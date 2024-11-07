@@ -2,10 +2,18 @@ locals {
   s3_origin_id = "trailplannerS3Origin"
 }
 
+resource "aws_cloudfront_origin_access_control" "s3_access" {
+  name                              = "s3_access"
+  description                       = "s3 origin access policy"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_control.default.id
+    origin_access_control_id = aws_cloudfront_origin_access_control.s3_access.id
     origin_id                = local.s3_origin_id
   }
 
@@ -27,7 +35,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       }
     }
 
-    viewer_protocol_policy = "allow-all"
+    viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 86400
@@ -78,10 +86,14 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     viewer_protocol_policy = "redirect-to-https"
   }
 
+  #Only use edge locations in US and EU
+  price_class = "PriceClass_100"
+
+  #Restricts countries access to only North American countries
   restrictions {
     geo_restriction {
       restriction_type = "whitelist"
-      locations        = ["US", "CA", "GB", "DE"]
+      locations        = ["US", "CA"]
     }
   }
 
@@ -92,4 +104,38 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+
+  depends_on = [ aws_s3_bucket.bucket, null_resource.deploy_react_app ]
 }
+
+#Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
+resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
+  bucket = aws_s3_bucket.bucket.id
+  policy = jsonencode({
+    Version = "2008-10-17"
+    Id      = "PolicyForCloudFrontPrivateContent"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.bucket.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+          }
+        }
+      }
+    ]
+  })
+
+  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+}
+
+output "website_url" {
+  value = aws_cloudfront_distribution.s3_distribution.domain_name
+}
+
