@@ -19,6 +19,12 @@ variable "react_app_directory" {
   default     = "../swen-project-react-app"
 }
 
+variable "authorization_type" {
+  type        = string
+  #Set to "NONE" to disable auth
+  default     = "COGNITO_USER_POOLS"
+}
+
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999

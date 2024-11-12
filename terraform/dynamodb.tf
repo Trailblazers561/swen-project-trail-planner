@@ -19,3 +19,17 @@ resource "aws_dynamodb_table" "traildata_table" {
         type = "N"
     }
 }
+
+#Test data should be removed
+resource "aws_dynamodb_table_item" "item1" {
+    depends_on = [
+        aws_dynamodb_table.traildata_table
+    ]
+    table_name = aws_dynamodb_table.traildata_table.name
+    hash_key = aws_dynamodb_table.traildata_table.hash_key
+
+    item = jsonencode({
+        "id": {"N": "1"},
+        "name": {"S": "TRAIL ONE"}
+    })
+}

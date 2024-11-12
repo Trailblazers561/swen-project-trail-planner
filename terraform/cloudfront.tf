@@ -97,6 +97,14 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
+  #Ensures cloudfront is always routed to our App.jsx router
+  custom_error_response {
+    error_code           = 403
+    response_page_path   = "/index.html"
+    response_code        = 200
+    error_caching_min_ttl = 300
+  }
+
   tags = {
     Environment = "production"
   }
