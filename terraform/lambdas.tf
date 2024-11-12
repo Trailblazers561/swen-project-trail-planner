@@ -1,4 +1,4 @@
-data "archive_file" "traildata.py" {
+data "archive_file" "traildata_zip" {
   type        = "zip"
   source_file = "${path.module}/../lambdas/traildata.py"
   output_path = "${path.module}/../lambdas/zips/traildata.zip"
@@ -39,5 +39,5 @@ resource "aws_lambda_permission" "allow_apigateway_all_functions" {
   function_name = each.value 
   principal     = "apigateway.amazonaws.com"
 
-  source_arn    = "${aws_api_gateway_rest_api.ecommerce-api.execution_arn}/*/*" 
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*" 
 }

@@ -22,3 +22,13 @@ resource "aws_cognito_user_pool_client" "client" {
   explicit_auth_flows = ["ADMIN_NO_SRP_AUTH", "USER_PASSWORD_AUTH"]
   supported_identity_providers = ["COGNITO"]
 }
+
+resource "aws_cognito_user" "admin" {
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  username     = "admin@gmail.com"
+  password     = "REDACTED"
+  attributes = {
+    email = "admin@gmail.com"
+    email_verified = true
+  }
+}
