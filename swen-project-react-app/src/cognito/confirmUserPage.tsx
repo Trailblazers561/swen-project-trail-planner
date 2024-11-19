@@ -1,6 +1,6 @@
 //https://github.com/awsdocs/aws-doc-sdk-examples/tree/main/javascriptv3/example_code/cognito-identity-provider/scenarios/cognito-developer-guide-react-example/frontend-client
 
-import type React from "react";
+import React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { confirmSignUp } from "./authService";

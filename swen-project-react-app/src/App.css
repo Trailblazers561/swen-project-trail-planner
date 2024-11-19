@@ -27,6 +27,47 @@
   }
 }
 
+.input-glass {
+  width: 100%;
+  padding: 15px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-glass::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.input-glass:focus {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.button-3d {
+    background: #36006f;
+    color: #fff;
+    padding: 15px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 6px #280449;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.2s ease;
+}
+
+.button-3d:active {
+    box-shadow: 0 2px #280449;
+    transform: translateY(4px);
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;

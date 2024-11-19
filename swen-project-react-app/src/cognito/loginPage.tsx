@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp } from "./authService";
+import React from "react";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -47,14 +48,14 @@ const LoginPage = () => {
 
   return (
     <div className="loginForm">
-      <h1>Welcome</h1>
+      <img className="logo" alt="Logo" src="AWA-logo.png" />
       <h4>
         {isSignUp ? "Sign up to create an account" : "Sign in to your account"}
       </h4>
       <form onSubmit={isSignUp ? handleSignUp : handleSignIn}>
         <div>
           <input
-            className="inputText"
+            className="inputText input-glass"
             id="email"
             type="email"
             value={email}
@@ -65,7 +66,7 @@ const LoginPage = () => {
         </div>
         <div>
           <input
-            className="inputText"
+            className="inputText input-glass"
             id="password"
             type="password"
             value={password}
@@ -77,7 +78,7 @@ const LoginPage = () => {
         {isSignUp && (
           <div>
             <input
-              className="inputText"
+              className="inputText input-glass"
               id="confirmPassword"
               type="password"
               value={confirmPassword}
@@ -87,9 +88,9 @@ const LoginPage = () => {
             />
           </div>
         )}
-        <button type="submit">{isSignUp ? "Sign Up" : "Sign In"}</button>
+        <button className="button-3d" type="submit">{isSignUp ? "Sign Up" : "Sign In"}</button>
       </form>
-      <button type="button" onClick={() => setIsSignUp(!isSignUp)}>
+      <button className="button-3d" type="button" onClick={() => setIsSignUp(!isSignUp)}>
         {isSignUp
           ? "Already have an account? Sign In"
           : "Need an account? Sign Up"}
