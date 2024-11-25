@@ -1,6 +1,5 @@
 //https://github.com/awsdocs/aws-doc-sdk-examples/tree/main/javascriptv3/example_code/cognito-identity-provider/scenarios/cognito-developer-guide-react-example/frontend-client
 
-import React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { confirmSignUp } from "./authService";
@@ -28,7 +27,7 @@ const ConfirmUserPage = () => {
       <form onSubmit={handleSubmit}>
         <div>
           <input
-            className="inputText"
+            className="inputText input-glass"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -38,7 +37,7 @@ const ConfirmUserPage = () => {
         </div>
         <div>
           <input
-            className="inputText"
+            className="inputText input-glass"
             type="text"
             value={confirmationCode}
             onChange={(e) => setConfirmationCode(e.target.value)}
@@ -46,7 +45,7 @@ const ConfirmUserPage = () => {
             required
           />
         </div>
-        <button type="submit">Confirm Account</button>
+        <button type="submit button-3d">Confirm Account</button>
       </form>
     </div>
   );
