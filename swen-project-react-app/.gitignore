@@ -13,10 +13,12 @@ dist
 dist-ssr
 *.local
 
+swen-project-react-app/src/cognito/config.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/*
 .DS_Store
 *.suo
 *.ntvs*
