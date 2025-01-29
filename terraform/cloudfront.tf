@@ -3,6 +3,8 @@ locals {
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {
+  count = var.fast_boot ? 0 : 1
+
   name                              = "s3_access"
   description                       = "s3 origin access policy"
   origin_access_control_origin_type = "s3"
@@ -11,9 +13,11 @@ resource "aws_cloudfront_origin_access_control" "s3_access" {
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
+  count = var.fast_boot ? 0 : 1
+
   origin {
     domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_control.s3_access.id
+    origin_access_control_id = aws_cloudfront_origin_access_control.s3_access[0].id
     origin_id                = local.s3_origin_id
   }
 
@@ -118,6 +122,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
 #Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
 resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
+  count = var.fast_boot ? 0 : 1
+
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
     Version = "2008-10-17"
@@ -133,7 +139,7 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
         Resource = "${aws_s3_bucket.bucket.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution[0].arn
           }
         }
       }
@@ -144,6 +150,6 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
 }
 
 output "website_url" {
-  value = aws_cloudfront_distribution.s3_distribution.domain_name
+  value = var.fast_boot ? "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}" : "http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}"
 }
 

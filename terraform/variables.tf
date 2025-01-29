@@ -25,6 +25,12 @@ variable "authorization_type" {
   default     = "COGNITO_USER_POOLS"
 }
 
+# ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
+variable "fast_boot" {
+  type = bool
+  default = false
+}
+
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
