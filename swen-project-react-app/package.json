@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.533.0",
+    "plotly.js": "^3.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-plotly.js": "^2.6.0",
     "react-router-dom": "^6.22.3"
   },
   "devDependencies": {

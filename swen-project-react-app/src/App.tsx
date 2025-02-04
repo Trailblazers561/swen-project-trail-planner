@@ -2,7 +2,9 @@ import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import HomePage from "./homePage";
+import DashBoard from "./dashboard";
 import ConfirmUserPage from "./cognito/confirmUserPage";
+import React from 'react';
 
 function App() {
   const isAuthenticated = () => {
@@ -19,7 +21,7 @@ function App() {
               isAuthenticated() ? (
                 <Navigate replace to="/home" />
               ) : (
-                <Navigate replace to="/login" />
+                <Navigate replace to="/dashboard" />
               )
             }
           />
@@ -28,6 +30,7 @@ function App() {
           <Route path="/home" 
             element={isAuthenticated() ? <HomePage /> : <Navigate replace to="/" />}
           />
+          <Route path="/dashboard" element={<DashBoard />} />
         </Routes>
       </BrowserRouter>
     );
