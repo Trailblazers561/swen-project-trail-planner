@@ -1,6 +1,8 @@
-import React from "react"; 
+import React, { useState, useEffect } from "react";
 import "./styles/dashboard.css"
 import Plot from "react-plotly.js"
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const data = 
 [
@@ -24,7 +26,7 @@ const dashboard = () => {
         <body>
             <div className="dashboard-div">
                 <Plot className="graph"
-                    // config={ {displayModeBar: false} }
+                    config={ {displayModeBar: false} }
                     data={[
                     {
                         x: [
@@ -72,20 +74,38 @@ const dashboard = () => {
                     
                         }}
                 />
-            <div>
-                <select name="Granularity" id="granularity">
-                    <option value="Hourly">Hourly</option>
-                    <option value="Daily">Daily</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Yearly">Yearly</option>
-                </select>
-                <select name="Trail" id="trail">
-                    <option value="Mt. Marcy">Mt. Marcy</option>
-                    <option value="Wolf Creek Mountin">Wolf Creek Mountin</option>
-                    <option value="Mt. Joe">Mt. Joe</option>
-                    <option value="Mt. America">Mt. America</option>
-                </select>
-            </div>
+                <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+                    <div>
+                        <label>Start Date:</label>
+                        <DatePicker
+                            selected={startDate}
+                            selectsStart
+                            startDate={startDate}
+                            endDate={endDate}
+                        />
+                        </div>
+                        <div>
+                        <label>End Date:</label>
+                        <DatePicker
+                            selected={endDate}
+                            selectsEnd
+                            startDate={startDate}
+                            endDate={endDate}
+                        />
+                    </div>
+                    <select name="Granularity" id="granularity">
+                        <option value="Hourly">Hourly</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                    </select>
+                    <select name="Trail" id="trail">
+                        <option value="Mt. Marcy">Mt. Marcy</option>
+                        <option value="Wolf Creek Mountin">Wolf Creek Mountin</option>
+                        <option value="Mt. Joe">Mt. Joe</option>
+                        <option value="Mt. America">Mt. America</option>
+                    </select>
+                </div>
             </div>
         </body>
     );
