@@ -186,6 +186,16 @@ resource "aws_api_gateway_stage" "api_stage" {
     stage_name    = "${var.default_name}_api_stage"
 }
 
+resource "local_sensitive_file" "production_env" {
+  content  = <<EOF
+VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
+EOF
+  filename = "${path.module}/${var.react_app_directory}/.env"
+  depends_on = [
+    aws_api_gateway_stage.api_stage
+  ]
+}
+
 output "api_gateway_url" {
     value = aws_api_gateway_stage.api_stage.invoke_url
 }

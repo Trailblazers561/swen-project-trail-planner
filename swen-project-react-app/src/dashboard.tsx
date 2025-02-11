@@ -3,6 +3,7 @@ import "./styles/dashboard.css"
 import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { TrailData } from "./api";
 
 const data = 
 [
@@ -15,6 +16,10 @@ const data =
     ['AlgonquinPeak', new Date('2025-01-28T10:00:00')],
     ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
 ]
+
+const { getAll } = TrailData();
+
+console.log(getAll())
 
 const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
