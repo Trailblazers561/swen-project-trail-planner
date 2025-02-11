@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp } from "./authService";
+import React from "react";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
