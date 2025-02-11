@@ -1,3 +1,4 @@
 .idea
 swen-project-react-app/src/cognito/config.json
 swen-project-react-app/tsconfig.json
+.DS_Store
