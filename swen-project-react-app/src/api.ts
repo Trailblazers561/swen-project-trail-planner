@@ -1,9 +1,8 @@
-/// <reference types="vite/client" />
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL
 
 export function TrailData(){
   async function getAll(){
-    return await request(API_URL + '/trail_data', {
+    return await request(API_URL + '/trail_data/', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
