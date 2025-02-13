@@ -26,6 +26,9 @@ const dashboard = () => {
     const { getAll } = TrailData();
     console.log(getAll())
 
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(null);
+
     return(
         <body>
             <div className="dashboard-div">
@@ -82,19 +85,21 @@ const dashboard = () => {
                     <div>
                         <label>Start Date:</label>
                         <DatePicker
-                            selected={startDate}
-                            selectsStart
-                            startDate={startDate}
-                            endDate={endDate}
+                            selected={selectedDate}
+                            onChange={(date) => setSelectedDate(date)}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
                         />
                         </div>
                         <div>
                         <label>End Date:</label>
                         <DatePicker
-                            selected={endDate}
-                            selectsEnd
-                            startDate={startDate}
-                            endDate={endDate}
+                            selected={selectedDateEnd}
+                            onChange={(date) => setSelectedDateEnd(date)}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
                         />
                     </div>
                     <select name="Granularity" id="granularity">
