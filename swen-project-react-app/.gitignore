@@ -12,6 +12,7 @@ package-lock.json
 dist
 dist-ssr
 *.local
+.env
 
 swen-project-react-app/src/cognito/config.json
 

@@ -25,7 +25,7 @@ let dateFrequencies = {}
 const dashboard = () => {
     const { getAll } = TrailData();
     console.log(getAll())
-    
+
     return(
         <body>
             <div className="dashboard-div">
