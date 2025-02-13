@@ -46,7 +46,7 @@ const ConfirmUserPage = () => {
             required
           />
         </div>
-        <button type="submit button-3d">Confirm Account</button>
+        <button type="submit">Confirm Account</button>
       </form>
     </div>
   );
