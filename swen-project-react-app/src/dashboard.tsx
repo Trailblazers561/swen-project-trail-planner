@@ -17,16 +17,15 @@ const data =
     ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
 ]
 
-const { getAll } = TrailData();
-
-console.log(getAll())
-
 const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
 let dateFrequencies = {}
 
     
 const dashboard = () => {
+    const { getAll } = TrailData();
+    console.log(getAll())
+    
     return(
         <body>
             <div className="dashboard-div">
