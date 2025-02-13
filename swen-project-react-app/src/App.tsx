@@ -21,15 +21,15 @@ function App() {
               isAuthenticated() ? (
                 <Navigate replace to="/dashboard" />
               ) : (
-                <Navigate replace to="/login" />
+                <Navigate replace to="/dashboard" />
               )
             }
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirm" element={<ConfirmUserPage />} />
-          <Route path="/dashboard" 
+          {/* <Route path="/dashboard" 
             element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/" />}
-          />
+          /> */}
           <Route path="/dashboard" element={<DashBoard />} />
         </Routes>
       </BrowserRouter>
