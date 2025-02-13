@@ -23,8 +23,32 @@ let dateFrequencies = {}
 
     
 const dashboard = () => {
-    const { getAll } = TrailData();
-    console.log(getAll())
+    // const { getAll } = TrailData();
+    // console.log(getAll())
+
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
+    const [trail, setTrail] = useState<String>("All Trails");
+    const [granularity, setGranularity] = useState<String | null>(null);
+
+    const handleStartDateChange = (e: Date | null) => {
+        setSelectedDate(e);
+        console.log(e)
+        console.log(selectedDateEnd)
+        console.log(trail)
+    }
+    const handleEndDateChange = (e: Date | null) => {
+        setSelectedDateEnd(e);
+
+    }
+    const handleTrailChange = (e:String) => {
+        setTrail(e);
+    }
+
+
+    const handleGranularityChange = (e: String) => {
+        setGranularity(e);
+    }
 
     return(
         <body>
@@ -48,11 +72,7 @@ const dashboard = () => {
                         mode: 'lines+markers',
                         marker: {color: 'red'},
                     },
-                    // {
-                    //     type: 'line',
-                    //     name: 'Mt. Marcy', // name of trace label
-                    //     x: ['2013-10-04 22:23:00', '2013-11-04 22:23:00', '2013-12-04 22:23:00'], 
-                    //     y: [2, 5, 7, 4, 5, 6, 4, 5]},
+
                     ]}
                     layout={
                         {width: 1000,
@@ -82,28 +102,38 @@ const dashboard = () => {
                     <div>
                         <label>Start Date:</label>
                         <DatePicker
-                            selected={startDate}
-                            selectsStart
-                            startDate={startDate}
-                            endDate={endDate}
+                            selected={selectedDate}
+                            onChange={handleStartDateChange}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
                         />
                         </div>
                         <div>
                         <label>End Date:</label>
                         <DatePicker
-                            selected={endDate}
-                            selectsEnd
-                            startDate={startDate}
-                            endDate={endDate}
+                            selected={selectedDateEnd}
+                            onChange={handleEndDateChange}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
                         />
                     </div>
-                    <select name="Granularity" id="granularity">
+                    <select 
+                        name="Granularity" 
+                        id="granularity"
+                        onChange={(e) => handleGranularityChange(e.target.value)}>
+
                         <option value="Hourly">Hourly</option>
                         <option value="Daily">Daily</option>
                         <option value="Monthly">Monthly</option>
                         <option value="Yearly">Yearly</option>
                     </select>
-                    <select name="Trail" id="trail">
+                    <select 
+                        name="Trail" 
+                        id="trail"
+                        onChange={(e) => handleTrailChange(e.target.value)}>
+                        <option value="All Trails">All Trails</option>
                         <option value="Mt. Marcy">Mt. Marcy</option>
                         <option value="Wolf Creek Mountin">Wolf Creek Mountin</option>
                         <option value="Mt. Joe">Mt. Joe</option>
