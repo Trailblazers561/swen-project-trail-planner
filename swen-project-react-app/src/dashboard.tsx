@@ -17,25 +17,45 @@ const data =
     ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
 ]
 
+var xData = ['']
+
 const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
 let dateFrequencies = {}
 
     
 const dashboard = () => {
-    // const { getAll } = TrailData();
-    // console.log(getAll())
+    const { getAll } = TrailData();
+
+    getAll().then(response => {
+        const responseJson = response.json;
+        console.log(responseJson);
+        console.log(responseJson[0])
+        // const count = Object.keys(responseJson).length;
+        // for (var i = 0; i < count; i++) {
+        //     console.log(responseJson[i].timestamp)
+        // }
+        
+        Object.values(responseJson).forEach((trail) => {
+            xData.push(trail.timestamp)
+        })
+    })
+        
+    
+    // console.log(getAll().then())
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
     const [trail, setTrail] = useState<String>("All Trails");
     const [granularity, setGranularity] = useState<String | null>(null);
 
-    const handleStartDateChange = (e: Date | null) => {
-        setSelectedDate(e);
-        console.log(e)
+    const handleStartDateChange = (startDate: Date | null) => {
+        setSelectedDate(startDate);
+        console.log(startDate)
         console.log(selectedDateEnd)
         console.log(trail)
+
+        
     }
     const handleEndDateChange = (e: Date | null) => {
         setSelectedDateEnd(e);
@@ -57,15 +77,7 @@ const dashboard = () => {
                     config={ {displayModeBar: false} }
                     data={[
                     {
-                        x: [
-                            "2025-02-04 12:00:00",
-                            "2025-02-08 18:30:00",
-                            "2025-02-12 05:15:00",
-                            "2025-02-16 23:45:00",
-                            "2025-02-20 14:00:00",
-                            "2025-02-24 07:20:00",
-                            "2025-02-27 19:10:00",
-                            "2025-03-03 02:50:00"],
+                        x: xData,
                         y: [2, 6, 3, 3, 4, 5, 7, 8],
                         type: 'line',
                         name: 'Wolf Jaw Peak',
