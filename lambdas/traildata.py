@@ -1,5 +1,6 @@
 import json
 import boto3
+from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
@@ -18,7 +19,24 @@ def get_trail_data(event, context):
     table = dynamodb.Table('traildata_table')
 
     try:
-        response = table.scan()
+        query_params = event.get('queryStringParameters', {})
+        
+        trail_id = query_params.get('trail') if query_params else None
+        start = query_params.get('start') if query_params else None
+        end = query_params.get('end') if query_params else None
+        
+    
+        if trail_id and start and end:
+            response = table.query(
+                KeyConditionExpression=(Key('id').eq(int(trail_id)) & Key('timestamp').between(str(start), str(end)))
+            )
+        elif trail_id:
+            response = table.query(
+                KeyConditionExpression=Key('id').eq(int(trail_id))
+            )
+        else:
+            response = table.scan()
+
         traildata = convert_decimals(response.get('Items', []))
 
         return {
