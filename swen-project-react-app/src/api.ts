@@ -17,6 +17,8 @@ export function TrailData(){
   }
 }
 
+
+
 type RequestResult = {
   json: object;
   success: boolean;
