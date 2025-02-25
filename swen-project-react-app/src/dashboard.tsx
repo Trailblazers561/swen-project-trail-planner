@@ -17,32 +17,23 @@ const data =
     ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
 ]
 
-var xData = ['']
+
 
 const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
 let dateFrequencies = {}
 
     
-const dashboard = () => {
-    const { getAll } = TrailData();
+const dashboard = ({newXData,newYData}) => {
+    const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const [xData, setXData] = useState<Date[]>([]); //
+    const [yData, setYData] = useState<Number[]>([]); //
 
-    getAll().then(response => {
-        const responseJson = response.json;
-        console.log(responseJson);
-        console.log(responseJson[0])
-        // const count = Object.keys(responseJson).length;
-        // for (var i = 0; i < count; i++) {
-        //     console.log(responseJson[i].timestamp)
-        // }
-        
-        Object.values(responseJson).forEach((trail) => {
-            xData.push(trail.timestamp)
-        })
-    })
-        
-    
-    // console.log(getAll().then())
+    useEffect(() => {
+        setXData(newXData);
+        setYData(newYData);
+    }, [newXData, newYData]); // Updates xData whenever newXData changes
+
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
@@ -54,9 +45,53 @@ const dashboard = () => {
         console.log(startDate)
         console.log(selectedDateEnd)
         console.log(trail)
+        getResponse(startDate, selectedDateEnd, trail)
 
+    }
+
+    async function getResponse(startDate, endDate, trail) {
+        
+        const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
+        let trailData: Date[] = [];
+        let countData: Number[] = [];
+        const responseJson = response.json;
+        Object.values(responseJson).forEach((trail) => {
+            console.log(trail);
+            trailData.push(new Date(trail.timestamp * 1000))
+        })
+        
+        var startOfWindow = new Date(2020, 0, 1);
+        var endOfWindow = new Date(2020, 11, 31);
+
+        var dateRanges =[
+            [new Date(2020, 0, 1), new Date(2020, 0, 3)],
+            [new Date(2020, 0, 3), new Date(2020, 0, 4)],
+            [new Date(2020, 0, 3), new Date(2020, 0, 6)],
+        ];
+        
+        while (startOfWindow <= endOfWindow) {
+            var count = 0;
+            dateRanges.forEach(
+                function(range) {
+                    if (startOfWindow >= range[0] && startOfWindow <= range[1]) {
+                        count++;
+                    }
+                }
+            );
+            countData.push(count);
+            startOfWindow.setDate(startOfWindow.getDate() + 1); //+1 day
+        }
+
+        console.log(countData);
+    
+        //for each block of time between start and enddate
+            //count entried with dates in that block
+            //push to xData
+        setYData(countData)
+        setXData(trailData);
         
     }
+
     const handleEndDateChange = (e: Date | null) => {
         setSelectedDateEnd(e);
 
@@ -64,7 +99,6 @@ const dashboard = () => {
     const handleTrailChange = (e:String) => {
         setTrail(e);
     }
-
 
     const handleGranularityChange = (e: String) => {
         setGranularity(e);
@@ -78,7 +112,7 @@ const dashboard = () => {
                     data={[
                     {
                         x: xData,
-                        y: [2, 6, 3, 3, 4, 5, 7, 8],
+                        y: yData,
                         type: 'line',
                         name: 'Wolf Jaw Peak',
                         mode: 'lines+markers',
