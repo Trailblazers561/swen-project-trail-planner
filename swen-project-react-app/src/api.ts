@@ -1,27 +1,53 @@
 const API_URL = import.meta.env.VITE_API_URL
 
 export function TrailData(){
-  async function getAll(){
-    return await request(API_URL + '/trail_data/', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-        'Content-Type': 'application/json',
-      },
-      body: null,
-    });
-  }
+async function getAll(){
+  return await request(API_URL + '/trail_data/', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+      'Content-Type': 'application/json',
+    },
+    
+    body: null,
+  });
+}
 
-  return {
-    getAll
-  }
+async function GetTrailDataBetweenDates(startdate, enddate, trailID) {
+	console.log(`/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`)
+  return await request(API_URL + `/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+      'Content-Type': 'application/json',
+    },
+    body: null,
+  });
+}
+async function GetAllTrailsBetweenDates(startdate, enddate) {
+	console.log(`/trail_data?start=${startdate}&end=${enddate}`)
+  return await request(API_URL + `/trail_data?start=${startdate}&end=${enddate}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+      'Content-Type': 'application/json',
+    },
+    body: null,
+  });
+}
+
+return {
+  getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates
+}
+
+
 }
 
 
 
 type RequestResult = {
-  json: object;
-  success: boolean;
+json: object;
+success: boolean;
 };
 
 /**
@@ -31,21 +57,21 @@ type RequestResult = {
  * @returns
  */
 async function request(
-    url: string,
-    options?: RequestInit
-  ): Promise<RequestResult> {
-    try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      return {
-        json: data,
-        success: true,
-      };
-    } catch (e) {
-      console.error(e);
-      return {
-        json: {},
-        success: false,
-      };
-    }
+  url: string,
+  options?: RequestInit
+): Promise<RequestResult> {
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    return {
+      json: data,
+      success: true,
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      json: {},
+      success: false,
+    };
   }
+}
