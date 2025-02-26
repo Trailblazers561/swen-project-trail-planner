@@ -21,7 +21,7 @@ const LoginPage = () => {
         sessionStorage.setItem("accessToken", session.AccessToken);
         if (sessionStorage.getItem("accessToken")) {
           //Refreshes session token (dont replace with navigate)
-          window.location.href = "/home";
+          window.location.href = "/dashboard";
         } else {
           console.error("Session token was not set properly.");
         }
