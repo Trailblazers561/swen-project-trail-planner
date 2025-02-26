@@ -49,47 +49,31 @@ const dashboard = ({newXData,newYData}) => {
 
     }
 
-    async function getResponse(startDate, endDate, trail) {
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: String) {
+        if (!startDate || !endDate) return; 
         
-        const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
-        let trailData: Date[] = [];
-        let countData: Number[] = [];
-        const responseJson = response.json;
-        Object.values(responseJson).forEach((trail) => {
-            console.log(trail);
-            trailData.push(new Date(trail.timestamp * 1000))
-        })
-        
-        var startOfWindow = new Date(2020, 0, 1);
-        var endOfWindow = new Date(2020, 11, 31);
+        try {
+            const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
+            const responseJson = response.json;
 
-        var dateRanges =[
-            [new Date(2020, 0, 1), new Date(2020, 0, 3)],
-            [new Date(2020, 0, 3), new Date(2020, 0, 4)],
-            [new Date(2020, 0, 3), new Date(2020, 0, 6)],
-        ];
-        
-        while (startOfWindow <= endOfWindow) {
-            var count = 0;
-            dateRanges.forEach(
-                function(range) {
-                    if (startOfWindow >= range[0] && startOfWindow <= range[1]) {
-                        count++;
-                    }
-                }
-            );
-            countData.push(count);
-            startOfWindow.setDate(startOfWindow.getDate() + 1); //+1 day
-        }
+            let dateCounts: Record<string, number> = {};
 
-        console.log(countData);
+            // Process timestamps into daily counts
+            Object.values(responseJson).forEach((entry: { timestamp: number }) => {
+                const date = new Date(entry.timestamp * 1000);
+                const dateKey = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+
+                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+            });
+            const sortedDates = Object.keys(dateCounts).sort(); // Ensure chronological order
+            const xData = sortedDates.map(dateStr => new Date(dateStr));
+            const yData = sortedDates.map(dateStr => dateCounts[dateStr]);
     
-        //for each block of time between start and enddate
-            //count entried with dates in that block
-            //push to xData
-        setYData(countData)
-        setXData(trailData);
-        
+            setXData(xData);
+            setYData(yData);
+        }catch (error) {
+            console.error("Error fetching trail data:", error);
+        }
     }
 
     const handleEndDateChange = (e: Date | null) => {
