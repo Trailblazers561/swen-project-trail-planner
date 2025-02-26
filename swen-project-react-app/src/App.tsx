@@ -21,7 +21,7 @@ function App() {
               isAuthenticated() ? (
                 <Navigate replace to="/dashboard" />
               ) : (
-                <Navigate replace to="/dashboard" />
+                <Navigate replace to="/login" />
               )
             }
           />
