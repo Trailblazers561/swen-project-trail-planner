@@ -4,6 +4,7 @@ import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
+import { useNavigate } from "react-router-dom";
 
 const data = 
 [
@@ -23,8 +24,45 @@ const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
 let dateFrequencies = {}
 
+function parseJwt(token) {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map((c) => `%${(`00${c.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .join(""),
+    );
+    return JSON.parse(jsonPayload);
+  }
     
 const dashboard = ({newXData,newYData}) => {
+
+    const [count, setCount] = useState(0)
+    const navigate = useNavigate();
+    const idToken = parseJwt(sessionStorage.idToken.toString());
+    const accessToken = parseJwt(sessionStorage.accessToken.toString());
+    console.log(
+      `Amazon Cognito ID token encoded: ${sessionStorage.idToken.toString()}`,
+    );
+    console.log("Amazon Cognito ID token decoded: ");
+    console.log(idToken);
+    console.log(
+      `Amazon Cognito access token encoded: ${sessionStorage.accessToken.toString()}`,
+    );
+    console.log("Amazon Cognito access token decoded: ");
+    console.log(accessToken);
+    console.log("Amazon Cognito refresh token: ");
+    console.log(sessionStorage.refreshToken);
+    console.log(
+      "Amazon Cognito example application. Not for use in production applications.",
+    );
+    const handleLogout = () => {
+      sessionStorage.clear();
+      navigate("/login");
+    };
+
     const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
     const [xData, setXData] = useState<Date[]>([]); //
     const [yData, setYData] = useState<Number[]>([]); //
@@ -91,6 +129,11 @@ const dashboard = ({newXData,newYData}) => {
     return(
         <body>
             <div className="dashboard-div">
+                <div style={{ display: "flex" }}>
+                    <button type="button" onClick={handleLogout} style={{ marginLeft: "auto" }}>
+                    Logout
+                    </button>
+                </div>
                 <Plot className="graph"
                     config={ {displayModeBar: false} }
                     data={[
