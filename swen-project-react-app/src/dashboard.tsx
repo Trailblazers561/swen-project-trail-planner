@@ -17,26 +17,65 @@ const data =
     ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
 ]
 
+
+
 const startDate = new Date('2025-01-27T10:00:00')
 const endDate = new Date('2025-01-31T10:00:00')
 let dateFrequencies = {}
 
     
-const dashboard = () => {
-    // const { getAll } = TrailData();
-    // console.log(getAll())
+const dashboard = ({newXData,newYData}) => {
+    const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const [xData, setXData] = useState<Date[]>([]); //
+    const [yData, setYData] = useState<Number[]>([]); //
+
+    useEffect(() => {
+        setXData(newXData);
+        setYData(newYData);
+    }, [newXData, newYData]); // Updates xData whenever newXData changes
+
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
     const [trail, setTrail] = useState<String>("All Trails");
     const [granularity, setGranularity] = useState<String | null>(null);
 
-    const handleStartDateChange = (e: Date | null) => {
-        setSelectedDate(e);
-        console.log(e)
+    const handleStartDateChange = (startDate: Date | null) => {
+        setSelectedDate(startDate);
+        console.log(startDate)
         console.log(selectedDateEnd)
         console.log(trail)
+        getResponse(startDate, selectedDateEnd, trail)
+
     }
+
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: String) {
+        if (!startDate || !endDate) return; 
+        
+        try {
+            const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
+            const responseJson = response.json;
+
+            let dateCounts: Record<string, number> = {};
+
+            // Process timestamps into daily counts
+            Object.values(responseJson).forEach((entry: { timestamp: number }) => {
+                const date = new Date(entry.timestamp * 1000);
+                const dateKey = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+
+                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+            });
+            const sortedDates = Object.keys(dateCounts).sort(); // Ensure chronological order
+            const xData = sortedDates.map(dateStr => new Date(dateStr));
+            const yData = sortedDates.map(dateStr => dateCounts[dateStr]);
+    
+            setXData(xData);
+            setYData(yData);
+        }catch (error) {
+            console.error("Error fetching trail data:", error);
+        }
+    }
+
     const handleEndDateChange = (e: Date | null) => {
         setSelectedDateEnd(e);
 
@@ -44,7 +83,6 @@ const dashboard = () => {
     const handleTrailChange = (e:String) => {
         setTrail(e);
     }
-
 
     const handleGranularityChange = (e: String) => {
         setGranularity(e);
@@ -57,16 +95,8 @@ const dashboard = () => {
                     config={ {displayModeBar: false} }
                     data={[
                     {
-                        x: [
-                            "2025-02-04 12:00:00",
-                            "2025-02-08 18:30:00",
-                            "2025-02-12 05:15:00",
-                            "2025-02-16 23:45:00",
-                            "2025-02-20 14:00:00",
-                            "2025-02-24 07:20:00",
-                            "2025-02-27 19:10:00",
-                            "2025-03-03 02:50:00"],
-                        y: [2, 6, 3, 3, 4, 5, 7, 8],
+                        x: xData,
+                        y: yData,
                         type: 'line',
                         name: 'Wolf Jaw Peak',
                         mode: 'lines+markers',
