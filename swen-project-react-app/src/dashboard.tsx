@@ -4,62 +4,69 @@ import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-
-const data = 
-[
-    ['AlgonquinPeak', new Date('2025-01-30T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-29T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-28T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
-]
-
-
-
-const startDate = new Date('2025-01-27T10:00:00')
-const endDate = new Date('2025-01-31T10:00:00')
-let dateFrequencies = {}
-
     
 const dashboard = ({newXData,newYData}) => {
-    const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const {GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
     const [xData, setXData] = useState<Date[]>([]); //
     const [yData, setYData] = useState<Number[]>([]); //
 
     useEffect(() => {
         setXData(newXData);
         setYData(newYData);
-    }, [newXData, newYData]); // Updates xData whenever newXData changes
+    }, [newXData, newYData]); // Updates xData & yData whenever newXDataor newYData changes
 
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
-    const [trail, setTrail] = useState<String>("All Trails");
-    const [granularity, setGranularity] = useState<String | null>(null);
+    const [trail, setTrail] = useState<string>("All Trails");
+    const [granularity, setGranularity] = useState<string | null>(null);
 
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
-        console.log(startDate)
-        console.log(selectedDateEnd)
-        console.log(trail)
-        getResponse(startDate, selectedDateEnd, trail)
-
+        if (startDate && selectedDateEnd) {
+            getResponse(startDate, selectedDateEnd, trail);
+        }
     }
 
-    async function getResponse(startDate: Date | null, endDate: Date | null, trail: String) {
+    const handleEndDateChange = (endDate: Date | null) => {
+        setSelectedDateEnd(endDate);
+        if (selectedDate && endDate) {
+            getResponse(selectedDate, endDate, trail);
+        }
+    }
+
+    const handleTrailChange = (selectedTrail: string) => {
+        setTrail(selectedTrail);
+        if (selectedDate && selectedDateEnd) {
+            getResponse(selectedDate, selectedDateEnd, selectedTrail);
+        }
+    }
+
+    const trailMap: Record<string, number> = {
+        "Mt. Marcy": 1,
+        "Wolf Creek Mountain": 2,
+        "Mt. Joe": 3,
+        "Mt. America": 4
+    };
+
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
         if (!startDate || !endDate) return; 
         
         try {
-            const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
-            const responseJson = response.json;
+            if (trail === "All Trails") {
+                var response;
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000));
+            } else {
+                const trailId = trailMap[trail];
+                if (!trailId) return; 
+                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId);
+            }            
+            const responseJson = await response.json;
 
             let dateCounts: Record<string, number> = {};
 
             // Process timestamps into daily counts
-            Object.values(responseJson).forEach((entry: { timestamp: number }) => {
+            (responseJson as { timestamp: number }[]).forEach((entry) => {
                 const date = new Date(entry.timestamp * 1000);
                 const dateKey = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
 
@@ -76,15 +83,7 @@ const dashboard = ({newXData,newYData}) => {
         }
     }
 
-    const handleEndDateChange = (e: Date | null) => {
-        setSelectedDateEnd(e);
-
-    }
-    const handleTrailChange = (e:String) => {
-        setTrail(e);
-    }
-
-    const handleGranularityChange = (e: String) => {
+    const handleGranularityChange = (e: string) => {
         setGranularity(e);
     }
 
@@ -98,34 +97,17 @@ const dashboard = ({newXData,newYData}) => {
                         x: xData,
                         y: yData,
                         type: 'line',
-                        name: 'Wolf Jaw Peak',
+                        name: 'trail',
                         mode: 'lines+markers',
                         marker: {color: 'red'},
                     },
 
                     ]}
-                    layout={
-                        {width: 1000,
+                    layout={{
+                        width: 1000,
                         height: 700, 
-                        xaxis: {
-                            title: {
-                            text: 'Date',
-                            font: {
-                                size: 18,
-                                color: '#7f7f7f'
-                                }
-                            },
-                        },
-                        yaxis: {
-                            title: {
-                            text: 'Hikers',
-                            font: {
-                                size: 18,
-                                color: '#7f7f7f'
-                                }
-                            },
-                        },
-                    
+                        xaxis: { title: { text: 'Date', font: { size: 18, color: '#7f7f7f' } }, },
+                        yaxis: { title: { text: 'Hikers', font: { size: 18, color: '#7f7f7f' } }, },
                         }}
                 />
                 <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
