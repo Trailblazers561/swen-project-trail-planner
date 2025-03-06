@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import TrailSelector from "./components/trailselector";
 import "./styles/dashboard.css"
 import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
@@ -37,12 +38,14 @@ const dashboard = ({newXData,newYData}) => {
 
     const handleTrailChange = (selectedTrail: string) => {
         setTrail(selectedTrail);
+        console.log(selectedTrail);
         if (selectedDate && selectedDateEnd) {
             getResponse(selectedDate, selectedDateEnd, selectedTrail);
         }
     }
 
     const trailMap: Record<string, number> = {
+        "All Trails": 0,
         "Mt. Marcy": 1,
         "Wolf Creek Mountain": 2,
         "Mt. Joe": 3,
@@ -51,16 +54,18 @@ const dashboard = ({newXData,newYData}) => {
 
     async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
         if (!startDate || !endDate) return; 
-        
+
+        let response;
         try {
-            if (trail === "All Trails") {
-                var response;
-                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000));
+            if (trail[0] === "All Trails") {
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
+                );
             } else {
                 const trailId = trailMap[trail];
-                if (!trailId) return; 
-                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId);
-            }            
+                if (!trailId) return; // Ensure the trailId is valid
+                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId
+                );
+            }
             const responseJson = await response.json;
 
             let dateCounts: Record<string, number> = {};
@@ -75,7 +80,7 @@ const dashboard = ({newXData,newYData}) => {
             const sortedDates = Object.keys(dateCounts).sort(); // Ensure chronological order
             const xData = sortedDates.map(dateStr => new Date(dateStr));
             const yData = sortedDates.map(dateStr => dateCounts[dateStr]);
-    
+
             setXData(xData);
             setYData(yData);
         }catch (error) {
@@ -110,8 +115,8 @@ const dashboard = ({newXData,newYData}) => {
                         yaxis: { title: { text: 'Hikers', font: { size: 18, color: '#7f7f7f' } }, },
                         }}
                 />
-                <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-                    <div>
+                <div className="filter-container">
+                    <div className="filter-group">
                         <label>Start Date:</label>
                         <DatePicker
                             selected={selectedDate}
@@ -119,9 +124,10 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
+                            className="date-picker"
                         />
-                        </div>
-                        <div>
+                    </div>
+                    <div className="filter-group">
                         <label>End Date:</label>
                         <DatePicker
                             selected={selectedDateEnd}
@@ -129,28 +135,26 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
+                            className="date-picker"
                         />
                     </div>
-                    <select 
-                        name="Granularity" 
-                        id="granularity"
-                        onChange={(e) => handleGranularityChange(e.target.value)}>
-
-                        <option value="Hourly">Hourly</option>
-                        <option value="Daily">Daily</option>
-                        <option value="Monthly">Monthly</option>
-                        <option value="Yearly">Yearly</option>
-                    </select>
-                    <select 
-                        name="Trail" 
-                        id="trail"
-                        onChange={(e) => handleTrailChange(e.target.value)}>
-                        <option value="All Trails">All Trails</option>
-                        <option value="Mt. Marcy">Mt. Marcy</option>
-                        <option value="Wolf Creek Mountin">Wolf Creek Mountin</option>
-                        <option value="Mt. Joe">Mt. Joe</option>
-                        <option value="Mt. America">Mt. America</option>
-                    </select>
+                    <div className="filter-group">
+                        <label>Granularity:</label>
+                        <select 
+                            id="granularity"
+                            className="select-box"
+                            onChange={(e) => handleGranularityChange(e.target.value)}
+                        >
+                            <option value="Hourly">Hourly</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div className="filter-group">
+                        <label>Trail:</label>
+                        <TrailSelector onChange={handleTrailChange}/>
+                    </div>
                 </div>
             </div>
         </body>
