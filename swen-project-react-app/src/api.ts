@@ -1,46 +1,44 @@
 const API_URL = import.meta.env.VITE_API_URL
 
 export function TrailData(){
-async function getAll(){
-  return await request(API_URL + '/trail_data/', {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-      'Content-Type': 'application/json',
-    },
-    
-    body: null,
-  });
-}
+  async function getAll(){
+    return await request(API_URL + '/trail_data/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+        'Content-Type': 'application/json',
+      },
+      
+      body: null,
+    });
+  }
 
-async function GetTrailDataBetweenDates(startdate, enddate, trailID) {
-	console.log(`/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`)
-  return await request(API_URL + `/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-      'Content-Type': 'application/json',
-    },
-    body: null,
-  });
-}
-async function GetAllTrailsBetweenDates(startdate, enddate) {
-	console.log(`/trail_data?start=${startdate}&end=${enddate}`)
-  return await request(API_URL + `/trail_data?start=${startdate}&end=${enddate}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-      'Content-Type': 'application/json',
-    },
-    body: null,
-  });
-}
+  async function GetTrailDataBetweenDates(startdate, enddate, trailID) {
+    console.log(`/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`)
+    return await request(API_URL + `/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+        'Content-Type': 'application/json',
+      },
+      body: null,
+    });
+  }
+  async function GetAllTrailsBetweenDates(startdate, enddate) {
+    console.log(`/trail_data?start=${startdate}&end=${enddate}`)
+    return await request(API_URL + `/trail_data?start=${startdate}&end=${enddate}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
+        'Content-Type': 'application/json',
+      },
+      body: null,
+    });
+  }
 
-return {
-  getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates
-}
-
-
+  return {
+    getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates
+  }
 }
 
 

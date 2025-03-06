@@ -49,6 +49,40 @@ const dashboard = ({newXData,newYData}) => {
 
     }
 
+    function getDateRanges(startDate: Date, endDate: Date, granularity: 'day' | 'month' = 'day'): { start: Date, end: Date }[] {
+        let ranges: { start: Date, end: Date }[] = [];
+        let current: Date = startDate;
+        let end: Date = endDate;
+        
+        while (current < end) {
+            let next: Date = new Date(current);
+            
+            if (granularity === 'day') {
+                next.setDate(next.getDate() + 1);
+            } else if (granularity === 'month') {
+                next.setMonth(next.getMonth() + 1);
+            }
+            
+            if (next > end) break;
+            
+            ranges.push({ start: new Date(current), end: new Date(next) });
+            current = next;
+        }
+        
+        return ranges;
+    }
+
+    function countOccurrencesInRanges(ranges: { start: Date, end: Date }[], dates: Date[]): Map<Date, number> {
+        let occurrences = new Map<Date, number>();
+        
+        for (let range of ranges) {
+            let count = dates.filter(date => date >= range.start && date <= range.end).length;
+            occurrences.set(range.start, count);
+        }
+        
+        return occurrences;
+    }
+
     async function getResponse(startDate: Date | null, endDate: Date | null, trail: String) {
         if (!startDate || !endDate) return; 
         
@@ -58,17 +92,22 @@ const dashboard = ({newXData,newYData}) => {
 
             let dateCounts: Record<string, number> = {};
 
+            let ranges = getDateRanges(startDate, endDate, "month")
+
+            let dates: Date[] = [];
+
             // Process timestamps into daily counts
             Object.values(responseJson).forEach((entry: { timestamp: number }) => {
-                const date = new Date(entry.timestamp * 1000);
-                const dateKey = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
-
-                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+                dates.push(new Date(entry.timestamp * 1000));
             });
-            const sortedDates = Object.keys(dateCounts).sort(); // Ensure chronological order
-            const xData = sortedDates.map(dateStr => new Date(dateStr));
-            const yData = sortedDates.map(dateStr => dateCounts[dateStr]);
-    
+            dates.sort();
+
+            let occurrences = countOccurrencesInRanges(ranges, dates)
+            
+            const sortedDates = Object.keys(occurrences).sort(); // Ensure chronological order
+            const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
+            const yData: Number[] = Array.from(occurrences.values());
+
             setXData(xData);
             setYData(yData);
         }catch (error) {
