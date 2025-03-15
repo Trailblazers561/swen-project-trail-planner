@@ -153,7 +153,7 @@ const dashboard = ({newXData,newYData}) => {
         <body>
             <div className="dashboard-div">
                 <div style={{ display: "flex" }}>
-                    <button type="button" onClick={handleLogout} style={{ marginLeft: "auto" }}>
+                    <button className="logout-button" type="button" onClick={handleLogout} style={{ marginLeft: "auto" }}>
                     Logout
                     </button>
                 </div>
