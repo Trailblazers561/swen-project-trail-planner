@@ -186,7 +186,7 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
-                            className="date-picker"
+                            className="date-picker-start-date"
                         />
                     </div>
                     <div className="filter-group">
@@ -197,7 +197,7 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
-                            className="date-picker"
+                            className="date-picker-end-date"
                         />
                     </div>
                     <div className="filter-group">
