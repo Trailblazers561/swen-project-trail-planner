@@ -11,7 +11,7 @@ def test_Login_Logout():
 
     try:
         # Open the login page
-        driver.get("http://trailplanner-bucket-48620377.s3-website-us-east-1.amazonaws.com")
+        driver.get("http://trailplanner-bucket-17590172.s3-website-us-east-1.amazonaws.com")
 
         # Find and enter the email
         email_field = driver.find_element(By.ID, "email")  
