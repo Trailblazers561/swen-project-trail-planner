@@ -48,10 +48,6 @@ def test_OneTrail():
         trail_selector.send_keys(Keys.RETURN)  # Press Enter
         time.sleep(5)
 
-        start_date.clear()
-        start_date.send_keys("06/01/2024" + Keys.ENTER)
-        time.sleep(5)
-
         end_date = driver.find_element(By.CLASS_NAME, "date-picker-end-date") 
         end_date.clear()
         end_date.send_keys("12/01/2024" + Keys.ENTER)
