@@ -4,7 +4,7 @@ from selenium.webdriver.common.by import By  # Ensure this import is present
 from selenium.webdriver.common.keys import Keys
 import pytest
 
-@pytest.mark.UI
+# @pytest.mark.UI
 def test_Login_Logout():
     # Initialize WebDriver
     driver = webdriver.Chrome()
