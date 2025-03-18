@@ -2,7 +2,7 @@
 [ ] Set execution policy to RemoteSigned (must be done manually)
 [ ] Check for winget installation https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget
 [x] Check for nvm, AWS CLI, and terraform installation
-[ ] install node lts and set as default
+[x] install node lts and set as default
 [ ] walk through the setup of aws account and linking to aws cli
 [ ] profit?
 #>
@@ -40,7 +40,8 @@ if ($winget){
     Write-Output "Winget found"
 }
 else{
-    Write-Output "Winget not found, installing."
+    Write-Output "Winget not found"
+    exit
     # install winget here
 }
 
@@ -84,4 +85,8 @@ $env:NVM_SYMLINK = 'C:\nvm4w\nodejs'
 
 # reload env variables to access the programs we just installed
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
+
+Write-Output "Installing Node LTS"
+nvm install lts
+nvm use lts
 
