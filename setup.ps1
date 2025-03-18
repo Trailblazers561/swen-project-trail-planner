@@ -34,6 +34,48 @@ Function installApp
     
 }
 
+Function awsSetupInstructions
+{
+    Write-Output "The following instructions will walk through the process of setting up an AWS account and linking it to the AWS CLI"
+    Read-Host -Prompt "Press Enter to Continue"
+
+    Write-Output "Navigate to http://aws.amazon.com, sign in to an existing account, or create a new account."
+    Read-Host -Prompt "Press Enter to Continue"
+
+    Write-Output "Once logged in, navigate to the top right and click your username. Select 'Security credentials' from the dropdown menu."
+    Read-Host -Prompt "Press Enter to Continue"
+
+    Write-Output "Scroll down to the section labeled 'Access keys' and follow the prompts to create an access key."
+    Write-Output "There will be warning against creating an access key for the root account, it is okay to ignore these warnings."
+    Write-Output "Make sure to keep the page that displays the new access key open for the following steps."
+    Read-Host -Prompt "Press Enter to Continue"
+
+    Write-Output "The AWS CLI will now be invoked to link your account to the CLI."
+    Write-Output "When prompted, enter your access key and press Enter."
+    Write-Output "Do the same for your secret access key."
+    Write-Output "'Default region name' and 'Default output format' can be left blank"
+    Read-Host -Prompt "Press Enter to Continue"
+
+    aws configure
+
+    #test that the linking worked
+    aws sts get-caller-identity
+    if(!$?){
+        Write-Output "AWS Account linking failed, exiting."
+        exit 1
+    }    
+
+    
+    
+    
+}
+
+
+awsSetupInstructions
+
+Read-Host -Prompt "Press Enter to Exit"
+exit
+
 $winget = getInstallStatus("winget")
 
 if ($winget){
@@ -90,3 +132,5 @@ Write-Output "Installing Node LTS"
 nvm install lts
 nvm use lts
 
+Read-Host -Prompt "Press Enter to Exit"
+exit 0
