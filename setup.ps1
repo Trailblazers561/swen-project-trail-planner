@@ -70,11 +70,12 @@ Function awsSetupInstructions
     
 }
 
+Function installNode
+{
+    $current = nvm current
+}
 
-awsSetupInstructions
 
-Read-Host -Prompt "Press Enter to Exit"
-exit
 
 $winget = getInstallStatus("winget")
 
