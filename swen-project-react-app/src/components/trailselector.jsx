@@ -20,6 +20,7 @@ const TrailSelector = ({ onChange }) => {
 
     return (
         <Select
+            className="trail-selector"
             options={trailOptions}
             isMulti
             isSearchable
