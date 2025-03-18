@@ -77,3 +77,11 @@ else{
     installApp("Hashicorp.Terraform")
 }
 
+#manually update the nvm env variables so we dont have to restart the powershell session
+$env:NVM_HOME = $env:LOCALAPPDATA + '\nvm'
+$env:NVM_SYMLINK = 'C:\nvm4w\nodejs'
+
+
+# reload env variables to access the programs we just installed
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
+
