@@ -1,55 +1,28 @@
 import React, { useState, useEffect } from "react";
+import TrailSelector from "./components/trailselector";
 import "./styles/dashboard.css"
 import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-
-const data = 
-[
-    ['AlgonquinPeak', new Date('2025-01-30T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-29T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-28T10:00:00')],
-    ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
-]
-
-
-
-const startDate = new Date('2025-01-27T10:00:00')
-const endDate = new Date('2025-01-31T10:00:00')
-let dateFrequencies = {}
-
     
 const dashboard = ({newXData,newYData}) => {
-    const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const {GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
     const [xData, setXData] = useState<Date[]>([]); //
     const [yData, setYData] = useState<Number[]>([]); //
 
     useEffect(() => {
         setXData(newXData);
         setYData(newYData);
-    }, [newXData, newYData]); // Updates xData whenever newXData changes
+    }, [newXData, newYData]); // Updates xData & yData whenever newXDataor newYData changes
 
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
-    const [trail, setTrail] = useState<String>("All Trails");
+    const [trail, setTrail] = useState<string>("All Trails");
     const [granularity, setGranularity] = useState<String | null>(null);
 
-    const handleStartDateChange = (startDate: Date | null) => {
-        setSelectedDate(startDate);
-        console.log(startDate)
-        console.log(selectedDateEnd)
-        console.log(trail)
-        getResponse(startDate, selectedDateEnd, trail)
-
-    }
-
-    function getDateRanges(startDate: Date, endDate: Date, granularity: 'day' | 'month' = 'day'): { start: Date, end: Date }[] {
+    function getDateRanges(startDate: Date, endDate: Date, granularity: 'hour' | 'day' | 'month' | 'week' = 'day'): { start: Date, end: Date }[] {
         let ranges: { start: Date, end: Date }[] = [];
         let current: Date = startDate;
         let end: Date = endDate;
@@ -57,12 +30,19 @@ const dashboard = ({newXData,newYData}) => {
         while (current < end) {
             let next: Date = new Date(current);
             
-            if (granularity === 'day') {
+            if (granularity === 'hour') {
+                next.setDate(next.getHours() + 1);
+            } 
+            else if (granularity === 'week') {
+                next.setDate(next.getSeconds() + 1);
+            } 
+            
+            else if (granularity === 'day') {
                 next.setDate(next.getDate() + 1);
             } else if (granularity === 'month') {
                 next.setMonth(next.getMonth() + 1);
             }
-            
+        
             if (next > end) break;
             
             ranges.push({ start: new Date(current), end: new Date(next) });
@@ -83,21 +63,28 @@ const dashboard = ({newXData,newYData}) => {
         return occurrences;
     }
 
-    async function getResponse(startDate: Date | null, endDate: Date | null, trail: String) {
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
         if (!startDate || !endDate) return; 
-        
+
+        let response;
         try {
-            const response = await GetAllTrailsBetweenDates(Math.floor(startDate?.getTime()/1000), Math.floor(endDate?.getTime() / 1000))
-            const responseJson = response.json;
+            if (trail[0] === "All Trails") {
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
+                );
+            } else {
+                const trailId = trailMap[trail];
+                if (!trailId) return; // Ensure the trailId is valid
+                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId
+                );
+            }
+            const responseJson = await response.json;
 
-            let dateCounts: Record<string, number> = {};
-
-            let ranges = getDateRanges(startDate, endDate, "month")
+            let ranges = getDateRanges(startDate, endDate, "hour")
 
             let dates: Date[] = [];
 
             // Process timestamps into daily counts
-            Object.values(responseJson).forEach((entry: { timestamp: number }) => {
+            Object.values(responseJson as { timestamp: number }[]).forEach((entry) => {
                 dates.push(new Date(entry.timestamp * 1000));
             });
             dates.sort();
@@ -115,17 +102,40 @@ const dashboard = ({newXData,newYData}) => {
         }
     }
 
-    const handleEndDateChange = (e: Date | null) => {
-        setSelectedDateEnd(e);
-
+    const handleStartDateChange = (startDate: Date | null) => {
+        setSelectedDate(startDate);
+        if (startDate && selectedDateEnd) {
+            getResponse(startDate, selectedDateEnd, trail);
+        }
     }
-    const handleTrailChange = (e:String) => {
-        setTrail(e);
+
+    const handleEndDateChange = (endDate: Date | null) => {
+        setSelectedDateEnd(endDate);
+        if (selectedDate && endDate) {
+            getResponse(selectedDate, endDate, trail);
+        }
     }
 
-    const handleGranularityChange = (e: String) => {
+    const handleTrailChange = (selectedTrail: string) => {
+        setTrail(selectedTrail);
+        console.log(selectedTrail);
+        if (selectedDate && selectedDateEnd) {
+            getResponse(selectedDate, selectedDateEnd, selectedTrail);
+        }
+    }
+
+    const handleGranularityChange = (e: string) => {
         setGranularity(e);
     }
+
+    const trailMap: Record<string, number> = {
+        "All Trails": 0,
+        "Mt. Marcy": 1,
+        "Wolf Creek Mountain": 2,
+        "Mt. Joe": 3,
+        "Mt. America": 4
+    };
+
 
     return(
         <body>
@@ -137,38 +147,21 @@ const dashboard = ({newXData,newYData}) => {
                         x: xData,
                         y: yData,
                         type: 'line',
-                        name: 'Wolf Jaw Peak',
+                        name: 'trail',
                         mode: 'lines+markers',
                         marker: {color: 'red'},
                     },
 
                     ]}
-                    layout={
-                        {width: 1000,
+                    layout={{
+                        width: 1000,
                         height: 700, 
-                        xaxis: {
-                            title: {
-                            text: 'Date',
-                            font: {
-                                size: 18,
-                                color: '#7f7f7f'
-                                }
-                            },
-                        },
-                        yaxis: {
-                            title: {
-                            text: 'Hikers',
-                            font: {
-                                size: 18,
-                                color: '#7f7f7f'
-                                }
-                            },
-                        },
-                    
+                        xaxis: { title: { text: 'Date', font: { size: 18, color: '#7f7f7f' } }, },
+                        yaxis: { title: { text: 'Hikers', font: { size: 18, color: '#7f7f7f' } }, },
                         }}
                 />
-                <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-                    <div>
+                <div className="filter-container">
+                    <div className="filter-group">
                         <label>Start Date:</label>
                         <DatePicker
                             selected={selectedDate}
@@ -176,9 +169,10 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
+                            className="date-picker"
                         />
-                        </div>
-                        <div>
+                    </div>
+                    <div className="filter-group">
                         <label>End Date:</label>
                         <DatePicker
                             selected={selectedDateEnd}
@@ -186,28 +180,26 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
+                            className="date-picker"
                         />
                     </div>
-                    <select 
-                        name="Granularity" 
-                        id="granularity"
-                        onChange={(e) => handleGranularityChange(e.target.value)}>
-
-                        <option value="Hourly">Hourly</option>
-                        <option value="Daily">Daily</option>
-                        <option value="Monthly">Monthly</option>
-                        <option value="Yearly">Yearly</option>
-                    </select>
-                    <select 
-                        name="Trail" 
-                        id="trail"
-                        onChange={(e) => handleTrailChange(e.target.value)}>
-                        <option value="All Trails">All Trails</option>
-                        <option value="Mt. Marcy">Mt. Marcy</option>
-                        <option value="Wolf Creek Mountin">Wolf Creek Mountin</option>
-                        <option value="Mt. Joe">Mt. Joe</option>
-                        <option value="Mt. America">Mt. America</option>
-                    </select>
+                    <div className="filter-group">
+                        <label>Granularity:</label>
+                        <select 
+                            id="granularity"
+                            className="select-box"
+                            onChange={(e) => handleGranularityChange(e.target.value)}
+                        >
+                            <option value="Hourly">Hourly</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div className="filter-group">
+                        <label>Trail:</label>
+                        <TrailSelector onChange={handleTrailChange}/>
+                    </div>
                 </div>
             </div>
         </body>
