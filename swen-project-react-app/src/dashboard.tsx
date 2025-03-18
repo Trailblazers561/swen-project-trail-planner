@@ -65,8 +65,8 @@ const dashboard = ({newXData,newYData}) => {
     };
 
     const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
-    const [xData, setXData] = useState<Date[]>([]); //
-    const [yData, setYData] = useState<Number[]>([]); //
+    const [xData, setXData] = useState<Date[]>([]); 
+    const [yData, setYData] = useState<Number[]>([]); 
 
     useEffect(() => {
         setXData(newXData);
