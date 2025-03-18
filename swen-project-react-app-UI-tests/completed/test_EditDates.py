@@ -6,7 +6,7 @@ import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-@pytest.mark.UI
+# @pytest.mark.UI
 def test_OneTrail():
      # Initialize WebDriver
     driver = webdriver.Chrome()
@@ -42,10 +42,19 @@ def test_OneTrail():
         trail_selector = wait.until(EC.presence_of_element_located((By.ID, "react-select-2-input")))
         driver.execute_script("arguments[0].click();", trail_selector)
         time.sleep(5)
-        
+
         # Send keys directly to the dropdown
-        trail_selector.send_keys("All Trails")
+        trail_selector.send_keys("Mt. Marcy")
         trail_selector.send_keys(Keys.RETURN)  # Press Enter
+        time.sleep(5)
+
+        start_date.clear()
+        start_date.send_keys("06/01/2024" + Keys.ENTER)
+        time.sleep(5)
+
+        end_date = driver.find_element(By.CLASS_NAME, "date-picker-end-date") 
+        end_date.clear()
+        end_date.send_keys("12/01/2024" + Keys.ENTER)
         time.sleep(5)
 
     finally:
