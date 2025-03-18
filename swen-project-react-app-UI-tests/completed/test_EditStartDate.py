@@ -52,11 +52,6 @@ def test_OneTrail():
         start_date.send_keys("06/01/2024" + Keys.ENTER)
         time.sleep(5)
 
-        end_date = driver.find_element(By.CLASS_NAME, "date-picker-end-date") 
-        end_date.clear()
-        end_date.send_keys("12/01/2024" + Keys.ENTER)
-        time.sleep(5)
-
     finally:
         # Close the browser
         driver.quit()
