@@ -20,7 +20,7 @@ label {
     margin-bottom: 5px;
 }
 
-.date-picker,
+.date-picker-start-date,
 select {
     padding: 8px;
     border: 1px solid #ccc;
@@ -32,7 +32,26 @@ select {
     color: #333;
 }
 
-.date-picker:focus,
+.date-picker-end-date,
+select{
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    width: 150px;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s ease-in-out;
+    color: #333;
+}
+
+.date-picker-start-date:focus,
+select:focus {
+    border-color: #007bff;
+    outline: none;
+    background-color: white;
+}
+
+.date-picker-end-date:focus,
 select:focus {
     border-color: #007bff;
     outline: none;

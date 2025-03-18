@@ -5,11 +5,68 @@ import Plot from "react-plotly.js"
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
+import { useNavigate } from "react-router-dom";
+
+const data = 
+[
+    ['AlgonquinPeak', new Date('2025-01-30T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-31T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-29T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-28T10:00:00')],
+    ['AlgonquinPeak', new Date('2025-01-27T10:00:00')]
+]
+
+
+
+const startDate = new Date('2025-01-27T10:00:00')
+const endDate = new Date('2025-01-31T10:00:00')
+let dateFrequencies = {}
+
+function parseJwt(token) {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map((c) => `%${(`00${c.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .join(""),
+    );
+    return JSON.parse(jsonPayload);
+  }
     
 const dashboard = ({newXData,newYData}) => {
-    const {GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
-    const [xData, setXData] = useState<Date[]>([]); //
-    const [yData, setYData] = useState<Number[]>([]); //
+
+    const [count, setCount] = useState(0)
+    const navigate = useNavigate();
+    const idToken = parseJwt(sessionStorage.idToken.toString());
+    const accessToken = parseJwt(sessionStorage.accessToken.toString());
+    console.log(
+      `Amazon Cognito ID token encoded: ${sessionStorage.idToken.toString()}`,
+    );
+    console.log("Amazon Cognito ID token decoded: ");
+    console.log(idToken);
+    console.log(
+      `Amazon Cognito access token encoded: ${sessionStorage.accessToken.toString()}`,
+    );
+    console.log("Amazon Cognito access token decoded: ");
+    console.log(accessToken);
+    console.log("Amazon Cognito refresh token: ");
+    console.log(sessionStorage.refreshToken);
+    console.log(
+      "Amazon Cognito example application. Not for use in production applications.",
+    );
+    const handleLogout = () => {
+      sessionStorage.clear();
+      navigate("/login");
+    };
+
+    const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const [xData, setXData] = useState<Date[]>([]); 
+    const [yData, setYData] = useState<Number[]>([]); 
 
     useEffect(() => {
         setXData(newXData);
@@ -20,7 +77,87 @@ const dashboard = ({newXData,newYData}) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
     const [trail, setTrail] = useState<string>("All Trails");
-    const [granularity, setGranularity] = useState<string | null>(null);
+    const [granularity, setGranularity] = useState<String | null>(null);
+
+    function getDateRanges(startDate: Date, endDate: Date, granularity: 'hour' | 'day' | 'month' | 'week' = 'day'): { start: Date, end: Date }[] {
+        let ranges: { start: Date, end: Date }[] = [];
+        let current: Date = startDate;
+        let end: Date = endDate;
+        
+        while (current < end) {
+            let next: Date = new Date(current);
+            
+            if (granularity === 'hour') {
+                next.setDate(next.getHours() + 1);
+            } 
+            else if (granularity === 'week') {
+                next.setDate(next.getSeconds() + 1);
+            } 
+            
+            else if (granularity === 'day') {
+                next.setDate(next.getDate() + 1);
+            } else if (granularity === 'month') {
+                next.setMonth(next.getMonth() + 1);
+            }
+        
+            if (next > end) break;
+            
+            ranges.push({ start: new Date(current), end: new Date(next) });
+            current = next;
+        }
+        
+        return ranges;
+    }
+
+    function countOccurrencesInRanges(ranges: { start: Date, end: Date }[], dates: Date[]): Map<Date, number> {
+        let occurrences = new Map<Date, number>();
+        
+        for (let range of ranges) {
+            let count = dates.filter(date => date >= range.start && date <= range.end).length;
+            occurrences.set(range.start, count);
+        }
+        
+        return occurrences;
+    }
+
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
+        if (!startDate || !endDate) return; 
+
+        let response;
+        try {
+            if (trail[0] === "All Trails") {
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
+                );
+            } else {
+                const trailId = trailMap[trail];
+                if (!trailId) return; // Ensure the trailId is valid
+                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId
+                );
+            }
+            const responseJson = await response.json;
+
+            let ranges = getDateRanges(startDate, endDate, "hour")
+
+            let dates: Date[] = [];
+
+            // Process timestamps into daily counts
+            Object.values(responseJson as { timestamp: number }[]).forEach((entry) => {
+                dates.push(new Date(entry.timestamp * 1000));
+            });
+            dates.sort();
+
+            let occurrences = countOccurrencesInRanges(ranges, dates)
+            
+            const sortedDates = Object.keys(occurrences).sort(); // Ensure chronological order
+            const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
+            const yData: Number[] = Array.from(occurrences.values());
+
+            setXData(xData);
+            setYData(yData);
+        }catch (error) {
+            console.error("Error fetching trail data:", error);
+        }
+    }
 
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
@@ -44,6 +181,10 @@ const dashboard = ({newXData,newYData}) => {
         }
     }
 
+    const handleGranularityChange = (e: string) => {
+        setGranularity(e);
+    }
+
     const trailMap: Record<string, number> = {
         "All Trails": 0,
         "Mt. Marcy": 1,
@@ -52,49 +193,15 @@ const dashboard = ({newXData,newYData}) => {
         "Mt. America": 4
     };
 
-    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
-        if (!startDate || !endDate) return; 
-
-        let response;
-        try {
-            if (trail[0] === "All Trails") {
-                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
-                );
-            } else {
-                const trailId = trailMap[trail];
-                if (!trailId) return; // Ensure the trailId is valid
-                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId
-                );
-            }
-            const responseJson = await response.json;
-
-            let dateCounts: Record<string, number> = {};
-
-            // Process timestamps into daily counts
-            (responseJson as { timestamp: number }[]).forEach((entry) => {
-                const date = new Date(entry.timestamp * 1000);
-                const dateKey = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
-
-                dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
-            });
-            const sortedDates = Object.keys(dateCounts).sort(); // Ensure chronological order
-            const xData = sortedDates.map(dateStr => new Date(dateStr));
-            const yData = sortedDates.map(dateStr => dateCounts[dateStr]);
-
-            setXData(xData);
-            setYData(yData);
-        }catch (error) {
-            console.error("Error fetching trail data:", error);
-        }
-    }
-
-    const handleGranularityChange = (e: string) => {
-        setGranularity(e);
-    }
 
     return(
         <body>
             <div className="dashboard-div">
+                <div style={{ display: "flex" }}>
+                    <button className="logout-button" type="button" onClick={handleLogout} style={{ marginLeft: "auto" }}>
+                    Logout
+                    </button>
+                </div>
                 <Plot className="graph"
                     config={ {displayModeBar: false} }
                     data={[
@@ -124,7 +231,7 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
-                            className="date-picker"
+                            className="date-picker-start-date"
                         />
                     </div>
                     <div className="filter-group">
@@ -135,7 +242,7 @@ const dashboard = ({newXData,newYData}) => {
                             dateFormat="MM/dd/yyyy"
                             isClearable
                             placeholderText="Select a date"
-                            className="date-picker"
+                            className="date-picker-end-date"
                         />
                     </div>
                     <div className="filter-group">
