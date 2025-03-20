@@ -79,7 +79,7 @@ const dashboard = ({newXData,newYData}) => {
     const [trail, setTrail] = useState<string>("All Trails");
     const [granularity, setGranularity] = useState<String | null>(null);
 
-    function getDateRanges(startDate: Date, endDate: Date, granularity: 'hour' | 'day' | 'month' | 'week' = 'day'): { start: Date, end: Date }[] {
+    function getDateRanges(startDate: Date, endDate: Date, granularity: string = 'Daily'): { start: Date, end: Date }[] {
         let ranges: { start: Date, end: Date }[] = [];
         let current: Date = startDate;
         let end: Date = endDate;
@@ -87,16 +87,9 @@ const dashboard = ({newXData,newYData}) => {
         while (current < end) {
             let next: Date = new Date(current);
             
-            if (granularity === 'hour') {
-                next.setDate(next.getHours() + 1);
-            } 
-            else if (granularity === 'week') {
-                next.setDate(next.getSeconds() + 1);
-            } 
-            
-            else if (granularity === 'day') {
+            if (granularity === 'Daily') {
                 next.setDate(next.getDate() + 1);
-            } else if (granularity === 'month') {
+            } else if (granularity === 'Monthly') {
                 next.setMonth(next.getMonth() + 1);
             }
         
@@ -120,7 +113,7 @@ const dashboard = ({newXData,newYData}) => {
         return occurrences;
     }
 
-    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string) {
+    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string, granularity: string = 'Daily' ) {
         if (!startDate || !endDate) return; 
 
         let response;
@@ -136,8 +129,7 @@ const dashboard = ({newXData,newYData}) => {
             }
             const responseJson = await response.json;
 
-            let ranges = getDateRanges(startDate, endDate, "hour")
-
+            let ranges = getDateRanges(startDate, endDate, granularity)
             let dates: Date[] = [];
 
             // Process timestamps into daily counts
@@ -162,14 +154,14 @@ const dashboard = ({newXData,newYData}) => {
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
         if (startDate && selectedDateEnd) {
-            getResponse(startDate, selectedDateEnd, trail);
+            getResponse(startDate, selectedDateEnd, trail, granularity);
         }
     }
 
     const handleEndDateChange = (endDate: Date | null) => {
         setSelectedDateEnd(endDate);
         if (selectedDate && endDate) {
-            getResponse(selectedDate, endDate, trail);
+            getResponse(selectedDate, endDate, trail, granularity);
         }
     }
 
@@ -177,12 +169,15 @@ const dashboard = ({newXData,newYData}) => {
         setTrail(selectedTrail);
         console.log(selectedTrail);
         if (selectedDate && selectedDateEnd) {
-            getResponse(selectedDate, selectedDateEnd, selectedTrail);
+            getResponse(selectedDate, selectedDateEnd, selectedTrail, granularity);
         }
     }
 
-    const handleGranularityChange = (e: string) => {
-        setGranularity(e);
+    const handleGranularityChange = (granularity: string) => {
+        setGranularity(granularity);
+        if (selectedDate && selectedDateEnd) {
+            getResponse(selectedDate, selectedDateEnd, trail, granularity);
+        }
     }
 
     const trailMap: Record<string, number> = {
