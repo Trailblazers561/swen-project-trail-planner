@@ -248,8 +248,8 @@ const dashboard = ({newXData,newYData}) => {
                             onChange={(e) => handleGranularityChange(e.target.value)}
                         >
                             {/* <option value="Hourly">Hourly</option> */}
-                            <option value="Daily">Daily</option>
-                            <option value="Monthly">Monthly</option>
+                            <option id="Daily" value="Daily">Daily</option>
+                            <option id="Monthly" value="Monthly">Monthly</option>
                             {/* <option value="Yearly">Yearly</option> */}
                         </select>
                     </div>
