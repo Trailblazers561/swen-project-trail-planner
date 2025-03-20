@@ -77,7 +77,7 @@ const dashboard = ({newXData,newYData}) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
     const [trail, setTrail] = useState<string>("All Trails");
-    const [granularity, setGranularity] = useState<String | null>(null);
+    const [granularity, setGranularity] = useState<string>("Daily");
 
     function getDateRanges(startDate: Date, endDate: Date, granularity: string = 'Daily'): { start: Date, end: Date }[] {
         let ranges: { start: Date, end: Date }[] = [];
@@ -247,10 +247,10 @@ const dashboard = ({newXData,newYData}) => {
                             className="select-box"
                             onChange={(e) => handleGranularityChange(e.target.value)}
                         >
-                            <option value="Hourly">Hourly</option>
+                            {/* <option value="Hourly">Hourly</option> */}
                             <option value="Daily">Daily</option>
                             <option value="Monthly">Monthly</option>
-                            <option value="Yearly">Yearly</option>
+                            {/* <option value="Yearly">Yearly</option> */}
                         </select>
                     </div>
                     <div className="filter-group">
