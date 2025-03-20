@@ -3,7 +3,7 @@
 [ ] Check for winget installation https://learn.microsoft.com/en-us/windows/package-manager/winget/#install-winget
 [x] Check for nvm, AWS CLI, and terraform installation
 [x] install node lts and set as default
-[ ] walk through the setup of aws account and linking to aws cli
+[x] walk through the setup of aws account and linking to aws cli
 [ ] profit?
 #>
 
@@ -59,8 +59,8 @@ Function awsSetupInstructions
     aws configure
 
     #test that the linking worked
-    aws sts get-caller-identity
-    if(!$?){
+    $aws_test = aws sts get-caller-identity
+    if(!$aws_test){
         Write-Output "AWS Account linking failed, exiting."
         exit 1
     }    
@@ -73,6 +73,10 @@ Function awsSetupInstructions
 Function installNode
 {
     $current = nvm current
+    if($current -match "No current version"){
+        nvm install lts
+        nvm use lts        
+    }
 }
 
 
@@ -129,9 +133,8 @@ $env:NVM_SYMLINK = 'C:\nvm4w\nodejs'
 # reload env variables to access the programs we just installed
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
 
-Write-Output "Installing Node LTS"
-nvm install lts
-nvm use lts
+installNode
+awsSetupInstructions
 
 Read-Host -Prompt "Press Enter to Exit"
 exit 0
