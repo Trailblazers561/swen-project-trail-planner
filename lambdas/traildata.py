@@ -1,5 +1,6 @@
 import json
 import boto3
+import concurrent.futures
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.conditions import Attr
 from decimal import Decimal
@@ -16,6 +17,18 @@ def convert_decimals(obj):
     else:
         return obj
 
+#Helper function to query a single trail
+def query_trail(table, trail_id, start=None, end=None):
+    if start and end:
+        response = table.query(
+            KeyConditionExpression=(Key('id').eq(trail_id) & Key('timestamp').between(int(start), int(end)))
+        )
+    else:
+        response = table.query(
+            KeyConditionExpression=Key('id').eq(trail_id)
+        )
+    return response.get('Items', [])
+
 def get_trail_data(event, context):
     table = dynamodb.Table('traildata_table')
 
@@ -23,26 +36,38 @@ def get_trail_data(event, context):
         query_params = event.get('queryStringParameters', {})
         
         trail_id = query_params.get('trail') if query_params else None
+        trails = query_params.get('trails') if query_params else None
         start = query_params.get('start') if query_params else None
         end = query_params.get('end') if query_params else None
-        
-    
-        if trail_id and start and end:
-            response = table.query(
-                KeyConditionExpression=(Key('id').eq(int(trail_id)) & Key('timestamp').between(int(start), int(end)))
-            )
+
+        if trails:
+            trail_ids = [int(tid.strip()) for tid in trails.split(',')]
+
+            #Use multi threading to speed up lambda execution and improve cost efficiency
+            #Should try to only request a max of 10 trails with one query
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_trail = {
+                    executor.submit(query_trail, table, tid, start, end): tid 
+                    for tid in trail_ids
+                }
+                
+                results = []
+                for future in concurrent.futures.as_completed(future_to_trail):
+                    trail_results = future.result()
+                    results.extend(trail_results)
+            
+            traildata = convert_decimals(results)
         elif trail_id:
-            response = table.query(
-                KeyConditionExpression=Key('id').eq(int(trail_id))
-            )
+            response = query_trail(table, int(trail_id), start, end)
+            traildata = convert_decimals(response)
         elif start and end:
             response = table.scan(
                 FilterExpression=Attr("timestamp").between(int(start), int(end))
             )
+            traildata = convert_decimals(response.get('Items', []))
         else:
             response = table.scan()
-
-        traildata = convert_decimals(response.get('Items', []))
+            traildata = convert_decimals(response.get('Items', []))
 
         return {
             'statusCode': 200,
@@ -54,9 +79,12 @@ def get_trail_data(event, context):
             'body': json.dumps(traildata)
         }
     except Exception as e:
+        
+        #Change to see exact errors, but in production build we should not give too much info away with error msg
+        debug = False
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e) if debug else "Fatal error"})
         }
 
 
@@ -90,7 +118,10 @@ def upload_trail_data(event, context):
         }
 
     except Exception as e:
+        
+        #Change to see exact errors, but in production build we should not give too much info away with error msg
+        debug = False
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': str(e) if debug else "Fatal error"})
         }
