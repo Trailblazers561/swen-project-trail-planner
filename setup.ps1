@@ -16,7 +16,7 @@ Function getInstallStatus
 
     $status = Get-Command $appName -ErrorAction SilentlyContinue
 
-    if ($?){
+    if ($status){
         return $true
     }
     return $false
@@ -79,7 +79,33 @@ Function installNode
     }
 }
 
+Function checkSetupCompletion{
+    
+    $setupComplete = $env:TrailPlannerSetupComplete
+    if($setupComplete){
+        Write-Output "This script has been run before, do you want to run it again? [y/n]"
 
+        $answer = Read-Host
+
+        while($answer -ne 'y' -and $answer -ne 'n'){
+            Write-Output "Please enter 'y' or 'n'"
+            Write-Output $answer
+            $answer = Read-Host
+        }
+
+        if($answer -eq 'y'){
+            return
+        }
+
+        if($answer -eq 'n'){
+            exit 0
+        }
+        
+    }
+}
+
+
+checkSetupCompletion
 
 $winget = getInstallStatus("winget")
 
@@ -136,5 +162,8 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 installNode
 awsSetupInstructions
 
-Read-Host -Prompt "Press Enter to Exit"
+# Set this env variable so that setup isn't reapeated if this script has already been run
+[System.Environment]::SetEnvironmentVariable("TrailPlannerSetupComplete", "True", "User")
+
+Read-Host -Prompt "Setup complete, press Enter to exit."
 exit 0
