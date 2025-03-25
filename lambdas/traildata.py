@@ -97,15 +97,25 @@ def upload_trail_data(event, context):
         body = event['body']
 
     trail_id = body.get('id')
-    trail_name = body.get('name')
+    data = body.get('data', [])
 
     try:
-        response = table.put_item(
-            Item={
-                'id': trail_id,
-                'name': trail_name
-            }
-        )
+        #Probably not the most effcient approach use concurrency in future
+        with table.batch_writer() as batch:
+            for point in data:
+                item = {
+                    'id': int(trail_id), #partition key
+                    'timestamp': int(point.get('timestamp')) #sort key
+                }
+
+                #Add possible other columns if they exist in req body
+                for key, value in point.items():
+                    if key != 'timestamp':
+                        item[key] = value
+
+                batch.put_item(Item=item)
+
+
         return {
             'statusCode': 200,
             'headers': {
@@ -114,7 +124,7 @@ def upload_trail_data(event, context):
                 'Access-Control-Allow-Headers': 'Content-Type,Authorization',
                 'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
             },
-            'body': json.dumps({'message': 'Trail data added successfully', 'data': convert_decimals(response)})
+            'body': json.dumps({'message': 'Trail data added successfully', 'data': convert_decimals(data)})
         }
 
     except Exception as e:
