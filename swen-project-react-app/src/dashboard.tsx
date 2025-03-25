@@ -38,11 +38,16 @@ const dashboard = ({newXData,newYData}) => {
         
         while (current < end) {
             let next: Date = new Date(current);
-            
-            if (granularity === 'Daily') {
+            if (granularity === 'Hourly') {
+                next.setHours(next.getHours() + 1);
+            } else if (granularity === 'Daily') {
                 next.setDate(next.getDate() + 1);
+            } else if (granularity === 'Weekly') {
+                next.setDate(next.getDate() + 7);
             } else if (granularity === 'Monthly') {
                 next.setMonth(next.getMonth() + 1);
+            } else if (granularity === 'Yearly') {
+                next.setFullYear(next.getFullYear() + 1);
             }
         
             if (next > end) break;
@@ -199,10 +204,11 @@ const dashboard = ({newXData,newYData}) => {
                             className="select-box"
                             onChange={(e) => handleGranularityChange(e.target.value)}
                         >
-                            {/* <option value="Hourly">Hourly</option> */}
+                            <option value="Hourly">Hourly</option>
                             <option id="Daily" value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
                             <option id="Monthly" value="Monthly">Monthly</option>
-                            {/* <option value="Yearly">Yearly</option> */}
+                            <option value="Yearly">Yearly</option>
                         </select>
                     </div>
                     <div className="filter-group">
