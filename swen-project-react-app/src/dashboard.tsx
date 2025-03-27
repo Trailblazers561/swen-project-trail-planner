@@ -30,6 +30,44 @@ const dashboard = ({newXData,newYData}) => {
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
     const [trail, setTrail] = useState<string>("All Trails");
     const [granularity, setGranularity] = useState<string>("Daily");
+    const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
+
+    function getDateDifference(startDate: Date, endDate: Date): number {
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+    }
+
+    function updateGranularityOptions(startDate: Date | null, endDate: Date | null) {
+        if (!startDate || !endDate) return;
+
+        const daysDiff = getDateDifference(startDate, endDate);
+
+        let options: string[] = [];
+        if (daysDiff >= 1825) {
+            options = ['Yearly', 'Monthly'];
+        } else if (daysDiff >= 730) {
+            options = ['Yearly', 'Monthly','Weekly','Daily'];
+        } else if (daysDiff >= 60) {
+            options = ['Monthly', 'Weekly', 'Daily'];
+        } else if (daysDiff >= 30) {
+            options = ['Weekly', 'Daily'];
+        } else if (daysDiff >= 7) {
+            options = ['Daily'];
+        } else if (daysDiff <= 3) {
+            options = ['Daily', 'Hourly'];
+        } else {
+            options = ['Daily'];
+        }
+
+        // Update the granularity options based on the range
+        setGranularityOptions(options);
+        // Set the granularity to the first option by default
+        setGranularity(options[0]);
+    }
+
+    useEffect(() => {
+        updateGranularityOptions(selectedDate, selectedDateEnd);
+    }, [selectedDate, selectedDateEnd]);
 
     function getDateRanges(startDate: Date, endDate: Date, granularity: string = 'Daily'): { start: Date, end: Date }[] {
         let ranges: { start: Date, end: Date }[] = [];
@@ -50,12 +88,15 @@ const dashboard = ({newXData,newYData}) => {
                 next.setFullYear(next.getFullYear() + 1);
             }
         
-            if (next > end) break;
-            
+            if (next > endDate) break;
+
             ranges.push({ start: new Date(current), end: new Date(next) });
             current = next;
         }
-        
+        if (current < endDate) {
+            ranges.push({ start: new Date(current), end: endDate });
+        }
+    
         return ranges;
     }
 
@@ -202,13 +243,12 @@ const dashboard = ({newXData,newYData}) => {
                         <select 
                             id="granularity"
                             className="select-box"
+                            value={granularity}
                             onChange={(e) => handleGranularityChange(e.target.value)}
                         >
-                            <option value="Hourly">Hourly</option>
-                            <option id="Daily" value="Daily">Daily</option>
-                            <option value="Weekly">Weekly</option>
-                            <option id="Monthly" value="Monthly">Monthly</option>
-                            <option value="Yearly">Yearly</option>
+                            {granularityOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
                         </select>
                     </div>
                     <div className="filter-group">
