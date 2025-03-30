@@ -2,7 +2,7 @@ import requests
 import pytest
 
 # Base URL of the API (replace with actual URL)
-BASE_URL = "https://jsonplaceholder.typicode.com"
+BASE_URL = "https://yi7hc9zix0.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage"
 
 @pytest.mark.parametrize("endpoint, expected_status, payload", [
     ("/posts/1", 200, {"title": "updated title", "body": "updated body", "userId": 1}),
