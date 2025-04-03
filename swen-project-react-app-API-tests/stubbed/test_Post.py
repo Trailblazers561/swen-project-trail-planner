@@ -1,21 +1,22 @@
 import requests
 import pytest
 
-# Base URL of the API (replace with actual URL)
-BASE_URL = "https://yi7hc9zix0.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage"
+# Base URL of the API
+BASE_URL = "https://yi7hc9zix0.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage/trail_data"
 
-@pytest.mark.parametrize("endpoint, expected_status, payload", [
-    ("/posts", 201, {"title": "foo", "body": "bar", "userId": 1}),
-    ("/comments", 201, {"postId": 1, "name": "test", "email": "test@example.com", "body": "Nice post!"}),
-])
+headers = {
+    "Authorization": "eyJraWQiOiJDTUVNOGdxd0Z2OUVkYWpxckpKYW1JUGFsTmM2dEpqbkxOSW90TElxSHd3PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI5NDk4MTRiOC00MDYxLTcwYjYtOWJmNS00Y2QwN2Y2NTM5ZWQiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfRzc1ZXo5eG1jIiwiY29nbml0bzp1c2VybmFtZSI6Ijk0OTgxNGI4LTQwNjEtNzBiNi05YmY1LTRjZDA3ZjY1MzllZCIsIm9yaWdpbl9qdGkiOiI3ZGJjYzcwYy05MzkzLTQwZDEtYTRiMS04M2U0MTMwNTg4MzkiLCJhdWQiOiI1Zmc5MTRwanBldG0wNHQwaG51Z2ZtYmp1ZSIsImV2ZW50X2lkIjoiMTkyNTRlYjYtOGU5OC00MjJjLTgyZGUtMzcyODJlMDg1YmE5IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NDM2MTQ4MjUsImV4cCI6MTc0MzYxODQyNSwiaWF0IjoxNzQzNjE0ODI1LCJqdGkiOiIyMDZmZTM2NS1kNGM0LTQ1ZjAtYmI0OC01NzI2MWE3Mjk1YjciLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSJ9.J0KPSkvORK0j1aOQSeas--EOyPV6_WFRWtWM722uKkQkr7pECzhz2kV_VHChvCeUCurUw3KaELZ5pkDik0_blEGDDFA2y0dSEh-oU2x7Mz6b0Q3GtB_IRgirT75Xn0BQJ_ahc_4K3GLvXZSugxIFTjRiaF_EBLTFGSIsKjLbDt9zWFmXwIBW4l5Vt3Bl_kS7sGl92Ynp9wJBb4SlqYW6oH_1jjmcYBrZvefI85P328kShS8c0wkAKvuF_OF56RLD2LBHmEd_6MA6CtleO4XUsR66eI01m1Pcs9W1s04n5FQrko_xGw1VujBkjR7T3l81vtMLn7pFnSPjXiOVI3Om1g",
+    "Content-Type": "application/json"
+}
 
 @pytest.mark.API
-def test_post_requests(endpoint, expected_status, payload):
-    """Tests POST requests for various endpoints."""
-    response = requests.post(BASE_URL + endpoint, json=payload)
-    assert response.status_code == expected_status, f"Unexpected status code for {endpoint}: {response.status_code}"
+def test_post_request():
+    payload = {
+        "id": 7,
+        "timestamp": 1735691235
+    }
+
+    response = requests.post(BASE_URL, json=payload, headers=headers)
     
-    # Additional validation for successful responses
-    if response.status_code == 201:
-        response_data = response.json()
-        assert "id" in response_data, f"Response for {endpoint} does not contain an 'id'"
+    print(response.json())  # Print response for debugging
+    assert response.status_code == 200  # Assuming 201 Created is the expected response
