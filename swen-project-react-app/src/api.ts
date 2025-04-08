@@ -13,9 +13,10 @@ export function TrailData(){
     });
   }
 
-  async function GetTrailDataBetweenDates(startdate, enddate, trailID) {
-    console.log(`/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`)
-    return await request(API_URL + `/trail_data?trail=${trailID}&start=${startdate}&end=${enddate}`, {
+  async function GetTrailDataBetweenDates(startdate, enddate, trailIDs) {
+    const trailParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
+    console.log(`/trail_data?trails=${trailParam}&start=${startdate}&end=${enddate}`)
+    return await request(API_URL + `/trail_data?trails=${trailIDs}&start=${startdate}&end=${enddate}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
@@ -24,6 +25,7 @@ export function TrailData(){
       body: null,
     });
   }
+  
   async function GetAllTrailsBetweenDates(startdate, enddate) {
     console.log(`/trail_data?start=${startdate}&end=${enddate}`)
     return await request(API_URL + `/trail_data?start=${startdate}&end=${enddate}`, {
@@ -40,8 +42,6 @@ export function TrailData(){
     getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates
   }
 }
-
-
 
 type RequestResult = {
 json: object;
