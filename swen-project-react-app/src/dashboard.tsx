@@ -7,8 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
     
-const dashboard = ({newXData,newYData}) => {
-
+const dashboard = () => {
     const [count, setCount] = useState(0)
     const navigate = useNavigate();
     const handleLogout = () => {
@@ -17,18 +16,34 @@ const dashboard = ({newXData,newYData}) => {
     };
 
     const { getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
-    const [xData, setXData] = useState<Date[]>([]); 
-    const [yData, setYData] = useState<Number[]>([]); 
+    const [data, setData] = useState<Array<{ 
+        x: Date[]; 
+        y: number[]; 
+        type: string; 
+        mode: string; 
+        name: string; 
+        marker: { color: string };
+    }>>([]);
+    const [xDataList, setXDataList] = useState<Date[][]>([]);
+    const [yDataList, setYDataList] = useState<number[][]>([]);
 
-    useEffect(() => {
-        setXData(newXData);
-        setYData(newYData);
-    }, [newXData, newYData]); // Updates xData & yData whenever newXDataor newYData changes
-
+    useEffect(() => {   
+        if (xDataList.length > 0 && yDataList.length > 0) {
+            const newData = xDataList.map((xData, index) => ({
+                x: xData,
+                y: yDataList[index],
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: `Trail ${trails[index]}`,
+                marker: { color: ['red', 'blue', 'green', 'orange'][index % 4] },
+            }));
+            setData(newData);
+        }
+    }, [xDataList, yDataList]); // React to changes in xDataList and yDataList
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
-    const [trail, setTrail] = useState<string>("All Trails");
+    const [trails, setTrails] = useState<string[]>(["All Trails"]);
     const [granularity, setGranularity] = useState<string>("Daily");
     const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
 
@@ -100,50 +115,62 @@ const dashboard = ({newXData,newYData}) => {
         return ranges;
     }
 
-    function countOccurrencesInRanges(ranges: { start: Date, end: Date }[], dates: Date[]): Map<Date, number> {
+    function countOccurrencesInRanges(ranges: { start: Date, end: Date }[], events: Date[]): Map<Date, number> {
         let occurrences = new Map<Date, number>();
         
         for (let range of ranges) {
-            let count = dates.filter(date => date >= range.start && date <= range.end).length;
+            let count = events.filter(date => date >= range.start && date <= range.end).length;
             occurrences.set(range.start, count);
         }
-        
         return occurrences;
     }
 
-    async function getResponse(startDate: Date | null, endDate: Date | null, trail: string, granularity: string = 'Daily' ) {
+    async function getResponse(startDate: Date | null, endDate: Date | null, trails: string[], granularity: string = 'Daily' ) {
         if (!startDate || !endDate) return; 
 
         let response;
         try {
-            if (trail[0] === "All Trails") {
+            if (trails[0] === "All Trails") {
                 response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
                 );
             } else {
-                const trailId = trailMap[trail];
-                if (!trailId) return; // Ensure the trailId is valid
-                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailId
+                let trailIds: number[] = [];
+                for(var i = 0; i < trails.length; i++) {
+                    trailIds[i] = trailMap[trails[i]];
+                }       
+                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
                 );
             }
             const responseJson = await response.json;
-
+           
             let ranges = getDateRanges(startDate, endDate, granularity)
-            let dates: Date[] = [];
+            let events: Map<number, Date[]> = new Map<number, Date[]>();
 
-            // Process timestamps into daily counts
-            Object.values(responseJson as { timestamp: number }[]).forEach((entry) => {
-                dates.push(new Date(entry.timestamp * 1000));
+            (responseJson as { id: number; timestamp: number }[]).forEach((entry) => {
+                if (!events.has(entry.id)) {
+                    events.set(entry.id, []); // Initialize an empty array for the ID
+                }
+                events.get(entry.id)!.push(new Date(entry.timestamp * 1000)); // Add new date
             });
-            dates.sort();
 
-            let occurrences = countOccurrencesInRanges(ranges, dates)
+            // events.sort();
+            var lines: [Date[], number[]][] = [];
+            // Loop through keys
+            for (const key of events.keys()) {
+                let dates: Date[] = events.get(key) ?? [];
+                let occurrences = countOccurrencesInRanges(ranges, dates)
+
+                Object.keys(occurrences).sort(); // Ensure chronological order
+                const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
+                const yData: number[] = Array.from(occurrences.values());
+
+                lines.push([xData, yData]); 
+            }
             
-            const sortedDates = Object.keys(occurrences).sort(); // Ensure chronological order
-            const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
-            const yData: Number[] = Array.from(occurrences.values());
-
-            setXData(xData);
-            setYData(yData);
+            if (lines.length > 0) {
+                setXDataList(lines.map(line => line[0])); // Extract xData from each line
+                setYDataList(lines.map(line => line[1])); // Extract yData from each line
+            }
         }catch (error) {
             console.error("Error fetching trail data:", error);
         }
@@ -152,29 +179,29 @@ const dashboard = ({newXData,newYData}) => {
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
         if (startDate && selectedDateEnd) {
-            getResponse(startDate, selectedDateEnd, trail, granularity);
+            getResponse(startDate, selectedDateEnd, trails, granularity);
         }
     }
 
     const handleEndDateChange = (endDate: Date | null) => {
         setSelectedDateEnd(endDate);
         if (selectedDate && endDate) {
-            getResponse(selectedDate, endDate, trail, granularity);
+            getResponse(selectedDate, endDate, trails, granularity);
         }
     }
 
-    const handleTrailChange = (selectedTrail: string) => {
-        setTrail(selectedTrail);
-        console.log(selectedTrail);
+    const handleTrailChange = (selectedTrails: string[]) => {
+        setTrails(selectedTrails);
+        console.log(selectedTrails);
         if (selectedDate && selectedDateEnd) {
-            getResponse(selectedDate, selectedDateEnd, selectedTrail, granularity);
+            getResponse(selectedDate, selectedDateEnd, selectedTrails, granularity);
         }
     }
 
     const handleGranularityChange = (granularity: string) => {
         setGranularity(granularity);
         if (selectedDate && selectedDateEnd) {
-            getResponse(selectedDate, selectedDateEnd, trail, granularity);
+            getResponse(selectedDate, selectedDateEnd, trails, granularity);
         }
     }
 
@@ -197,17 +224,7 @@ const dashboard = ({newXData,newYData}) => {
                 </div>
                 <Plot className="graph"
                     config={ {displayModeBar: false} }
-                    data={[
-                    {
-                        x: xData,
-                        y: yData,
-                        type: 'line',
-                        name: 'trail',
-                        mode: 'lines+markers',
-                        marker: {color: 'red'},
-                    },
-
-                    ]}
+                    data={data}
                     layout={{
                         width: 1000,
                         height: 700, 
