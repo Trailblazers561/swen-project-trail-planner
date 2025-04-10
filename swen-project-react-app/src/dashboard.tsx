@@ -35,7 +35,7 @@ const dashboard = () => {
                 type: 'scatter',
                 mode: 'lines+markers',
                 name: `Trail ${trails[index]}`,
-                marker: { color: ['red', 'blue', 'green', 'orange'][index % 4] },
+                marker: { color: ['red', 'blue', 'green', 'orange', 'goldenrod', 'limegreen', 'papayawhip'][index % 7] },
             }));
             setData(newData);
         }
@@ -43,9 +43,10 @@ const dashboard = () => {
 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(new Date());
-    const [trails, setTrails] = useState<string[]>(["All Trails"]);
-    const [granularity, setGranularity] = useState<string>("Daily");
+    const [trails, setTrails] = useState<string[]>([]);
+    const [granularity, setGranularity] = useState<string| null>(null);
     const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
+    const [graphTitle, setGraphTitle] = useState<string>("Trail Data");
 
     function getDateDifference(startDate: Date, endDate: Date): number {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -126,26 +127,23 @@ const dashboard = () => {
     }
 
     async function getResponse(startDate: Date | null, endDate: Date | null, trails: string[], granularity: string = 'Daily' ) {
-        if (!startDate || !endDate) return; 
+        if (!startDate || !endDate || !granularity || trails.length === 0) return;
 
-        let response;
+        var response;
         try {
-            if (trails[0] === "All Trails") {
-                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
-                );
-            } else {
-                let trailIds: number[] = [];
-                for(var i = 0; i < trails.length; i++) {
-                    trailIds[i] = trailMap[trails[i]];
-                }       
-                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
-                );
-            }
+            let trailIds: number[] = [];
+            for(var i = 0; i < trails.length; i++) {
+                trailIds[i] = trailMap[trails[i]];
+            }       
+            response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
+            );
+            
             const responseJson = await response.json;
            
             let ranges = getDateRanges(startDate, endDate, granularity)
             let events: Map<number, Date[]> = new Map<number, Date[]>();
 
+            // look through response and create a map of trail id to an array of dates
             (responseJson as { id: number; timestamp: number }[]).forEach((entry) => {
                 if (!events.has(entry.id)) {
                     events.set(entry.id, []); // Initialize an empty array for the ID
@@ -153,12 +151,11 @@ const dashboard = () => {
                 events.get(entry.id)!.push(new Date(entry.timestamp * 1000)); // Add new date
             });
 
-            // events.sort();
             var lines: [Date[], number[]][] = [];
-            // Loop through keys
+   
             for (const key of events.keys()) {
                 let dates: Date[] = events.get(key) ?? [];
-                let occurrences = countOccurrencesInRanges(ranges, dates)
+                let occurrences = countOccurrencesInRanges(ranges, dates);
 
                 Object.keys(occurrences).sort(); // Ensure chronological order
                 const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
@@ -166,41 +163,84 @@ const dashboard = () => {
 
                 lines.push([xData, yData]); 
             }
+
+            if (trails.indexOf("All Trails") > -1) {
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000));
+                const responseJson = await response.json;
+                let dates: Date[] = [];
+
+                // Process timestamps into daily counts
+                Object.values(responseJson as { timestamp: number }[]).forEach((entry) => {
+                    dates.push(new Date(entry.timestamp * 1000));
+                });
+                dates.sort();
+
+                let occurrences = countOccurrencesInRanges(ranges, dates);
+                var xData = Array.from(occurrences.keys()).map(key => new Date(key));
+                var yData = Array.from(occurrences.values())
+                lines.push([xData, yData]);   
+            }
+            
             
             if (lines.length > 0) {
                 setXDataList(lines.map(line => line[0])); // Extract xData from each line
                 setYDataList(lines.map(line => line[1])); // Extract yData from each line
             }
+
+            setGraphTitle(formatGraphTitle(startDate, endDate, trails));
         }catch (error) {
             console.error("Error fetching trail data:", error);
         }
     }
 
+    function formatGraphTitle(startDate: Date | null, endDate: Date | null, trails: string[]): string {
+        if (!startDate || !endDate) return "Trail Data";
+    
+        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        const startStr = startDate.toLocaleDateString(undefined, options);
+        const endStr = endDate.toLocaleDateString(undefined, options);
+    
+        if (trails.includes("All Trails")) {
+            return `All Trails from ${startStr} to ${endStr}`;
+        } else if (trails.length === 1) {
+            return `${trails[0]} from ${startStr} to ${endStr}`;
+        } else if (trails.length === 2) {
+            return `${trails[0]} & ${trails[1]} from ${startStr} to ${endStr}`;
+        } else {
+            return `Trails from ${startStr} to ${endStr}`;
+        }
+    }
+    
+
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
-        if (startDate && selectedDateEnd) {
+        if (startDate && selectedDateEnd && trails.length > 0 && granularity) {
             getResponse(startDate, selectedDateEnd, trails, granularity);
         }
     }
 
     const handleEndDateChange = (endDate: Date | null) => {
         setSelectedDateEnd(endDate);
-        if (selectedDate && endDate) {
+        if (selectedDate && endDate && trails.length > 0 && granularity) {
             getResponse(selectedDate, endDate, trails, granularity);
         }
     }
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
-        console.log(selectedTrails);
-        if (selectedDate && selectedDateEnd) {
-            getResponse(selectedDate, selectedDateEnd, selectedTrails, granularity);
+
+        if (selectedTrails.length === 0) {
+            setData([]); 
+            return;
         }
-    }
+        if (selectedDate && selectedDateEnd && selectedTrails.length > 0 && granularity) {
+          getResponse(selectedDate, selectedDateEnd, selectedTrails, granularity);
+        }
+      }
 
     const handleGranularityChange = (granularity: string) => {
         setGranularity(granularity);
-        if (selectedDate && selectedDateEnd) {
+        if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
             getResponse(selectedDate, selectedDateEnd, trails, granularity);
         }
     }
@@ -213,11 +253,10 @@ const dashboard = () => {
         "Mt. America": 4
     };
 
-
     return(
         <body>
             <div className="dashboard-div">
-                <div style={{ display: "flex" }}>
+                <div style={{ display: "flex", padding: "10px" }}>
                     <button className="logout-button" type="button" onClick={handleLogout} style={{ marginLeft: "auto" }}>
                     Logout
                     </button>
@@ -226,6 +265,12 @@ const dashboard = () => {
                     config={ {displayModeBar: false} }
                     data={data}
                     layout={{
+                        title: {
+                            text: graphTitle,
+                            font: { size: 24 },
+                            xref: "paper",
+                            x: 0.05
+                        },
                         width: 1000,
                         height: 700, 
                         xaxis: { title: { text: 'Date', font: { size: 18, color: '#7f7f7f' } }, },
@@ -260,7 +305,7 @@ const dashboard = () => {
                         <select 
                             id="granularity"
                             className="select-box"
-                            value={granularity}
+                            value={granularity ?? ""}
                             onChange={(e) => handleGranularityChange(e.target.value)}
                         >
                             {granularityOptions.map(option => (
