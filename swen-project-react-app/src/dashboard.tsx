@@ -35,7 +35,7 @@ const dashboard = () => {
                 type: 'scatter',
                 mode: 'lines+markers',
                 name: `Trail ${trails[index]}`,
-                marker: { color: ['red', 'blue', 'green', 'orange'][index % 4] },
+                marker: { color: ['red', 'blue', 'green', 'orange', 'goldenrod', 'limegreen', 'papayawhip'][index % 7] },
             }));
             setData(newData);
         }
@@ -129,24 +129,21 @@ const dashboard = () => {
     async function getResponse(startDate: Date | null, endDate: Date | null, trails: string[], granularity: string = 'Daily' ) {
         if (!startDate || !endDate || !granularity || trails.length === 0) return;
 
-        let response;
+        var response;
         try {
-            if (trails[0] === "All Trails") {
-                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000)
-                );
-            } else {
-                let trailIds: number[] = [];
-                for(var i = 0; i < trails.length; i++) {
-                    trailIds[i] = trailMap[trails[i]];
-                }       
-                response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
-                );
-            }
+            let trailIds: number[] = [];
+            for(var i = 0; i < trails.length; i++) {
+                trailIds[i] = trailMap[trails[i]];
+            }       
+            response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
+            );
+            
             const responseJson = await response.json;
            
             let ranges = getDateRanges(startDate, endDate, granularity)
             let events: Map<number, Date[]> = new Map<number, Date[]>();
 
+            // look through response and create a map of trail id to an array of dates
             (responseJson as { id: number; timestamp: number }[]).forEach((entry) => {
                 if (!events.has(entry.id)) {
                     events.set(entry.id, []); // Initialize an empty array for the ID
@@ -154,12 +151,11 @@ const dashboard = () => {
                 events.get(entry.id)!.push(new Date(entry.timestamp * 1000)); // Add new date
             });
 
-            // events.sort();
             var lines: [Date[], number[]][] = [];
-            // Loop through keys
+   
             for (const key of events.keys()) {
                 let dates: Date[] = events.get(key) ?? [];
-                let occurrences = countOccurrencesInRanges(ranges, dates)
+                let occurrences = countOccurrencesInRanges(ranges, dates);
 
                 Object.keys(occurrences).sort(); // Ensure chronological order
                 const xData: Date[] = Array.from(occurrences.keys()).map(key => new Date(key));
@@ -167,6 +163,24 @@ const dashboard = () => {
 
                 lines.push([xData, yData]); 
             }
+
+            if (trails.indexOf("All Trails") > -1) {
+                response = await GetAllTrailsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000));
+                const responseJson = await response.json;
+                let dates: Date[] = [];
+
+                // Process timestamps into daily counts
+                Object.values(responseJson as { timestamp: number }[]).forEach((entry) => {
+                    dates.push(new Date(entry.timestamp * 1000));
+                });
+                dates.sort();
+
+                let occurrences = countOccurrencesInRanges(ranges, dates);
+                var xData = Array.from(occurrences.keys()).map(key => new Date(key));
+                var yData = Array.from(occurrences.values())
+                lines.push([xData, yData]);   
+            }
+            
             
             if (lines.length > 0) {
                 setXDataList(lines.map(line => line[0])); // Extract xData from each line
@@ -233,7 +247,6 @@ const dashboard = () => {
         "Mt. Joe": 3,
         "Mt. America": 4
     };
-
 
     return(
         <body>
