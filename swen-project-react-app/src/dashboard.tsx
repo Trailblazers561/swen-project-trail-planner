@@ -228,6 +228,11 @@ const dashboard = () => {
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
+
+        if (selectedTrails.length === 0) {
+            setData([]); 
+            return;
+        }
         if (selectedDate && selectedDateEnd && selectedTrails.length > 0 && granularity) {
           getResponse(selectedDate, selectedDateEnd, selectedTrails, granularity);
         }
