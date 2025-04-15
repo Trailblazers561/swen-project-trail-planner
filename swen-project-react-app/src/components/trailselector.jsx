@@ -23,7 +23,6 @@ const TrailSelector = ({ onChange }) => {
     const handleWildernessChange = (selectedOption) => {
         setSelectedWilderness(selectedOption.value);
         setSelectedTrails([]); // Reset selected trails when wilderness changes
-        onChange(["All Trails"]); // Reset trails selection to All Trails
     };
 
     const handleTrailChange = (selectedOptions) => {
