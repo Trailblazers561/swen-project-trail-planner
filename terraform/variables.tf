@@ -3,6 +3,16 @@ variable "default_name" {
   default = "trailplanner"
 }
 
+variable "domain" {
+  type = string
+  default = "adiron.no-lan.com"
+}
+
+variable "has_domain" {
+  type = bool
+  default = false
+}
+
 variable "bucket_name" {
   type = string
   default = "trailplanner-bucket"
@@ -26,9 +36,9 @@ variable "authorization_type" {
 }
 
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
-variable "fast_boot" {
+variable "has_cdn" {
   type = bool
-  default = true
+  default = false
 }
 
 resource "random_integer" "random_suffix" {
