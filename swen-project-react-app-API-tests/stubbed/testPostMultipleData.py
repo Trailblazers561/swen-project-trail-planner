@@ -1,0 +1,22 @@
+import requests
+import pytest
+
+# Base URL of the API
+BASE_URL = "https://3tpxypd416.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage/trail_data/"
+
+headers = {
+    "Authorization": "eyJraWQiOiJwMUpyNWQycUx0T0x4WUVINmZ6RXpOSm1LcSttK0xCRmZEOFdvMVNPanM4PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJiNGE4MTRmOC0yMDAxLTcwMDgtNjVmMC04NjZiZTk3YjNjMTgiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfWDl0V0FRM3F3IiwiY29nbml0bzp1c2VybmFtZSI6ImI0YTgxNGY4LTIwMDEtNzAwOC02NWYwLTg2NmJlOTdiM2MxOCIsIm9yaWdpbl9qdGkiOiIxNDRhZjkxMi04MjFmLTRjNjAtOTE2Mi0wMGEwZmFlN2UxZDEiLCJhdWQiOiIxYThqZDE3M3RpdjhsNTlkNTM4M2tmMDVibSIsImV2ZW50X2lkIjoiYzM5OTQ3YjgtMTA3My00YzYyLWI1ZWQtMzY4ZDg0M2JhNTgzIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NDM3MDg0NDcsImV4cCI6MTc0MzcxMjA0NywiaWF0IjoxNzQzNzA4NDQ3LCJqdGkiOiI0NTk1OWI3MS04MTRkLTQzN2UtODA2ZC02ZDNlMzY0OTliYTMiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSJ9.UTJoM7zc2mXIzK8j8hsgLipvzPCdgC_qVsWWky3HpCWHv1ddFGPyAJR_CDU637UoiCDVY04COMZRUXwAlOnW3D1NNB90bHpQd8Nmmllj6D8F4ZxoFOZg3Q_JjLoQG61NqpMkDz7OY9R7-SnI81Ni5fJX-yzT5fNlhv3_7elPNMgthMLi_Cx5-16wxpiteJvfHkxRX_GhweTKlA15tZMoRGjpf1kc0cpQAERq8SG9QDsD_SIb5D39bngEnbscvMwDtBCsUGE09USnbTyNNibMLWiT96iSEvQSeMIVINf0dzWbD6laIKHH5AYXWYpaTEIgx5OWlS3FmiYiJ6OGIvdKYg",
+    "Content-Type": "application/json"
+}
+
+@pytest.mark.API_testbed
+def test_post_request():
+    payload = {
+        "id": 7,
+        "timestamp": 1735691235
+    }
+
+    response = requests.post(BASE_URL, json=payload, headers=headers)
+    
+    print(response.json())  # Print response for debugging
+    assert response.status_code == 200  # Assuming 201 Created is the expected response
