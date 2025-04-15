@@ -9,7 +9,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-@pytest.mark.Testbed
+@pytest.mark.API
 def test_post_request():
     payload = {
         "id" : 1,
