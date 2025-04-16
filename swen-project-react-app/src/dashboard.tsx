@@ -28,7 +28,7 @@ const dashboard = () => {
     const [trails, setTrails] = useState<string[]>([]);
     const [granularity, setGranularity] = useState<string| null>(null);
     const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
-    const [graphTitle, setGraphTitle] = useState<string>("Trail Data");
+    const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
 
     function getDateDifference(startDate: Date, endDate: Date): number {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -66,6 +66,13 @@ const dashboard = () => {
     useEffect(() => {
         updateGranularityOptions(selectedDate, selectedDateEnd);
     }, [selectedDate, selectedDateEnd]);
+
+    useEffect(() => {
+        if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
+            getResponse(selectedDate, selectedDateEnd, trails, granularity);
+        }
+    }, [selectedDate, selectedDateEnd, trails, granularity]);
+    
 
     function getDateRanges(startDate: Date, endDate: Date, granularity: string = 'Daily'): { start: Date, end: Date }[] {
         let ranges: { start: Date, end: Date }[] = [];
@@ -171,15 +178,16 @@ const dashboard = () => {
     }
 
     function formatGraphTitle(startDate: Date | null, endDate: Date | null, trails: string[]): string {
-        if (!startDate || !endDate) return "Trail Data";
+        if (!startDate || !endDate || trails.length === 0) return "No trails selected";
     
-        const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-        const startStr = startDate.toLocaleDateString(undefined, options);
-        const endStr = endDate.toLocaleDateString(undefined, options);
-        if (trails.length >= 2 && trails.includes("All Trails")){
-            return `Trails from ${startStr} to ${endStr}`;
-        } else if (trails.includes("All Trails")) {
+        const startStr = startDate.toLocaleDateString();
+        const endStr = endDate.toLocaleDateString();
+        const includesAll = trails.includes("All Trails");
+
+        if (includesAll && trails.length === 0) {
             return `All Trails from ${startStr} to ${endStr}`;
+        } else if (includesAll && trails.length > 1) {
+            return `Trails from ${startStr} to ${endStr}`;
         } else if (trails.length === 1) {
             return `${trails[0]} from ${startStr} to ${endStr}`;
         } else if (trails.length === 2) {
@@ -192,16 +200,10 @@ const dashboard = () => {
 
     const handleStartDateChange = (startDate: Date | null) => {
         setSelectedDate(startDate);
-        if (startDate && selectedDateEnd && trails.length > 0 && granularity) {
-            getResponse(startDate, selectedDateEnd, trails, granularity);
-        }
     }
 
     const handleEndDateChange = (endDate: Date | null) => {
         setSelectedDateEnd(endDate);
-        if (selectedDate && endDate && trails.length > 0 && granularity) {
-            getResponse(selectedDate, endDate, trails, granularity);
-        }
     }
 
     const handleTrailChange = (selectedTrails: string[]) => {
@@ -209,18 +211,13 @@ const dashboard = () => {
 
         if (selectedTrails.length === 0) {
             setGraphLines([]); 
+            setGraphTitle("No Trails Selected");
             return;
-        }
-        if (selectedDate && selectedDateEnd && selectedTrails.length > 0 && granularity) {
-          getResponse(selectedDate, selectedDateEnd, selectedTrails, granularity);
         }
       }
 
     const handleGranularityChange = (granularity: string) => {
         setGranularity(granularity);
-        if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
-            getResponse(selectedDate, selectedDateEnd, trails, granularity);
-        }
     }
 
     const trailMap: Record<string, number> = {
@@ -302,7 +299,10 @@ const dashboard = () => {
                     </div>
                     <div className="filter-group">
                         <label>Trail:</label>
-                        <TrailSelector onChange={handleTrailChange}/>
+                        <TrailSelector onChange={handleTrailChange}
+                        clearGraph={() => setGraphLines([])}
+                        clearName={() => setGraphTitle("No Trails Selected")}    
+                        />
                     </div>
                 </div>
             </div>
