@@ -68,6 +68,7 @@ const dashboard = () => {
     }, [selectedDate, selectedDateEnd]);
 
     useEffect(() => {
+
         if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
             getResponse(selectedDate, selectedDateEnd, trails, granularity);
         }
@@ -300,6 +301,7 @@ const dashboard = () => {
                     <div className="filter-group">
                         <label>Trail:</label>
                         <TrailSelector onChange={handleTrailChange}
+                        clearTrails={() => setTrails([])}
                         clearGraph={() => setGraphLines([])}
                         clearName={() => setGraphTitle("No Trails Selected")}    
                         />
