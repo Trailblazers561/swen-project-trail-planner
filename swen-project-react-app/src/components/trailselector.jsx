@@ -16,13 +16,14 @@ const trailData = {
     "Giant Mountain": ["Mt. Joe", "Mt. America", "Giant Summit", "Falcon Crest"],
 };
 
-const TrailSelector = ({ onChange,clearGraph,clearName }) => {
+const TrailSelector = ({ onChange,clearGraph,clearName,clearTrails }) => {
     const [selectedWilderness, setSelectedWilderness] = useState("All Areas");
     const [selectedTrails, setSelectedTrails] = useState([]);
 
     const handleWildernessChange = (selectedOption) => {
         setSelectedWilderness(selectedOption.value);
         setSelectedTrails([]); // Reset selected trails when wilderness changes       
+        clearTrails(); //clear trails
         clearGraph(); //clear graph lines
         clearName(); //clear name
     };
@@ -151,6 +152,7 @@ TrailSelector.propTypes = {
     onChange: PropTypes.func.isRequired,
     clearGraph: PropTypes.func.isRequired,
     clearName: PropTypes.func.isRequired,
+    clearTrails: PropTypes.func.isRequired,
 };
 
 export default TrailSelector;
