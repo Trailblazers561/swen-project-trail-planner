@@ -1,5 +1,5 @@
 locals {
-  s3_origin_id = "trailplannerS3Origin"
+  s3_origin_id = var.has_domain ? var.domain : "trailplannerS3Origin"
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {
@@ -16,7 +16,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   count = var.has_cdn ? 1 : 0
 
   origin {
-    domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
+    domain_name              = var.has_domain ? "${var.domain}.s3.amazonaws.com" : aws_s3_bucket.bucket.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_access[0].id
     origin_id                = local.s3_origin_id
   }

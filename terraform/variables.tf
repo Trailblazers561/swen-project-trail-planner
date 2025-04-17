@@ -5,7 +5,7 @@ variable "default_name" {
 
 variable "domain" {
   type = string
-  default = "adiron.no-lan.com"
+  default = "no-lan.com"
 }
 
 variable "has_domain" {
@@ -38,7 +38,7 @@ variable "authorization_type" {
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
 variable "has_cdn" {
   type = bool
-  default = false
+  default = true
 }
 
 resource "random_integer" "random_suffix" {
