@@ -3,14 +3,28 @@ variable "default_name" {
   default = "trailplanner"
 }
 
+#root domain
 variable "domain" {
   type = string
-  default = "no-lan.com"
+  default = "example.com"
+}
+
+#sub domain
+variable "sub" {
+  type = string
+  default = "adiron"
 }
 
 variable "has_domain" {
   type = bool
   default = false
+}
+
+#If has domain is true this needs to have a value
+variable "acm_certificate_arn" {
+  type = string
+  default = "arn:"
+  description = "Domain certificate arn"
 }
 
 variable "bucket_name" {
@@ -38,7 +52,7 @@ variable "authorization_type" {
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
 variable "has_cdn" {
   type = bool
-  default = true
+  default = false
 }
 
 resource "random_integer" "random_suffix" {
