@@ -3,14 +3,28 @@ variable "default_name" {
   default = "trailplanner"
 }
 
+#root domain
 variable "domain" {
   type = string
-  default = "adiron.no-lan.com"
+  default = "example.com"
+}
+
+#sub domain
+variable "sub" {
+  type = string
+  default = "adiron"
 }
 
 variable "has_domain" {
   type = bool
   default = false
+}
+
+#If has domain is true this needs to have a value
+variable "acm_certificate_arn" {
+  type = string
+  default = "arn:"
+  description = "Domain certificate arn"
 }
 
 variable "bucket_name" {
