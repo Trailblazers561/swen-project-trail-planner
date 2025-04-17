@@ -1,5 +1,6 @@
 locals {
-  s3_origin_id = "trailplannerS3Origin"
+  s3_origin_id = var.has_domain ? "${var.sub}.${var.domain}" : "trailplannerS3Origin"
+  full_domain  = var.has_domain ? "${var.sub}.${var.domain}" : ""
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {
@@ -21,7 +22,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_id                = local.s3_origin_id
   }
 
-  aliases = var.has_domain ? [var.domain] : []
+  aliases = var.has_domain ? [local.full_domain] : []
 
   enabled             = true
   is_ipv6_enabled     = true
@@ -115,8 +116,12 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     Environment = "production"
   }
 
+  #Sets up domain cert uses default cloudfront cert otherwise
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = var.has_domain ? var.acm_certificate_arn : null
+    ssl_support_method             = var.has_domain ? "sni-only" : null
+    minimum_protocol_version       = var.has_domain ? "TLSv1.2_2021" : null
+    cloudfront_default_certificate = var.has_domain ? false : true
   }
 
   depends_on = [ aws_s3_bucket.bucket, null_resource.deploy_react_app ]
@@ -152,6 +157,6 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
 }
 
 output "website_url" {
-  value = var.has_cdn ? "http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
+  value = var.has_cdn ? "https://${var.has_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
 }
 
