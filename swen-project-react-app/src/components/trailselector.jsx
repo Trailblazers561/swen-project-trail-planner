@@ -12,7 +12,7 @@ const wildernessOptions = [
 const trailData = {
     "All Areas": ["All Trails", "Mt. Marcy", "Wolf Creek Mountain", "Mt. Joe", "Mt. America", "Blueberry Trail", "Sunset Peak","Cedar Loop","Eagle Ridge", "Bear Claw Path"],
     "Five Ponds": ["Blueberry Trail", "Sunset Peak", "Cedar Loop"],
-    "High Peaks": ["Mt. Marcy", "Wolf Creek Mountain", "Eagle Ridge", "Bear Claw Path"],
+    "High Peaks": ["Mt. Marcy", "Wolf Creek Mountain"],
     "Giant Mountain": ["Mt. Joe", "Mt. America", "Giant Summit", "Falcon Crest"],
 };
 
@@ -21,11 +21,30 @@ const TrailSelector = ({ onChange,clearGraph,clearName,clearTrails }) => {
     const [selectedTrails, setSelectedTrails] = useState([]);
 
     const handleWildernessChange = (selectedOption) => {
-        setSelectedWilderness(selectedOption.value);
-        setSelectedTrails([]); // Reset selected trails when wilderness changes       
-        clearTrails(); //clear trails
-        clearGraph(); //clear graph lines
-        clearName(); //clear name
+
+        clearTrails();
+        clearGraph();
+        clearName();
+
+        const newWilderness = selectedOption.value;
+        setSelectedWilderness(newWilderness);
+    
+        // Get the auto-selected trails depending on the wilderness
+        let autoSelectedTrails = [];
+    
+        if (newWilderness === "All Areas") {
+            // Select all trails if "All Areas" is selected
+            autoSelectedTrails = [{ value: "All Trails", label: "All Trails" }];
+        } else {
+            // Just the trails from the selected wilderness
+            autoSelectedTrails = trailData[newWilderness].map(trail => ({
+                value: trail,
+                label: trail,
+            }));
+        }
+
+        setSelectedTrails(autoSelectedTrails);
+        onChange(autoSelectedTrails.map(option => option.value)); // notify dashboard  
     };
 
     const handleTrailChange = (selectedOptions) => {

@@ -208,7 +208,8 @@ const dashboard = () => {
     }
 
     const handleTrailChange = (selectedTrails: string[]) => {
-        setTrails(selectedTrails);
+        setTrails(selectedTrails); 
+        
 
         if (selectedTrails.length === 0) {
             setGraphLines([]); 
