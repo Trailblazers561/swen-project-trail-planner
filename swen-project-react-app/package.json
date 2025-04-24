@@ -11,9 +11,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.533.0",
+    "@aws-sdk/client-dynamodb": "^3.741.0",
+    "@aws-sdk/lib-dynamodb": "^3.741.0",
+    "plotly.js": "^3.0.0",
     "react": "^18.3.1",
+    "react-datepicker": "^8.0.0",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.22.3"
+    "react-plotly.js": "^2.6.0",
+    "react-router-dom": "^6.22.3",
+    "react-select": "5.10.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

@@ -1,17 +1,14 @@
-//https://github.com/awsdocs/aws-doc-sdk-examples/tree/main/javascriptv3/example_code/cognito-identity-provider/scenarios/cognito-developer-guide-react-example/frontend-client
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signIn, signUp } from "./authService";
+import { signIn } from "./authService";
+import React from "react";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignIn = async (e: { preventDefault: () => void }) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     try {
       const session = await signIn(email, password);
@@ -19,8 +16,7 @@ const LoginPage = () => {
       if (session && typeof session.AccessToken !== "undefined") {
         sessionStorage.setItem("accessToken", session.AccessToken);
         if (sessionStorage.getItem("accessToken")) {
-          //Refreshes session token (dont replace with navigate)
-          window.location.href = "/home";
+          window.location.href = "/dashboard";
         } else {
           console.error("Session token was not set properly.");
         }
@@ -32,27 +28,11 @@ const LoginPage = () => {
     }
   };
 
-  const handleSignUp = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    try {
-      await signUp(email, password);
-      navigate("/confirm", { state: { email } });
-    } catch (error) {
-      alert(`Sign up failed: ${error}`);
-    }
-  };
-
   return (
     <div className="loginForm">
       <img className="logo" alt="Logo" src="AWA-logo.png" />
-      <h4>
-        {isSignUp ? "Sign up to create an account" : "Sign in to your account"}
-      </h4>
-      <form onSubmit={isSignUp ? handleSignUp : handleSignIn}>
+      <h4>Sign in to your account</h4>
+      <form onSubmit={handleSignIn}>
         <div>
           <input
             className="inputText input-glass"
@@ -75,26 +55,8 @@ const LoginPage = () => {
             required
           />
         </div>
-        {isSignUp && (
-          <div>
-            <input
-              className="inputText input-glass"
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm Password"
-              required
-            />
-          </div>
-        )}
-        <button className="button-3d" type="submit">{isSignUp ? "Sign Up" : "Sign In"}</button>
+        <button className="button-3d" type="submit">Sign In</button>
       </form>
-      <button className="button-3d" type="button" onClick={() => setIsSignUp(!isSignUp)}>
-        {isSignUp
-          ? "Already have an account? Sign In"
-          : "Need an account? Sign Up"}
-      </button>
     </div>
   );
 };

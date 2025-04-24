@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = "${var.bucket_name}-${random_integer.random_suffix.result}"
+  bucket = var.has_domain ? "${var.sub}.${var.domain}" : "${var.bucket_name}-${random_integer.random_suffix.result}"
   
   tags = {
     Name = var.bucket_name
@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access" {
-  count = var.fast_boot ? 1 : 0
+  count = var.has_cdn ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_s3_bucket_policy" "public_read" {
-  count = var.fast_boot ? 1 : 0
+  count = var.has_cdn ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
@@ -39,7 +39,7 @@ resource "aws_s3_bucket_policy" "public_read" {
 }
 
 resource "aws_s3_bucket_website_configuration" "website" {
-  count = var.fast_boot ? 1 : 0
+  count = var.has_cdn ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -65,7 +65,7 @@ resource "aws_s3_bucket_acl" "acl" {
   depends_on = [ aws_s3_bucket_ownership_controls.bucket_ownership, aws_s3_bucket_public_access_block.public_access ]
 
   bucket = aws_s3_bucket.bucket.id
-  acl    = var.fast_boot ?  "public-read" : var.bucket_acl
+  acl    = var.has_cdn ?  var.bucket_acl : "public-read"
 }
 
 #Injects user pool configuration into environment
@@ -86,5 +86,5 @@ resource "null_resource" "deploy_react_app" {
     command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
-  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config]
+  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.production_env]
 }
