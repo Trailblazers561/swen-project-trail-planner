@@ -3,6 +3,30 @@ variable "default_name" {
   default = "trailplanner"
 }
 
+#root domain
+variable "domain" {
+  type = string
+  default = "example.com"
+}
+
+#sub domain
+variable "sub" {
+  type = string
+  default = "adiron"
+}
+
+variable "has_domain" {
+  type = bool
+  default = false
+}
+
+#If has domain is true this needs to have a value
+variable "acm_certificate_arn" {
+  type = string
+  default = "arn:"
+  description = "Domain certificate arn"
+}
+
 variable "bucket_name" {
   type = string
   default = "trailplanner-bucket"
@@ -26,7 +50,7 @@ variable "authorization_type" {
 }
 
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
-variable "fast_boot" {
+variable "has_cdn" {
   type = bool
   default = false
 }
