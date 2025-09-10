@@ -16,7 +16,7 @@ export function TrailData(){
   async function GetTrailDataBetweenDates(startdate, enddate, trailIDs) {
     const trailParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
     console.log(`/trail_data?trails=${trailParam}&start=${startdate}&end=${enddate}`)
-    return await request(API_URL + `/trail_data?trails=${trailIDs}&start=${startdate}&end=${enddate}`, {
+    return await request(API_URL + `/trail_data?trails=${trailParam}&start=${startdate}&end=${enddate}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
