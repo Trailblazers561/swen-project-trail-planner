@@ -10,7 +10,7 @@ const wildernessOptions = [
 ];
 
 const trailData = {
-    "All Areas": ["All Trails", "Mt. Marcy", "Wolf Creek Mountain", "Mt. Joe", "Mt. America", "Blueberry Trail", "Sunset Peak","Cedar Loop","Eagle Ridge", "Bear Claw Path"],
+    "All Areas": ["All Trails", "Mt. Marcy", "Wolf Creek Mountain", "Mt. Joe", "Mt. America", "Blueberry Trail", "Sunset Peak", "Cedar Loop", "Eagle Ridge", "Bear Claw Path"],
     "Five Ponds": ["Blueberry Trail", "Sunset Peak", "Cedar Loop"],
     "High Peaks": ["Mt. Marcy", "Wolf Creek Mountain"],
     "Giant Mountain": ["Mt. Joe", "Mt. America", "Giant Summit", "Falcon Crest"],

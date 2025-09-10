@@ -227,7 +227,12 @@ const dashboard = () => {
         "Mt. Marcy": 1,
         "Wolf Creek Mountain": 2,
         "Mt. Joe": 3,
-        "Mt. America": 4
+        "Mt. America": 4,
+        "Blueberry Trail": 5,
+        "Sunset Peak": 6,
+        "Cedar Loop": 7,
+        "Eagle Ridge": 8,
+        "Bear Claw Path": 9,
     };
 
     return(
