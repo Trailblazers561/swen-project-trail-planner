@@ -14,7 +14,7 @@ const dashboard = () => {
       navigate("/login");
     };
 
-    const { GetTrailDataBetweenDates, GetAllTrailsBetweenDates } = TrailData();
+    const { getAll, getAllLogsBetweenDates, getTrailLogsBetweenDates, getDeviceMetadata } = TrailData();
 
 
     const [graphLines, setGraphLines] = useState<Array<{
@@ -125,7 +125,7 @@ const dashboard = () => {
             for(var i = 0; i < trails.length; i++) {
                 trailIds[i] = trailMap[trails[i]];
             }       
-            response = await GetTrailDataBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
+            response = await getTrailLogsBetweenDates(Math.floor(startDate.getTime() / 1000),Math.floor(endDate.getTime() / 1000),trailIds
             );
             
             const responseJson = await response.json;
@@ -144,7 +144,7 @@ const dashboard = () => {
             var lines: { name: string; x: Date[]; y: number[] }[] = [];
 
             if (trails.includes("All Trails")) {
-                const response = await GetAllTrailsBetweenDates(
+                const response = await getAllLogsBetweenDates(
                   Math.floor(startDate.getTime() / 1000),
                   Math.floor(endDate.getTime() / 1000)
                 );
