@@ -15,102 +15,65 @@ resource "aws_api_gateway_resource" "trail_data" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 }
 
-#Fixes CORS issues by setting up preflight
+# CORS (OPTIONS)
 resource "aws_api_gateway_method" "trail_data_options" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_data.id
   http_method   = "OPTIONS"
   authorization = "NONE"
-
-  depends_on = [aws_api_gateway_resource.trail_data ]
 }
 
-resource "aws_api_gateway_model" "trail_data_response_model" {
+resource "aws_api_gateway_integration" "trail_data_options_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  content_type = "application/json"
-  name = "TrailDataResponseModel"
+  resource_id = aws_api_gateway_resource.trail_data.id
+  http_method = aws_api_gateway_method.trail_data_options.http_method
+  type        = "MOCK"
 
-  schema = <<EOF
-  {
-    "type": "object",
-    "properties": {
-      "statusCode": { "type": "integer" }
-    }
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
   }
-  EOF
 }
 
 resource "aws_api_gateway_method_response" "trail_data_options_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.trail_data.id
   http_method = aws_api_gateway_method.trail_data_options.http_method
-  status_code = 200 
-
-  response_models = {
-    "application/json" = aws_api_gateway_model.trail_data_response_model.name
-  }
+  status_code = "200"
 
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Credentials" = true,
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true,
-    "method.response.header.Access-Control-Allow-Origin"  = true,
+    "method.response.header.Access-Control-Allow-Headers"  = true
+    "method.response.header.Access-Control-Allow-Methods"  = true
+    "method.response.header.Access-Control-Allow-Origin"   = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
   }
-
-  depends_on = [aws_api_gateway_method.trail_data_options, aws_api_gateway_model.trail_data_response_model]
-}
-
-resource "aws_api_gateway_integration" "trail_data_options_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.trail_data.id
-  http_method             = aws_api_gateway_method.trail_data_options.http_method
-
-  type                    = "MOCK"
-
-  request_templates = {
-    "application/json" = "{ \"statusCode\": 200 }"
-  }
-
-  depends_on = [aws_api_gateway_method.trail_data_options]
 }
 
 resource "aws_api_gateway_integration_response" "trail_data_options_integration_response" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.trail_data.id
   http_method = aws_api_gateway_method.trail_data_options.http_method
-  status_code = aws_api_gateway_method_response.trail_data_options_response.status_code
+  status_code = "200"
 
   response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"  = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"  = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"   = "'*'"
     "method.response.header.Access-Control-Allow-Credentials" = "'true'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'",
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'" 
-    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'",
   }
 
-  depends_on = [aws_api_gateway_method_response.trail_data_options_response]
+  depends_on = [
+    aws_api_gateway_integration.trail_data_options_integration,
+    aws_api_gateway_method_response.trail_data_options_response
+  ]
 }
 
+# POST (upload_trail_data)
 resource "aws_api_gateway_method" "trail_data_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_data.id
   http_method   = "POST"
   authorization = var.authorization_type
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
-
-  depends_on = [aws_api_gateway_resource.trail_data]
-}
-
-resource "aws_api_gateway_method_response" "trail_data_method_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.trail_data.id
-  http_method = aws_api_gateway_method.trail_data_post.http_method
-  status_code = 200 
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true,
-  }
-
-  depends_on = [aws_api_gateway_method.trail_data_post]
 }
 
 resource "aws_api_gateway_integration" "trail_data_integration" {
@@ -120,31 +83,15 @@ resource "aws_api_gateway_integration" "trail_data_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.upload_trail_data.invoke_arn
-
-  depends_on = [ aws_api_gateway_method.trail_data_post]
 }
 
+# GET (get_trail_data)
 resource "aws_api_gateway_method" "trail_data_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_data.id
   http_method   = "GET"
   authorization = var.authorization_type
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
-
-  depends_on = [aws_api_gateway_resource.trail_data]
-}
-
-resource "aws_api_gateway_method_response" "trail_data_get_method_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.trail_data.id
-  http_method = aws_api_gateway_method.trail_data_get.http_method
-  status_code = 200 
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true,
-  }
-
-  depends_on = [aws_api_gateway_method.trail_data_get]
 }
 
 resource "aws_api_gateway_integration" "trail_data_get_integration" {
@@ -154,10 +101,9 @@ resource "aws_api_gateway_integration" "trail_data_get_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.get_trail_data.invoke_arn
-
-  depends_on = [ aws_api_gateway_method.trail_data_get]
 }
 
+#  Cognito Authorizer
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   name          = "CognitoAuthorizer"
   rest_api_id   = aws_api_gateway_rest_api.api.id
@@ -165,27 +111,35 @@ resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   provider_arns = [aws_cognito_user_pool.user_pool.arn]
 }
 
+# Deployment + Stage
 resource "aws_api_gateway_deployment" "api_deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
 
   triggers = {
-    redeployment = jsonencode(aws_api_gateway_rest_api.api.body)
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_integration.trail_data_integration.uri,
+      aws_api_gateway_integration.trail_data_get_integration.uri
+    ]))
   }
 
   lifecycle {
     create_before_destroy = true
   }
 
-  depends_on = [ aws_api_gateway_integration.trail_data_integration, aws_api_gateway_integration.trail_data_get_integration,  aws_api_gateway_integration_response.trail_data_options_integration_response]
+  depends_on = [
+    aws_api_gateway_integration.trail_data_integration,
+    aws_api_gateway_integration.trail_data_get_integration,
+    aws_api_gateway_integration_response.trail_data_options_integration_response
+  ]
 }
 
 resource "aws_api_gateway_stage" "api_stage" {
-    deployment_id = aws_api_gateway_deployment.api_deployment.id
-    rest_api_id   = aws_api_gateway_rest_api.api.id
-    
-    stage_name    = "${var.default_name}_api_stage"
+  deployment_id = aws_api_gateway_deployment.api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = "${var.default_name}_api_stage"
 }
 
+# Output for frontend
 resource "local_sensitive_file" "production_env" {
   content  = <<EOF
 VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
@@ -197,5 +151,5 @@ EOF
 }
 
 output "api_gateway_url" {
-    value = aws_api_gateway_stage.api_stage.invoke_url
+  value = aws_api_gateway_stage.api_stage.invoke_url
 }

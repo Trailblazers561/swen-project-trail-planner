@@ -1,11 +1,17 @@
+import os
 import json
 import boto3
 import concurrent.futures
-from boto3.dynamodb.conditions import Key
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Key, Attr
 from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
+
+TRAIL_LOGS_TABLE = os.environ.get("TRAIL_LOGS_TABLE", "trail_device_logs")
+TRAIL_METADATA_TABLE = os.environ.get("TRAIL_METADATA_TABLE", "trail_metadata")
+
+logs_table = dynamodb.Table(TRAIL_LOGS_TABLE)
+metadata_table = dynamodb.Table(TRAIL_METADATA_TABLE)
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -17,21 +23,23 @@ def convert_decimals(obj):
     else:
         return obj
 
-#Helper function to query a single trail
-def query_trail(table, trail_id, start=None, end=None):
+# Helper to query logs for a single trail
+def query_trail(trail_id, start=None, end=None):
     if start and end:
-        response = table.query(
-            KeyConditionExpression=(Key('id').eq(trail_id) & Key('timestamp').between(int(start), int(end)))
+        response = logs_table.query(
+            KeyConditionExpression=(Key('trail_id').eq(trail_id) & Key('timestamp').between(int(start), int(end)))
         )
     else:
-        response = table.query(
-            KeyConditionExpression=Key('id').eq(trail_id)
+        response = logs_table.query(
+            KeyConditionExpression=Key('trail_id').eq(trail_id)
         )
     return response.get('Items', [])
 
-def get_trail_data(event, context):
-    table = dynamodb.Table('traildata_table')
+def get_trail_name(trail_id):
+    response = metadata_table.get_item(Key={'trail_id': trail_id})
+    return response.get('Item', {}).get('trail_name')
 
+def get_trail_data(event, context):
     try:
         query_params = event.get('queryStringParameters', {})
         
@@ -40,34 +48,32 @@ def get_trail_data(event, context):
         start = query_params.get('start') if query_params else None
         end = query_params.get('end') if query_params else None
 
+        results = []
+
         if trails:
             trail_ids = [int(tid.strip()) for tid in trails.split(',')]
-
-            #Use multi threading to speed up lambda execution and improve cost efficiency
-            #Should try to only request a max of 10 trails with one query
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_trail = {
-                    executor.submit(query_trail, table, tid, start, end): tid 
+                    executor.submit(query_trail, tid, start, end): tid 
                     for tid in trail_ids
                 }
-                
-                results = []
                 for future in concurrent.futures.as_completed(future_to_trail):
                     trail_results = future.result()
                     results.extend(trail_results)
-            
-            traildata = convert_decimals(results)
         elif trail_id:
-            response = query_trail(table, int(trail_id), start, end)
-            traildata = convert_decimals(response)
+            results = query_trail(int(trail_id), start, end)
         elif start and end:
-            response = table.scan(
+            response = logs_table.scan(
                 FilterExpression=Attr("timestamp").between(int(start), int(end))
             )
-            traildata = convert_decimals(response.get('Items', []))
+            results = response.get('Items', [])
         else:
-            response = table.scan()
-            traildata = convert_decimals(response.get('Items', []))
+            response = logs_table.scan()
+            results = response.get('Items', [])
+
+        # Optionally enrich with trail_name
+        for item in results:
+            item["trail_name"] = get_trail_name(item["trail_id"])
 
         return {
             'statusCode': 200,
@@ -76,45 +82,34 @@ def get_trail_data(event, context):
                 "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type, Authorization",
             },
-            'body': json.dumps(traildata)
+            'body': json.dumps(convert_decimals(results))
         }
     except Exception as e:
-        
-        #Change to see exact errors, but in production build we should not give too much info away with error msg
-        debug = False
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e) if debug else "Fatal error"})
+            'body': json.dumps({'error': str(e)})
         }
 
-
 def upload_trail_data(event, context):
-    table = dynamodb.Table('traildata_table')
-
     if isinstance(event['body'], str):
         body = json.loads(event['body'])
     else:
         body = event['body']
 
-    trail_id = body.get('id')
+    trail_id = int(body.get('trail_id'))
     data = body.get('data', [])
 
     try:
-        #Probably not the most effcient approach use concurrency in future
-        with table.batch_writer() as batch:
+        with logs_table.batch_writer() as batch:
             for point in data:
                 item = {
-                    'id': int(trail_id), #partition key
-                    'timestamp': int(point.get('timestamp')) #sort key
+                    'trail_id': trail_id,
+                    'timestamp': int(point['timestamp'])
                 }
-
-                #Add possible other columns if they exist in req body
                 for key, value in point.items():
                     if key != 'timestamp':
                         item[key] = value
-
                 batch.put_item(Item=item)
-
 
         return {
             'statusCode': 200,
@@ -128,8 +123,6 @@ def upload_trail_data(event, context):
         }
 
     except Exception as e:
-        
-        #Change to see exact errors, but in production build we should not give too much info away with error msg
         debug = False
         return {
             'statusCode': 500,

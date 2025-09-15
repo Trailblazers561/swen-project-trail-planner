@@ -1,72 +1,90 @@
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
 
-export function TrailData(){
-  async function getAll(){
-    return await request(API_URL + '/trail_data/', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-        'Content-Type': 'application/json',
-      },
-      
-      body: null,
+export function TrailData() {
+  /**
+   * Get all trail metadata (names, IDs, etc.)
+   */
+  async function getAll() {
+    return await request(`${API_URL}/trail_metadata`, {
+      method: "GET",
+      headers: authHeaders(),
     });
   }
 
-  async function GetTrailDataBetweenDates(startdate, enddate, trailIDs) {
+  /**
+   * Get device logs for specific trails between two dates
+   * @param startdate ISO or epoch start date
+   * @param enddate ISO or epoch end date
+   * @param trailIDs number or array of trail IDs
+   */
+  async function getTrailLogsBetweenDates(startdate: number, enddate: number, trailIDs: number | number[]) {
     const trailParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
-    console.log(`/trail_data?trails=${trailParam}&start=${startdate}&end=${enddate}`)
-    return await request(API_URL + `/trail_data?trails=${trailParam}&start=${startdate}&end=${enddate}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-        'Content-Type': 'application/json',
-      },
-      body: null,
+    const url = `${API_URL}/trail_data?trail_id=${trailParam}&start=${startdate}&end=${enddate}`;
+    console.log("Fetching trail logs:", url);
+    return await request(url, {
+      method: "GET",
+      headers: authHeaders(),
     });
   }
-  
-  async function GetAllTrailsBetweenDates(startdate, enddate) {
-    console.log(`/trail_data?start=${startdate}&end=${enddate}`)
-    return await request(API_URL + `/trail_data?start=${startdate}&end=${enddate}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('idToken')}`,
-        'Content-Type': 'application/json',
-      },
-      body: null,
+
+  /**
+   * Get all trail logs between two dates (no filtering by trail)
+   */
+  async function getAllLogsBetweenDates(startdate: number, enddate: number) {
+    const url = `${API_URL}/trail_data?start=${startdate}&end=${enddate}`;
+    console.log("Fetching all logs:", url);
+    return await request(url, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+  /**
+   * Get device metadata (latest battery, current trail per device)
+   */
+  async function getDeviceMetadata() {
+    return await request(`${API_URL}/device_metadata`, {
+      method: "GET",
+      headers: authHeaders(),
     });
   }
 
   return {
-    getAll, GetTrailDataBetweenDates, GetAllTrailsBetweenDates
-  }
+    getAll,
+    getTrailLogsBetweenDates,
+    getAllLogsBetweenDates,
+    getDeviceMetadata,
+  };
+}
+
+/**
+ * Helper to add auth headers
+ */
+function authHeaders() {
+  return {
+    Authorization: `Bearer ${sessionStorage.getItem("idToken")}`,
+    "Content-Type": "application/json",
+  };
 }
 
 type RequestResult = {
-json: object;
-success: boolean;
+  json: object;
+  success: boolean;
 };
 
 /**
  * Fetch helper method.
- * @param url Url to Reach
- * @param options CRUD options
- * @returns
  */
-async function request(
-  url: string,
-  options?: RequestInit
-): Promise<RequestResult> {
+async function request(url: string, options?: RequestInit): Promise<RequestResult> {
   try {
     const response = await fetch(url, options);
     const data = await response.json();
     return {
       json: data,
-      success: true,
+      success: response.ok,
     };
   } catch (e) {
-    console.error(e);
+    console.error("API request failed:", e);
     return {
       json: {},
       success: false,

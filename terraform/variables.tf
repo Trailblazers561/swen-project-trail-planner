@@ -1,34 +1,34 @@
 variable "default_name" {
-  type = string
+  type    = string
   default = "trailplanner"
 }
 
 #root domain
 variable "domain" {
-  type = string
+  type    = string
   default = "example.com"
 }
 
 #sub domain
 variable "sub" {
-  type = string
+  type    = string
   default = "adiron"
 }
 
 variable "has_domain" {
-  type = bool
+  type    = bool
   default = false
 }
 
 #If has domain is true this needs to have a value
 variable "acm_certificate_arn" {
-  type = string
-  default = "arn:"
+  type        = string
+  default     = "arn:"
   description = "Domain certificate arn"
 }
 
 variable "bucket_name" {
-  type = string
+  type    = string
   default = "trailplanner-bucket"
 }
 
@@ -39,19 +39,19 @@ variable "bucket_acl" {
 }
 
 variable "react_app_directory" {
-  type        = string
-  default     = "../swen-project-react-app"
+  type    = string
+  default = "../swen-project-react-app"
 }
 
 variable "authorization_type" {
-  type        = string
+  type = string
   #Set to "NONE" to disable auth
-  default     = "COGNITO_USER_POOLS"
+  default = "COGNITO_USER_POOLS"
 }
 
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
 variable "has_cdn" {
-  type = bool
+  type    = bool
   default = false
 }
 

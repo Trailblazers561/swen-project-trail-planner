@@ -17,7 +17,7 @@ resource "aws_route53_record" "www" {
     evaluate_target_health = false
   }
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution, aws_route53_zone.primary ]
+  depends_on = [aws_cloudfront_distribution.s3_distribution, aws_route53_zone.primary]
 }
 
 output "route53_nameservers" {

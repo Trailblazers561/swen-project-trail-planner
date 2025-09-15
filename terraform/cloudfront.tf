@@ -106,9 +106,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   #Ensures cloudfront is always routed to our App.jsx router
   custom_error_response {
-    error_code           = 403
-    response_page_path   = "/index.html"
-    response_code        = 200
+    error_code            = 403
+    response_page_path    = "/index.html"
+    response_code         = 200
     error_caching_min_ttl = 300
   }
 
@@ -124,7 +124,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cloudfront_default_certificate = var.has_domain ? false : true
   }
 
-  depends_on = [ aws_s3_bucket.bucket, null_resource.deploy_react_app ]
+  depends_on = [aws_s3_bucket.bucket, null_resource.deploy_react_app]
 }
 
 #Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
@@ -153,7 +153,7 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
     ]
   })
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+  depends_on = [aws_cloudfront_distribution.s3_distribution]
 }
 
 output "website_url" {
