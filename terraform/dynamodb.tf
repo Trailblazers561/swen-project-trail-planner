@@ -1,4 +1,3 @@
-
 # TABLE 1: TrailDeviceLogs
 resource "aws_dynamodb_table" "trail_device_logs" {
   name           = "TrailDeviceLogs"
@@ -84,6 +83,23 @@ resource "aws_dynamodb_table" "trail_metadata" {
   }
 }
 
+# TABLE 4: TrailGroups
+resource "aws_dynamodb_table" "trail_groups" {
+  name           = "TrailGroups"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "group_name"
+
+  attribute {
+    name = "group_name"
+    type = "S"
+  }
+
+  tags = {
+    Environment = "dev"
+    TableType   = "TrailGroups"
+  }
+}
+
 # VARIABLES: SAMPLE DATA
 variable "trail_device_logs_sampledata" {
   type = list(object({
@@ -159,6 +175,32 @@ variable "trail_metadata_sampledata" {
   ]
 }
 
+variable "trail_groups_sampledata" {
+  type = list(object({
+    group_name = string
+    trail_ids  = list(string)
+  }))
+
+  default = [
+    {
+      group_name = "All Areas"
+      trail_ids  = ["1","2","3","4","5","6","7","8","9"] # all trails by ID
+    },
+    {
+      group_name = "Five Ponds"
+      trail_ids  = ["5","6","7"] # Blueberry Trail, Sunset Peak, Cedar Loop
+    },
+    {
+      group_name = "High Peaks"
+      trail_ids  = ["1","2"] # Mt. Marcy, Wolf Creek Mountain
+    },
+    {
+      group_name = "Giant Mountain"
+      trail_ids  = ["3","4"] # Mt. Joe, Mt. America
+    }
+  ]
+}
+
 
 # INSERT TEST DATA INTO TrailDeviceLogs
 resource "aws_dynamodb_table_item" "trail_device_logs_items" {
@@ -202,5 +244,18 @@ resource "aws_dynamodb_table_item" "trail_metadata_items" {
   item = jsonencode({
     trail_id   = { "N" = each.value.trail_id }
     trail_name = { "S" = each.value.trail_name }
+  })
+}
+
+# INSERT TEST DATA INTO TrailGroups
+resource "aws_dynamodb_table_item" "trail_groups_items" {
+  for_each = { for idx, item in var.trail_groups_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.trail_groups.name
+  hash_key   = aws_dynamodb_table.trail_groups.hash_key
+
+  item = jsonencode({
+    group_name = { "S" = each.value.group_name }
+    trail_ids  = { "L" = [for id in each.value.trail_ids : { "N" = id }] }
   })
 }
