@@ -13,8 +13,10 @@ resource "aws_lambda_function" "get_trail_data" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE     = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE = aws_dynamodb_table.trail_metadata.name
+      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
+      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
+      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
     }
   }
 
@@ -30,8 +32,29 @@ resource "aws_lambda_function" "upload_trail_data" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE     = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE = aws_dynamodb_table.trail_metadata.name
+      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
+      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
+      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+    }
+  }
+
+  depends_on = [aws_iam_role.lambda_iam_role]
+}
+
+resource "aws_lambda_function" "upload_device_data" {
+  function_name = "traildata_upload_device_data"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "traildata.upload_device_data"
+  runtime       = "python3.12"
+  filename      = "${path.module}/../lambdas/zips/traildata.zip"
+
+  environment {
+    variables = {
+      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
+      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
+      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
     }
   }
 
@@ -42,6 +65,7 @@ variable "lambda_function_names" {
   default = [
     "traildata_upload_trail_data",
     "traildata_get_trail_data",
+    "traildata_upload_device_data",
   ]
 }
 
