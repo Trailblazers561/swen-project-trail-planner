@@ -1,4 +1,94 @@
-.idea
+# Project files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
 swen-project-react-app/src/cognito/config.json
 swen-project-react-app/tsconfig.json
-.DS_Store
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.tfstate.lock.info
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node / JS
+node_modules/
+package-lock.json
+dist/
+dist-ssr/
+*.local
+.env
+jspm_packages/
+typings/
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+
+# Zips
+/zips
+
+# Python
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pyc
+*.so
+
+# Python packaging
+bin/
+build/
+develop-eggs/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Python testing
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# Python project configs
+.mr.developer.cfg
+.project
+.pydevproject
+.ropeproject
+
+# Django
+*.pot
+
+# Sphinx
+docs/_build/
+
+# Misc editor/project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node addons
+build/Release
