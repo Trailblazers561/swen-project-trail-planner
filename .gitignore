@@ -12,6 +12,7 @@ swen-project-react-app/tsconfig.json
 terraform.tfstate
 terraform.tfstate.backup
 .terraform.tfstate.lock.info
+/lambdas/zips/*
 
 # Logs
 logs
