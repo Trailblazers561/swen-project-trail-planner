@@ -1,9 +1,9 @@
 # TABLE 1: TrailDeviceLogs
 resource "aws_dynamodb_table" "trail_device_logs" {
-  name           = "TrailDeviceLogs"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "trail_id"
-  range_key      = "device_timestamp"
+  name         = "TrailDeviceLogs"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "trail_id"
+  range_key    = "timestamp"
 
   attribute {
     name = "trail_id"
@@ -11,18 +11,13 @@ resource "aws_dynamodb_table" "trail_device_logs" {
   }
 
   attribute {
-    name = "device_timestamp"
-    type = "S"
+    name = "timestamp"
+    type = "N"
   }
 
   attribute {
     name = "device_id"
     type = "S"
-  }
-
-  attribute {
-    name = "timestamp"
-    type = "N"
   }
 
   global_secondary_index {
@@ -103,33 +98,29 @@ resource "aws_dynamodb_table" "trail_groups" {
 # VARIABLES: SAMPLE DATA
 variable "trail_device_logs_sampledata" {
   type = list(object({
-    trail_id          = string
-    device_timestamp  = string
-    device_id         = string
-    timestamp         = string
-    battery           = string
+    trail_id  = string
+    device_id = string
+    timestamp = string
+    battery   = string
   }))
   default = [
     {
-      trail_id         = "1"
-      device_timestamp = "deviceA#1704744000"
-      device_id        = "deviceA"
-      timestamp        = "1704744000"
-      battery          = "95"
+      trail_id  = "1"
+      device_id = "deviceA"
+      timestamp = "1759064864"
+      battery   = "95"
     },
     {
-      trail_id         = "1"
-      device_timestamp = "deviceA#1704747600"
-      device_id        = "deviceA"
-      timestamp        = "1704747600"
-      battery          = "94"
+      trail_id  = "1"
+      device_id = "deviceA"
+      timestamp = "1759065044"
+      battery   = "94"
     },
     {
-      trail_id         = "2"
-      device_timestamp = "deviceB#1704744000"
-      device_id        = "deviceB"
-      timestamp        = "1704744000"
-      battery          = "88"
+      trail_id  = "2"
+      device_id = "deviceB"
+      timestamp = "1759065344"
+      battery   = "88"
     }
   ]
 }
@@ -146,13 +137,13 @@ variable "device_metadata_sampledata" {
       device_id        = "deviceA"
       current_trail_id = "1"
       battery          = "94"
-      last_update      = "1704747600"
+      last_update      = "1759065044"
     },
     {
       device_id        = "deviceB"
       current_trail_id = "2"
       battery          = "88"
-      last_update      = "1704744000"
+      last_update      = "1759065344"
     }
   ]
 }
@@ -211,11 +202,10 @@ resource "aws_dynamodb_table_item" "trail_device_logs_items" {
   range_key  = aws_dynamodb_table.trail_device_logs.range_key
 
   item = jsonencode({
-    trail_id         = { "N" = each.value.trail_id }
-    device_timestamp = { "S" = each.value.device_timestamp }
-    device_id        = { "S" = each.value.device_id }
-    timestamp        = { "N" = each.value.timestamp }
-    battery          = { "N" = each.value.battery }
+    trail_id  = { "N" = each.value.trail_id }
+    timestamp = { "N" = each.value.timestamp }
+    device_id = { "S" = each.value.device_id }
+    battery   = { "N" = each.value.battery }
   })
 }
 

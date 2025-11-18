@@ -14,7 +14,7 @@ const dashboard = () => {
       navigate("/login");
     };
 
-    const { getAll, getAllLogsBetweenDates, getTrailLogsBetweenDates, getDeviceMetadata } = TrailData();
+    const { getAllLogsBetweenDates, getTrailLogsBetweenDates, getDeviceMetadata } = TrailData();
 
 
     const [graphLines, setGraphLines] = useState<Array<{

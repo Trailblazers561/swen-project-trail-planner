@@ -32,10 +32,18 @@ When you no longer need the infrastructure, use the following command to delete 
 `terraform destroy`
 
 ## Additional Commands
-Check AWS CLI Version: aws --version
-Validate Terraform Configuration: terraform validate
-Format Terraform Files: terraform fmt
+Check AWS CLI Version: `aws --version`
+Validate Terraform Configuration: `terraform validate`
+Format Terraform Files: `terraform fmt`
 Troubleshooting
 Permission Errors: Ensure that your AWS IAM user has sufficient permissions for the resources you’re provisioning.
 Configuration Issues: Double-check that your AWS CLI is configured correctly if you encounter connectivity issues.
 For more details, refer to the official AWS CLI documentation and Terraform documentation.
+
+## Device Trail Assignment
+The `/devices` API automatically handles device-to-trail linking without requiring manual registration:
+
+- **New devices**: Automatically assigned to trail_id 0 on first use
+- **Existing devices**: Server looks up the most recent trail assignment from previous data
+- **Trail updates**: Include `trail_id` in the payload to change a device's trail assignment
+- **Caching**: Trail assignments are automatically cached in DeviceMetadata for faster lookups

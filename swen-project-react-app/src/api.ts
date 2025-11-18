@@ -2,10 +2,30 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export function TrailData() {
   /**
-   * Get all trail metadata (names, IDs, etc.)
+   * Get all trail metadata (names, IDs, etc.) 
    */
-  async function getAll() {
+  async function getTrailMetadata() {
     return await request(`${API_URL}/trail_metadata`, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+  /**
+   * Get all trail groups 
+   */
+  async function getTrailGroups() {
+    return await request(`${API_URL}/trail_groups`, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+  /** 
+   * Get device metadata (battery, current trail, etc.) 
+   */
+  async function getDeviceMetadata() {
+    return await request(`${API_URL}/device_metadata`, {
       method: "GET",
       headers: authHeaders(),
     });
@@ -18,48 +38,35 @@ export function TrailData() {
    * @param trailIDs number or array of trail IDs
    */
   async function getTrailLogsBetweenDates(startdate: number, enddate: number, trailIDs: number | number[]) {
-    const trailParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
-    const url = `${API_URL}/trail_data?trail_id=${trailParam}&start=${startdate}&end=${enddate}`;
-    console.log("Fetching trail logs:", url);
+    const trailsParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
+    const url = `${API_URL}/trail_data?trails=${trailsParam}&start=${startdate}&end=${enddate}`;
     return await request(url, {
       method: "GET",
       headers: authHeaders(),
     });
   }
 
-  /**
-   * Get all trail logs between two dates (no filtering by trail)
+  /** Get all logs between two dates
+   * @param startdate ISO or epoch start date
+   * @param enddate ISO or epoch end date
    */
   async function getAllLogsBetweenDates(startdate: number, enddate: number) {
     const url = `${API_URL}/trail_data?start=${startdate}&end=${enddate}`;
-    console.log("Fetching all logs:", url);
     return await request(url, {
-      method: "GET",
-      headers: authHeaders(),
-    });
-  }
-
-  /**
-   * Get device metadata (latest battery, current trail per device)
-   */
-  async function getDeviceMetadata() {
-    return await request(`${API_URL}/device_metadata`, {
       method: "GET",
       headers: authHeaders(),
     });
   }
 
   return {
-    getAll,
+    getTrailMetadata,
+    getTrailGroups,
+    getDeviceMetadata,
     getTrailLogsBetweenDates,
     getAllLogsBetweenDates,
-    getDeviceMetadata,
   };
 }
 
-/**
- * Helper to add auth headers
- */
 function authHeaders() {
   return {
     Authorization: `Bearer ${sessionStorage.getItem("idToken")}`,
@@ -67,27 +74,15 @@ function authHeaders() {
   };
 }
 
-type RequestResult = {
-  json: object;
-  success: boolean;
-};
+type RequestResult = { json: any; success: boolean };
 
-/**
- * Fetch helper method.
- */
 async function request(url: string, options?: RequestInit): Promise<RequestResult> {
   try {
     const response = await fetch(url, options);
     const data = await response.json();
-    return {
-      json: data,
-      success: response.ok,
-    };
+    return { json: data, success: response.ok };
   } catch (e) {
     console.error("API request failed:", e);
-    return {
-      json: {},
-      success: false,
-    };
+    return { json: {}, success: false };
   }
 }
