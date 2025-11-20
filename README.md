@@ -36,7 +36,7 @@ Check AWS CLI Version: `aws --version`
 
 Validate Terraform Configuration: `terraform validate`
 
-Format Terraform Files: `terraform fmt`\
+Format Terraform Files: `terraform fmt`
 
 **Troubleshooting**
 
