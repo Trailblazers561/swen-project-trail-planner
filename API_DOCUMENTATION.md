@@ -43,6 +43,8 @@ The `/devices` endpoint requires an API key in the request header.
 X-Api-Key: {aws_api_key}
 ```
 
+Please note that the default API key is `MSD-24572-TRAIL-PLANNER-KEY`. This can be changed in `api.tf`
+
 **Usage Plan Limits:**
 - Rate Limit: 50 requests per second
 - Burst Limit: 100 requests
@@ -96,6 +98,12 @@ Content-Type: application/json
 - On first use, new devices default to trail_id 0
 - The server caches the trail assignment in DeviceMetadata for faster future lookups
 - If a device moves to a new trail, include `trail_id` in the payload to update the assignment
+
+**`/devices/` Filtering**
+- Any POST request to `/devices/` has the following limitations
+  - Duplicate timestamps from the **same** device are ignored
+  - Timestamps from before 1735707600 (January 1, 2025) are **ignored**
+    - This is due to the device sometimes sending 946702800 (January 1, 2000) timestamps
 
 **Success Response (200 OK):**
 ```json

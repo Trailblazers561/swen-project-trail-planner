@@ -33,11 +33,17 @@ When you no longer need the infrastructure, use the following command to delete 
 
 ## Additional Commands
 Check AWS CLI Version: `aws --version`
+
 Validate Terraform Configuration: `terraform validate`
-Format Terraform Files: `terraform fmt`
-Troubleshooting
+
+Format Terraform Files: `terraform fmt`\
+
+**Troubleshooting**
+
 Permission Errors: Ensure that your AWS IAM user has sufficient permissions for the resources you’re provisioning.
+
 Configuration Issues: Double-check that your AWS CLI is configured correctly if you encounter connectivity issues.
+
 For more details, refer to the official AWS CLI documentation and Terraform documentation.
 
 ## Device Trail Assignment

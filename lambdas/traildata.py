@@ -219,6 +219,10 @@ def upload_device_data(event, context):
             resolved_trail_id = 0
 
         prepared_items = []
+        # Track seen (device_id, timestamp) pairs to filter duplicates
+        seen_timestamps = set()
+        # Minimum allowed timestamp (1735707600 unix time or January 1, 2025)
+        MIN_TIMESTAMP = 1735707600
 
         for idx, point in enumerate(data_points):
             timestamp_raw = point.get("ts") or point.get("timestamp")
@@ -239,6 +243,17 @@ def upload_device_data(event, context):
                     "headers": cors_headers(),
                     "body": json.dumps({"error": f"Invalid timestamp format (data[{idx}])"})
                 }
+
+            # Ignore timestamps before minimum allowed time
+            if timestamp < MIN_TIMESTAMP:
+                continue
+
+            # Check for duplicate timestamp from the same device
+            timestamp_key = (device_id, timestamp)
+            if timestamp_key in seen_timestamps:
+                # Skip duplicate timestamp from same device
+                continue
+            seen_timestamps.add(timestamp_key)
 
             # Per-point trail_id override takes precedence
             if point_trail_raw is not None:
