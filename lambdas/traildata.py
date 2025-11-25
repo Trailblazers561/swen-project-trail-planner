@@ -407,9 +407,465 @@ def get_trail_groups(event, context):
         "body": json.dumps(convert_decimals(resp.get("Items", [])))
     }
 
+def create_trail(event, context):
+    """
+    Create a new trail. Auto-generates trail_id as next available ID.
+    Expects: { "trail_name": str, "trail_group": str (optional) }
+    Returns: { "trail_id": int, "message": str }
+    """
+    try:
+        body = json.loads(event.get("body", "{}"))
+        
+        trail_name = body.get("trail_name")
+        trail_group = body.get("trail_group")
+        
+        if not trail_name:
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: trail_name"})
+            }
+        
+        # Get all existing trails to find next available ID
+        try:
+            resp = trail_metadata_table.scan()
+            existing_trails = resp.get("Items", [])
+            if existing_trails:
+                existing_ids = [int(t.get("trail_id", 0)) for t in existing_trails]
+                new_trail_id = max(existing_ids, default=0) + 1
+            else:
+                new_trail_id = 1
+        except Exception as e:
+            # If scan fails, start with ID 1
+            new_trail_id = 1
+        
+        # Create trail metadata
+        item = {
+            "trail_id": new_trail_id,
+            "trail_name": str(trail_name)
+        }
+        
+        try:
+            trail_metadata_table.put_item(Item=item)
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": f"Failed to create trail: {str(e)}"})
+            }
+        
+        # Always add trail to "All Areas" group
+        # Then add to specified group if provided
+        try:
+            resp = trail_groups_table.scan()
+            groups = resp.get("Items", [])
+            
+            # Step 1: Add to "All Areas" group (all trails should be in this group)
+            all_areas_found = False
+            for group in groups:
+                if group.get("group_name") == "All Areas":
+                    trail_ids = group.get("trail_ids", [])
+                    if not isinstance(trail_ids, list):
+                        trail_ids = []
+                    if new_trail_id not in trail_ids:
+                        trail_ids.append(new_trail_id)
+                    trail_groups_table.put_item(Item={
+                        "group_name": "All Areas",
+                        "trail_ids": trail_ids
+                    })
+                    all_areas_found = True
+                    break
+            
+            # If "All Areas" group doesn't exist, create it
+            if not all_areas_found:
+                trail_groups_table.put_item(Item={
+                    "group_name": "All Areas",
+                    "trail_ids": [new_trail_id]
+                })
+            
+            # Step 2: Add to specified trail group if provided (in addition to "All Areas")
+            if trail_group and trail_group != "All Areas":
+                group_found = False
+                for group in groups:
+                    if group.get("group_name") == trail_group:
+                        trail_ids = group.get("trail_ids", [])
+                        if not isinstance(trail_ids, list):
+                            trail_ids = []
+                        if new_trail_id not in trail_ids:
+                            trail_ids.append(new_trail_id)
+                        trail_groups_table.put_item(Item={
+                            "group_name": trail_group,
+                            "trail_ids": trail_ids
+                        })
+                        group_found = True
+                        break
+                
+                if not group_found:
+                    trail_groups_table.put_item(Item={
+                        "group_name": trail_group,
+                        "trail_ids": [new_trail_id]
+                    })
+        except Exception as e:
+            # Continue even if trail group update fails
+            pass
+        
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({
+                "message": "Trail created successfully",
+                "trail_id": new_trail_id
+            })
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
+def update_trail_metadata(event, context):
+    """
+    Update trail metadata (trail name, trail group).
+    Expects: { "trail_id": int, "trail_name": str, "trail_group": str }
+    """
+    try:
+        body = json.loads(event.get("body", "{}"))
+        
+        trail_id = body.get("trail_id")
+        trail_name = body.get("trail_name")
+        trail_group = body.get("trail_group")
+        
+        if trail_id is None:
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: trail_id"})
+            }
+        
+        try:
+            trail_id = int(trail_id)
+        except (ValueError, TypeError):
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Invalid trail_id format"})
+            }
+        
+        # Update trail metadata
+        item = {"trail_id": trail_id}
+        if trail_name is not None:
+            item["trail_name"] = str(trail_name)
+        
+        try:
+            trail_metadata_table.put_item(Item=item)
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": f"Failed to update trail metadata: {str(e)}"})
+            }
+        
+        # Update trail groups if trail_group is provided (and not empty string)
+        if trail_group is not None and trail_group != "":
+            try:
+                # Get current trail groups
+                resp = trail_groups_table.scan()
+                groups = resp.get("Items", [])
+                
+                # First, remove trail_id from all other groups (except "All Areas")
+                # "All Areas" should always contain all trails
+                for group in groups:
+                    group_name = group.get("group_name")
+                    if group_name != trail_group and group_name != "All Areas":
+                        trail_ids = group.get("trail_ids", [])
+                        if isinstance(trail_ids, list) and trail_id in trail_ids:
+                            trail_ids = [tid for tid in trail_ids if tid != trail_id]
+                            trail_groups_table.put_item(Item={
+                                "group_name": group_name,
+                                "trail_ids": trail_ids
+                            })
+                
+                # Ensure trail is in "All Areas" (all trails should be in this group)
+                all_areas_found = False
+                for group in groups:
+                    if group.get("group_name") == "All Areas":
+                        trail_ids = group.get("trail_ids", [])
+                        if not isinstance(trail_ids, list):
+                            trail_ids = []
+                        if trail_id not in trail_ids:
+                            trail_ids.append(trail_id)
+                        trail_groups_table.put_item(Item={
+                            "group_name": "All Areas",
+                            "trail_ids": trail_ids
+                        })
+                        all_areas_found = True
+                        break
+                
+                # If "All Areas" doesn't exist, create it
+                if not all_areas_found:
+                    trail_groups_table.put_item(Item={
+                        "group_name": "All Areas",
+                        "trail_ids": [trail_id]
+                    })
+                
+                # Find the target group and add trail_id to it (if not "All Areas")
+                if trail_group != "All Areas":
+                    group_found = False
+                    for group in groups:
+                        if group.get("group_name") == trail_group:
+                            trail_ids = group.get("trail_ids", [])
+                            if not isinstance(trail_ids, list):
+                                trail_ids = []
+                            if trail_id not in trail_ids:
+                                trail_ids.append(trail_id)
+                            trail_groups_table.put_item(Item={
+                                "group_name": trail_group,
+                                "trail_ids": trail_ids
+                            })
+                            group_found = True
+                            break
+                    
+                    # If group doesn't exist, create it
+                    if not group_found:
+                        trail_groups_table.put_item(Item={
+                            "group_name": trail_group,
+                            "trail_ids": [trail_id]
+                        })
+            except Exception as e:
+                # Continue even if trail group update fails
+                pass
+        else:
+            # If trail_group is None (empty string), ensure trail is still in "All Areas"
+            # This handles the case when removing a trail from a specific group
+            try:
+                resp = trail_groups_table.scan()
+                groups = resp.get("Items", [])
+                
+                # Remove from all groups except "All Areas"
+                for group in groups:
+                    group_name = group.get("group_name")
+                    if group_name != "All Areas":
+                        trail_ids = group.get("trail_ids", [])
+                        if isinstance(trail_ids, list) and trail_id in trail_ids:
+                            trail_ids = [tid for tid in trail_ids if tid != trail_id]
+                            trail_groups_table.put_item(Item={
+                                "group_name": group_name,
+                                "trail_ids": trail_ids
+                            })
+                
+                # Ensure trail is in "All Areas"
+                all_areas_found = False
+                for group in groups:
+                    if group.get("group_name") == "All Areas":
+                        trail_ids = group.get("trail_ids", [])
+                        if not isinstance(trail_ids, list):
+                            trail_ids = []
+                        if trail_id not in trail_ids:
+                            trail_ids.append(trail_id)
+                        trail_groups_table.put_item(Item={
+                            "group_name": "All Areas",
+                            "trail_ids": trail_ids
+                        })
+                        all_areas_found = True
+                        break
+                
+                # If "All Areas" doesn't exist, create it
+                if not all_areas_found:
+                    trail_groups_table.put_item(Item={
+                        "group_name": "All Areas",
+                        "trail_ids": [trail_id]
+                    })
+            except Exception as e:
+                # Continue even if trail group update fails
+                pass
+        
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Trail metadata updated successfully"})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
+def delete_trail(event, context):
+    """
+    Delete a trail and all associated data.
+    Deletes:
+    - Trail metadata
+    - All trail device logs for that trail
+    - Trail from all trail groups
+    - Updates devices associated with this trail to trail_id 0
+    Expects: { "trail_id": int }
+    """
+    try:
+        body = json.loads(event.get("body", "{}"))
+        
+        trail_id = body.get("trail_id")
+        
+        if trail_id is None:
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: trail_id"})
+            }
+        
+        try:
+            trail_id = int(trail_id)
+        except (ValueError, TypeError):
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Invalid trail_id format"})
+            }
+        
+        # Delete all trail device logs for this trail
+        try:
+            # Query all logs for this trail
+            response = logs_table.query(
+                KeyConditionExpression=Key("trail_id").eq(trail_id)
+            )
+            items = response.get("Items", [])
+            
+            # Delete all items in batches
+            if items:
+                with logs_table.batch_writer() as batch:
+                    for item in items:
+                        batch.delete_item(
+                            Key={
+                                "trail_id": item["trail_id"],
+                                "timestamp": item["timestamp"]
+                            }
+                        )
+        except Exception as e:
+            # Log error but continue
+            print(f"Error deleting trail logs: {str(e)}")
+        
+        # Remove trail from all trail groups
+        try:
+            resp = trail_groups_table.scan()
+            groups = resp.get("Items", [])
+            
+            for group in groups:
+                trail_ids = group.get("trail_ids", [])
+                if isinstance(trail_ids, list) and trail_id in trail_ids:
+                    trail_ids = [tid for tid in trail_ids if tid != trail_id]
+                    trail_groups_table.put_item(Item={
+                        "group_name": group.get("group_name"),
+                        "trail_ids": trail_ids
+                    })
+        except Exception as e:
+            # Log error but continue
+            print(f"Error removing trail from groups: {str(e)}")
+        
+        # Update all devices associated with this trail to trail_id 0
+        try:
+            resp = device_metadata_table.scan()
+            devices = resp.get("Items", [])
+            
+            for device in devices:
+                if device.get("current_trail_id") == trail_id:
+                    device_id = device.get("device_id")
+                    battery = device.get("battery")
+                    update_device_metadata(device_id, 0, battery)
+        except Exception as e:
+            # Log error but continue
+            print(f"Error updating device associations: {str(e)}")
+        
+        # Delete trail metadata
+        try:
+            trail_metadata_table.delete_item(Key={"trail_id": trail_id})
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": f"Failed to delete trail metadata: {str(e)}"})
+            }
+        
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Trail and all associated data deleted successfully"})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
+def update_device_trail_association(event, context):
+    """
+    Update device trail association. Updates DeviceMetadata to change which trail
+    a device is associated with. Future data from this device will use the new trail_id.
+    Expects: { "device_id": str, "trail_id": int }
+    """
+    try:
+        body = json.loads(event.get("body", "{}"))
+        
+        device_id = body.get("device_id")
+        trail_id = body.get("trail_id")
+        
+        if device_id is None:
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: device_id"})
+            }
+        
+        if trail_id is None:
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: trail_id"})
+            }
+        
+        try:
+            trail_id = int(trail_id)
+        except (ValueError, TypeError):
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Invalid trail_id format"})
+            }
+        
+        # Update device metadata with new trail_id
+        device_id_str = str(device_id)
+        
+        # Get existing device metadata to preserve battery
+        try:
+            resp = device_metadata_table.get_item(Key={"device_id": device_id_str})
+            existing_item = resp.get("Item", {})
+            battery = existing_item.get("battery")
+        except Exception:
+            battery = None
+        
+        # Update device metadata
+        update_device_metadata(device_id_str, trail_id, battery)
+        
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Device trail association updated successfully"})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
 def cors_headers():
     return {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }

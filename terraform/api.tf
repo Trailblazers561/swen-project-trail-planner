@@ -58,7 +58,7 @@ resource "aws_api_gateway_integration_response" "trail_data_options_integration_
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,PUT,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"       = "'*'"
     "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
   }
@@ -182,6 +182,297 @@ resource "aws_api_gateway_integration" "trail_data_get_integration" {
   uri                     = aws_lambda_function.get_trail_data.invoke_arn
 }
 
+# /trail_metadata Resource
+resource "aws_api_gateway_resource" "trail_metadata" {
+  path_part   = "trail_metadata"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /trail_metadata
+resource "aws_api_gateway_method" "trail_metadata_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_metadata.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "trail_metadata_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_metadata.id
+  http_method = aws_api_gateway_method.trail_metadata_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "trail_metadata_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_metadata.id
+  http_method = aws_api_gateway_method.trail_metadata_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "trail_metadata_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_metadata.id
+  http_method = aws_api_gateway_method.trail_metadata_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.trail_metadata_options_integration,
+    aws_api_gateway_method_response.trail_metadata_options_response
+  ]
+}
+
+# GET /trail_metadata
+resource "aws_api_gateway_method" "trail_metadata_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_metadata.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_metadata_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_metadata.id
+  http_method             = aws_api_gateway_method.trail_metadata_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_trail_metadata.invoke_arn
+}
+
+# PUT /trail_metadata
+resource "aws_api_gateway_method" "trail_metadata_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_metadata.id
+  http_method   = "PUT"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_metadata_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_metadata.id
+  http_method             = aws_api_gateway_method.trail_metadata_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.update_trail_metadata.invoke_arn
+}
+
+# POST /trail_metadata (create new trail)
+resource "aws_api_gateway_method" "trail_metadata_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_metadata.id
+  http_method   = "POST"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_metadata_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_metadata.id
+  http_method             = aws_api_gateway_method.trail_metadata_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.create_trail.invoke_arn
+}
+
+# DELETE /trail_metadata
+resource "aws_api_gateway_method" "trail_metadata_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_metadata.id
+  http_method   = "DELETE"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_metadata_delete_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_metadata.id
+  http_method             = aws_api_gateway_method.trail_metadata_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.delete_trail.invoke_arn
+}
+
+# /device_metadata Resource
+resource "aws_api_gateway_resource" "device_metadata" {
+  path_part   = "device_metadata"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /device_metadata
+resource "aws_api_gateway_method" "device_metadata_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.device_metadata.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "device_metadata_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_metadata.id
+  http_method = aws_api_gateway_method.device_metadata_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "device_metadata_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_metadata.id
+  http_method = aws_api_gateway_method.device_metadata_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "device_metadata_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_metadata.id
+  http_method = aws_api_gateway_method.device_metadata_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.device_metadata_options_integration,
+    aws_api_gateway_method_response.device_metadata_options_response
+  ]
+}
+
+# GET /device_metadata
+resource "aws_api_gateway_method" "device_metadata_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.device_metadata.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "device_metadata_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.device_metadata.id
+  http_method             = aws_api_gateway_method.device_metadata_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_device_metadata.invoke_arn
+}
+
+# PUT /device_metadata
+resource "aws_api_gateway_method" "device_metadata_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.device_metadata.id
+  http_method   = "PUT"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "device_metadata_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.device_metadata.id
+  http_method             = aws_api_gateway_method.device_metadata_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.update_device_trail_association.invoke_arn
+}
+
+# /trail_groups Resource
+resource "aws_api_gateway_resource" "trail_groups" {
+  path_part   = "trail_groups"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /trail_groups
+resource "aws_api_gateway_method" "trail_groups_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_groups.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "trail_groups_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_groups.id
+  http_method = aws_api_gateway_method.trail_groups_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "trail_groups_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_groups.id
+  http_method = aws_api_gateway_method.trail_groups_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "trail_groups_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.trail_groups.id
+  http_method = aws_api_gateway_method.trail_groups_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.trail_groups_options_integration,
+    aws_api_gateway_method_response.trail_groups_options_response
+  ]
+}
+
+# GET /trail_groups
+resource "aws_api_gateway_method" "trail_groups_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_groups.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_groups_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_groups.id
+  http_method             = aws_api_gateway_method.trail_groups_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_trail_groups.invoke_arn
+}
+
 # Cognito Authorizer
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   name          = "CognitoAuthorizer"
@@ -198,7 +489,14 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_integration.trail_data_post_integration.uri,
       aws_api_gateway_integration.trail_data_get_integration.uri,
-      aws_api_gateway_integration.devices_post_integration.uri
+      aws_api_gateway_integration.devices_post_integration.uri,
+      aws_api_gateway_integration.trail_metadata_get_integration.uri,
+      aws_api_gateway_integration.trail_metadata_post_integration.uri,
+      aws_api_gateway_integration.trail_metadata_put_integration.uri,
+      aws_api_gateway_integration.trail_metadata_delete_integration.uri,
+      aws_api_gateway_integration.device_metadata_get_integration.uri,
+      aws_api_gateway_integration.device_metadata_put_integration.uri,
+      aws_api_gateway_integration.trail_groups_get_integration.uri
     ]))
   }
 
@@ -210,8 +508,18 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.trail_data_post_integration,
     aws_api_gateway_integration.trail_data_get_integration,
     aws_api_gateway_integration.devices_post_integration,
+    aws_api_gateway_integration.trail_metadata_get_integration,
+    aws_api_gateway_integration.trail_metadata_post_integration,
+    aws_api_gateway_integration.trail_metadata_put_integration,
+    aws_api_gateway_integration.trail_metadata_delete_integration,
+    aws_api_gateway_integration.device_metadata_get_integration,
+    aws_api_gateway_integration.device_metadata_put_integration,
+    aws_api_gateway_integration.trail_groups_get_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
-    aws_api_gateway_integration_response.devices_options_integration_response
+    aws_api_gateway_integration_response.devices_options_integration_response,
+    aws_api_gateway_integration_response.trail_metadata_options_integration_response,
+    aws_api_gateway_integration_response.device_metadata_options_integration_response,
+    aws_api_gateway_integration_response.trail_groups_options_integration_response
   ]
 }
 
