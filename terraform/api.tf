@@ -533,9 +533,16 @@ resource "aws_api_gateway_stage" "api_stage" {
 resource "local_sensitive_file" "production_env" {
   content = <<EOF
 VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
+VITE_COGNITO_REGION=us-east-1
+VITE_COGNITO_USER_POOL_ID=${aws_cognito_user_pool.user_pool.id}
+VITE_COGNITO_CLIENT_ID=${aws_cognito_user_pool_client.client.id}
 EOF
   filename = "${path.module}/${var.react_app_directory}/.env"
-  depends_on = [aws_api_gateway_stage.api_stage]
+  depends_on = [
+    aws_api_gateway_stage.api_stage,
+    aws_cognito_user_pool.user_pool,
+    aws_cognito_user_pool_client.client
+  ]
 }
 
 # API Key 
