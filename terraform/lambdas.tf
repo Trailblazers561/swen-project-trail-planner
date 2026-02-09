@@ -5,7 +5,7 @@ data "archive_file" "traildata_zip" {
 }
 
 resource "aws_lambda_function" "get_trail_data" {
-  function_name = "traildata_get_trail_data"
+  function_name = "${var.deploy_env}_traildata_get_trail_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_data"
   runtime       = "python3.12"
@@ -24,7 +24,7 @@ resource "aws_lambda_function" "get_trail_data" {
 }
 
 resource "aws_lambda_function" "upload_trail_data" {
-  function_name = "traildata_upload_trail_data"
+  function_name = "${var.deploy_env}_traildata_upload_trail_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.upload_trail_data"
   runtime       = "python3.12"
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "upload_trail_data" {
 }
 
 resource "aws_lambda_function" "upload_device_data" {
-  function_name = "traildata_upload_device_data"
+  function_name = "${var.deploy_env}_traildata_upload_device_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.upload_device_data"
   runtime       = "python3.12"
@@ -62,7 +62,7 @@ resource "aws_lambda_function" "upload_device_data" {
 }
 
 resource "aws_lambda_function" "update_trail_metadata" {
-  function_name = "traildata_update_trail_metadata"
+  function_name = "${var.deploy_env}_traildata_update_trail_metadata"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.update_trail_metadata"
   runtime       = "python3.12"
@@ -81,7 +81,7 @@ resource "aws_lambda_function" "update_trail_metadata" {
 }
 
 resource "aws_lambda_function" "update_device_trail_association" {
-  function_name = "traildata_update_device_trail_association"
+  function_name = "${var.deploy_env}_traildata_update_device_trail_association"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.update_device_trail_association"
   runtime       = "python3.12"
@@ -100,7 +100,7 @@ resource "aws_lambda_function" "update_device_trail_association" {
 }
 
 resource "aws_lambda_function" "get_trail_metadata" {
-  function_name = "traildata_get_trail_metadata"
+  function_name = "${var.deploy_env}_traildata_get_trail_metadata"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_metadata"
   runtime       = "python3.12"
@@ -119,7 +119,7 @@ resource "aws_lambda_function" "get_trail_metadata" {
 }
 
 resource "aws_lambda_function" "get_device_metadata" {
-  function_name = "traildata_get_device_metadata"
+  function_name = "${var.deploy_env}_traildata_get_device_metadata"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_device_metadata"
   runtime       = "python3.12"
@@ -138,7 +138,7 @@ resource "aws_lambda_function" "get_device_metadata" {
 }
 
 resource "aws_lambda_function" "get_trail_groups" {
-  function_name = "traildata_get_trail_groups"
+  function_name = "${var.deploy_env}_traildata_get_trail_groups"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_groups"
   runtime       = "python3.12"
@@ -157,7 +157,7 @@ resource "aws_lambda_function" "get_trail_groups" {
 }
 
 resource "aws_lambda_function" "delete_trail" {
-  function_name = "traildata_delete_trail"
+  function_name = "${var.deploy_env}_traildata_delete_trail"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.delete_trail"
   runtime       = "python3.12"
@@ -176,7 +176,7 @@ resource "aws_lambda_function" "delete_trail" {
 }
 
 resource "aws_lambda_function" "create_trail" {
-  function_name = "traildata_create_trail"
+  function_name = "${var.deploy_env}_traildata_create_trail"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.create_trail"
   runtime       = "python3.12"
