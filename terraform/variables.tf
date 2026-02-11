@@ -5,7 +5,7 @@ variable "default_name" {
 
 variable "deploy_env" {
   type = string
-  default = "tst"
+  default = "local"
 }
 
 #root domain
