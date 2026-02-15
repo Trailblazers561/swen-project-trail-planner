@@ -3,6 +3,11 @@ variable "default_name" {
   default = "trailplanner"
 }
 
+variable "deploy_env" {
+  type = string
+  default = "local"
+}
+
 #root domain
 variable "domain" {
   type    = string
@@ -52,7 +57,7 @@ variable "authorization_type" {
 # ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
 variable "has_cdn" {
   type    = bool
-  default = false
+  default = true
 }
 
 resource "random_integer" "random_suffix" {

@@ -3,11 +3,11 @@ resource "aws_api_gateway_rest_api" "api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "${var.default_name}_api"
+      title   = "${var.deploy_env}_${var.default_name}_api"
       version = "1.0"
     }
   })
-  name = "${var.default_name}_api"
+  name = "${var.deploy_env}_${var.default_name}_api"
 }
 
 # /trail_data Resource
@@ -475,7 +475,7 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
 
 # Cognito Authorizer
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
-  name          = "CognitoAuthorizer"
+  name          = "${var.deploy_env}_CognitoAuthorizer"
   rest_api_id   = aws_api_gateway_rest_api.api.id
   type          = var.authorization_type
   provider_arns = [aws_cognito_user_pool.user_pool.arn]
@@ -526,7 +526,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "${var.default_name}_api_stage"
+  stage_name    = "${var.deploy_env}_${var.default_name}_api_stage"
 }
 
 # Environment file for frontend (.env)
@@ -547,13 +547,13 @@ EOF
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "Device API Key"
-  value = "REDACTED"
+  name = "${var.deploy_env} Device API Key"
+  value = "${var.deploy_env}-trail-planner-key-trail-trail-trail-trail"
 }
 
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "device_usage_plan" {
-  name = "Device API Usage Plan"
+  name = "${var.deploy_env} Device API Usage Plan"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.api.id
