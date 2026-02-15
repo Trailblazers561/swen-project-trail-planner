@@ -6,7 +6,7 @@ locals {
 resource "aws_cloudfront_origin_access_control" "s3_access" {
   count = var.has_cdn ? 1 : 0
 
-  name                              = "s3_access"
+  name                              = "${var.deploy_env}_s3_access"
   description                       = "s3 origin access policy"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"

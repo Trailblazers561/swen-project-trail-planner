@@ -1,8 +1,8 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = var.has_domain ? "${var.sub}.${var.domain}" : "${var.bucket_name}-${random_integer.random_suffix.result}"
+  bucket = var.has_domain ? "${var.deploy_env}.${var.domain}" : "${var.deploy_env}-${var.bucket_name}-${random_integer.random_suffix.result}"
 
   tags = {
-    Name = var.bucket_name
+    Name = "${var.deploy_env}-${var.bucket_name}"
   }
 
   force_destroy = true
