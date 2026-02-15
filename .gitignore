@@ -13,6 +13,7 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.tfstate.lock.info
 /lambdas/zips/*
+terraform/token.json
 
 # Logs
 logs

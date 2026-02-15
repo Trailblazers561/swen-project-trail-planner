@@ -1,0 +1,79 @@
+name: "TST Apply"
+
+on:
+  push:
+    branches:
+      - trailblazers
+
+env:
+  TF_CLOUD_ORGANIZATION: "Trailblazers"
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  TF_WORKSPACE: "tst-workspace"
+  TF_WORKSPACE_ID: "ws-tyX8EGPhAJtBkw9t"
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: us-east-1
+  TF_VAR_deploy_env: '"tst"'
+  TF_VAR_local_run: "false"
+  CONFIG_DIRECTORY: "./terraform"
+
+
+jobs:
+  terraform:
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform Folder
+        run: |
+          mkdir -p terraform/lambdas
+          cp -r lambdas/* terraform/lambdas/
+          mkdir -p terraform/swen-project-react-app
+          cp -r swen-project-react-app/* terraform/swen-project-react-app/
+
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
+        id: apply-upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+
+      - name: Create Apply Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: apply-run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply
+        with:
+          run: ${{ steps.apply-run.outputs.run_id }}
+          comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Add React Files To React Bucket
+        run: |
+          BUCKET_NAME=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.TF_API_ORG_TOKEN }}" \
+            -H "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
+            | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "react_bucket_name") | .attributes.value')
+          
+          cd swen-project-react-app
+          python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
+          npm install
+          npm run build
+          aws s3 sync ./dist s3://$BUCKET_NAME --delete
