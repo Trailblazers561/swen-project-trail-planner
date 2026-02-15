@@ -1,16 +1,16 @@
 import boto3
-from botocore.exceptions import ProfileNotFound
 import argparse
 from pathlib import Path
 
-try:
-    session = boto3.Session(profile_name="dev-role")
-except ProfileNotFound: 
-    session = boto3
-    print("dev-role NOT FOUND: THIS IS AN ISSUE FOR A LOCAL RUN")
+cloudfront = boto3.client('cloudfront')
+api_gateway = boto3.client('apigateway')
+cognito = boto3.client('cognito-idp')
 
-api_gateway = session.client('apigateway')
-cognito = session.client('cognito-idp')
+def retrieve_cloudfront_url(DEPLOY_ENV):
+    distributions = cloudfront.list_distributions()
+    for distribution in distributions["DistributionList"]["Items"]:
+        if distribution["Comment"] == f"{DEPLOY_ENV} distribution":
+            return distribution["DomainName"]
 
 def retrieve_api_url(env):
     gateways = api_gateway.get_rest_apis(limit=20)
@@ -26,18 +26,29 @@ def retrieve_user_pool_id(env):
         if pool["Name"] == f"{env}_trailplanner_user_pool":
             return pool["Id"]
 
-def retrieve_user_id(env):
+def retrieve_client_id(env):
     clients = cognito.list_user_pool_clients(UserPoolId=retrieve_user_pool_id(env), MaxResults=20)
     for client in clients["UserPoolClients"]:
         if client["ClientName"] == f"{env}_trailplanner_cognito_client":
             return client["ClientId"]
 
+def retrieve_token(env):
+    response = cognito.initiate_auth(
+        ClientId=retrieve_client_id(env),
+        AuthFlow="USER_PASSWORD_AUTH",
+        AuthParameters={
+            "USERNAME": "admin@gmail.com",
+            "PASSWORD": "password"
+        }
+    )
+    return response['AuthenticationResult']['IdToken']
+
 def write_values(env):
     with open(Path(__file__).parent / ".env", "w") as file:
-        file.write(f"VITE_API_URL={retrieve_api_url(env)}\n")
-        file.write(f"VITE_COGNITO_REGION=us-east-1\n")
-        file.write(f"VITE_COGNITO_USER_POOL_ID={retrieve_user_pool_id(env)}\n")
-        file.write(f"VITE_COGNITO_CLIENT_ID={retrieve_user_id(env)}\n")
+        file.write(f"CLOUDFRONT_URL=http://{retrieve_cloudfront_url(env)}\n")
+        file.write(f"API_URL={retrieve_api_url(env)}\n")
+        file.write(f"API_TOKEN={retrieve_token(env)}\n")
+        file.write(f"API_KEY={env}-trail-planner-key-trail-trail-trail-trail\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
