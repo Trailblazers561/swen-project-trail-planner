@@ -1,29 +1,44 @@
-name: "TST Plan"
+name: "Terraform Plan"
 
 on:
   pull_request:
     branches:
       - trailblazers
+      - uat-branch-name
+      - prod-branch-name
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "tst-workspace"
-  TF_WORKSPACE_ID: "ws-tyX8EGPhAJtBkw9t"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
-  TF_VAR_deploy_env: '"tst"'
   TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
+  
 
 jobs:
-  terraform:
-    name: "Terraform Plan"
+  terraform-plan:
+    name: | 
+      ${{ 
+          github.base_ref == 'trailblazers' && 'TST Plan' ||
+          github.base_ref == 'uat-branch-name' && 'UAT Plan' ||
+          github.base_ref == 'prod-branch-name' && 'PROD Plan'
+        }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+    environment: | 
+      ${{ 
+          github.base_ref == 'trailblazers' && 'tst' ||
+          github.base_ref == 'uat-branch-name' && 'uat' ||
+          github.base_ref == 'prod-branch-name' && 'prod'
+        }}
+    env:
+      TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
+      TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
+      TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -63,7 +78,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // 1. Retrieve existing bot comments for the PR
+            // Retrieve existing bot comments for the PR
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -78,7 +93,7 @@ jobs:
                \`\`\`
                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
                `;
-            // 3. Delete previous comment so PR timeline makes sense
+            // Delete previous comment so PR timeline makes sense
             if (botComment) {
               github.rest.issues.deleteComment({
                 owner: context.repo.owner,
