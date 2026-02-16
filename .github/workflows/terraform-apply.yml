@@ -1,29 +1,43 @@
-name: "TST Apply"
+name: "Terraform Apply"
 
 on:
   push:
     branches:
       - trailblazers
+      - uat-branch-name
+      - prod-branch-name
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "tst-workspace"
-  TF_WORKSPACE_ID: "ws-tyX8EGPhAJtBkw9t"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
-  TF_VAR_deploy_env: '"tst"'
   TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
 
 
 jobs:
-  terraform:
-    name: "Terraform Apply"
+  terraform-apply:
+    name: | 
+      ${{ 
+          github.ref_name == 'trailblazers' && 'TST Apply' ||
+          github.ref_name == 'uat-branch-name' && 'UAT Apply' ||
+          github.ref_name == 'prod-branch-name' && 'PROD Apply'
+        }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    environment: | 
+      ${{ 
+          github.ref_name == 'trailblazers' && 'tst' ||
+          github.ref_name == 'uat-branch-name' && 'uat' ||
+          github.ref_name == 'prod-branch-name' && 'prod'
+        }}
+    env:
+      TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
+      TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
+      TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
     steps:
       - name: Checkout
         uses: actions/checkout@v3

@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - trailblazers
+      - uat-branch-name
+      - prod-branch-name
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
