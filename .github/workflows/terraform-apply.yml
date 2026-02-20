@@ -3,9 +3,9 @@ name: "Terraform Apply"
 on:
   push:
     branches:
-      - trailblazers
-      - uat-branch-name
-      - prod-branch-name
+      - trailblazers-tst
+      - trailblazers-uat
+      - trailblazers-prod
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
@@ -21,18 +21,18 @@ jobs:
   terraform-apply:
     name: | 
       ${{ 
-          github.ref_name == 'trailblazers' && 'TST Apply' ||
-          github.ref_name == 'uat-branch-name' && 'UAT Apply' ||
-          github.ref_name == 'prod-branch-name' && 'PROD Apply'
+          github.ref_name == 'trailblazers-tst' && 'TST Apply' ||
+          github.ref_name == 'trailblazers-uat' && 'UAT Apply' ||
+          github.ref_name == 'trailblazers-prod' && 'PROD Apply'
         }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     environment: | 
       ${{ 
-          github.ref_name == 'trailblazers' && 'tst' ||
-          github.ref_name == 'uat-branch-name' && 'uat' ||
-          github.ref_name == 'prod-branch-name' && 'prod'
+          github.ref_name == 'trailblazers-tst' && 'tst' ||
+          github.ref_name == 'trailblazers-uat' && 'uat' ||
+          github.ref_name == 'trailblazers-prod' && 'prod'
         }}
     env:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"

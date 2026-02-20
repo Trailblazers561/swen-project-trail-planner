@@ -18,8 +18,6 @@ COGNITO_TOKEN = os.getenv("API_TOKEN")
 # API Key for /devices endpoint
 API_KEY = os.getenv("API_KEY")
 
-print("THHINGS: ", BASE_URL, API_KEY, COGNITO_TOKEN)
-
 # Headers for Cognito-authenticated requests
 def get_cognito_headers():
     return {
