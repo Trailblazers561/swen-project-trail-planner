@@ -3,9 +3,9 @@ name: "Terraform Plan"
 on:
   pull_request:
     branches:
-      - trailblazers
-      - uat-branch-name
-      - prod-branch-name
+      - trailblazers-tst
+      - trailblazers-uat
+      - trailblazers-prod
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
@@ -21,9 +21,9 @@ jobs:
   terraform-plan:
     name: | 
       ${{ 
-          github.base_ref == 'trailblazers' && 'TST Plan' ||
-          github.base_ref == 'uat-branch-name' && 'UAT Plan' ||
-          github.base_ref == 'prod-branch-name' && 'PROD Plan'
+          github.base_ref == 'trailblazers-tst' && 'TST Plan' ||
+          github.base_ref == 'trailblazers-uat' && 'UAT Plan' ||
+          github.base_ref == 'trailblazers-prod' && 'PROD Plan'
         }}
     runs-on: ubuntu-latest
     permissions:
@@ -31,9 +31,9 @@ jobs:
       pull-requests: write
     environment: | 
       ${{ 
-          github.base_ref == 'trailblazers' && 'tst' ||
-          github.base_ref == 'uat-branch-name' && 'uat' ||
-          github.base_ref == 'prod-branch-name' && 'prod'
+          github.base_ref == 'trailblazers-tst' && 'tst' ||
+          github.base_ref == 'trailblazers-uat' && 'uat' ||
+          github.base_ref == 'trailblazers-prod' && 'prod'
         }}
     env:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
