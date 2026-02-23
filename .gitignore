@@ -4,7 +4,8 @@
 !.vscode/extensions.json
 .DS_Store
 swen-project-react-app/src/cognito/config.json
-swen-project-react-app/tsconfig.json
+
+# previously: swen-project-react-app/tsconfig.json, why was this ignored? needed for project to compile & run
 
 # Terraform
 .terraform/
