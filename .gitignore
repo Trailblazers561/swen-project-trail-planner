@@ -14,6 +14,7 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.tfstate.lock.info
 /lambdas/zips/*
+*.tfvars
 
 # Logs
 logs
