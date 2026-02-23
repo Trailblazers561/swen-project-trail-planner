@@ -576,6 +576,57 @@ const dashboard = () => {
 
     return (
         <body>
+            <div className="flex flex-col">
+            <div className="filter-container">
+                            <div className="filter-group">
+                                <label>Start Date:</label>
+                                <DatePicker
+                                    selected={selectedDate}
+                                    onChange={handleStartDateChange}
+                                    dateFormat="MM/dd/yyyy"
+                                    isClearable
+                                    placeholderText="Select a date"
+                                    className="date-picker-start-date"
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>End Date:</label>
+                                <DatePicker
+                                    selected={selectedDateEnd}
+                                    onChange={handleEndDateChange}
+                                    dateFormat="MM/dd/yyyy"
+                                    isClearable
+                                    placeholderText="Select a date"
+                                    className="date-picker-end-date"
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>Granularity:</label>
+                                <select
+                                    id="granularity"
+                                    className="select-box"
+                                    value={granularity ?? ""}
+                                    onChange={(e) => handleGranularityChange(e.target.value)}
+                                >
+                                    {granularityOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="filter-group">
+                                <label>Trail:</label>
+                                <TrailSelector
+                                    onChange={handleTrailChange}
+                                    clearTrails={() => setTrails([])}
+                                    clearGraph={() => setGraphLines([])}
+                                    clearName={() => setGraphTitle("No Trails Selected")}
+                                    trailMetadata={trailMetadata}
+                                    trailGroups={trailGroups}
+                                />
+                            </div>
+                        </div>
             <div className="dashboard-div">
                 <div
                     style={{
@@ -692,56 +743,6 @@ const dashboard = () => {
                                 },
                             }}
                         />
-                        <div className="filter-container">
-                            <div className="filter-group">
-                                <label>Start Date:</label>
-                                <DatePicker
-                                    selected={selectedDate}
-                                    onChange={handleStartDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-start-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>End Date:</label>
-                                <DatePicker
-                                    selected={selectedDateEnd}
-                                    onChange={handleEndDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-end-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>Granularity:</label>
-                                <select
-                                    id="granularity"
-                                    className="select-box"
-                                    value={granularity ?? ""}
-                                    onChange={(e) => handleGranularityChange(e.target.value)}
-                                >
-                                    {granularityOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="filter-group">
-                                <label>Trail:</label>
-                                <TrailSelector
-                                    onChange={handleTrailChange}
-                                    clearTrails={() => setTrails([])}
-                                    clearGraph={() => setGraphLines([])}
-                                    clearName={() => setGraphTitle("No Trails Selected")}
-                                    trailMetadata={trailMetadata}
-                                    trailGroups={trailGroups}
-                                />
-                            </div>
-                        </div>
                     </>
                 ) : (
                     <div style={{ padding: "20px" }}>
@@ -946,7 +947,8 @@ const dashboard = () => {
                 isOpen={isAssociateDeviceModalOpen}
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
-            />
+            />    
+            </div>
         </body>
     );
 };
