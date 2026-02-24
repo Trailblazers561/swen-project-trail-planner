@@ -32,3 +32,34 @@ resource "aws_cognito_user" "admin" {
     email_verified = true
   }
 }
+
+# aws trail manager user role
+resource "aws_cognito_user_group" "manager" {
+  name         = "${var.deploy_env}_${var.default_name}_trailManager"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Trail Manager group, managed by Terraform"
+  precedence   = 4
+}
+
+# aws admin user role
+resource "aws_cognito_user_group" "administrator" {
+  name         = "${var.deploy_env}_${var.default_name}_administrator"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Administator group, managed by Terraform"
+  precedence   = 2
+}
+
+# aws root admin user role
+resource "aws_cognito_user_group" "root_administrator" {
+  name         = "${var.deploy_env}_${var.default_name}_rootAdministrator"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Root Administator group, managed by Terraform"
+  precedence   = 0
+}
+
+# add admin user to group
+resource "aws_cognito_user_in_group" "root_admin_users" {
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  username     = aws_cognito_user.admin.username
+  group_name   = aws_cognito_user_group.root_administrator.name
+}
