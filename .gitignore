@@ -96,3 +96,6 @@ docs/_build/
 
 # Node addons
 build/Release
+
+# Negations
+!swen-project-react-app/src/lib/
