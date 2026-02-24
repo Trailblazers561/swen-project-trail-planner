@@ -530,20 +530,59 @@ resource "aws_api_gateway_stage" "api_stage" {
 }
 
 # Environment file for frontend (.env)
-resource "local_sensitive_file" "production_env" {
+resource "local_sensitive_file" "frontend_env" {
   content = <<EOF
 VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 VITE_COGNITO_REGION=us-east-1
 VITE_COGNITO_USER_POOL_ID=${aws_cognito_user_pool.user_pool.id}
 VITE_COGNITO_CLIENT_ID=${aws_cognito_user_pool_client.client.id}
 EOF
-  filename = "${path.module}/${var.react_app_directory}/.env"
+  filename = "${path.module}/${local.react_app_directory}/.env"
   depends_on = [
     aws_api_gateway_stage.api_stage,
     aws_cognito_user_pool.user_pool,
     aws_cognito_user_pool_client.client
   ]
 }
+
+resource "null_resource" "generate_id_token" {
+  provisioner "local-exec" {
+    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.admin_username},PASSWORD=${var.admin_password} --output json > token.json"
+  }
+
+  depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.admin]
+
+  triggers = {
+    token_request_time = timestamp()
+  }
+}
+
+data "local_file" "cognito_token_json" {
+  filename   = "${path.module}/token.json"
+  depends_on = [null_resource.generate_id_token]
+}
+
+locals {
+  cognito_token = jsondecode(data.local_file.cognito_token_json.content).AuthenticationResult.IdToken
+}
+
+# Environment file for testing (.env)
+resource "local_sensitive_file" "testing_env" {
+  content = <<EOF
+FRONTEND_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
+API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
+API_TOKEN=${local.cognito_token}
+API_KEY=${aws_api_gateway_api_key.api_key.value}
+EOF
+  filename = "${path.module}/${local.test_directory}/.env"
+  depends_on = [
+    aws_api_gateway_stage.api_stage,
+    aws_cognito_user_pool.user_pool,
+    aws_cognito_user_pool_client.client,
+    data.local_file.cognito_token_json,
+    aws_cloudfront_distribution.s3_distribution
+  ]
+}  
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {

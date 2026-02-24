@@ -1,0 +1,109 @@
+name: "Terraform Plan"
+
+on:
+  pull_request:
+    branches:
+      - trailblazers-tst
+      - trailblazers-uat
+      - trailblazers-prod
+
+env:
+  TF_CLOUD_ORGANIZATION: "Trailblazers"
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: us-east-1
+  TF_VAR_local_run: "false"
+  CONFIG_DIRECTORY: "./terraform"
+  
+
+jobs:
+  terraform-plan:
+    name: | 
+      ${{ 
+          github.base_ref == 'trailblazers-tst' && 'TST Plan' ||
+          github.base_ref == 'trailblazers-uat' && 'UAT Plan' ||
+          github.base_ref == 'trailblazers-prod' && 'PROD Plan'
+        }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    environment: | 
+      ${{ 
+          github.base_ref == 'trailblazers-tst' && 'tst' ||
+          github.base_ref == 'trailblazers-uat' && 'uat' ||
+          github.base_ref == 'trailblazers-prod' && 'prod'
+        }}
+    env:
+      TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
+      TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
+      TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform Folder
+        run: |
+          mkdir -p terraform/lambdas
+          cp -r lambdas/* terraform/lambdas/
+          mkdir -p terraform/swen-project-react-app
+          cp -r swen-project-react-app/* terraform/swen-project-react-app/
+
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
+        id: plan-upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+          speculative: true
+
+      - name: Create Plan Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: plan-run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
+          plan_only: true
+
+      - name: Get Plan Output
+        uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.3.0
+        id: plan-output
+        with:
+          plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
+
+      - name: Update PR
+        uses: actions/github-script@v6
+        id: plan-comment
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
+            });
+            const output = `#### Terraform Cloud Plan Output
+               \`\`\`
+               Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
+               \`\`\`
+               [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
+               `;
+            // Delete previous comment so PR timeline makes sense
+            if (botComment) {
+              github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });

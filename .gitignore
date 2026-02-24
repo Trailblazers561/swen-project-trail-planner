@@ -14,6 +14,7 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.tfstate.lock.info
 /lambdas/zips/*
+terraform/token.json
 /terraform/terraform.tfvars
 
 # Logs
@@ -95,3 +96,6 @@ docs/_build/
 
 # Node addons
 build/Release
+
+# Negations
+!swen-project-react-app/src/lib/
