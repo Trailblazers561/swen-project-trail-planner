@@ -531,6 +531,7 @@ resource "aws_api_gateway_stage" "api_stage" {
 
 # Environment file for frontend (.env)
 resource "local_sensitive_file" "frontend_env" {
+  count = var.local_run ? 1 : 0
   content = <<EOF
 VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 VITE_COGNITO_REGION=us-east-1
@@ -546,18 +547,16 @@ EOF
 }
 
 resource "null_resource" "generate_id_token" {
+  count = var.local_run ? 1 : 0
   provisioner "local-exec" {
     command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.admin_username},PASSWORD=${var.admin_password} --output json > token.json"
   }
 
   depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.admin]
-
-  triggers = {
-    token_request_time = timestamp()
-  }
 }
 
 data "local_file" "cognito_token_json" {
+  count = var.local_run ? 1 : 0
   filename   = "${path.module}/token.json"
   depends_on = [null_resource.generate_id_token]
 }
@@ -568,6 +567,7 @@ locals {
 
 # Environment file for testing (.env)
 resource "local_sensitive_file" "testing_env" {
+  count = var.local_run ? 1 : 0
   content = <<EOF
 FRONTEND_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
 API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
