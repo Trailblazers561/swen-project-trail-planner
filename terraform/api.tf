@@ -562,7 +562,7 @@ data "local_file" "cognito_token_json" {
 }
 
 locals {
-  cognito_token = jsondecode(data.local_file.cognito_token_json.content).AuthenticationResult.IdToken
+  cognito_token = var.local_run ? jsondecode(data.local_file.cognito_token_json[0].content).AuthenticationResult.IdToken : ""
 }
 
 # Environment file for testing (.env)
