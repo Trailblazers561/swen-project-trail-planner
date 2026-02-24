@@ -8,6 +8,28 @@ variable "deploy_env" {
   default = "local"
 }
 
+variable "local_run" {
+  type = bool
+  default = true
+}
+
+locals {
+  react_app_directory = var.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
+  lambda_code_directory = var.local_run ? "../lambdas" : "./lambdas"
+  test_directory = var.local_run ? "../tests" : "./tests"
+}
+
+// This can be changed later to not be defined here, but for now it's not less secure than before
+variable "admin_username" {
+  type = string
+  default = "admin@gmail.com"
+}
+
+variable "admin_password" {
+  type = string
+  default = "password"
+}
+
 #root domain
 variable "domain" {
   type    = string
@@ -43,10 +65,7 @@ variable "bucket_acl" {
   description = "Bucket ACL (Access Control Listing)"
 }
 
-variable "react_app_directory" {
-  type    = string
-  default = "../swen-project-react-app"
-}
+
 
 variable "authorization_type" {
   type = string

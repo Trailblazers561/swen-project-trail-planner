@@ -19,6 +19,10 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   restrict_public_buckets = false
 }
 
+output "react_bucket_name" {
+  value = aws_s3_bucket.bucket.bucket
+}
+
 resource "aws_s3_bucket_policy" "public_read" {
   count = var.has_cdn ? 0 : 1
 
@@ -77,14 +81,15 @@ resource "local_sensitive_file" "user_pool_config" {
     "clientId": "${aws_cognito_user_pool_client.client.id}"
 }
 EOF
-  filename   = "${path.module}/${var.react_app_directory}/src/cognito/config.json"
+  filename   = "${path.module}/${local.react_app_directory}/src/cognito/config.json"
   depends_on = [aws_cognito_user_pool.user_pool, aws_cognito_user_pool_client.client]
 }
 
 resource "null_resource" "deploy_react_app" {
+  count = var.local_run ? 1 : 0
   provisioner "local-exec" {
-    command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
+    command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
-  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.production_env]
+  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env]
 }
