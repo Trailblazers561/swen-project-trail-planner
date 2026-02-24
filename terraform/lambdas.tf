@@ -238,7 +238,7 @@ data "archive_file" "simulate_data_zip" {
 }
 
 resource "aws_lambda_function" "simulate_data" {
-  function_name = "${var.deploy_env}_simulate_traildata2"
+  function_name = "${var.deploy_env}_simulate_traildata"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "simulate_data.simulate_data"
   runtime       = "python3.12"
@@ -255,7 +255,14 @@ resource "aws_lambda_function" "simulate_data" {
     }
   }
 
-  depends_on = [aws_iam_role.lambda_iam_role]
+# Since this function gets called immediatly after creation, it relies on the dynamodb to be in the correct format
+  depends_on = [
+    aws_iam_role.lambda_iam_role,
+    aws_dynamodb_table.trail_device_logs,
+    aws_dynamodb_table.device_metadata,
+    aws_dynamodb_table.trail_metadata,
+    aws_dynamodb_table.trail_groups
+    ]
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
