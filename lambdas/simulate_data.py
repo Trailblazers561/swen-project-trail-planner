@@ -99,13 +99,13 @@ def create_device(trail_id: int) -> int:
         resp = device_metadata_table.scan()
         existing_devices = resp.get("Items", [])
         if existing_devices:
-            existing_ids = [int(d.get("device_id", 0)) for d in existing_devices]
-            new_device_id = max(existing_ids, default=0) + 1
+            existing_ids = [int(d.get("device_id", 0)) for d in existing_devices if str(d.get("device_id", "")).isdigit()]
+            new_device_id = str(max(existing_ids, default=0) + 1)
         else:
-            new_device_id = 1
+            new_device_id = "1"
     except Exception as e:
         # If scan fails, start with ID 1
-        new_device_id = 1
+        new_device_id = "1"
 
     device_metadata_table.put_item(Item={
         "device_id": new_device_id,

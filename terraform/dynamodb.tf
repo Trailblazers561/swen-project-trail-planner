@@ -17,7 +17,7 @@ resource "aws_dynamodb_table" "trail_device_logs" {
 
   attribute {
     name = "device_id"
-    type = "N"
+    type = "S"
   }
 
   global_secondary_index {
@@ -41,7 +41,7 @@ resource "aws_dynamodb_table" "device_metadata" {
 
   attribute {
     name = "device_id"
-    type = "N"
+    type = "S"
   }
 
   tags = {
@@ -232,7 +232,7 @@ resource "aws_dynamodb_table_item" "trail_device_logs_items" {
   item = jsonencode({
     trail_id  = { "N" = each.value.trail_id }
     timestamp = { "N" = each.value.timestamp }
-    device_id = { "N" = each.value.device_id }
+    device_id = { "S" = each.value.device_id }
     battery   = { "N" = each.value.battery }
   })
 
@@ -249,7 +249,7 @@ resource "aws_dynamodb_table_item" "device_metadata_items" {
   hash_key   = aws_dynamodb_table.device_metadata.hash_key
 
   item = jsonencode({
-    device_id        = { "N" = each.value.device_id }
+    device_id        = { "S" = each.value.device_id }
     current_trail_id = { "N" = each.value.current_trail_id }
     battery          = { "N" = each.value.battery }
     last_update      = { "N" = each.value.last_update }
