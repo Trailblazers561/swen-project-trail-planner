@@ -235,10 +235,6 @@ resource "aws_dynamodb_table_item" "trail_device_logs_items" {
     device_id = { "S" = each.value.device_id }
     battery   = { "N" = each.value.battery }
   })
-
-  lifecycle {
-    ignore_changes = [item]
-  }
 }
 
 # INSERT TEST DATA INTO DeviceMetadata
@@ -254,10 +250,6 @@ resource "aws_dynamodb_table_item" "device_metadata_items" {
     battery          = { "N" = each.value.battery }
     last_update      = { "N" = each.value.last_update }
   })
-
-  lifecycle {
-    ignore_changes = [item]
-  }
 }
 
 # INSERT TEST DATA INTO TrailMetadata
@@ -271,10 +263,6 @@ resource "aws_dynamodb_table_item" "trail_metadata_items" {
     trail_id   = { "N" = each.value.trail_id }
     trail_name = { "S" = each.value.trail_name }
   })
-
-  lifecycle {
-    ignore_changes = [item]
-  }
 }
 
 # INSERT TEST DATA INTO TrailGroups
@@ -288,8 +276,4 @@ resource "aws_dynamodb_table_item" "trail_groups_items" {
     group_name = { "S" = each.value.group_name }
     trail_ids  = { "L" = [for id in each.value.trail_ids : { "N" = id }] }
   })
-
-  lifecycle {
-    ignore_changes = [item]
-  }
 }
