@@ -220,3 +220,36 @@ resource "aws_lambda_permission" "allow_apigateway_all_functions" {
 
   source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
 }
+
+data "archive_file" "export_csv_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/exportcsv.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/exportcsv.zip"
+}
+
+resource "aws_lambda_function" "exportcsv" {
+  function_name = "${var.deploy_env}_export_csv"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "exportcsv.exportcsv"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/exportcsv.zip"
+  code_sha256   = data.archive_file.export_csv_zip.output_base64sha256
+  timeout       = 30
+
+  environment {
+    variables = {
+      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
+      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
+      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      TRAIL_S3_BUCKET       = aws_s3_bucket.bucket222222222.bucket
+    }
+  }
+  depends_on = [
+    aws_iam_role.lambda_iam_role,
+    aws_dynamodb_table.trail_device_logs,
+    aws_dynamodb_table.device_metadata,
+    aws_dynamodb_table.trail_metadata,
+    aws_dynamodb_table.trail_groups
+    ]
+}
