@@ -1,0 +1,28 @@
+import boto3
+from datetime import datetime, timezone, timedelta
+import os
+
+s3 = boto3.client('s3')
+
+BUCKET_NAME = os.environ['BUCKET_NAME']
+
+def lambda_handler(event, context):
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=48)
+
+    response = s3.list_objects_v2(Bucket=BUCKET_NAME)
+
+    if 'Contents' not in response:
+        return {'message': 'No files to delete.'}
+
+    to_delete = [
+        {'Key': obj['Key']}
+        for obj in response['Contents']
+        if obj['LastModified'] < cutoff
+    ]
+
+    if to_delete:
+        s3.delete_objects(Bucket=BUCKET_NAME, Delete={'Objects': to_delete})
+        return {'message': f'Deleted {len(to_delete)} files.'}
+    else:
+        return {'message': 'No files older than 48 hours.'}
