@@ -93,3 +93,13 @@ resource "null_resource" "deploy_react_app" {
 
   depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env]
 }
+
+resource "aws_s3_bucket" "bucket222222222" {
+  bucket = "${var.deploy_env}-bucket222222222-${random_integer.random_suffix.result}"
+
+  tags = {
+    Name = "${var.deploy_env}-bucket222222222"
+  }
+
+  force_destroy = true
+}
