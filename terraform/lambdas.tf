@@ -253,3 +253,44 @@ resource "aws_lambda_function" "exportcsv" {
     aws_dynamodb_table.trail_groups
     ]
 }
+
+resource "aws_cloudwatch_event_rule" "daily_cleanup" {
+  name                = "daily_cleanup"
+  schedule_expression = "rate(1 day)"
+}
+
+resource "aws_cloudwatch_event_target" "trigger_cleanup" {
+  rule      = aws_cloudwatch_event_rule.daily_cleanup.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.cleanup_lambda.arn
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cleanup_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.daily_cleanup.arn
+}
+
+data "archive_file" "cleanup_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/cleanup_lambda.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/cleanup_lambda.zip"
+}
+
+resource "aws_lambda_function" "cleanup_lambda" {
+  function_name = "cleanup_old_frames"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "delete_frames.lambda_handler"
+  runtime       = "python3.11"
+
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/cleanup_lambda.zip"
+  code_sha256   = data.archive_file.cleanup_lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      BUCKET_NAME = aws_s3_bucket.bucket222222222.bucket
+    }
+  }
+}
