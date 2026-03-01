@@ -1,14 +1,25 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import TrailSelector from "./components/trailselector.tsx";
 import EditTrailModal from "./components/EditTrailModal";
 import EditTrailGroupModal from "./components/EditTrailGroupModal";
 import AssociateDeviceModal from "./components/AssociateDeviceModal";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
+import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
+import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
+import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
+import { Button } from "./components/ui/button.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Trail {
     trail_id: number;
@@ -19,6 +30,18 @@ interface TrailGroup {
     group_name: string;
     trail_ids: number[];
 }
+
+
+
+const trailoptions: MultiSelectOption[] = [
+    {value: "test 1", label: "RT Test Trail 1"},
+    {value: "test 2", label: "RT Test Trail 2"},
+];
+
+const trailgroupoptions: MultiSelectOption[] = [
+    {value: "test group 1", label: "RT Test Trail Group 1"},
+    {value: "test group 2", label: "RT Test Trail Group 2"},
+];
 
 const dashboard = () => {
     const navigate = useNavigate();
@@ -36,6 +59,8 @@ const dashboard = () => {
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
     const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
+    
+    const [selectedTrails, setSelectedTrails] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
@@ -72,7 +97,10 @@ const dashboard = () => {
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(
         new Date()
     );
+    
+    const [range, setRange] = React.useState<DateRange | undefined>(undefined)
     const [trails, setTrails] = useState<string[]>([]);
+    
     const [granularity, setGranularity] = useState<string | null>(null);
     const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
@@ -415,6 +443,10 @@ const dashboard = () => {
         setSelectedDateEnd(endDate);
     };
 
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setRange(range);
+    }
+
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
 
@@ -577,67 +609,73 @@ const dashboard = () => {
     return (
         <body>
             <div className="flex flex-col">
-            <div className="filter-container">
-                            <div className="filter-group">
-                                <label>Start Date:</label>
-                                <DatePicker
-                                    selected={selectedDate}
-                                    onChange={handleStartDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-start-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>End Date:</label>
-                                <DatePicker
-                                    selected={selectedDateEnd}
-                                    onChange={handleEndDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-end-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>Granularity:</label>
-                                <select
-                                    id="granularity"
-                                    className="select-box"
-                                    value={granularity ?? ""}
-                                    onChange={(e) => handleGranularityChange(e.target.value)}
-                                >
-                                    {granularityOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="filter-group">
-                                <label>Trail:</label>
-                                <TrailSelector
-                                    onChange={handleTrailChange}
-                                    clearTrails={() => setTrails([])}
-                                    clearGraph={() => setGraphLines([])}
-                                    clearName={() => setGraphTitle("No Trails Selected")}
-                                    trailMetadata={trailMetadata}
-                                    trailGroups={trailGroups}
-                                />
-                            </div>
+                <div className="filter-container">
+                    <div className="filter-group flex flex-col">
+
+                        <label>Date Range:</label>
+                        <DateRangePicker value={range} onChange={handleDateRangeChange} />
+
+                        {/* <label>Start Date:</label>
+                        <DatePicker
+                            selected={selectedDate}
+                            onChange={handleStartDateChange}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
+                            className="date-picker-start-date"
+                        /> */}
+                    </div>
+                    {/* <div className="filter-group">
+                        <label>End Date:</label>
+                        <DatePicker
+                            selected={selectedDateEnd}
+                            onChange={handleEndDateChange}
+                            dateFormat="MM/dd/yyyy"
+                            isClearable
+                            placeholderText="Select a date"
+                            className="date-picker-end-date"
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Granularity:</label>
+                        <select
+                            id="granularity"
+                            className="select-box"
+                            value={granularity ?? ""}
+                            onChange={(e) => handleGranularityChange(e.target.value)}
+                        >
+                            {granularityOptions.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </select>
+                    </div> */}
+                    <div className="filter-group flex flex-col">
+
+                        <label>Trails:</label>
+                        <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+
+                    </div>
+                    <div className="filter-group flex flex-col">
+
+                        <label>Trail Groups:</label>
+                        <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+
+                    </div>
+                    <div className="options-container flex flex-col">
+                        <label className="">Additional Options:</label>
+                        <div className="flex flex-row gap-2">
+                            <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
+                            <Button variant="secondary">Export Data</Button>
+                            <Button variant="secondary">Import Data</Button>
                         </div>
+                    </div>
+                </div>
             <div className="dashboard-div">
-                <div
-                    style={{
-                        display: "flex",
-                        padding: "10px",
-                        gap: "10px",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    <button
+                <div className="flex p-2.5 gap-2.5 justify-between items-center">
+                    <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                    {/* <button
                         className="action-button"
                         type="button"
                         onClick={toggleView}
@@ -649,43 +687,31 @@ const dashboard = () => {
                         {viewMode === "graph"
                             ? "Switch to List View"
                             : "Switch to Graph View"}
-                    </button>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleAddTrail}
-                        >
-                            Add Trail
-                        </button>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleEditTrail}
-                        >
-                            Edit Trail Info
-                        </button>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleAddGroup}
-                        >
-                            Add Group
-                        </button>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleEditGroup}
-                        >
-                            Edit Group
-                        </button>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleAssociateDevice}
-                        >
-                            Associate Device
-                        </button>
+                    </button> */}
+                    <div className="flex gap-2.5">
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="primary">Trail Options</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuGroup>
+                            <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="primary">Trail Group Options</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuGroup>
+                            <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                        </DropdownMenu>
                         <button
                             className="logout-button"
                             type="button"
