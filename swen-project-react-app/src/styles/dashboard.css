@@ -5,7 +5,7 @@
     margin-bottom: 15px;
     align-items: center;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: start;
 }
 
 .filter-group {
