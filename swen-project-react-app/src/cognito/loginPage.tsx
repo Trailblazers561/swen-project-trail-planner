@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn } from "./authService";
 import React from "react";
+import {Button} from "@/components/ui/button";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -35,7 +36,7 @@ const LoginPage = () => {
       <form onSubmit={handleSignIn}>
         <div>
           <input
-            className="inputText input-glass"
+            className="inputText"
             id="email"
             type="email"
             value={email}
@@ -46,7 +47,7 @@ const LoginPage = () => {
         </div>
         <div>
           <input
-            className="inputText input-glass"
+            className="inputText"
             id="password"
             type="password"
             value={password}
@@ -55,7 +56,7 @@ const LoginPage = () => {
             required
           />
         </div>
-        <button className="button-3d" type="submit">Sign In</button>
+        <Button variant="primary" type="submit">Sign In</Button>
       </form>
     </div>
   );

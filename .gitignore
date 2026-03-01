@@ -4,7 +4,8 @@
 !.vscode/extensions.json
 .DS_Store
 swen-project-react-app/src/cognito/config.json
-swen-project-react-app/tsconfig.json
+
+# previously: swen-project-react-app/tsconfig.json, why was this ignored? needed for project to compile & run
 
 # Terraform
 .terraform/
@@ -13,6 +14,8 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.tfstate.lock.info
 /lambdas/zips/*
+terraform/token.json
+/terraform/terraform.tfvars
 
 # Logs
 logs
@@ -93,3 +96,6 @@ docs/_build/
 
 # Node addons
 build/Release
+
+# Negations
+!swen-project-react-app/src/lib/

@@ -1,8 +1,8 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = var.has_domain ? "${var.sub}.${var.domain}" : "${var.bucket_name}-${random_integer.random_suffix.result}"
+  bucket = var.has_domain ? "${var.deploy_env}.${var.domain}" : "${var.deploy_env}-${var.bucket_name}-${random_integer.random_suffix.result}"
 
   tags = {
-    Name = var.bucket_name
+    Name = "${var.deploy_env}-${var.bucket_name}"
   }
 
   force_destroy = true
@@ -17,6 +17,10 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
+}
+
+output "react_bucket_name" {
+  value = aws_s3_bucket.bucket.bucket
 }
 
 resource "aws_s3_bucket_policy" "public_read" {
@@ -77,14 +81,15 @@ resource "local_sensitive_file" "user_pool_config" {
     "clientId": "${aws_cognito_user_pool_client.client.id}"
 }
 EOF
-  filename   = "${path.module}/${var.react_app_directory}/src/cognito/config.json"
+  filename   = "${path.module}/${local.react_app_directory}/src/cognito/config.json"
   depends_on = [aws_cognito_user_pool.user_pool, aws_cognito_user_pool_client.client]
 }
 
 resource "null_resource" "deploy_react_app" {
+  count = var.local_run ? 1 : 0
   provisioner "local-exec" {
-    command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
+    command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
-  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.production_env]
+  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env]
 }

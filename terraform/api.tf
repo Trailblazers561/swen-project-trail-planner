@@ -3,11 +3,11 @@ resource "aws_api_gateway_rest_api" "api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "${var.default_name}_api"
+      title   = "${var.deploy_env}_${var.default_name}_api"
       version = "1.0"
     }
   })
-  name = "${var.default_name}_api"
+  name = "${var.deploy_env}_${var.default_name}_api"
 }
 
 # /trail_data Resource
@@ -475,7 +475,7 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
 
 # Cognito Authorizer
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
-  name          = "CognitoAuthorizer"
+  name          = "${var.deploy_env}_CognitoAuthorizer"
   rest_api_id   = aws_api_gateway_rest_api.api.id
   type          = var.authorization_type
   provider_arns = [aws_cognito_user_pool.user_pool.arn]
@@ -526,18 +526,18 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "${var.default_name}_api_stage"
+  stage_name    = "${var.deploy_env}_${var.default_name}_api_stage"
 }
 
 # Environment file for frontend (.env)
-resource "local_sensitive_file" "production_env" {
+resource "local_sensitive_file" "frontend_env" {
   content = <<EOF
 VITE_API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 VITE_COGNITO_REGION=us-east-1
 VITE_COGNITO_USER_POOL_ID=${aws_cognito_user_pool.user_pool.id}
 VITE_COGNITO_CLIENT_ID=${aws_cognito_user_pool_client.client.id}
 EOF
-  filename = "${path.module}/${var.react_app_directory}/.env"
+  filename = "${path.module}/${local.react_app_directory}/.env"
   depends_on = [
     aws_api_gateway_stage.api_stage,
     aws_cognito_user_pool.user_pool,
@@ -545,15 +545,54 @@ EOF
   ]
 }
 
+resource "null_resource" "generate_id_token" {
+  provisioner "local-exec" {
+    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.admin_username},PASSWORD=${var.admin_password} --output json > token.json"
+  }
+
+  depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.admin]
+
+  triggers = {
+    token_request_time = timestamp()
+  }
+}
+
+data "local_file" "cognito_token_json" {
+  filename   = "${path.module}/token.json"
+  depends_on = [null_resource.generate_id_token]
+}
+
+locals {
+  cognito_token = jsondecode(data.local_file.cognito_token_json.content).AuthenticationResult.IdToken
+}
+
+# Environment file for testing (.env)
+resource "local_sensitive_file" "testing_env" {
+  content = <<EOF
+FRONTEND_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
+API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
+API_TOKEN=${local.cognito_token}
+API_KEY=${aws_api_gateway_api_key.api_key.value}
+EOF
+  filename = "${path.module}/${local.test_directory}/.env"
+  depends_on = [
+    aws_api_gateway_stage.api_stage,
+    aws_cognito_user_pool.user_pool,
+    aws_cognito_user_pool_client.client,
+    data.local_file.cognito_token_json,
+    aws_cloudfront_distribution.s3_distribution
+  ]
+}  
+
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "Device API Key"
-  value = "REDACTED"
+  name = "${var.deploy_env} Device API Key"
+  value = "${var.deploy_env}-trail-planner-key-trail-trail-trail-trail"
 }
 
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "device_usage_plan" {
-  name = "Device API Usage Plan"
+  name = "${var.deploy_env} Device API Usage Plan"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.api.id
