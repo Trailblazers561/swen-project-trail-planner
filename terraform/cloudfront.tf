@@ -6,7 +6,7 @@ locals {
 resource "aws_cloudfront_origin_access_control" "s3_access" {
   count = var.has_cdn ? 1 : 0
 
-  name                              = "s3_access"
+  name                              = "${var.deploy_env}_s3_access"
   description                       = "s3 origin access policy"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -26,7 +26,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "Some comment"
+  comment             = "${var.deploy_env} distribution"
   default_root_object = "index.html"
 
   default_cache_behavior {

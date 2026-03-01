@@ -4,6 +4,7 @@ import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import ConfirmUserPage from "./cognito/confirmUserPage";
 import React from 'react';
+import Test from './Test';
 
 function App() {
   const isAuthenticated = () => {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/dashboard" 
             element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/" />}
           />
+          <Route path="/test" element={<Test />} />
         </Routes>
       </BrowserRouter>
     );
