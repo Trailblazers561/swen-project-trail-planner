@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import Navbar from "./components/navbar"
  
 // This is a test component to test components from shadcn. It is not used in the app and can be deleted when we are done testing.
 // Author: Richard Tang
@@ -15,6 +16,7 @@ import {
 function Test() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center">
+      <Navbar />
         <Button>Click me</Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
