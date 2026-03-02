@@ -18,8 +18,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  background: url(assets/images/BJW_17.jpg) no-repeat center center fixed;
-
   --radius: 0.625rem;
 
   --background: oklch(1 0 0);
@@ -96,8 +94,6 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -124,6 +120,126 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* === Graph View === */
+
+.graph-view {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.graph-container {
+    width: 75%;
+    background: white;
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.graph {
+    width: 100%;
+}
+
+/* === List View  === */
+
+.table-header {
+  background-color: #C0D3D1;
+}
+
+.table-header th {
+  color: black;
+  font-weight: 600;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.trail-table th,
+.trail-table td {
+    border-right: 1px solid #e5e7eb;
+}
+
+.table-header th.col-center {
+  text-align: center;
+}
+
+.list-view {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+
+.list-container {
+    width: 75%;
+}
+
+.list-title {   
+    font-size: 26px;      
+    margin-bottom: 18px;
+    color: #111827;   
+}
+
+.list-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.trail-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.trail-table thead th {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 16px;
+    font-size: 16px;
+}
+
+.trail-table td {
+    padding: 10px 0;
+    font-size: 15px;
+}
+
+.col-center {
+    text-align: center;
+}
+
+.no-data {
+    text-align: center;
+    padding: 24px 0;
+    color: #888;
+}
+
+
+.battery {
+    font-weight: 600;
+}
+
+.battery-good {
+    color: #28a745;
+}
+
+.battery-warning {
+    color: #ff9800;
+}
+
+.battery-low {
+    color: #dc3545;
+}
+
+.na {
+    color: #999;
 }
 
 @media (prefers-color-scheme: light) {

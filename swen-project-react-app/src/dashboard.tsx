@@ -20,7 +20,7 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
-const dashboard = () => {
+const Dashboard = () => {
     const navigate = useNavigate();
     const handleLogout = () => {
         sessionStorage.clear();
@@ -574,9 +574,34 @@ const dashboard = () => {
         setViewMode((prev) => (prev === "graph" ? "list" : "graph"));
     };
 
+    //attempt at making graph columns have alternating colors
+    /*function generateVerticalBands(xValues: Date[]) { 
+        if (!xValues || xValues.length < 2) return [];
+
+        const shapes: any[] = [];
+
+        for (let i = 0; i < xValues.length - 1; i++) {
+            if (i % 2 === 0) {
+                shapes.push({
+                    type: "rect",
+                    xref: "x",
+                    yref: "paper",
+                    x0: xValues[i],
+                    x1: xValues[i + 1],
+                    y0: 0,
+                    y1: 1,
+                    fillcolor: "rgba(0,0,0,0.04)",
+                    line: { width: 0 },
+                    layer: "below",
+                });
+            }
+        }
+
+        return shapes;
+    }*/
+
     return (
-        <body>
-            <div className="flex flex-col">
+        <div className="flex flex-col">
             <div className="filter-container">
                             <div className="filter-group">
                                 <label>Start Date:</label>
@@ -696,7 +721,8 @@ const dashboard = () => {
                     </div>
                 </div>
                 {viewMode === "graph" ? (
-                    <>
+                <div className="graph-view">
+                    <div className="graph-container">
                         <Plot
                             className="graph"
                             config={{ displayModeBar: false }}
@@ -707,7 +733,7 @@ const dashboard = () => {
                                 mode: "lines+markers",
                                 name: line.name,
                                 marker: {
-                                    color: [
+                                   color: [
                                         "red",
                                         "blue",
                                         "green",
@@ -716,195 +742,108 @@ const dashboard = () => {
                                         "limegreen",
                                         "papayawhip",
                                     ][index % 7],
-                                },
+                                }, 
                             }))}
                             layout={{
                                 title: {
                                     text: graphTitle,
                                     font: { size: 24 },
                                     xref: "paper",
-                                    x: 0.05,
+                                    x: 0.5,
                                 },
                                 width: 1000,
                                 height: 700,
                                 xaxis: {
-                                    title: { text: "Date", font: { size: 18, color: "#7f7f7f" } },
+                                    title: { text: "Date", font: { size: 14, color: "#7f7f7f" } },
                                     autorange: true,
                                     rangemode: "tozero",
                                 },
                                 yaxis: {
                                     title: {
                                         text: "Hikers",
-                                        font: { size: 18, color: "#7f7f7f" },
+                                        font: { size: 14, color: "#7f7f7f" },
                                     },
                                     range: [0, null],
                                     autorange: true,
                                     rangemode: "tozero",
+                                    zeroline: false,
+                                    showgrid: false,
                                 },
+                                /*shapes: generateVerticalBands(
+                                    graphLines.length > 0 ? graphLines[0].x : []
+                                ),*/
                             }}
                         />
-                    </>
-                ) : (
-                    <div style={{ padding: "20px" }}>
-                        <h2
-                            style={{
-                                marginBottom: "20px",
-                                fontSize: "24px",
-                                fontWeight: "bold",
-                                color: "#333",
-                            }}
-                        >
-                            Trail Status Overview
-                        </h2>
+                     </div>
+                 </div>
+               ) : (
+
+                <div className="list-view">
+                    <div className="list-container">
                         {loadingListData ? (
-                            <div style={{ textAlign: "center", padding: "40px" }}>
-                                Loading trail data...
-                            </div>
-                        ) : (
-                            <div style={{ overflowX: "auto" }}>
-                                <table
-                                    style={{
-                                        width: "100%",
-                                        borderCollapse: "collapse",
-                                        backgroundColor: "#fff",
-                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                    }}
-                                >
-                                    <thead>
-                                        <tr style={{ backgroundColor: "#007bff", color: "white" }}>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "left",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Trail Name
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Weekly Count
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Battery Status
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Last Updated
-                                            </th>
+                            <div className="list-loading">Loading trail data...</div>
+                ) : (
+                <div className="list-card">
+                    <h2 className="list-title">Trail Status Overview</h2>
+                    <div className="table-wrapper">
+                        <table className="trail-table">
+                            <thead className="table-header">
+                                <tr>
+                                    <th className="col-center">Trail Name</th>
+                                    <th className="col-center">Weekly Count</th>
+                                    <th className="col-center">Battery Status</th>
+                                    <th className="col-center">Last Updated</th>
+                                </tr>
+                            </thead>
+                                <tbody>
+                                {trailListData.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="no-data">
+                                            No trails found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    trailListData.map((trail) => (
+                                        <tr key={trail.trail_id} className="border-b even:bg-gray-50">
+                                            <td className="col-name">
+                                                {trail.trail_name}
+                                            </td>
+                                            <td className="col-center">
+                                                {trail.weeklyCount}
+                                            </td>
+                                            <td className="col-center">
+                                                {trail.batteryStatus !== null ? (
+                                                    <span
+                                                        className={`battery ${
+                                                            trail.batteryStatus > 50
+                                                                ? "battery-good"
+                                                                : trail.batteryStatus > 20
+                                                                ? "battery-warning"
+                                                                : "battery-low"
+                                                        }`}
+                                                    >
+                                                        {trail.batteryStatus}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="na">N/A</span>
+                                                )}
+                                            </td>
+                                            <td className="col-center">
+                                                {trail.lastUpdated ?? (
+                                                    <span className="na">N/A</span>
+                                                )}
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {trailListData.length === 0 ? (
-                                            <tr>
-                                                <td
-                                                    colSpan={4}
-                                                    style={{
-                                                        padding: "20px",
-                                                        textAlign: "center",
-                                                        color: "#666",
-                                                    }}
-                                                >
-                                                    No trails found
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            trailListData.map((trail, index) => (
-                                                <tr
-                                                    key={trail.trail_id}
-                                                    style={{
-                                                        backgroundColor:
-                                                            index % 2 === 0 ? "#f9f9f9" : "#ffffff",
-                                                        borderBottom: "1px solid #e0e0e0",
-                                                    }}
-                                                >
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            border: "1px solid #ddd",
-                                                            fontWeight: "500",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.trail_name}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.weeklyCount}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.batteryStatus !== null ? (
-                                                            <span
-                                                                style={{
-                                                                    color:
-                                                                        trail.batteryStatus > 50
-                                                                            ? "#28a745"
-                                                                            : trail.batteryStatus > 20
-                                                                                ? "#ffc107"
-                                                                                : "#dc3545",
-                                                                    fontWeight: "bold",
-                                                                }}
-                                                            >
-                                                                {trail.batteryStatus}%
-                                                            </span>
-                                                        ) : (
-                                                            <span style={{ color: "#999" }}>N/A</span>
-                                                        )}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.lastUpdated || (
-                                                            <span style={{ color: "#999" }}>N/A</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
                                             ))
-                                        )}
+                                            )}
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
+            </div>
+            )}
             </div>
             <EditTrailModal
                 isOpen={isEditTrailModalOpen}
@@ -948,9 +887,8 @@ const dashboard = () => {
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
             />    
-            </div>
-        </body>
+    </div>
     );
 };
 
-export default dashboard;
+export default Dashboard;
