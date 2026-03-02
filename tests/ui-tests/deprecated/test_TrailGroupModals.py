@@ -12,6 +12,7 @@ from test_helpers import login, getService, getOptions
 from ui_config import DEFAULT_WAIT_TIME, SHORT_WAIT_TIME
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_AddGroupModal():
     """Test opening and interacting with the Add Group modal"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
@@ -58,6 +59,7 @@ def test_AddGroupModal():
         driver.quit()
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_EditGroupModal():
     """Test opening the Edit Group modal"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
