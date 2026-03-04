@@ -28,7 +28,7 @@ def login_test():
         validations = [
             (UserDTO("", "noEmail"), "Please fill out this field."),
             (UserDTO("noAtSign", "password"), "Please include an '@' in the email address. 'noAtSign' is missing an '@'."),
-            (UserDTO("nothingAfter@", "password", "Please enter a part following '@'. 'nothingAfter@' is incomplete.")),
+            (UserDTO("nothingAfter@", "password"), "Please enter a part following '@'. 'nothingAfter@' is incomplete."),
             (UserDTO("noPassword@gmail.com", ""), "Please fill out this field.")
         ]
 
