@@ -28,7 +28,7 @@ trails = {
 }
 
 # Hiker Multiplier based on day of the week Monday - Sunday
-weekday_modifier = {0: .75, 1: .6, 2: .45, 3: .55, 4: .85, 5: 2.3, 6: 1.5}
+weekday_modifier = {0: .8, 1: .65, 2: .50, 3: .60, 4: .90, 5: 1.95, 6: 1.6}
 
 seconds_in_day = 24 * 60 * 60
 
