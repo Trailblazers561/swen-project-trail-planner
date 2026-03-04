@@ -114,6 +114,7 @@ class SeleniumHelper:
         alert = wait.until(lambda d : d.switch_to.alert)
         text = alert.text
         alert.dismiss()
+        time.sleep(.5)
         return text
 
     # @staticmethod
