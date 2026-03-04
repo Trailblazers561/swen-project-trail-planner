@@ -58,7 +58,7 @@ def simulate_data(event, context):
             device_id = create_device(trail_id)
             battery = 100
         # 1/3 chance to decrement battery
-        if (random.random() < 1/3):
+        if (battery > 1 and random.random() < 1/3):
             battery = battery - 1
 
         # Determine amount of hikers for the day
