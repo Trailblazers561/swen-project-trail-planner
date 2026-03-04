@@ -97,8 +97,6 @@ a:hover {
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
 }
 
 h1 {
@@ -179,6 +177,8 @@ button:focus-visible {
   --color-sidebar-ring: var(--sidebar-ring);
   --color-button: #DFD858;
   --color-button-secondary: #C0D3D1;
+  --color-navbar: #2B6B64;
+  --color-logout: #DC3545;
 }
 
 .dark {

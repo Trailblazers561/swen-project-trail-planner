@@ -1,13 +1,3 @@
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import Navbar from "./components/navbar"
  
 // This is a test component to test components from shadcn. It is not used in the app and can be deleted when we are done testing.
@@ -15,26 +5,8 @@ import Navbar from "./components/navbar"
 
 function Test() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
+    <div className="flex min-h-svh flex-col items-center justify-top margin-0px p-0px">
       <Navbar />
-        <Button>Click me</Button>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="primary">Open</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuGroup>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Billing</DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Team</DropdownMenuItem>
-                <DropdownMenuItem>Subscription</DropdownMenuItem>
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
     </div>
   )
 }

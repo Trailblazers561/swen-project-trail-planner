@@ -6,7 +6,6 @@ import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-import { useNavigate } from "react-router-dom";
 import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
@@ -16,10 +15,9 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import Navbar from "./components/Navbar.tsx";
 
 interface Trail {
     trail_id: number;
@@ -44,11 +42,6 @@ const trailgroupoptions: MultiSelectOption[] = [
 ];
 
 const dashboard = () => {
-    const navigate = useNavigate();
-    const handleLogout = () => {
-        sessionStorage.clear();
-        navigate("/login");
-    };
 
     const {
         getTrailLogsBetweenDates,
@@ -608,6 +601,7 @@ const dashboard = () => {
 
     return (
         <body>
+            <Navbar />
             <div className="flex flex-col">
                 <div className="filter-container">
                     <div className="filter-group flex flex-col">
@@ -712,13 +706,6 @@ const dashboard = () => {
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                         </DropdownMenu>
-                        <button
-                            className="logout-button"
-                            type="button"
-                            onClick={handleLogout}
-                        >
-                            Logout
-                        </button>
                     </div>
                 </div>
                 {viewMode === "graph" ? (
