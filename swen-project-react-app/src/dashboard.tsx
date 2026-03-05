@@ -3,8 +3,10 @@ import TrailSelector from "./components/trailselector.tsx";
 import EditTrailModal from "./components/EditTrailModal";
 import EditTrailGroupModal from "./components/EditTrailGroupModal";
 import AssociateDeviceModal from "./components/AssociateDeviceModal";
+import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
+import type { Layout } from "plotly.js";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
@@ -574,11 +576,54 @@ const Dashboard = () => {
         setViewMode((prev) => (prev === "graph" ? "list" : "graph"));
     };
 
-    //attempt at making graph columns have alternating colors
-    /*function generateVerticalBands(xValues: Date[]) { 
-        if (!xValues || xValues.length < 2) return [];
+    //
+    function getPlotLayout(lines: any[]): Partial<Layout> {
 
-        const shapes: any[] = [];
+    return {   
+        margin: { l: 60, r: 30, t: 20, b: 60 },
+        plot_bgcolor: "white",
+        paper_bgcolor: "white",
+
+        xaxis: {
+            type: "date",
+            title: {
+                text: "Date",
+                font: { size: 14, color: "#6b7280" },
+            },
+            showgrid: false,
+            zeroline: false,
+            tickfont: { size: 12 },
+        },
+
+        yaxis: {
+            title: {
+              text: "Hikers",
+              font: { size: 14, color: "#6b7280" },
+            },
+            showgrid: false,
+            zeroline: false,
+            tickfont: { size: 12 },
+            rangemode: "tozero",
+        },
+
+        shapes: generateVerticalBands(lines),
+
+        legend: {
+        orientation: "h",
+        y: -0.25,
+        x: 0.5,
+        xanchor: "center",
+        },
+    };
+    }
+
+    //Makes graph columns have alternating colors
+    function generateVerticalBands(lines: any[]): NonNullable<Layout["shapes"]> { 
+        const shapes: NonNullable<Layout["shapes"]> = [];
+        
+        if (!lines.length || !lines[0].x?.length) return shapes;
+
+        const xValues: Date[] = lines[0].x;
 
         for (let i = 0; i < xValues.length - 1; i++) {
             if (i % 2 === 0) {
@@ -598,7 +643,7 @@ const Dashboard = () => {
         }
 
         return shapes;
-    }*/
+    }
 
     return (
         <div className="flex flex-col">
@@ -721,128 +766,47 @@ const Dashboard = () => {
                     </div>
                 </div>
                 {viewMode === "graph" ? (
-                <div className="graph-view">
-                    <div className="graph-container">
-                        <Plot
-                            className="graph"
-                            config={{ displayModeBar: false }}
-                            data={graphLines.map((line, index) => ({
-                                x: line.x,
-                                y: line.y,
-                                type: "scatter",
-                                mode: "lines+markers",
-                                name: line.name,
-                                marker: {
-                                   color: [
-                                        "red",
-                                        "blue",
-                                        "green",
-                                        "orange",
-                                        "goldenrod",
-                                        "limegreen",
-                                        "papayawhip",
-                                    ][index % 7],
-                                }, 
-                            }))}
-                            layout={{
-                                title: {
-                                    text: graphTitle,
-                                    font: { size: 24 },
-                                    xref: "paper",
-                                    x: 0.5,
-                                },
-                                width: 1000,
-                                height: 700,
-                                xaxis: {
-                                    title: { text: "Date", font: { size: 14, color: "#7f7f7f" } },
-                                    autorange: true,
-                                    rangemode: "tozero",
-                                },
-                                yaxis: {
-                                    title: {
-                                        text: "Hikers",
-                                        font: { size: 14, color: "#7f7f7f" },
-                                    },
-                                    range: [0, null],
-                                    autorange: true,
-                                    rangemode: "tozero",
-                                    zeroline: false,
-                                    showgrid: false,
-                                },
-                                /*shapes: generateVerticalBands(
-                                    graphLines.length > 0 ? graphLines[0].x : []
-                                ),*/
-                            }}
-                        />
-                     </div>
-                 </div>
+                <div className="flex justify-center px-6 pb-8">
+                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                            {graphTitle}
+                        </h2>
+                            <div className="h-[500px]">
+                                <Plot 
+                                    className="w-full h-full"
+                                    config={{ displayModeBar: false, responsive: true }}
+                                    useResizeHandler={true}
+                                    style={{ width: "100%", height: "100%" }}
+                                    data={graphLines.map((line) => ({
+                                        x: line.x.map(d => d.toISOString()),
+                                        y: line.y,
+                                        type: "scatter",
+                                        mode: "lines+markers",
+                                        name: line.name,
+                                        line: {
+                                            width: 3,
+                                        },
+                                        marker: {
+                                            size: 6,
+                                        },
+                                    }))}
+                                    layout={getPlotLayout(graphLines)}
+                                />
+                         </div>
+                    </div>
+                </div>
                ) : (
-
                 <div className="list-view">
                     <div className="list-container">
-                        {loadingListData ? (
-                            <div className="list-loading">Loading trail data...</div>
-                ) : (
-                <div className="list-card">
-                    <h2 className="list-title">Trail Status Overview</h2>
-                    <div className="table-wrapper">
-                        <table className="trail-table">
-                            <thead className="table-header">
-                                <tr>
-                                    <th className="col-center">Trail Name</th>
-                                    <th className="col-center">Weekly Count</th>
-                                    <th className="col-center">Battery Status</th>
-                                    <th className="col-center">Last Updated</th>
-                                </tr>
-                            </thead>
-                                <tbody>
-                                {trailListData.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="no-data">
-                                            No trails found
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    trailListData.map((trail) => (
-                                        <tr key={trail.trail_id} className="border-b even:bg-gray-50">
-                                            <td className="col-name">
-                                                {trail.trail_name}
-                                            </td>
-                                            <td className="col-center">
-                                                {trail.weeklyCount}
-                                            </td>
-                                            <td className="col-center">
-                                                {trail.batteryStatus !== null ? (
-                                                    <span
-                                                        className={`battery ${
-                                                            trail.batteryStatus > 50
-                                                                ? "battery-good"
-                                                                : trail.batteryStatus > 20
-                                                                ? "battery-warning"
-                                                                : "battery-low"
-                                                        }`}
-                                                    >
-                                                        {trail.batteryStatus}%
-                                                    </span>
-                                                ) : (
-                                                    <span className="na">N/A</span>
-                                                )}
-                                            </td>
-                                            <td className="col-center">
-                                                {trail.lastUpdated ?? (
-                                                    <span className="na">N/A</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                            ))
-                                            )}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div className="list-card">
+                            <h2 className="list-title">Trail Status Overview</h2>
+                                <TrailStatusTable
+                                    data={trailListData}
+                                    loading={loadingListData}
+                                />
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
             )}
             </div>
             <EditTrailModal
