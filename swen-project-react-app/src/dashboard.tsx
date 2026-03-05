@@ -22,7 +22,7 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
-const Dashboard = () => {
+const dashboard = () => {
     const navigate = useNavigate();
     const handleLogout = () => {
         sessionStorage.clear();
@@ -855,4 +855,4 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard;
+export default dashboard;
