@@ -256,13 +256,13 @@ resource "aws_lambda_function" "export_csv" {
 }
 
 resource "aws_cloudwatch_event_rule" "daily_cleanup" {
-  name                = "daily_cleanup"
+  name                = "${var.deploy_env}_daily_cleanup"
   schedule_expression = "rate(1 day)"
 }
 
 resource "aws_cloudwatch_event_target" "trigger_cleanup" {
   rule      = aws_cloudwatch_event_rule.daily_cleanup.name
-  target_id = "lambda"
+  target_id = "${var.deploy_env}_cleanup_event"
   arn       = aws_lambda_function.cleanup_lambda.arn
 }
 
@@ -281,7 +281,7 @@ data "archive_file" "cleanup_lambda_zip" {
 }
 
 resource "aws_lambda_function" "cleanup_lambda" {
-  function_name = "cleanup_old_frames"
+  function_name = "${var.deploy_env}_cleanup_csv_bucket"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "delete_frames.lambda_handler"
   runtime       = "python3.11"
