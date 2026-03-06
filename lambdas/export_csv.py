@@ -2,14 +2,11 @@ import os
 import json
 from datetime import datetime
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
-from decimal import Decimal
-from pprint import pprint
+from boto3.dynamodb.conditions import Attr
 import csv
 from pathlib import Path
 import hashlib
-
-
+from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 s3_client = boto3.client('s3')
@@ -19,7 +16,7 @@ logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDevic
 trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "local_TrailMetadata"))
 device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "local_DeviceMetadata"))
 trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "local_TrailGroups"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-bucket222222222-13295087")
+s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-csv_bucket-13295087")
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -38,7 +35,7 @@ def create_and_fill_csv(event, context):
     Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str}
     """
     try:
-        body = json.loads(event.get("body", "{}"))
+        body = json.loads(event.get("body") or "{}")
 
         trail_id_list = body.get("trail_id_list")
         start_date = body.get("start_date")
@@ -59,52 +56,44 @@ def create_and_fill_csv(event, context):
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
                     Attr("timestamp").lt(end_date)
-            )
+            ).get("Items")
         else:
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
                     Attr("timestamp").lt(end_date) & \
                     Attr("trail_id_list").is_in(trail_id_list)
-            )
-        print(items)
+            ).get("Items")
+        items = convert_decimals(items)
 
-        # # hopefully the DB output style stays the same as I'm expecting(a list of tuples)
-        # # this is just some test data in the meantime to simulate it. I'll switch it to the proper column headers once we finalize that.
-        # items = [("deviceB", 2, 88, 1759065344), ("deviceA", 1, 26, 1234567890)]
+        key = "/tmp/trail_data_export.csv"
+        file_path = Path(key)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # key = "/tmp/trail_data_export.csv"
-        # file_path = Path(key)
-        # file_path.parent.mkdir(parents=True, exist_ok=True)
+        f = open(key, "w+", newline='')
+        temp_csv_file = csv.writer(f)
 
-        # f = open(key, "w+")
-        # temp_csv_file = csv.writer(f)
+        # non finalized headers. update with sql database structure
+        temp_csv_file.writerow(["Device Name", "Trail ID", "Battery %", "Last Update Timestamp"])
+        temp_csv_file.writerows([item.values() for item in items])
 
-        # # non finalized headers. update with sql database structure
-        # temp_csv_file.writerow(["Device Name", "Trail ID", "Battery %", "Last Update Timestamp"])
+        f.close()
 
-        # for entry in items:
-        #     temp_csv_file.writerow([entry[0], entry[1], entry[2], entry[3]])
+        h = hashlib.sha3_512()
+        h.update(json.dumps(items, sort_keys=True).encode('utf-8'))
+        fullFilePath = h.hexdigest() + "/trail_data.csv"
+        s3_client.upload_file(key, s3_bucket, fullFilePath)
 
-        # f.close()
-
-        # h = hashlib.sha3_512()
-        # h.update(json.dumps(items, sort_keys=True).encode('utf-8'))
-        # fullFilePath = h.hexdigest() + "/trail_data.csv"
-        # s3_client.upload_file(key, s3_bucket, fullFilePath)
-
-        # response = s3_client.generate_presigned_url('get_object',
-        #                                             Params={'Bucket': s3_bucket,
-        #                                                     'Key': fullFilePath},
-        #                                             ExpiresIn=3600)
-
-        # return response
-
+        url = s3_client.generate_presigned_url('get_object',
+                                                    Params={'Bucket': s3_bucket,
+                                                            'Key': fullFilePath},
+                                                    ExpiresIn=3600)
 
         return {
             "statusCode": 200,
             "headers": cors_headers(),
-            "body": json.dumps({"message": "Device data uploaded successfully"})
+            "body": json.dumps({"url": url})
         }
+
     except ValueError as e:
         return {
             "statusCode": 400,
@@ -124,3 +113,4 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
+#start_date="2025-05-28"&end_date="2025-15-28"&trail_id_list=[1]
