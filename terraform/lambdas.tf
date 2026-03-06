@@ -196,7 +196,7 @@ resource "aws_lambda_function" "create_trail" {
 
 # Map of function names to Lambda function resources
 locals {
-  lambda_functions = {
+  api_lambda_functions = {
     "traildata_upload_trail_data"            = aws_lambda_function.upload_trail_data
     "traildata_get_trail_data"               = aws_lambda_function.get_trail_data
     "traildata_upload_device_data"           = aws_lambda_function.upload_device_data
@@ -207,11 +207,12 @@ locals {
     "traildata_get_device_metadata"          = aws_lambda_function.get_device_metadata
     "traildata_get_trail_groups"             = aws_lambda_function.get_trail_groups
     "traildata_delete_trail"                 = aws_lambda_function.delete_trail
+    "traildata_export_csv"                     = aws_lambda_function.export_csv
   }
 }
 
 resource "aws_lambda_permission" "allow_apigateway_all_functions" {
-  for_each = local.lambda_functions
+  for_each = local.api_lambda_functions
 
   statement_id  = "AllowExecutionFromAPIGateway-${each.key}"
   action        = "lambda:InvokeFunction"
@@ -223,16 +224,16 @@ resource "aws_lambda_permission" "allow_apigateway_all_functions" {
 
 data "archive_file" "export_csv_zip" {
   type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/exportcsv.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/exportcsv.zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/export_csv.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/export_csv.zip"
 }
 
-resource "aws_lambda_function" "exportcsv" {
+resource "aws_lambda_function" "export_csv" {
   function_name = "${var.deploy_env}_export_csv"
   role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "exportcsv.exportcsv"
+  handler       = "export_csv.create_and_fill_csv"
   runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/exportcsv.zip"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/export_csv.zip"
   code_sha256   = data.archive_file.export_csv_zip.output_base64sha256
   timeout       = 30
 
@@ -242,7 +243,7 @@ resource "aws_lambda_function" "exportcsv" {
       TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
       DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
       TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
-      TRAIL_S3_BUCKET       = aws_s3_bucket.bucket222222222.bucket
+      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }
   depends_on = [
@@ -290,7 +291,7 @@ resource "aws_lambda_function" "cleanup_lambda" {
 
   environment {
     variables = {
-      BUCKET_NAME = aws_s3_bucket.bucket222222222.bucket
+      BUCKET_NAME = aws_s3_bucket.csv_bucket.bucket
     }
   }
 }
