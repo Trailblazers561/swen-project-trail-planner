@@ -2,8 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import EditTrailModal from "./components/EditTrailModal";
 import EditTrailGroupModal from "./components/EditTrailGroupModal";
 import AssociateDeviceModal from "./components/AssociateDeviceModal";
+import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
+import type { Layout } from "plotly.js";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
@@ -606,69 +609,126 @@ const dashboard = () => {
         setViewMode((prev) => (prev === "graph" ? "list" : "graph"));
     };
 
+    //
+    function getPlotLayout(lines: any[]): Partial<Layout> {
+
+    return {   
+        margin: { l: 60, r: 30, t: 20, b: 60 },
+        plot_bgcolor: "white",
+        paper_bgcolor: "white",
+
+        xaxis: {
+            type: "date",
+            title: {
+                text: "Date",
+                font: { size: 14, color: "#6b7280" },
+            },
+            showgrid: false,
+            zeroline: false,
+            tickfont: { size: 12 },
+        },
+
+        yaxis: {
+            title: {
+              text: "Hikers",
+              font: { size: 14, color: "#6b7280" },
+            },
+            showgrid: false,
+            zeroline: false,
+            tickfont: { size: 12 },
+            rangemode: "tozero",
+        },
+
+        shapes: generateVerticalBands(lines),
+
+        legend: {
+        orientation: "h",
+        y: -0.25,
+        x: 0.5,
+        xanchor: "center",
+        },
+    };
+    }
+
+    //Makes graph columns have alternating colors
+    function generateVerticalBands(lines: any[]): NonNullable<Layout["shapes"]> { 
+        const shapes: NonNullable<Layout["shapes"]> = [];
+        
+        if (!lines.length || !lines[0].x?.length) return shapes;
+
+        const xValues: Date[] = lines[0].x;
+
+        for (let i = 0; i < xValues.length - 1; i++) {
+            if (i % 2 === 0) {
+                shapes.push({
+                    type: "rect",
+                    xref: "x",
+                    yref: "paper",
+                    x0: xValues[i],
+                    x1: xValues[i + 1],
+                    y0: 0,
+                    y1: 1,
+                    fillcolor: "rgba(0,0,0,0.04)",
+                    line: { width: 0 },
+                    layer: "below",
+                });
+            }
+        }
+
+        return shapes;
+    }
+
     return (
-        <body>
-            <div className="flex flex-col">
-                <div className="filter-container">
-                    <div className="filter-group flex flex-col">
-
-                        <label>Date Range:</label>
-                        <DateRangePicker value={range} onChange={handleDateRangeChange} />
-
-                        {/* <label>Start Date:</label>
-                        <DatePicker
-                            selected={selectedDate}
-                            onChange={handleStartDateChange}
-                            dateFormat="MM/dd/yyyy"
-                            isClearable
-                            placeholderText="Select a date"
-                            className="date-picker-start-date"
-                        /> */}
-                    </div>
-                    {/* <div className="filter-group">
-                        <label>End Date:</label>
-                        <DatePicker
-                            selected={selectedDateEnd}
-                            onChange={handleEndDateChange}
-                            dateFormat="MM/dd/yyyy"
-                            isClearable
-                            placeholderText="Select a date"
-                            className="date-picker-end-date"
-                        />
-                    </div>
-                    <div className="filter-group">
-                        <label>Granularity:</label>
-                        <select
-                            id="granularity"
-                            className="select-box"
-                            value={granularity ?? ""}
-                            onChange={(e) => handleGranularityChange(e.target.value)}
-                        >
-                            {granularityOptions.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </div> */}
-                    <div className="filter-group flex flex-col">
-
-                        <label>Trails:</label>
-                        <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
-
-                    </div>
-                    <div className="filter-group flex flex-col">
-
-                        <label>Trail Groups:</label>
-                        <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
-
-                    </div>
-                    <div className="options-container flex flex-col">
-                        <label className="">Additional Options:</label>
-                        <div className="flex flex-row gap-2">
-                            <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                            <Button variant="secondary">Export Data</Button>
-                            <Button variant="secondary">Import Data</Button>
+        <div className="flex flex-col">
+            <div className="filter-container">
+                            <div className="filter-group">
+                                <label>Start Date:</label>
+                                <DatePicker
+                                    selected={selectedDate}
+                                    onChange={handleStartDateChange}
+                                    dateFormat="MM/dd/yyyy"
+                                    isClearable
+                                    placeholderText="Select a date"
+                                    className="date-picker-start-date"
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>End Date:</label>
+                                <DatePicker
+                                    selected={selectedDateEnd}
+                                    onChange={handleEndDateChange}
+                                    dateFormat="MM/dd/yyyy"
+                                    isClearable
+                                    placeholderText="Select a date"
+                                    className="date-picker-end-date"
+                                />
+                            </div>
+                            <div className="filter-group">
+                                <label>Granularity:</label>
+                                <select
+                                    id="granularity"
+                                    className="select-box"
+                                    value={granularity ?? ""}
+                                    onChange={(e) => handleGranularityChange(e.target.value)}
+                                >
+                                    {granularityOptions.map((option) => (
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="filter-group">
+                                <label>Trail:</label>
+                                <TrailSelector
+                                    onChange={handleTrailChange}
+                                    clearTrails={() => setTrails([])}
+                                    clearGraph={() => setGraphLines([])}
+                                    clearName={() => setGraphTitle("No Trails Selected")}
+                                    trailMetadata={trailMetadata}
+                                    trailGroups={trailGroups}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -722,215 +782,48 @@ const dashboard = () => {
                     </div>
                 </div>
                 {viewMode === "graph" ? (
-                    <>
-                        <Plot
-                            className="graph"
-                            config={{ displayModeBar: false }}
-                            data={graphLines.map((line, index) => ({
-                                x: line.x,
-                                y: line.y,
-                                type: "scatter",
-                                mode: "lines+markers",
-                                name: line.name,
-                                marker: {
-                                    color: [
-                                        "red",
-                                        "blue",
-                                        "green",
-                                        "orange",
-                                        "goldenrod",
-                                        "limegreen",
-                                        "papayawhip",
-                                    ][index % 7],
-                                },
-                            }))}
-                            layout={{
-                                title: {
-                                    text: graphTitle,
-                                    font: { size: 24 },
-                                    xref: "paper",
-                                    x: 0.05,
-                                },
-                                width: 1000,
-                                height: 700,
-                                xaxis: {
-                                    title: { text: "Date", font: { size: 18, color: "#7f7f7f" } },
-                                    autorange: true,
-                                    rangemode: "tozero",
-                                },
-                                yaxis: {
-                                    title: {
-                                        text: "Hikers",
-                                        font: { size: 18, color: "#7f7f7f" },
-                                    },
-                                    range: [0, null],
-                                    autorange: true,
-                                    rangemode: "tozero",
-                                },
-                            }}
-                        />
-                    </>
-                ) : (
-                    <div style={{ padding: "20px" }}>
-                        <h2
-                            style={{
-                                marginBottom: "20px",
-                                fontSize: "24px",
-                                fontWeight: "bold",
-                                color: "#333",
-                            }}
-                        >
-                            Trail Status Overview
+                <div className="flex justify-center px-6 pb-8">
+                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                            {graphTitle}
                         </h2>
-                        {loadingListData ? (
-                            <div style={{ textAlign: "center", padding: "40px" }}>
-                                Loading trail data...
-                            </div>
-                        ) : (
-                            <div style={{ overflowX: "auto" }}>
-                                <table
-                                    style={{
-                                        width: "100%",
-                                        borderCollapse: "collapse",
-                                        backgroundColor: "#fff",
-                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                    }}
-                                >
-                                    <thead>
-                                        <tr style={{ backgroundColor: "#007bff", color: "white" }}>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "left",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Trail Name
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Weekly Count
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Battery Status
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Last Updated
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {trailListData.length === 0 ? (
-                                            <tr>
-                                                <td
-                                                    colSpan={4}
-                                                    style={{
-                                                        padding: "20px",
-                                                        textAlign: "center",
-                                                        color: "#666",
-                                                    }}
-                                                >
-                                                    No trails found
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            trailListData.map((trail, index) => (
-                                                <tr
-                                                    key={trail.trail_id}
-                                                    style={{
-                                                        backgroundColor:
-                                                            index % 2 === 0 ? "#f9f9f9" : "#ffffff",
-                                                        borderBottom: "1px solid #e0e0e0",
-                                                    }}
-                                                >
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            border: "1px solid #ddd",
-                                                            fontWeight: "500",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.trail_name}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.weeklyCount}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.batteryStatus !== null ? (
-                                                            <span
-                                                                style={{
-                                                                    color:
-                                                                        trail.batteryStatus > 50
-                                                                            ? "#28a745"
-                                                                            : trail.batteryStatus > 20
-                                                                                ? "#ffc107"
-                                                                                : "#dc3545",
-                                                                    fontWeight: "bold",
-                                                                }}
-                                                            >
-                                                                {trail.batteryStatus}%
-                                                            </span>
-                                                        ) : (
-                                                            <span style={{ color: "#999" }}>N/A</span>
-                                                        )}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.lastUpdated || (
-                                                            <span style={{ color: "#999" }}>N/A</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                            <div className="h-[500px]">
+                                <Plot 
+                                    className="w-full h-full"
+                                    config={{ displayModeBar: false, responsive: true }}
+                                    useResizeHandler={true}
+                                    style={{ width: "100%", height: "100%" }}
+                                    data={graphLines.map((line) => ({
+                                        x: line.x.map(d => d.toISOString()),
+                                        y: line.y,
+                                        type: "scatter",
+                                        mode: "lines+markers",
+                                        name: line.name,
+                                        line: {
+                                            width: 3,
+                                        },
+                                        marker: {
+                                            size: 6,
+                                        },
+                                    }))}
+                                    layout={getPlotLayout(graphLines)}
+                                />
+                         </div>
                     </div>
-                )}
+                </div>
+               ) : (
+                <div className="list-view">
+                    <div className="list-container">
+                        <div className="list-card">
+                            <h2 className="list-title">Trail Status Overview</h2>
+                                <TrailStatusTable
+                                    data={trailListData}
+                                    loading={loadingListData}
+                                />
+                        </div>
+                    </div>
+                </div>
+            )}
             </div>
             <EditTrailModal
                 isOpen={isEditTrailModalOpen}
@@ -974,8 +867,7 @@ const dashboard = () => {
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
             />    
-            </div>
-        </body>
+    </div>
     );
 };
 
