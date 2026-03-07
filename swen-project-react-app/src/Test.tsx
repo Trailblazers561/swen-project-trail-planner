@@ -18,7 +18,7 @@ function Test() {
         <Button>Click me</Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline">Open</Button>
+                <Button variant="primary">Open</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuGroup>
