@@ -56,19 +56,19 @@ jobs:
           directory: ${{ env.CONFIG_DIRECTORY }}
           speculative: true
 
-      - name: Create Plan Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: plan-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
-          plan_only: true
+      # - name: Create Plan Run
+      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+      #   id: plan-run
+      #   with:
+      #     workspace: ${{ env.TF_WORKSPACE }}
+      #     configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
+      #     plan_only: true
 
-      - name: Get Plan Output
-        uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.3.0
-        id: plan-output
-        with:
-          plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
+      # - name: Get Plan Output
+      #   uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.3.0
+      #   id: plan-output
+      #   with:
+      #     plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
@@ -83,6 +83,7 @@ jobs:
           cd swen-project-react-app
           python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           npm install
+          # npm install react-data-table-component
           npm run build
 
       - name: Update PR Success
@@ -159,7 +160,7 @@ jobs:
             
             const output = `#### Terraform Cloud Plan Output
                 \`\`\`
-                ${reason}
+                Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
                 \`\`\`
                 [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
                 `;
