@@ -83,6 +83,7 @@ jobs:
           cd swen-project-react-app
           python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           npm install
+          npm install react-data-table-component
           npm run build
 
       - name: Update PR Success
