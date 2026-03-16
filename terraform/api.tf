@@ -3,11 +3,11 @@ resource "aws_api_gateway_rest_api" "api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "${var.deploy_env}_${var.default_name}_api"
+      title   = "${var.deploy_env}_trailplanner_api"
       version = "1.0"
     }
   })
-  name = "${var.deploy_env}_${var.default_name}_api"
+  name = "${var.deploy_env}_trailplanner_api"
 }
 
 # /trail_data Resource
@@ -151,8 +151,8 @@ resource "aws_api_gateway_method" "trail_data_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_data.id
   http_method   = "POST"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_data_post_integration" {
@@ -169,8 +169,8 @@ resource "aws_api_gateway_method" "trail_data_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_data.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_data_get_integration" {
@@ -242,8 +242,8 @@ resource "aws_api_gateway_method" "trail_metadata_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_metadata.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_metadata_get_integration" {
@@ -260,8 +260,8 @@ resource "aws_api_gateway_method" "trail_metadata_put" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_metadata.id
   http_method   = "PUT"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_metadata_put_integration" {
@@ -278,8 +278,8 @@ resource "aws_api_gateway_method" "trail_metadata_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_metadata.id
   http_method   = "POST"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_metadata_post_integration" {
@@ -296,8 +296,8 @@ resource "aws_api_gateway_method" "trail_metadata_delete" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_metadata.id
   http_method   = "DELETE"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_metadata_delete_integration" {
@@ -369,8 +369,8 @@ resource "aws_api_gateway_method" "device_metadata_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.device_metadata.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "device_metadata_get_integration" {
@@ -387,8 +387,8 @@ resource "aws_api_gateway_method" "device_metadata_put" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.device_metadata.id
   http_method   = "PUT"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "device_metadata_put_integration" {
@@ -460,8 +460,8 @@ resource "aws_api_gateway_method" "trail_groups_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.trail_groups.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "trail_groups_get_integration" {
@@ -473,13 +473,16 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
   uri                     = aws_lambda_function.get_trail_groups.invoke_arn
 }
 
-# Cognito Authorizer
-resource "aws_api_gateway_authorizer" "cognito_authorizer" {
-  name          = "${var.deploy_env}_CognitoAuthorizer"
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  type          = var.authorization_type
-  provider_arns = [aws_cognito_user_pool.user_pool.arn]
+# Lambda Authorizor Authorizer
+resource "aws_api_gateway_authorizer" "lambda_authorizer" {
+  name = "${var.deploy_env}_LambdaAuthorizer"
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  authorizer_uri = aws_lambda_function.lambda_authorizer.invoke_arn
+  authorizer_credentials = aws_iam_role.lambda_authorizer_role.arn
+  type = local.gateway_authorizer_type
+  authorizer_result_ttl_in_seconds =  0
 }
+
 
 # Deployment + Stage
 resource "aws_api_gateway_deployment" "api_deployment" {
@@ -526,7 +529,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "${var.deploy_env}_${var.default_name}_api_stage"
+  stage_name    = "${var.deploy_env}_trailplanner_api_stage"
 }
 
 # Environment file for frontend (.env)
@@ -547,10 +550,10 @@ EOF
 
 resource "null_resource" "generate_id_token" {
   provisioner "local-exec" {
-    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.admin_username},PASSWORD=${var.admin_password} --output json > token.json"
+    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.users["root_admin"].username},PASSWORD=${var.users["root_admin"].password} --output json > token.json"
   }
 
-  depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.admin]
+  depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.users]
 
   triggers = {
     token_request_time = timestamp()
