@@ -9,6 +9,7 @@ from test_helpers import login, select_trail_from_dropdown, getService, getOptio
 from ui_config import DEFAULT_WAIT_TIME, SHORT_WAIT_TIME, DEFAULT_START_DATE, TEST_START_DATE, TEST_END_DATE, START_DATE_CLASS, END_DATE_CLASS
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_EditDates():
     """Test editing start and end dates"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
