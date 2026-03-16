@@ -679,59 +679,59 @@ const dashboard = () => {
     }
 
     return (
+        <div>
         <div className="flex flex-col">
             <div className="filter-container">
-                            <div className="filter-group">
-                                <label>Start Date:</label>
-                                <DatePicker
-                                    selected={selectedDate}
-                                    onChange={handleStartDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-start-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>End Date:</label>
-                                <DatePicker
-                                    selected={selectedDateEnd}
-                                    onChange={handleEndDateChange}
-                                    dateFormat="MM/dd/yyyy"
-                                    isClearable
-                                    placeholderText="Select a date"
-                                    className="date-picker-end-date"
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <label>Granularity:</label>
-                                <select
-                                    id="granularity"
-                                    className="select-box"
-                                    value={granularity ?? ""}
-                                    onChange={(e) => handleGranularityChange(e.target.value)}
-                                >
-                                    {granularityOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="filter-group">
-                                <label>Trail:</label>
-                                <TrailSelector
-                                    onChange={handleTrailChange}
-                                    clearTrails={() => setTrails([])}
-                                    clearGraph={() => setGraphLines([])}
-                                    clearName={() => setGraphTitle("No Trails Selected")}
-                                    trailMetadata={trailMetadata}
-                                    trailGroups={trailGroups}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                <div className="filter-group">
+                    <label>Start Date:</label>
+                    <DatePicker
+                        selected={selectedDate}
+                        onChange={handleStartDateChange}
+                        dateFormat="MM/dd/yyyy"
+                        isClearable
+                        placeholderText="Select a date"
+                        className="date-picker-start-date"
+                    />
                 </div>
+                <div className="filter-group">
+                    <label>End Date:</label>
+                    <DatePicker
+                        selected={selectedDateEnd}
+                        onChange={handleEndDateChange}
+                        dateFormat="MM/dd/yyyy"
+                        isClearable
+                        placeholderText="Select a date"
+                        className="date-picker-end-date"
+                    />
+                </div>
+                <div className="filter-group">
+                    <label>Granularity:</label>
+                    <select
+                        id="granularity"
+                        className="select-box"
+                        value={granularity ?? ""}
+                        onChange={(e) => handleGranularityChange(e.target.value)}
+                    >
+                        {granularityOptions.map((option) => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="filter-group">
+                    <label>Trail:</label>
+                    <TrailSelector
+                        onChange={handleTrailChange}
+                        clearTrails={() => setTrails([])}
+                        clearGraph={() => setGraphLines([])}
+                        clearName={() => setGraphTitle("No Trails Selected")}
+                        trailMetadata={trailMetadata}
+                        trailGroups={trailGroups}
+                    />
+                </div>
+            </div>
+        </div>
             <div className="dashboard-div">
                 <div className="flex p-2.5 gap-2.5 justify-between items-center">
                     <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
