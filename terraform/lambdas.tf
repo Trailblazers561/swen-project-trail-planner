@@ -283,7 +283,7 @@ data "archive_file" "cleanup_lambda_zip" {
 resource "aws_lambda_function" "cleanup_lambda" {
   function_name = "${var.deploy_env}_cleanup_csv_bucket"
   role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "delete_frames.lambda_handler"
+  handler       = "cleanup_lambda.cleanup"
   runtime       = "python3.11"
 
   filename      = "${path.module}/${local.lambda_code_directory}/zips/cleanup_lambda.zip"
