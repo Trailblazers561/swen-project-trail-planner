@@ -86,7 +86,7 @@ EOF
 }
 
 resource "null_resource" "deploy_react_app" {
-  count = var.local_run ? 1 : 0
+  count = local.local_run ? 1 : 0
   provisioner "local-exec" {
     command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
