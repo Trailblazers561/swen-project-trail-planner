@@ -15,7 +15,6 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
-  
 
 jobs:
   terraform-plan:
@@ -72,9 +71,25 @@ jobs:
         with:
           plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
 
-      - name: Update PR
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Ensure NPM Build
+        id: ensure-npm-build
+        run: |
+          cd swen-project-react-app
+          python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
+          npm install
+          npm run build
+
+      - name: Update PR Success
+        if: success()
         uses: actions/github-script@v6
-        id: plan-comment
+        id: plan-comment-success
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -87,12 +102,6 @@ jobs:
             const botComment = comments.find(comment => {
               return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
             });
-            const output = `#### Terraform Cloud Plan Output
-               \`\`\`
-               Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
-               \`\`\`
-               [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
-               `;
             // Delete previous comment so PR timeline makes sense
             if (botComment) {
               github.rest.issues.deleteComment({
@@ -101,9 +110,63 @@ jobs:
                 comment_id: botComment.id,
               });
             }
+
+            const output = `#### Terraform Cloud Plan Output
+                \`\`\`
+                Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
+                \`\`\`
+                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
+                `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: output
             });
+
+      - name: Update PR Failure
+        if: failure()
+        uses: actions/github-script@v6
+        id: plan-comment-failure
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
+            });
+            // Delete previous comment so PR timeline makes sense
+            if (botComment) {
+              github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+
+            let reason = "Plan Failed: ";
+            if ("${{ steps.plan-run.outcome }}" === "failure") {
+              reason += "Terraform plan run failed.";
+            } else if ("${{ steps.ensure-npm-build.outcome }}" === "failure") {
+              reason += "React npm build failed.";
+            } else {
+              reason += "Failure unknown, please check logs for reason."
+            }
+            
+            const output = `#### Terraform Cloud Plan Output
+                \`\`\`
+                ${reason}
+                \`\`\`
+                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
+                `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });  

@@ -16,7 +16,6 @@ env:
   TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
 
-
 jobs:
   terraform-apply:
     name: | 
