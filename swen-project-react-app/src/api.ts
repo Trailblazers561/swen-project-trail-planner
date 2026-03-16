@@ -170,6 +170,24 @@ export function TrailData() {
     });
   }
 
+  /**
+   * Gets csv thats created from the database
+   * @param trailIdList - Optional List of trail IDs to include in the csv
+   * @param startDate - Optional ISO format date for earliest date to include in the csv
+   * @param endDate - Optional ISO format date for latest date to include in the csv
+   */
+  async function exportCSV(trailIdList: number[], startDate?: string, endDate?: string) {
+    return await request(`${API_URL}/csv`, {
+      method: "GET",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        trail_id_list: trailIdList,
+        start_date: startDate,
+        end_date: endDate,
+      }),
+    });
+  }
+
   return {
     getTrailMetadata,
     getTrailGroups,
@@ -183,6 +201,7 @@ export function TrailData() {
     createTrailGroup,
     updateTrailGroup,
     deleteTrailGroup,
+    exportCSV,
   };
 }
 
