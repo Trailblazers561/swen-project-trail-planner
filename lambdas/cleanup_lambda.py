@@ -6,7 +6,7 @@ s3 = boto3.client('s3')
 
 BUCKET_NAME = os.environ['BUCKET_NAME']
 
-def lambda_handler(event, context):
+def cleanup(event, context):
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=48)
 
