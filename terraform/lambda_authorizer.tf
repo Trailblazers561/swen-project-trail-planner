@@ -57,7 +57,7 @@ resource "aws_iam_role" "lambda_authorizer_role" {
 }
 
 # Allows cloudwatch log access for lambda (local only for cost)
-resource "aws_iam_role_policy_attachment" "authorizor_cloudwatch_logs" {
+resource "aws_iam_role_policy_attachment" "authorizer_cloudwatch_logs" {
   count = local.local_run ? 1 : 0
   role = aws_iam_role.lambda_authorizer_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"

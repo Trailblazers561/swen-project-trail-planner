@@ -546,7 +546,7 @@ resource "aws_api_gateway_integration" "csv_get_integration" {
   uri                     = aws_lambda_function.export_csv.invoke_arn
 }
 
-# Lambda Authorizor Authorizer
+# Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   name = "${var.deploy_env}_LambdaAuthorizer"
   rest_api_id = aws_api_gateway_rest_api.api.id
@@ -575,7 +575,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.trail_groups_get_integration.uri,
       aws_api_gateway_integration.csv_get_integration.uri,
 
-      # Authorizor Stuff
+      # Authorizer Stuff
       aws_api_gateway_authorizer.lambda_authorizer.id,
       aws_api_gateway_authorizer.lambda_authorizer.authorizer_uri,
 
