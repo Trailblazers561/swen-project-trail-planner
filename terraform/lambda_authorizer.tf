@@ -21,6 +21,8 @@ resource "aws_lambda_function" "lambda_authorizer" {
 }
 
 resource "null_resource" "authorizer_pip_install" {
+  count = local.local_run ? 1 : 0
+
   triggers = {
     shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/lambda_authorizer/requirements.txt")
   }
