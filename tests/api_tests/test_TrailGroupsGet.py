@@ -3,7 +3,6 @@ import pytest
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_get_trail_groups_success():
     """
     Test GET /trail_groups to retrieve all trail groups.
@@ -25,7 +24,6 @@ def test_get_trail_groups_success():
         assert isinstance(group["trail_ids"], list)
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_get_trail_groups_structure():
     """
     Test that trail groups have the correct structure and trail_ids are valid.
@@ -50,7 +48,6 @@ def test_get_trail_groups_structure():
                 assert trail_id in valid_trail_ids, f"Trail ID {trail_id} in group {group['group_name']} does not exist"
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_get_trail_groups_unauthorized():
     """
     Test GET /trail_groups without authentication.

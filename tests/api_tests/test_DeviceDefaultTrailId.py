@@ -4,7 +4,6 @@ import time
 from api_config import BASE_URL, get_api_key_headers, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_device_default_trail_id_from_previous_logs():
     """
     Test that when a device posts data without trail_id, it uses the trail_id
@@ -102,7 +101,6 @@ def test_device_default_trail_id_from_previous_logs():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_device_default_trail_id_from_metadata():
     """
     Test that when a device posts data without trail_id, it uses the trail_id
@@ -197,7 +195,6 @@ def test_device_default_trail_id_from_metadata():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_device_default_trail_id_new_device():
     """
     Test that a new device (no previous logs or metadata) defaults to trail_id=0

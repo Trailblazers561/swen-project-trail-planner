@@ -10,8 +10,7 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 # Base URL of the application
 # Update this with your actual S3 bucket website URL
-# BASE_URL = os.getenv("CLOUDFRONT_URL")
-BASE_URL = "https://dupemhpnywyvc.cloudfront.net/"
+BASE_URL = os.getenv("CLOUDFRONT_URL")
 
 # Login credentials
 LOGIN_EMAIL = "admin@gmail.com"

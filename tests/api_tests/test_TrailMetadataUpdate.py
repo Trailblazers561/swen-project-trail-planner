@@ -4,7 +4,6 @@ import time
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_update_trail_metadata_success():
     """
     Test PUT /trail_metadata to update trail name and group.
@@ -59,7 +58,6 @@ def test_update_trail_metadata_success():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_update_trail_metadata_with_group():
     """
     Test PUT /trail_metadata to update trail group.
@@ -111,7 +109,6 @@ def test_update_trail_metadata_with_group():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_update_trail_metadata_missing_trail_id():
     """
     Test PUT /trail_metadata with missing trail_id - should return 400.
@@ -135,7 +132,6 @@ def test_update_trail_metadata_missing_trail_id():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_update_trail_metadata_invalid_trail_id():
     """
     Test PUT /trail_metadata with invalid trail_id format - should return 400.
@@ -159,7 +155,6 @@ def test_update_trail_metadata_invalid_trail_id():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_update_trail_metadata_unauthorized():
     """
     Test PUT /trail_metadata without authentication - should return 401/403.

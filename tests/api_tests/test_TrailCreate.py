@@ -4,7 +4,6 @@ import time
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_create_trail_success():
     """
     Test POST /trail_metadata to create a new trail.
@@ -37,7 +36,6 @@ def test_create_trail_success():
     assert created_trail["trail_id"] == data["trail_id"]
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_create_trail_with_group():
     """
     Test POST /trail_metadata to create a trail with a group.
@@ -69,7 +67,6 @@ def test_create_trail_with_group():
     assert data["trail_id"] in test_group.get("trail_ids", [])
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_create_trail_missing_name():
     """
     Test POST /trail_metadata with missing trail_name.
@@ -84,7 +81,6 @@ def test_create_trail_missing_name():
     assert response.status_code == 400
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_create_trail_empty_name():
     """
     Test POST /trail_metadata with empty trail_name.
@@ -101,7 +97,6 @@ def test_create_trail_empty_name():
     assert response.status_code in [400, 500]
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_create_trail_unauthorized():
     """
     Test POST /trail_metadata without authentication.

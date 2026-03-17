@@ -4,7 +4,6 @@ import time
 from api_config import BASE_URL, get_cognito_headers, get_api_key_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_delete_trail_success():
     """
     Test DELETE /trail_metadata to delete a trail and all associated data.
@@ -83,7 +82,6 @@ def test_delete_trail_success():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_delete_trail_missing_trail_id():
     """
     Test DELETE /trail_metadata with missing trail_id - should return 400.
@@ -105,7 +103,6 @@ def test_delete_trail_missing_trail_id():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_delete_trail_invalid_trail_id():
     """
     Test DELETE /trail_metadata with invalid trail_id format - should return 400.
@@ -128,7 +125,6 @@ def test_delete_trail_invalid_trail_id():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_delete_trail_unauthorized():
     """
     Test DELETE /trail_metadata without authentication - should return 401/403.
@@ -151,7 +147,6 @@ def test_delete_trail_unauthorized():
 
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_delete_trail_removes_from_groups():
     """
     Test that deleting a trail removes it from all trail groups.
