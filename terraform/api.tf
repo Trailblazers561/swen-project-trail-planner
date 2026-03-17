@@ -551,7 +551,6 @@ resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   name = "${var.deploy_env}_LambdaAuthorizer"
   rest_api_id = aws_api_gateway_rest_api.api.id
   authorizer_uri = aws_lambda_function.lambda_authorizer.invoke_arn
-  authorizer_credentials = aws_iam_role.lambda_authorizer_role.arn
   type = local.gateway_authorizer_type
   authorizer_result_ttl_in_seconds =  0
 }
@@ -563,6 +562,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
   triggers = {
     redeployment = sha1(jsonencode([
+      # Integrations
       aws_api_gateway_integration.trail_data_post_integration.uri,
       aws_api_gateway_integration.trail_data_get_integration.uri,
       aws_api_gateway_integration.devices_post_integration.uri,
@@ -573,7 +573,33 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.device_metadata_get_integration.uri,
       aws_api_gateway_integration.device_metadata_put_integration.uri,
       aws_api_gateway_integration.trail_groups_get_integration.uri,
-      aws_api_gateway_integration.csv_get_integration.uri
+      aws_api_gateway_integration.csv_get_integration.uri,
+
+      # Authorizor Stuff
+      aws_api_gateway_authorizer.lambda_authorizer.id,
+      aws_api_gateway_authorizer.lambda_authorizer.authorizer_uri,
+
+      # Methods
+      aws_api_gateway_method.trail_data_options.authorization,
+      aws_api_gateway_method.trail_data_post.authorization,
+      aws_api_gateway_method.trail_data_get.authorization,
+      aws_api_gateway_method.devices_options.authorization,
+      aws_api_gateway_method.devices_post.authorization,
+      aws_api_gateway_method.trail_metadata_options.authorization,
+      aws_api_gateway_method.trail_metadata_get.authorization,
+      aws_api_gateway_method.trail_metadata_put.authorization,
+      aws_api_gateway_method.trail_metadata_post.authorization,
+      aws_api_gateway_method.trail_metadata_delete.authorization,
+      aws_api_gateway_method.device_metadata_options.authorization,
+      aws_api_gateway_method.device_metadata_get.authorization,
+      aws_api_gateway_method.device_metadata_put.authorization,
+      aws_api_gateway_method.trail_groups_options.authorization,
+      aws_api_gateway_method.trail_groups_get.authorization,
+      aws_api_gateway_method.csv_options.authorization,
+      aws_api_gateway_method.csv_get.authorization,
+
+      # Permissions
+      aws_lambda_permission.allow_apigateway_all_functions
     ]))
   }
 
@@ -645,7 +671,7 @@ data "local_file" "cognito_token_json" {
 }
 
 locals {
-  cognito_token = local.local_run ? jsondecode(data.local_file.cognito_token_json[0].content).AuthenticationResult.IdToken : ""
+  cognito_token = local.local_run ? jsondecode(data.local_file.cognito_token_json[0].content).AuthenticationResult.AccessToken : ""
 }
 
 # Environment file for testing (.env)
