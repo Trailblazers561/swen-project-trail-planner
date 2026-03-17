@@ -10,7 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-from ui_config import (
+from old_ui_config import (
     BASE_URL, 
     LOGIN_EMAIL, 
     LOGIN_PASSWORD, 
