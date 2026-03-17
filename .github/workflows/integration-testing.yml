@@ -165,7 +165,6 @@ jobs:
               body: output
             });
         if: ${{ always() }}
-      
 
       - name: Create Destroy Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0

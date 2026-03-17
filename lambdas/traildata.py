@@ -8,10 +8,10 @@ from decimal import Decimal
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "TrailDeviceLogs"))
-trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "TrailMetadata"))
-device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "DeviceMetadata"))
-trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "TrailGroups"))
+logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDeviceLogs"))
+trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "local_TrailMetadata"))
+device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "local_DeviceMetadata"))
+trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "local_TrailGroups"))
 
 def convert_decimals(obj):
     if isinstance(obj, list):
