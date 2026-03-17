@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from ui_tests.selenium_helper import SeleniumHelper as SH
+from selenium_helper import SeleniumHelper as SH
 
 # This page exists for the sole purpose of login_test, but will be removed when the header stuff is implemented
 class LogoutPage:

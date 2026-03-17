@@ -1,9 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from ui_tests.selenium_helper import SeleniumHelper as SH
+from selenium_helper import SeleniumHelper as SH
 
-from ui_tests.dtos.user_dto import UserDTO
-from ui_tests.enums.login_mode import LoginMode
+from dtos.user_dto import UserDTO
+from enums.login_mode import LoginMode
 
 class LoginPage:
     root = (By.XPATH, "//div[@class='loginForm']")

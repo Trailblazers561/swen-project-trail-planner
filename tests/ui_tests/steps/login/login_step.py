@@ -1,7 +1,7 @@
 from selenium import webdriver
-from ui_tests.dtos.user_dto import UserDTO
-from ui_tests.pages.login_page import LoginPage
-from ui_tests.enums.login_mode import LoginMode
+from dtos.user_dto import UserDTO
+from pages.login_page import LoginPage
+from enums.login_mode import LoginMode
 
 class LoginStep:
     def __init__(self, driver: webdriver.Chrome, user: UserDTO, login_mode: LoginMode = LoginMode.NORMAL):
