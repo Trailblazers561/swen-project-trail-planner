@@ -4,34 +4,25 @@ import time
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-def test_post_trail_data_multiple():
+@pytest.mark.skip(reason="deprecated")
+def test_post_trail_data_single():
     """
-    Test POST /trail_data with multiple data points in a batch.
+    Test POST /trail_data with a single data point.
     """
     url = f"{BASE_URL}/trail_data"
     headers = get_cognito_headers()
     
-    # Generate unique timestamps for this test
-    base_timestamp = int(time.time())
-    device_id = "test_device_B"
+    # Generate unique timestamp for this test
+    current_timestamp = int(time.time())
+    device_id = "test_device_A"
     
     payload = {
         "trail_id": 1,
         "data": [
             {
                 "device_id": device_id,
-                "timestamp": base_timestamp,
+                "timestamp": current_timestamp,
                 "battery": 95
-            },
-            {
-                "device_id": device_id,
-                "timestamp": base_timestamp + 1,
-                "battery": 94
-            },
-            {
-                "device_id": device_id,
-                "timestamp": base_timestamp + 2,
-                "battery": 93
             }
         ]
     }

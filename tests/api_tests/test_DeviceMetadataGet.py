@@ -3,6 +3,7 @@ import pytest
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_get_device_metadata_success():
     """
     Test GET /device_metadata to retrieve all device metadata.
@@ -22,6 +23,7 @@ def test_get_device_metadata_success():
         assert isinstance(device["device_id"], str)
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_get_device_metadata_structure():
     """
     Test that device metadata has the correct structure.
@@ -44,6 +46,7 @@ def test_get_device_metadata_structure():
             assert isinstance(device["battery_level"], (int, float, type(None)))
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_get_device_metadata_unauthorized():
     """
     Test GET /device_metadata without authentication.

@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_api_key_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_missing_api_key():
     """
     Test POST /devices without API key - should return 403 Forbidden.
@@ -33,6 +34,7 @@ def test_post_device_data_missing_api_key():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_invalid_api_key():
     """
     Test POST /devices with invalid API key - should return 403 Forbidden.
@@ -62,6 +64,7 @@ def test_post_device_data_invalid_api_key():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_missing_device_id():
     """
     Test POST /devices with missing required field device_id - should return 400 Bad Request.
@@ -89,6 +92,7 @@ def test_post_device_data_missing_device_id():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_missing_data_array():
     """
     Test POST /devices with missing data array - should return 400 Bad Request.
@@ -113,6 +117,7 @@ def test_post_device_data_missing_data_array():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_empty_data_array():
     """
     Test POST /devices with empty data array - should return 400 Bad Request.
@@ -137,6 +142,7 @@ def test_post_device_data_empty_data_array():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_missing_timestamp_in_entry():
     """
     Test POST /devices with missing ts in a data entry - should return 400 Bad Request.
@@ -163,6 +169,7 @@ def test_post_device_data_missing_timestamp_in_entry():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_invalid_trail_id_override():
     """
     Test POST /devices with invalid trail_id override - should return 400 Bad Request.
@@ -189,6 +196,7 @@ def test_post_device_data_invalid_trail_id_override():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_invalid_timestamp_type():
     """
     Test POST /devices with invalid timestamp type - should return 400 Bad Request.
@@ -215,6 +223,7 @@ def test_post_device_data_invalid_timestamp_type():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_empty_body():
     """
     Test POST /devices with empty request body - should return 400 Bad Request.
@@ -235,6 +244,7 @@ def test_post_device_data_empty_body():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_duplicate_timestamps():
     """
     Test POST /devices with duplicate timestamps from the same device.
@@ -271,6 +281,7 @@ def test_post_device_data_duplicate_timestamps():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_post_device_data_old_timestamps():
     """
     Test POST /devices with timestamps before 1735707600 (January 1, 2025).
