@@ -9,7 +9,7 @@ import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from test_helpers import login, getService, getOptions
-from ui_config import DEFAULT_WAIT_TIME, MEDIUM_WAIT_TIME, FILTER_CONTAINER_CLASS
+from old_ui_config import DEFAULT_WAIT_TIME, MEDIUM_WAIT_TIME, FILTER_CONTAINER_CLASS
 
 @pytest.mark.UI
 @pytest.mark.skip(reason="deprecated")

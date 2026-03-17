@@ -5,7 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pytest
 from test_helpers import login, getService, getOptions
-from ui_config import DEFAULT_WAIT_TIME, LONG_WAIT_TIME, LOGOUT_BUTTON_CLASS
+from old_ui_config import DEFAULT_WAIT_TIME, LONG_WAIT_TIME, LOGOUT_BUTTON_CLASS
 
 @pytest.mark.UI
 @pytest.mark.skip(reason="deprecated")
