@@ -86,10 +86,20 @@ EOF
 }
 
 resource "null_resource" "deploy_react_app" {
-  count = var.local_run ? 1 : 0
+  count = local.local_run ? 1 : 0
   provisioner "local-exec" {
     command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
   depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env]
+}
+
+resource "aws_s3_bucket" "csv_bucket" {
+  bucket = "${var.deploy_env}-csv-bucket-${random_integer.random_suffix.result}"
+
+  tags = {
+    Name = "${var.deploy_env}-csv-bucket"
+  }
+
+  force_destroy = true
 }

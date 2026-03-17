@@ -473,6 +473,79 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
   uri                     = aws_lambda_function.get_trail_groups.invoke_arn
 }
 
+# /csv Resource
+resource "aws_api_gateway_resource" "csv" {
+  path_part   = "csv"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /csv
+resource "aws_api_gateway_method" "csv_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.csv.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "csv_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv.id
+  http_method = aws_api_gateway_method.csv_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "csv_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv.id
+  http_method = aws_api_gateway_method.csv_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "csv_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv.id
+  http_method = aws_api_gateway_method.csv_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.csv_options_integration,
+    aws_api_gateway_method_response.csv_options_response
+  ]
+}
+
+# GET /csv
+resource "aws_api_gateway_method" "csv_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.csv.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "csv_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.csv.id
+  http_method             = aws_api_gateway_method.csv_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.export_csv.invoke_arn
+}
+
 # Cognito Authorizer
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   name          = "${var.deploy_env}_CognitoAuthorizer"
@@ -496,7 +569,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.trail_metadata_delete_integration.uri,
       aws_api_gateway_integration.device_metadata_get_integration.uri,
       aws_api_gateway_integration.device_metadata_put_integration.uri,
-      aws_api_gateway_integration.trail_groups_get_integration.uri
+      aws_api_gateway_integration.trail_groups_get_integration.uri,
+      aws_api_gateway_integration.csv_get_integration.uri
     ]))
   }
 
@@ -515,11 +589,13 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.device_metadata_get_integration,
     aws_api_gateway_integration.device_metadata_put_integration,
     aws_api_gateway_integration.trail_groups_get_integration,
+    aws_api_gateway_integration.csv_get_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
     aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
     aws_api_gateway_integration_response.device_metadata_options_integration_response,
-    aws_api_gateway_integration_response.trail_groups_options_integration_response
+    aws_api_gateway_integration_response.trail_groups_options_integration_response,
+    aws_api_gateway_integration_response.csv_options_integration_response
   ]
 }
 
@@ -569,7 +645,7 @@ locals {
 resource "local_sensitive_file" "testing_env" {
   count = var.local_run ? 1 : 0
   content = <<EOF
-FRONTEND_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
+CLOUDFRONT_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
 API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 API_TOKEN=${local.cognito_token}
 API_KEY=${aws_api_gateway_api_key.api_key.value}
