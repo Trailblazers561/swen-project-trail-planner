@@ -153,11 +153,11 @@ jobs:
             const time = parseFloat(testsuite.$.time || 0)
 
             const output = `#### Integration Testing Output
-              \`\`\`
-              ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
-              \`\`\`
-              [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-              `;
+            \`\`\`
+            ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
+            \`\`\`
+            [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -165,7 +165,6 @@ jobs:
               body: output
             });
         if: ${{ always() }}
-      
 
       - name: Create Destroy Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0

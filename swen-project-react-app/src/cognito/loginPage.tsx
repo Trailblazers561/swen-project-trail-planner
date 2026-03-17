@@ -56,7 +56,7 @@ const LoginPage = () => {
             required
           />
         </div>
-        <Button variant="primary" type="submit">Sign In</Button>
+        <Button variant="primary" type="submit" id="signInButton">Sign In</Button>
       </form>
     </div>
   );

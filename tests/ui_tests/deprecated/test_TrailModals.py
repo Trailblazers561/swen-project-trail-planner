@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from test_helpers import login, getService, getOptions
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_AddTrailModal():
     """Test opening and interacting with the Add Trail modal"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
@@ -46,6 +47,7 @@ def test_AddTrailModal():
         driver.quit()
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_EditTrailModal():
     """Test opening the Edit Trail Info modal"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())

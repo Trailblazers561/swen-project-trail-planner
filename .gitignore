@@ -72,6 +72,7 @@ var/
 .cache
 nosetests.xml
 coverage.xml
+test-results.xml
 
 # Translations
 *.mo

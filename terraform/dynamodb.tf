@@ -103,25 +103,8 @@ variable "trail_device_logs_sampledata" {
     timestamp = string
     battery   = string
   }))
+  # Sample data will get created 
   default = [
-    {
-      trail_id  = "1"
-      device_id = "deviceA"
-      timestamp = "1759064864"
-      battery   = "95"
-    },
-    {
-      trail_id  = "1"
-      device_id = "deviceA"
-      timestamp = "1759065044"
-      battery   = "94"
-    },
-    {
-      trail_id  = "2"
-      device_id = "deviceB"
-      timestamp = "1759065344"
-      battery   = "88"
-    }
   ]
 }
 
@@ -134,16 +117,64 @@ variable "device_metadata_sampledata" {
   }))
   default = [
     {
-      device_id        = "deviceA"
+      device_id        = "1"
       current_trail_id = "1"
-      battery          = "94"
-      last_update      = "1759065044"
+      battery          = "98"
+      last_update      = "1771863877"
     },
     {
-      device_id        = "deviceB"
+      device_id        = "2"
       current_trail_id = "2"
-      battery          = "88"
-      last_update      = "1759065344"
+      battery          = "89"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "3"
+      current_trail_id = "3"
+      battery          = "100"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "4"
+      current_trail_id = "4"
+      battery          = "85"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "5"
+      current_trail_id = "5"
+      battery          = "60"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "6"
+      current_trail_id = "6"
+      battery          = "70"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "7"
+      current_trail_id = "7"
+      battery          = "99"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "8"
+      current_trail_id = "8"
+      battery          = "94"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "9"
+      current_trail_id = "9"
+      battery          = "51"
+      last_update      = "1771863877"
+    },
+    {
+      device_id        = "10"
+      current_trail_id = "10"
+      battery          = "62"
+      last_update      = "1771863877"
     }
   ]
 }
@@ -155,14 +186,15 @@ variable "trail_metadata_sampledata" {
   }))
   default = [
     { trail_id = "1", trail_name = "Mt. Marcy" },
-    { trail_id = "2", trail_name = "Wolf Creek Mountain" },
-    { trail_id = "3", trail_name = "Mt. Joe" },
-    { trail_id = "4", trail_name = "Mt. America" },
-    { trail_id = "5", trail_name = "Blueberry Trail" },
-    { trail_id = "6", trail_name = "Sunset Peak" },
-    { trail_id = "7", trail_name = "Cedar Loop" },
-    { trail_id = "8", trail_name = "Eagle Ridge" },
-    { trail_id = "9", trail_name = "Bear Claw Path" }
+    { trail_id = "2", trail_name = "Giant Mountain" },
+    { trail_id = "3", trail_name = "Poke-O-Moonshine Ranger Trail" },
+    { trail_id = "4", trail_name = "Mt. Skylight" },
+    { trail_id = "5", trail_name = "Cat Mountain" },
+    { trail_id = "6", trail_name = "Bald Peak" },
+    { trail_id = "7", trail_name = "Mt. Haystack" },
+    { trail_id = "8", trail_name = "Beaver Meadow Trail" },
+    { trail_id = "9", trail_name = "Mud Lake" },
+    { trail_id = "10", trail_name = "Blueberry Trail"}
   ]
 }
 
@@ -174,20 +206,16 @@ variable "trail_groups_sampledata" {
 
   default = [
     {
-      group_name = "All Areas"
-      trail_ids  = ["1","2","3","4","5","6","7","8","9"] # all trails by ID
+      group_name = "High Peaks Wilderness"
+      trail_ids  = ["1", "4", "7", "10"] # Mt. Marcy, Mt. Skylight, Mt. Haystack, Blueberry Trail
     },
     {
-      group_name = "Five Ponds"
-      trail_ids  = ["5","6","7"] # Blueberry Trail, Sunset Peak, Cedar Loop
+      group_name = "Giant Mountain Wilderness"
+      trail_ids  = ["2", "6"] # Giant Mountain, Bald Peak
     },
     {
-      group_name = "High Peaks"
-      trail_ids  = ["1","2"] # Mt. Marcy, Wolf Creek Mountain
-    },
-    {
-      group_name = "Giant Mountain"
-      trail_ids  = ["3","4"] # Mt. Joe, Mt. America
+      group_name = "Adirondack Park"
+      trail_ids = [ "5", "9" ] # Cat Mountain, Mud Lake
     }
   ]
 }

@@ -111,11 +111,11 @@ jobs:
             }
 
             const output = `#### Terraform Cloud Plan Output
-                \`\`\`
-                Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
-                \`\`\`
-                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
-                `;
+            \`\`\`
+            Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
+            \`\`\`
+            [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -156,13 +156,12 @@ jobs:
             } else {
               reason += "Failure unknown, please check logs for reason."
             }
-            
+
             const output = `#### Terraform Cloud Plan Output
-                \`\`\`
-                ${reason}
-                \`\`\`
-                [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
-                `;
+            \`\`\`
+            ${reason}
+            \`\`\`
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
