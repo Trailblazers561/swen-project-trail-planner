@@ -3,7 +3,6 @@ import pytest
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_get_trail_data_filtered():
     """
     Test GET /trail_data with query parameters to filter by specific trails.

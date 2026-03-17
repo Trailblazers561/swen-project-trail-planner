@@ -3,7 +3,6 @@ import pytest
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="deprecated")
 def test_get_all_trail_data():
     """
     Test GET /trail_data to retrieve all trail device logs.
