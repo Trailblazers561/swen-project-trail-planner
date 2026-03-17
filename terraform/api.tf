@@ -533,8 +533,8 @@ resource "aws_api_gateway_method" "csv_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.csv.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "csv_get_integration" {
@@ -631,7 +631,6 @@ resource "null_resource" "generate_id_token" {
     command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.users["root_admin"].username},PASSWORD=${var.users["root_admin"].password} --output json > token.json"
   }
 
-  depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.admin]
   depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.users]
 
   triggers = {
