@@ -1,5 +1,5 @@
 import pytest_check
-from ui_tests.enums.user_enum import User
+from enums.user_enum import User
 
 class UserDTO:
     def __init__(self, email: str="", password: str="", name: str="", user: User = None):
