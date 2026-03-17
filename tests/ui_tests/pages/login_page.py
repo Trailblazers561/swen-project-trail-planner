@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
 
-from  dtos.user_dto import UserDTO
+from dtos.user_dto import UserDTO
 from enums.login_mode import LoginMode
 
 class LoginPage:
