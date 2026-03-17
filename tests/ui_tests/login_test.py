@@ -1,12 +1,12 @@
 import pytest
 import pytest_check
-from selenium_helper import SeleniumHelper as SH
+from ui_tests.selenium_helper import SeleniumHelper as SH
 
-from dtos.user_dto import UserDTO
-from enums.user_enum import User
-from steps.login.login_step import LoginStep
-from steps.login.logout_step import LogoutStep
-from enums.login_mode import LoginMode
+from ui_tests.dtos.user_dto import UserDTO
+from ui_tests.enums.user_enum import User
+from ui_tests.steps.login.login_step import LoginStep
+from ui_tests.steps.login.logout_step import LogoutStep
+from ui_tests.enums.login_mode import LoginMode
 
 @pytest.mark.UI
 def login_test():
