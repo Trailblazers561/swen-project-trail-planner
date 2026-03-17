@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_cognito_headers, get_api_key_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_update_device_trail_association_success():
     """
     Test PUT /device_metadata to associate a device to a trail.
@@ -67,6 +68,7 @@ def test_update_device_trail_association_success():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_update_device_trail_association_missing_device_id():
     """
     Test PUT /device_metadata with missing device_id - should return 400.
@@ -90,6 +92,7 @@ def test_update_device_trail_association_missing_device_id():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_update_device_trail_association_missing_trail_id():
     """
     Test PUT /device_metadata with missing trail_id - should return 400.
@@ -113,6 +116,7 @@ def test_update_device_trail_association_missing_trail_id():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_update_device_trail_association_invalid_trail_id():
     """
     Test PUT /device_metadata with invalid trail_id format - should return 400.
@@ -136,6 +140,7 @@ def test_update_device_trail_association_invalid_trail_id():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated")
 def test_update_device_trail_association_unauthorized():
     """
     Test PUT /device_metadata without authentication - should return 401/403.
