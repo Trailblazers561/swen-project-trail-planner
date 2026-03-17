@@ -41,7 +41,7 @@ def retrieve_token(env):
             "PASSWORD": "password"
         }
     )
-    return response['AuthenticationResult']['IdToken']
+    return response['AuthenticationResult']['AccessToken']
 
 def write_values(env):
     with open(Path(__file__).parent / ".env", "w") as file:

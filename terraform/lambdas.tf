@@ -207,7 +207,7 @@ resource "aws_lambda_function" "create_trail" {
 # Map of function names to Lambda function resources
 locals {
   api_lambda_functions = {
-    "lambda_authorizer" = aws_lambda_function.lambda_authorizer
+    "lambda_authorizer"                         = aws_lambda_function.lambda_authorizer
     "traildata_upload_trail_data"            = aws_lambda_function.upload_trail_data
     "traildata_get_trail_data"               = aws_lambda_function.get_trail_data
     "traildata_upload_device_data"           = aws_lambda_function.upload_device_data

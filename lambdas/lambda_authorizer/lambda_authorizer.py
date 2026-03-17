@@ -15,30 +15,16 @@ USER = os.environ.get("USER")
 GUEST = "GUEST"
 
 # Does not handle guest permissions, future sprint task?
-# PERMISSIONS = {
-#     ("/csv", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER],
-#     ("/csv", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/device_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
-#     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
-#     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/trail_groups", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
-#     ("/trail_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
-#     ("/trail_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/trail_metadata", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-#     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-# }
 PERMISSIONS = {
-    ("/csv", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, ],
+    ("/csv", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER],
     ("/csv", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/device_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/device_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER], # Not actaully used, currently just API key
+    ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/trail_groups", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/trail_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/trail_groups", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
+    ("/trail_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
@@ -54,6 +40,7 @@ def handler(event, context):
     print(event)
 
     policy_resource = event['methodArn']
+    resource, http_method = parse_method_arn(policy_resource)
 
     token_data = parse_token_data(event)
     if not token_data["valid"]:
@@ -64,9 +51,6 @@ def handler(event, context):
         if not claims:
             return get_deny_policy("invalid-token", policy_resource)
         users_groups = claims.get("cognito:groups", [GUEST])
-
-        resource = event['resource']
-        http_method   = event['httpMethod']
 
         allowed_groups = PERMISSIONS.get((resource, http_method), [ROOT_ADMIN])
         # If requesting user is in any of the groups that have permission to call the endpoint
@@ -83,10 +67,10 @@ def handler(event, context):
 def parse_token_data(event):
     response = {'valid': False}
 
-    if 'Authorization' not in event['headers']:
+    auth_header = event.get("authorizationToken")
+    if not auth_header:
         return response
 
-    auth_header = event['headers']['Authorization']
     auth_header_list = auth_header.split(' ')
 
     # deny request of header isn't made out of two strings, or
@@ -181,3 +165,10 @@ def get_allow_policy(principalId, resource):
             ]
         }
     }
+
+def parse_method_arn(arn):
+    # arn looks like arn:aws:execute-api:region:account-id:api_id/stage/METHOD/resource_path
+    ending = arn.split(':')[5] 
+    api_id, stage, http_method, *resource_parts = ending.split('/')
+    resource = '/' + '/'.join(resource_parts)
+    return resource, http_method

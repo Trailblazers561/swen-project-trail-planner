@@ -207,7 +207,7 @@ export function TrailData() {
 
 function authHeaders() {
   return {
-    Authorization: `Bearer ${sessionStorage.getItem("idToken")}`,
+    Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
     "Content-Type": "application/json",
   };
 }

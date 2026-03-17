@@ -26,7 +26,7 @@ resource "null_resource" "authorizer_pip_install" {
   }
 
   provisioner "local-exec" {
-    command = "python -m pip install -r ${path.module}/${local.lambda_code_directory}/lambda_authorizer/requirements.txt -t ${path.module}/${local.lambda_code_directory}/layers/auth_reqs/python"
+    command = "python -m pip install --no-compile --no-binary :all: -r ${path.module}/${local.lambda_code_directory}/lambda_authorizer/requirements.txt -t ${path.module}/${local.lambda_code_directory}/layers/auth_reqs/python"
   }
 }
 
@@ -38,7 +38,7 @@ data "archive_file" "authorizer_layer" {
 }
 
 resource "aws_lambda_layer_version" "authorizer_layer" {
-  layer_name          = "${var.deploy_env}-authorizer-layer-layer"
+  layer_name          = "${var.deploy_env}-authorizer-layer"
   filename            = data.archive_file.authorizer_layer.output_path
   source_code_hash    = data.archive_file.authorizer_layer.output_base64sha256
   compatible_runtimes = ["python3.12"]
