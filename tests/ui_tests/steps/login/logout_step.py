@@ -1,5 +1,5 @@
 from selenium import webdriver
-from pages.logout_page import LogoutPage
+from ui_tests.pages.logout_page import LogoutPage
 
 class LogoutStep:
     def __init__(self, driver: webdriver.Chrome):
