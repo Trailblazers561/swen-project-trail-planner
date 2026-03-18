@@ -1,4 +1,4 @@
-import Navbar from "./components/navbar"
+import Navbar from "./components/Navbar.tsx";
  
 // This is a test component to test components from shadcn. It is not used in the app and can be deleted when we are done testing.
 // Author: Richard Tang
