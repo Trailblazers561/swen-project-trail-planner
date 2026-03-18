@@ -677,8 +677,12 @@ const dashboard = () => {
             <Navbar />
         <div className="flex flex-col">
             <div className="filter-container">
-                <div className="filter-group">
-                    <label>Start Date:</label>
+                <div className="filter-group flex flex-col">
+
+                    <label>Date Range:</label>
+                    <DateRangePicker value={range} onChange={handleDateRangeChange} />
+
+                    {/* <label>Start Date:</label>
                     <DatePicker
                         selected={selectedDate}
                         onChange={handleStartDateChange}
@@ -686,9 +690,9 @@ const dashboard = () => {
                         isClearable
                         placeholderText="Select a date"
                         className="date-picker-start-date"
-                    />
+                    /> */}
                 </div>
-                <div className="filter-group">
+                {/* <div className="filter-group">
                     <label>End Date:</label>
                     <DatePicker
                         selected={selectedDateEnd}
@@ -713,17 +717,26 @@ const dashboard = () => {
                             </option>
                         ))}
                     </select>
+                </div> */}
+                <div className="filter-group flex flex-col">
+
+                    <label>Trails:</label>
+                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+
                 </div>
-                <div className="filter-group">
-                    <label>Trail:</label>
-                    <TrailSelector
-                        onChange={handleTrailChange}
-                        clearTrails={() => setTrails([])}
-                        clearGraph={() => setGraphLines([])}
-                        clearName={() => setGraphTitle("No Trails Selected")}
-                        trailMetadata={trailMetadata}
-                        trailGroups={trailGroups}
-                    />
+                <div className="filter-group flex flex-col">
+
+                    <label>Trail Groups:</label>
+                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+
+                </div>
+                <div className="options-container flex flex-col">
+                    <label className="">Additional Options:</label>
+                    <div className="flex flex-row gap-2">
+                        <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
+                        <Button variant="secondary">Export Data</Button>
+                        <Button variant="secondary">Import Data</Button>
+                    </div>
                 </div>
             </div>
         </div>
