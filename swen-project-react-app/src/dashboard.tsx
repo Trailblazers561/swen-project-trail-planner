@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
-} from "@/components/ui/dropdown-menu";
 import TrailSelector from "./components/trailselector";
 
 interface Trail {
@@ -675,6 +674,7 @@ const dashboard = () => {
 
     return (
         <div>
+            <Navbar />
         <div className="flex flex-col">
             <div className="filter-container">
                 <div className="filter-group">
