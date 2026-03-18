@@ -14,6 +14,9 @@ TRAIL_MANAGER = os.environ.get("TRAIL_MANAGER")
 USER = os.environ.get("USER")
 GUEST = "GUEST"
 
+group_values = {"user": 0, "trail_manager": 1, "admin": 2, "root_admin": 3}
+groups_simplified = {ROOT_ADMIN: "root_admin", ADMIN: "admin", TRAIL_MANAGER: "trail_manager", USER: "user", GUEST: "guest"}
+
 # Does not handle guest permissions, future sprint task?
 PERMISSIONS = {
     ("/csv", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER],
@@ -28,6 +31,8 @@ PERMISSIONS = {
     ("/trail_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/users", "GET"): [ROOT_ADMIN, ADMIN],
+    ("/users", "POST"): [ROOT_ADMIN, ADMIN],
 }
 
 # Download public keys when lambda is created (code is outside handler)
@@ -51,11 +56,12 @@ def handler(event, context):
         if not claims:
             return get_deny_policy("invalid-token", policy_resource)
         users_groups = claims.get("cognito:groups", [GUEST])
+        context = {"caller_role": max([groups_simplified[group] for group in users_groups], key=lambda x: group_values[x], default="guest")}
 
         allowed_groups = PERMISSIONS.get((resource, http_method), [ROOT_ADMIN])
         # If requesting user is in any of the groups that have permission to call the endpoint
         if any(group in allowed_groups for group in users_groups):
-            return get_allow_policy(claims.get("sub", "unknown-user"), policy_resource)
+            return get_allow_policy(claims.get("sub", "unknown-user"), policy_resource, context)
 
         return get_deny_policy(claims.get("sub", "unknown-user"), policy_resource)
 
@@ -137,6 +143,7 @@ def validate_token(token):
     return claims
 
 def get_deny_policy(principalId, resource):
+    print(f"Failure: returning deny policy for principalId [{principalId}]")
     return {
         "principalId": principalId,
         "policyDocument": {
@@ -151,7 +158,8 @@ def get_deny_policy(principalId, resource):
         }
     }
 
-def get_allow_policy(principalId, resource):
+def get_allow_policy(principalId, resource, context):
+    print(f"Success: returning allow policy for principalId [{principalId}]")
     return {
         "principalId": principalId,
         "policyDocument": {
@@ -163,7 +171,8 @@ def get_allow_policy(principalId, resource):
                     "Resource": resource
                 }
             ]
-        }
+        },
+        "context": context
     }
 
 def parse_method_arn(arn):

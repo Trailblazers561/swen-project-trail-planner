@@ -546,6 +546,97 @@ resource "aws_api_gateway_integration" "csv_get_integration" {
   uri                     = aws_lambda_function.export_csv.invoke_arn
 }
 
+# /users Resource
+resource "aws_api_gateway_resource" "users" {
+  path_part   = "users"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /users
+resource "aws_api_gateway_method" "users_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.users.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.users_options_integration,
+    aws_api_gateway_method_response.users_options_response
+  ]
+}
+
+# GET /users
+resource "aws_api_gateway_method" "users_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.users.id
+  http_method   = "GET"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "users_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.users.id
+  http_method             = aws_api_gateway_method.users_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_users.invoke_arn
+}
+
+# POST /users
+resource "aws_api_gateway_method" "users_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.users.id
+  http_method   = "POST"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "users_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.users.id
+  http_method             = aws_api_gateway_method.users_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.change_user_group.invoke_arn
+}
+
 # Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   name = "${var.deploy_env}_LambdaAuthorizer"
@@ -554,7 +645,6 @@ resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   type = local.gateway_authorizer_type
   authorizer_result_ttl_in_seconds =  0
 }
-
 
 # Deployment + Stage
 resource "aws_api_gateway_deployment" "api_deployment" {
@@ -574,6 +664,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.device_metadata_put_integration.uri,
       aws_api_gateway_integration.trail_groups_get_integration.uri,
       aws_api_gateway_integration.csv_get_integration.uri,
+      aws_api_gateway_integration.users_get_integration.uri,
+      aws_api_gateway_integration.users_post_integration.uri,
 
       # Authorizer Stuff
       aws_api_gateway_authorizer.lambda_authorizer.id,
@@ -597,6 +689,9 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.trail_groups_get.authorization,
       aws_api_gateway_method.csv_options.authorization,
       aws_api_gateway_method.csv_get.authorization,
+      aws_api_gateway_method.users_options.authorization,
+      aws_api_gateway_method.users_get.authorization,
+      aws_api_gateway_method.users_post.authorization,
 
       # Permissions
       aws_lambda_permission.allow_apigateway_all_functions
@@ -619,12 +714,15 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.device_metadata_put_integration,
     aws_api_gateway_integration.trail_groups_get_integration,
     aws_api_gateway_integration.csv_get_integration,
+    aws_api_gateway_integration.users_get_integration,
+    aws_api_gateway_integration.users_post_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
     aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
     aws_api_gateway_integration_response.device_metadata_options_integration_response,
     aws_api_gateway_integration_response.trail_groups_options_integration_response,
-    aws_api_gateway_integration_response.csv_options_integration_response
+    aws_api_gateway_integration_response.csv_options_integration_response,
+    aws_api_gateway_integration_response.users_options_integration_response,
   ]
 }
 

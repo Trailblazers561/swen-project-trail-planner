@@ -33,6 +33,11 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_full_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_cognito_full_access" {
+  role = aws_iam_role.lambda_iam_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonCognitoPowerUser"
+}
+
 # Allows cloudwatch log access for lambda (local only for cost)
 resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
   count = local.local_run ? 1 : 0

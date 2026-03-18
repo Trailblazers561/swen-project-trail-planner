@@ -219,6 +219,8 @@ locals {
     "traildata_get_trail_groups"             = aws_lambda_function.get_trail_groups
     "traildata_delete_trail"                 = aws_lambda_function.delete_trail
     "traildata_export_csv"                     = aws_lambda_function.export_csv
+    "get_users"                                     = aws_lambda_function.get_users
+    "change_user_group"                      = aws_lambda_function.change_user_group
   }
 }
 
@@ -398,4 +400,53 @@ resource "aws_lambda_function" "cleanup_lambda" {
       BUCKET_NAME = aws_s3_bucket.csv_bucket.bucket
     }
   }
+}
+
+# Lambdas for /users API endpoint
+data "archive_file" "user_management_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/user_management.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
+}
+
+resource "aws_lambda_function" "get_users" {
+  function_name = "${var.deploy_env}_get_users"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "user_management.get_users"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
+  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+
+  environment {
+    variables = {
+      COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
+      ROOT_ADMIN = aws_cognito_user_group.root_admin_group.name
+      ADMIN = aws_cognito_user_group.admin_group.name
+      TRAIL_MANAGER = aws_cognito_user_group.trail_manager_group.name
+      USER = aws_cognito_user_group.default_user_group.name
+    }
+  }
+
+  depends_on = [aws_iam_role.lambda_iam_role]
+}
+
+resource "aws_lambda_function" "change_user_group" {
+  function_name = "${var.deploy_env}_change_user_group"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "user_management.change_user_group"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
+  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+
+  environment {
+    variables = {
+      COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
+      ROOT_ADMIN = aws_cognito_user_group.root_admin_group.name
+      ADMIN = aws_cognito_user_group.admin_group.name
+      TRAIL_MANAGER = aws_cognito_user_group.trail_manager_group.name
+      USER = aws_cognito_user_group.default_user_group.name
+    }
+  }
+
+  depends_on = [aws_iam_role.lambda_iam_role]
 }
