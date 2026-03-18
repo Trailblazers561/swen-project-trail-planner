@@ -16,7 +16,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
   TF_VAR_deploy_env: '"test"'
-  TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
 
 jobs:
@@ -154,11 +153,11 @@ jobs:
             const time = parseFloat(testsuite.$.time || 0)
 
             const output = `#### Integration Testing Output
-              \`\`\`
-              ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
-              \`\`\`
-              [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-              `;
+            \`\`\`
+            ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
+            \`\`\`
+            [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -166,7 +165,6 @@ jobs:
               body: output
             });
         if: ${{ always() }}
-      
 
       - name: Create Destroy Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
