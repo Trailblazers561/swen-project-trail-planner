@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
+import { UserRole } from "./lib/apiTypes";
 
 export function TrailData() {
   /**
@@ -188,6 +189,42 @@ export function TrailData() {
     });
   }
 
+  /**
+   * Gets a list of cognito users
+   * @param maxCount - Optional max number of users to retrieve; defaults to 99
+   * @param targetUserRole - Optional List of trail IDs to include in the csv
+   */
+  async function getUsers(maxCount?: number, targetUserRole?: UserRole) {
+    //?trails=${trailsParam}&start=${startdate}&end=${enddate}
+    const queries: string[] = []
+    if (maxCount !== undefined)
+      queries.push(`max_count=${maxCount.toString()}`)
+    if (targetUserRole !== undefined)
+      queries.push(`target_user_role=${targetUserRole}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/users${queryString}`, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+  /**
+   * Updates cognito users role
+   * @param targetUserId - User ID for the user that will be updated
+   * @param targetUserRole - UserRole to set the given user to
+   */
+  async function updateUserRole(targetUserId: string, targetUserRole: UserRole) {
+    return await request(`${API_URL}/users`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        target_user_id: targetUserId,
+        target_user_role: targetUserRole
+      }),
+    });
+  }
+
   return {
     getTrailMetadata,
     getTrailGroups,
@@ -202,6 +239,8 @@ export function TrailData() {
     updateTrailGroup,
     deleteTrailGroup,
     exportCSV,
+    getUsers,
+    updateUserRole
   };
 }
 
