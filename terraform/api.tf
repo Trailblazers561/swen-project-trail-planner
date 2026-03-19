@@ -591,7 +591,7 @@ resource "aws_api_gateway_integration_response" "users_options_integration_respo
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"       = "'*'"
     "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
   }
