@@ -5,8 +5,9 @@ from selenium_helper import SeleniumHelper as SH
 from dtos.user_dto import UserDTO
 from enums.user_enum import User
 from steps.login.login_step import LoginStep
-from steps.login.logout_step import LogoutStep
+from steps.other.perform_user_action_step import PerformUserActionStep
 from enums.login_mode import LoginMode
+from enums.user_action import UserAction
 
 @pytest.mark.UI
 def login_test():
@@ -51,7 +52,7 @@ def user_login_logout(driver, user: UserDTO):
         login_step = LoginStep(driver, user, LoginMode.NORMAL)
         login_step.run()
 
-        logout_step = LogoutStep(driver)
+        logout_step = PerformUserActionStep(driver, UserAction.LOGOUT)
         logout_step.run()
     except Exception as e:
         pytest_check.fail(f"Error Occured With Login/Logout for User [{user.name}]: {e.msg}")
