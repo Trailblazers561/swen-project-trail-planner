@@ -91,13 +91,3 @@ def parse_csv_and_export_data(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
-
-if __name__ == "__main__":
-    mock_event = {
-        "body": json.dumps({
-            "csv_file_path": "tmp-upload/04aab8e1-8cc7-4d32-aa04-137df0bfecf0/trail_data.csv"
-        })
-    }
-    result = parse_csv_and_export_data(mock_event, None)
-    print(result)
