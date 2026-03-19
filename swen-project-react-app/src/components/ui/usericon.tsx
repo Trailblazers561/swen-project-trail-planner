@@ -16,15 +16,15 @@ export function UserIcon() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-          <Button className="bg-[var(--color-navbar)]" size="icon">
+          <Button className="bg-[var(--color-navbar)]" size="icon" id="user-icon-button">
             <User />
           </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-          <DropdownMenuGroup>
-          <DropdownMenuItem>Manage Users</DropdownMenuItem>
+          <DropdownMenuGroup id="user-icon-group">
+          <DropdownMenuItem data-testid="manage-users">Manage Users</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
+          <DropdownMenuItem onClick={handleLogout} data-testid="logout">
             <div className={"hover:bg-[var(--color-logout)] hover:text-white rounded-md px-2 py-1 flex items-center gap-2"}>
               Logout
               <LogOut />
