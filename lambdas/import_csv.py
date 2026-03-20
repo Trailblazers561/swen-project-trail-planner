@@ -14,7 +14,7 @@ s3_client = boto3.client('s3')
 
 # Table references
 logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDeviceLogs"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-csv_bucket-13295087")
+s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 
 def cors_headers():

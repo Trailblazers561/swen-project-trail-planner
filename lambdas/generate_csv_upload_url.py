@@ -6,7 +6,7 @@ import boto3
 s3_client = boto3.client('s3')
 
 # Table references
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-csv_bucket-13295087")
+s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 
 def generate_url(event, context):
