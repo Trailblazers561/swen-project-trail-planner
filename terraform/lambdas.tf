@@ -373,7 +373,7 @@ resource "aws_lambda_function" "import_csv" {
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/import_csv.zip"
   code_sha256   = data.archive_file.import_csv_zip.output_base64sha256
-  timeout       = 30
+  timeout       = 600
 
   environment {
     variables = {
@@ -400,7 +400,7 @@ resource "aws_lambda_function" "generate_csv_upload_url" {
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/generate_csv_upload_url.zip"
   code_sha256   = data.archive_file.generate_csv_upload_url_zip.output_base64sha256
-  timeout       = 30
+  timeout       = 3
 
   environment {
     variables = {

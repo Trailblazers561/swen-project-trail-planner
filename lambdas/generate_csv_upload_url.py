@@ -21,7 +21,7 @@ def generate_url(event, context):
                                                Params={'Bucket': s3_bucket,
                                                        'Key': fullFilePath},
                                                ExpiresIn=3600)
-
+        print(f"file path {fullFilePath} generated to upload file to")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
