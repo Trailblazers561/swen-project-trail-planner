@@ -16,7 +16,7 @@ logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDevic
 trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "local_TrailMetadata"))
 device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "local_DeviceMetadata"))
 trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "local_TrailGroups"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-csv_bucket-13295087")
+s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -29,17 +29,18 @@ def convert_decimals(obj):
         return obj
 
 def create_and_fill_csv(event, context):
+    print(event)
     """
     Creates a csv file from the given parameters and returns link to the file in a bucket.
     Dates in iso format, all payload parameters are optional
     Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str}
     """
     try:
-        body = json.loads(event.get("body") or "{}")
+        params = event.get('queryStringParameters', {}) or {}
 
-        trail_id_list = body.get("trail_id_list")
-        start_date = body.get("start_date")
-        end_date = body.get("end_date")
+        trail_id_list = params.get("trail_id_list")
+        start_date = params.get("start_date")
+        end_date = params.get("end_date")
 
 
         if start_date is None:
@@ -87,7 +88,7 @@ def create_and_fill_csv(event, context):
                                                     Params={'Bucket': s3_bucket,
                                                             'Key': fullFilePath},
                                                     ExpiresIn=3600)
-
+        print(f"Success: returning csv url [{url}]")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
@@ -95,12 +96,14 @@ def create_and_fill_csv(event, context):
         }
 
     except ValueError as e:
+        print(e)
         return {
             "statusCode": 400,
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Invalid data format: {str(e)}"})
         }
     except Exception as e:
+        print(e)
         return {
             "statusCode": 500,
             "headers": cors_headers(),
@@ -113,4 +116,3 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
-#start_date="2025-05-28"&end_date="2025-15-28"&trail_id_list=[1]
