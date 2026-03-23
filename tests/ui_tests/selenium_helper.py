@@ -12,7 +12,7 @@ import time
 from ui_config import BASE_URL
 
 DEFAULT_WAIT = 2
-WEBSITE_ROOT = (By.XPATH, "//div[@class='loginForm']")
+WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
 
 class SeleniumHelper:
     def get_driver() -> webdriver.Chrome:

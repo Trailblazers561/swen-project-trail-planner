@@ -44,7 +44,7 @@ const LoginPage = () => {
       </div>
 
       <div className="fixed right-0 top-0 h-screen w-1/2 flex items-center justify-center">
-        <div className="flex w-full max-w-4xl items-start">
+        <div className="flex w-full max-w-4xl items-start" id="loginForm">
 
           <div className="flex-1 px-10 pt-6">
             <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
