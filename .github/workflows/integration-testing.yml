@@ -16,7 +16,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
   TF_VAR_deploy_env: '"test"'
-  TF_VAR_local_run: "false"
   CONFIG_DIRECTORY: "./terraform"
 
 jobs:
@@ -30,6 +29,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python Requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tests/requirements.txt
+          python -m pip install --no-compile --no-binary :all: -r lambdas/lambda_authorizer/requirements.txt -t lambdas/layers/auth_reqs/python
 
       - name: Setup Terraform Folder
         run: |
@@ -82,11 +92,6 @@ jobs:
           npm run build
           aws s3 sync ./dist s3://$BUCKET_NAME --delete
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
       - name: Install Chrome
         run: |
           sudo apt update
@@ -94,8 +99,6 @@ jobs:
 
       - name: Install Dependiencies And Test
         run: |
-          python -m pip install --upgrade pip
-          pip install -r tests/requirements.txt
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           pytest -s tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
@@ -154,11 +157,11 @@ jobs:
             const time = parseFloat(testsuite.$.time || 0)
 
             const output = `#### Integration Testing Output
-              \`\`\`
-              ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
-              \`\`\`
-              [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-              `;
+            \`\`\`
+            ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
+            \`\`\`
+            [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -166,7 +169,6 @@ jobs:
               body: output
             });
         if: ${{ always() }}
-      
 
       - name: Create Destroy Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0

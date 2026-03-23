@@ -1,4 +1,5 @@
 pytest
+pytest-check
 pytest-cov
 requests
 selenium
