@@ -755,7 +755,7 @@ const dashboard = () => {
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Button variant="secondary">Export Data</Button>
+                        <Button variant="secondary" onClick={handleExportData}>Export Data</Button>
                         <Button variant="secondary">Import Data</Button>
                     </div>
                 </div>
