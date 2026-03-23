@@ -16,7 +16,7 @@ logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDevic
 trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "local_TrailMetadata"))
 device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "local_DeviceMetadata"))
 trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "local_TrailGroups"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET", "local-csv_bucket-13295087")
+s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -29,29 +29,36 @@ def convert_decimals(obj):
         return obj
 
 def create_and_fill_csv(event, context):
+    print(event)
     """
     Creates a csv file from the given parameters and returns link to the file in a bucket.
     Dates in iso format, all payload parameters are optional
     Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str}
     """
     try:
-        body = json.loads(event.get("body") or "{}")
+        single_params = event.get("queryStringParameters", {}) or {}
+        multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        trail_id_list = body.get("trail_id_list")
-        start_date = body.get("start_date")
-        end_date = body.get("end_date")
+        trail_id_list = multi_params.get("trail_id_list")
+        start_date = single_params.get("start_date")
+        end_date = single_params.get("end_date")
 
+        if trail_id_list is not None and not all(id.isdigit() for id in trail_id_list):
+            raise ValueError("Invalid trail_id_list format")
+        if trail_id_list:
+            trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
         if start_date is None:
-            start_date = 0
+            start_date = Decimal(0)
         else:
-            start_date = datetime.fromisoformat(start_date).timestamp()
+            start_date = Decimal(datetime.fromisoformat(start_date).timestamp())
 
         if end_date is None:
-            end_date = 4928325678
+            end_date = Decimal(4928325678)
         else:
-            end_date = datetime.fromisoformat(end_date).timestamp()
+            end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
 
+        print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}]")
         if trail_id_list is None:
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
@@ -61,7 +68,7 @@ def create_and_fill_csv(event, context):
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
                     Attr("timestamp").lt(end_date) & \
-                    Attr("trail_id_list").is_in(trail_id_list)
+                    Attr("trail_id").is_in(trail_id_list_decimals)
             ).get("Items")
         items = convert_decimals(items)
 
@@ -87,7 +94,7 @@ def create_and_fill_csv(event, context):
                                                     Params={'Bucket': s3_bucket,
                                                             'Key': fullFilePath},
                                                     ExpiresIn=3600)
-
+        print(f"Success: returning csv url [{url}]")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
@@ -95,12 +102,14 @@ def create_and_fill_csv(event, context):
         }
 
     except ValueError as e:
+        print(e)
         return {
             "statusCode": 400,
             "headers": cors_headers(),
-            "body": json.dumps({"error": f"Invalid data format: {str(e)}"})
+            "body": json.dumps({"error": f"{str(e)}"})
         }
     except Exception as e:
+        print(e)
         return {
             "statusCode": 500,
             "headers": cors_headers(),
@@ -113,4 +122,3 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
-#start_date="2025-05-28"&end_date="2025-15-28"&trail_id_list=[1]

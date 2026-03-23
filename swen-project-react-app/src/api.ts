@@ -177,15 +177,19 @@ export function TrailData() {
    * @param startDate - Optional ISO format date for earliest date to include in the csv
    * @param endDate - Optional ISO format date for latest date to include in the csv
    */
-  async function exportCSV(trailIdList: number[], startDate?: string, endDate?: string) {
-    return await request(`${API_URL}/csv`, {
+  async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date) {
+    const queries: string[] = []
+    if (trailIdList !== undefined)
+      trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
+    if (startDate !== undefined)
+      queries.push(`start_date=${startDate}`)
+    if (endDate !== undefined)
+      queries.push(`end_date=${endDate}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/csv${queryString}`, {
       method: "GET",
       headers: authHeaders(),
-      body: JSON.stringify({
-        trail_id_list: trailIdList,
-        start_date: startDate,
-        end_date: endDate,
-      }),
     });
   }
 
