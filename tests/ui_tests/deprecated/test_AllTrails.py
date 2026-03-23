@@ -6,19 +6,20 @@ import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from test_helpers import login, select_trail_from_dropdown, getService, getOptions
-from ui_config import DEFAULT_WAIT_TIME, SHORT_WAIT_TIME, MEDIUM_WAIT_TIME, DEFAULT_START_DATE, START_DATE_CLASS
+from old_ui_config import DEFAULT_WAIT_TIME, SHORT_WAIT_TIME, MEDIUM_WAIT_TIME, DEFAULT_START_DATE, START_DATE_CLASS
 
 @pytest.mark.UI
-def test_WildernessGroups():
-    """Test selecting trails from wilderness groups"""
+@pytest.mark.skip(reason="deprecated")
+def test_AllTrails():
+    """Test selecting 'All Trails' in the trail selector"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
 
     try:
         login(driver)
 
-        wait = WebDriverWait(driver, DEFAULT_WAIT_TIME)
-
         # Ensure we're in graph view (default)
+        wait = WebDriverWait(driver, DEFAULT_WAIT_TIME)
+        
         # Set start date
         start_date = wait.until(EC.presence_of_element_located((By.CLASS_NAME, START_DATE_CLASS)))
         start_date.clear()
@@ -29,7 +30,8 @@ def test_WildernessGroups():
         select_trail_from_dropdown(driver, wait, "All Trails")
         time.sleep(MEDIUM_WAIT_TIME)
         
-        # Verify selection worked
+        # Verify "All Trails" was selected (check if graph updates or trail selector shows the selection)
+        # The graph should display data or the selector should show "All Trails"
         assert True  # Basic test - if we get here without error, selection worked
 
     finally:

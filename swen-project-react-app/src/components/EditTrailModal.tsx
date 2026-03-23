@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrailData } from '../api';
 import './Modal.css';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Button } from './ui/button';
 
 interface Trail {
   trail_id: number;
@@ -194,8 +196,8 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{isCreateMode ? 'Create New Trail' : 'Edit Trail Information'}</h2>
+        <div className="modal-header bg-[var(--color-navbar)]">
+          <div className="font-primary text-white font-semibold"> {isCreateMode ? 'Create New Trail' : 'Edit Trail Information'} </div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -233,6 +235,19 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 </div>
                 <div className="form-group">
                   <label htmlFor="trail-group">Trail Group (optional):</label>
+
+                  {/* TODO: Implement new dropdown menu for trail groups once data model is updated */}
+                  {/* <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="primary">Trail Options</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuGroup>
+                            <DropdownMenuItem>Add Trail</DropdownMenuItem>
+                            <DropdownMenuItem>Edit Trail Info</DropdownMenuItem>
+                            </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                        </DropdownMenu> */}
                   <select
                     id="trail-group"
                     value={selectedGroup}
@@ -266,12 +281,9 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 )}
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={onClose} disabled={loading || deleting}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={loading || deleting}>
+                <Button variant="primary" disabled={loading || deleting}>
                   {loading ? (isCreateMode ? 'Creating...' : 'Updating...') : (isCreateMode ? 'Create Trail' : 'Update Trail')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

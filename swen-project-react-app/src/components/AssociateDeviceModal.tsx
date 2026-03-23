@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrailData } from '../api';
 import './Modal.css';
+import { Button } from './ui/button';
 
 interface Device {
   device_id: string;
@@ -102,8 +103,8 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Associate Device to Trail</h2>
+        <div className="modal-header bg-[var(--color-navbar)]">
+          <div className="font-primary text-white font-semibold">Associate Device to Trail</div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -184,12 +185,9 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <button type="button" onClick={onClose} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" disabled={loading || !selectedDevice || !selectedTrail}>
+            <Button variant="primary" disabled={loading || !selectedDevice || !selectedTrail}>
               {loading ? 'Associating...' : 'Associate Device'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
