@@ -49,14 +49,14 @@ def create_and_fill_csv(event, context):
             trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
         if start_date is None:
-            start_date = 0
+            start_date = Decimal(0)
         else:
-            start_date = datetime.fromisoformat(start_date).timestamp()
+            start_date = Decimal(datetime.fromisoformat(start_date).timestamp())
 
         if end_date is None:
-            end_date = 4928325678
+            end_date = Decimal(4928325678)
         else:
-            end_date = datetime.fromisoformat(end_date).timestamp()
+            end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
 
         print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}]")
         if trail_id_list is None:
