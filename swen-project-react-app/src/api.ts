@@ -195,10 +195,10 @@ export function TrailData() {
    */
       async function importCSV(csvFile: File) {
 
-        const { uploadUrl, s3FilePath } = await request(`${API_URL}/csv/csv-url`, {
+        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv/csv-url`, {
           method: "GET",
           headers: authHeaders(),
-        });
+        }))["json"];
     
         await fetch(uploadUrl, {
           method: "PUT",
