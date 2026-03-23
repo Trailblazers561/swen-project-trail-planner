@@ -36,12 +36,17 @@ def create_and_fill_csv(event, context):
     Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str}
     """
     try:
-        params = event.get('queryStringParameters', {}) or {}
+        single_params = event.get("queryStringParameters", {}) or {}
+        multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        trail_id_list = params.get("trail_id_list")
-        start_date = params.get("start_date")
-        end_date = params.get("end_date")
+        trail_id_list = multi_params.get("trail_id_list")
+        start_date = single_params.get("start_date")
+        end_date = single_params.get("end_date")
 
+        if trail_id_list is not None and not all(id.isdigit() for id in trail_id_list):
+            raise ValueError("Invalid trail_id_list format")
+        if trail_id_list:
+            trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
         if start_date is None:
             start_date = 0
@@ -53,6 +58,7 @@ def create_and_fill_csv(event, context):
         else:
             end_date = datetime.fromisoformat(end_date).timestamp()
 
+        print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}]")
         if trail_id_list is None:
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
@@ -62,7 +68,7 @@ def create_and_fill_csv(event, context):
             items = logs_table.scan(
                 FilterExpression=Attr("timestamp").gt(start_date) & \
                     Attr("timestamp").lt(end_date) & \
-                    Attr("trail_id_list").is_in(trail_id_list)
+                    Attr("trail_id").is_in(trail_id_list_decimals)
             ).get("Items")
         items = convert_decimals(items)
 
@@ -100,7 +106,7 @@ def create_and_fill_csv(event, context):
         return {
             "statusCode": 400,
             "headers": cors_headers(),
-            "body": json.dumps({"error": f"Invalid data format: {str(e)}"})
+            "body": json.dumps({"error": f"{str(e)}"})
         }
     except Exception as e:
         print(e)

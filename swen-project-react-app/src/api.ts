@@ -179,7 +179,7 @@ export function TrailData() {
   async function exportCSV(trailIdList?: number[], startDate?: string, endDate?: string) {
     const queries: string[] = []
     if (trailIdList !== undefined)
-      queries.push(`trail_id_list=${trailIdList.toString()}`)
+      trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
     if (startDate !== undefined)
       queries.push(`start_date=${startDate}`)
     if (endDate !== undefined)
