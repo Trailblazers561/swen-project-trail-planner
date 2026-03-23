@@ -16,10 +16,10 @@ def login_test():
     try:
         # Test Logging In With Correct Users
         users = [
-            # UserDTO(user=User.ROOT_ADMIN),
+            UserDTO(user=User.ROOT_ADMIN),
             UserDTO(user=User.ADMIN),
-            # UserDTO(user=User.TRAIL_MANAGER),
-            # UserDTO(user=User.USER)
+            UserDTO(user=User.TRAIL_MANAGER),
+            UserDTO(user=User.USER)
         ]
 
         for user in users:
