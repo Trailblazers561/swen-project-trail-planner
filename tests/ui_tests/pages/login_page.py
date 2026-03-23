@@ -6,10 +6,10 @@ from dtos.user_dto import UserDTO
 from enums.login_mode import LoginMode
 
 class LoginPage:
-    root = (By.XPATH, "//div[@class='loginForm']")
-    email_input = (By.XPATH, "//input[@id='email']")
-    password_input = (By.XPATH, "//input[@id='password']")
-    sign_in_button = (By.XPATH, "//button[@id='signInButton']")
+    root = (By.XPATH, "//div[@id='loginForm']")
+    email_input = (By.XPATH, "//input[@type='email']")
+    password_input = (By.XPATH, "//input[@type='password']")
+    sign_in_button = (By.XPATH, "//button[text()='Login']")
 
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
