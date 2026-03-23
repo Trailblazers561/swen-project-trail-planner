@@ -219,6 +219,8 @@ locals {
     "traildata_get_trail_groups"             = aws_lambda_function.get_trail_groups
     "traildata_delete_trail"                 = aws_lambda_function.delete_trail
     "traildata_export_csv"                     = aws_lambda_function.export_csv
+    "traildata_import_csv"                     = aws_lambda_function.import_csv
+    "traildata_generate_csv_upload_url"        = aws_lambda_function.generate_csv_upload_url
     "get_users"                                     = aws_lambda_function.get_users
     "change_user_group"                      = aws_lambda_function.change_user_group
   }
@@ -359,6 +361,57 @@ resource "aws_lambda_function" "export_csv" {
     aws_dynamodb_table.trail_metadata,
     aws_dynamodb_table.trail_groups
     ]
+}
+
+data "archive_file" "import_csv_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/import_csv.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/import_csv.zip"
+}
+
+resource "aws_lambda_function" "import_csv" {
+  function_name = "${var.deploy_env}_import_csv"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "import_csv.parse_csv_and_export_data"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/import_csv.zip"
+  code_sha256   = data.archive_file.import_csv_zip.output_base64sha256
+  timeout       = 600
+
+  environment {
+    variables = {
+      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
+    }
+  }
+  depends_on = [
+    aws_iam_role.lambda_iam_role,
+    aws_dynamodb_table.trail_device_logs
+    ]
+}
+
+data "archive_file" "generate_csv_upload_url_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/generate_csv_upload_url.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/generate_csv_upload_url.zip"
+}
+
+resource "aws_lambda_function" "generate_csv_upload_url" {
+  function_name = "${var.deploy_env}_generate_csv_upload_url"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "generate_csv_upload_url.generate_url"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/generate_csv_upload_url.zip"
+  code_sha256   = data.archive_file.generate_csv_upload_url_zip.output_base64sha256
+  timeout       = 3
+
+  environment {
+    variables = {
+      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
+    }
+  }
+  depends_on = [
+    aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_cloudwatch_event_rule" "daily_cleanup" {

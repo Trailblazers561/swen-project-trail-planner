@@ -189,6 +189,31 @@ export function TrailData() {
     });
   }
 
+      /**
+   * Takes in a .csv file and adds it to the database
+   * @param csvFile - Csv file itself
+   */
+      async function importCSV(csvFile: File) {
+
+        const { uploadUrl, s3FilePath } = await request(`${API_URL}/csv/csv-url`, {
+          method: "GET",
+          headers: authHeaders(),
+        });
+    
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: csvFile
+        })
+    
+        return await request(`${API_URL}/csv`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            csv_file_path: s3FilePath,
+          }),
+        });
+      }
+
   /**
    * Gets a list of cognito users
    * @param maxCount - Optional max number of users to retrieve; defaults to 99
@@ -225,6 +250,8 @@ export function TrailData() {
     });
   }
 
+
+
   return {
     getTrailMetadata,
     getTrailGroups,
@@ -239,8 +266,9 @@ export function TrailData() {
     updateTrailGroup,
     deleteTrailGroup,
     exportCSV,
+    importCSV,
     getUsers,
-    updateUserRole
+    updateUserRole,
   };
 }
 

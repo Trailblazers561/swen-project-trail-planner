@@ -9,7 +9,6 @@ import type { Layout } from "plotly.js";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-import { useNavigate } from "react-router-dom";
 import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
@@ -19,10 +18,9 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu"
+import Navbar from "./components/Navbar.tsx";
 import TrailSelector from "./components/trailselector";
 
 interface Trail {
@@ -48,11 +46,6 @@ const trailgroupoptions: MultiSelectOption[] = [
 ];
 
 const dashboard = () => {
-    const navigate = useNavigate();
-    const handleLogout = () => {
-        sessionStorage.clear();
-        navigate("/login");
-    };
 
     const {
         getTrailLogsBetweenDates,
@@ -681,10 +674,15 @@ const dashboard = () => {
 
     return (
         <div>
+            <Navbar />
         <div className="flex flex-col">
             <div className="filter-container">
-                <div className="filter-group">
-                    <label>Start Date:</label>
+                <div className="filter-group flex flex-col">
+
+                    <label>Date Range:</label>
+                    <DateRangePicker value={range} onChange={handleDateRangeChange} />
+
+                    {/* <label>Start Date:</label>
                     <DatePicker
                         selected={selectedDate}
                         onChange={handleStartDateChange}
@@ -692,9 +690,9 @@ const dashboard = () => {
                         isClearable
                         placeholderText="Select a date"
                         className="date-picker-start-date"
-                    />
+                    /> */}
                 </div>
-                <div className="filter-group">
+                {/* <div className="filter-group">
                     <label>End Date:</label>
                     <DatePicker
                         selected={selectedDateEnd}
@@ -719,17 +717,26 @@ const dashboard = () => {
                             </option>
                         ))}
                     </select>
+                </div> */}
+                <div className="filter-group flex flex-col">
+
+                    <label>Trails:</label>
+                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+
                 </div>
-                <div className="filter-group">
-                    <label>Trail:</label>
-                    <TrailSelector
-                        onChange={handleTrailChange}
-                        clearTrails={() => setTrails([])}
-                        clearGraph={() => setGraphLines([])}
-                        clearName={() => setGraphTitle("No Trails Selected")}
-                        trailMetadata={trailMetadata}
-                        trailGroups={trailGroups}
-                    />
+                <div className="filter-group flex flex-col">
+
+                    <label>Trail Groups:</label>
+                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+
+                </div>
+                <div className="options-container flex flex-col">
+                    <label className="">Additional Options:</label>
+                    <div className="flex flex-row gap-2">
+                        <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
+                        <Button variant="secondary">Export Data</Button>
+                        <Button variant="secondary">Import Data</Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -773,13 +780,6 @@ const dashboard = () => {
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                         </DropdownMenu>
-                        <button
-                            className="logout-button"
-                            type="button"
-                            onClick={handleLogout}
-                        >
-                            Logout
-                        </button>
                     </div>
                 </div>
                 {viewMode === "graph" ? (
