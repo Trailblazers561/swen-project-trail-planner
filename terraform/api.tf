@@ -542,8 +542,8 @@ resource "aws_api_gateway_method" "csv_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.csv.id
   http_method   = "POST"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "csv_get_integration" {
@@ -624,8 +624,8 @@ resource "aws_api_gateway_method" "csv_url_get" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.csv_url.id
   http_method   = "GET"
-  authorization = var.authorization_type
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "csv_url_get_integration" {
@@ -755,6 +755,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.device_metadata_put_integration.uri,
       aws_api_gateway_integration.trail_groups_get_integration.uri,
       aws_api_gateway_integration.csv_get_integration.uri,
+      aws_api_gateway_integration.csv_post_integration.uri,
+      aws_api_gateway_integration.csv_url_get_integration.uri,
       aws_api_gateway_integration.users_get_integration.uri,
       aws_api_gateway_integration.users_post_integration.uri,
 
@@ -780,6 +782,9 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.trail_groups_get.authorization,
       aws_api_gateway_method.csv_options.authorization,
       aws_api_gateway_method.csv_get.authorization,
+      aws_api_gateway_method.csv_post.authorization,
+      aws_api_gateway_method.csv_url_options.authorization,
+      aws_api_gateway_method.csv_url_get.authorization,
       aws_api_gateway_method.users_options.authorization,
       aws_api_gateway_method.users_get.authorization,
       aws_api_gateway_method.users_post.authorization,
@@ -813,6 +818,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.device_metadata_options_integration_response,
     aws_api_gateway_integration_response.trail_groups_options_integration_response,
     aws_api_gateway_integration_response.csv_options_integration_response,
+    aws_api_gateway_integration_response.csv_url_options_integration_response,
     aws_api_gateway_integration_response.users_options_integration_response,
   ]
 }
