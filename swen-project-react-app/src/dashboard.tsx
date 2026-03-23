@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
 import TrailSelector from "./components/trailselector";
+import { el } from "date-fns/locale";
 
 interface Trail {
     trail_id: number;
@@ -52,6 +53,7 @@ const dashboard = () => {
         getDeviceMetadata,
         getTrailMetadata,
         getTrailGroups,
+        exportCSV
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
@@ -206,8 +208,27 @@ const dashboard = () => {
 
     const handleAssociateDevice = () => {
         setIsAssociateDeviceModalOpen(true);
-    };
+    }; 
 
+    const handleExportData = async() => {
+        let trailList = [];
+        for (let i = 0; i < trailListData.length; i++) {
+            trailList.push(trailListData[i].trail_id)
+        }
+        const startDate = selectedDate === null ? undefined : selectedDate;
+        const endDate = selectedDateEnd === null ? undefined : selectedDateEnd;
+
+
+        const csv_url = (await exportCSV(trailList, startDate, endDate))["json"]["url"];
+        // if (csv_url["success"]) === true {
+        //     console.log("successss")
+        // };
+        try{
+            window.open(csv_url, "_self");
+        } catch (error) {
+            console.error("Download failed:", error);
+        }
+    }
     const handleTrailUpdated = async () => {
         await loadTrailData();
         // Refresh graph - wait for state to update

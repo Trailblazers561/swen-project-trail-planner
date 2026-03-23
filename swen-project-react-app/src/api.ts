@@ -176,7 +176,7 @@ export function TrailData() {
    * @param startDate - Optional ISO format date for earliest date to include in the csv
    * @param endDate - Optional ISO format date for latest date to include in the csv
    */
-  async function exportCSV(trailIdList: number[], startDate?: string, endDate?: string) {
+  async function exportCSV(trailIdList: number[], startDate?: Date, endDate?: Date) {
     return await request(`${API_URL}/csv`, {
       method: "GET",
       headers: authHeaders(),
