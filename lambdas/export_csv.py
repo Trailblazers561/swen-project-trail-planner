@@ -45,8 +45,7 @@ def create_and_fill_csv(event, context):
 
         if trail_id_list is not None and not all(id.isdigit() for id in trail_id_list):
             raise ValueError("Invalid trail_id_list format")
-        if trail_id_list:
-            trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
+        trail_id_list_decimals = [Decimal(id) for id in trail_id_list] if trail_id_list else None
 
         if start_date is None:
             start_date = Decimal(0)
