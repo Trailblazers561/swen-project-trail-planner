@@ -1,9 +1,9 @@
 from enum import Enum
 
 class User(Enum):
-    ROOT_ADMIN = ("rootadmin@gmail.com", "root_admin")
+    ROOT_ADMIN = ("root_admin@gmail.com", "root_admin")
     ADMIN = ("admin@gmail.com", "admin")
-    TRAIL_MANAGER = ("trailmanager@gmail.com", "trail_manager")
+    TRAIL_MANAGER = ("trail_manager@gmail.com", "trail_manager")
     USER = ("user@gmail.com", "user")
 
     def __init__(self, email, username):

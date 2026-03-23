@@ -72,6 +72,7 @@ def parse_csv_and_export_data(event, context):
     File limit is 5mb, checks if headers are correct, and if the file has been uploaded in the past 30 days, reject it.
     Expects: {"csv_file_path": path to the csv file in the s3 bucket}
     """
+    print(event)
     try:
         body = json.loads(event.get("body") or "{}")
 
