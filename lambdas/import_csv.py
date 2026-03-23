@@ -26,42 +26,44 @@ def cors_headers():
 
 
 # Path in bucket for our uploaded hashes file
-file_hash_repository_path = "import-hashes/uploaded_hashes.json"
-
-
-def get_current_file_hashes():
-    """
-    Check our file for storing uploaded hashes, and return the list of hashes we've already uploaded.
-    :return: A list of file hashes previously uploaded in the last 30 days(time set in the auto delete lambda)
-    """
-    try:
-        hashJson = s3_client.get_object(Bucket=s3_bucket, Key=file_hash_repository_path)
-        return json.loads(hashJson["Body"].read().decode("utf-8"))
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "NoSuchKey":
-            return []
-        raise
+file_hash_repository_path = "import-hashes/"
 
 
 def is_duplicate_hash(fileHash):
     """
-    Quick check for if we've already uploaded this csv file recently. The data is the same, no reason to do it again.
+    Grab all files in the import-hashes folder, compare file hash to the names of the files in there to check if the file
+    has been hashed.
     :param fileHash: The hash of the file to check
     :return: Boolean if we've uploaded the file or not
     """
-    return fileHash in get_current_file_hashes()
+
+    try:
+        paginator = s3_client.get_paginator("list_objects_v2")
+
+        pages = paginator.paginate(Bucket=s3_bucket, Prefix=file_hash_repository_path)
+
+        hashes = []
+        for page in pages:
+            if 'Contents' in page:
+                for obj in page['Contents']:
+                    hashes.append(str(obj['Key']).removeprefix(file_hash_repository_path).removesuffix(".json"))
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            return False
+        raise
+
+    return fileHash in hashes
 
 
 def append_new_hash(fileHash):
     """
-    Add file hash to our "already uploaded hashes" file and save it to the bucket.
+    Add empty json file with the file hash as the name to our bucket
     :param fileHash: The hash to add
     """
-    hashes = get_current_file_hashes()
-    hashes.append(fileHash)
     print(f"Appending file hash to hash list- {fileHash}")
-    s3_client.put_object(Bucket=s3_bucket, Key=file_hash_repository_path,
-                         Body=json.dumps(hashes).encode("utf-8"))
+    filePath = file_hash_repository_path + fileHash + ".json"
+    s3_client.put_object(Bucket=s3_bucket, Key=filePath)
 
 
 def parse_csv_and_export_data(event, context):
