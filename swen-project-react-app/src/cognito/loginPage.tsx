@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { signIn } from "./authService";
 import React from "react";
 import {Button} from "@/components/ui/button";
+import { useAuth } from "../AuthContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -9,9 +9,10 @@ import pytest
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from test_helpers import login, getService, getOptions
-from ui_config import DEFAULT_WAIT_TIME, MEDIUM_WAIT_TIME, FILTER_CONTAINER_CLASS
+from old_ui_config import DEFAULT_WAIT_TIME, MEDIUM_WAIT_TIME, FILTER_CONTAINER_CLASS
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_SwitchToListView():
     """Test switching from graph view to list view"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
@@ -38,6 +39,7 @@ def test_SwitchToListView():
         driver.quit()
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_ListViewTableDisplay():
     """Test that the list view table displays correctly"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())
@@ -72,6 +74,7 @@ def test_ListViewTableDisplay():
         driver.quit()
 
 @pytest.mark.UI
+@pytest.mark.skip(reason="deprecated")
 def test_SwitchBackToGraphView():
     """Test switching back from list view to graph view"""
     driver = webdriver.Chrome(service=getService(), options=getOptions())

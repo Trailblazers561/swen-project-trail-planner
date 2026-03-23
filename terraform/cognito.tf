@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user_pool" {
-  name                = "${var.deploy_env}_${var.default_name}_user_pool"
+  name                = "${var.deploy_env}_trailplanner_user_pool"
   deletion_protection = "INACTIVE"
 
   username_attributes      = ["email"]
@@ -15,7 +15,7 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_client" "client" {
-  name         = "${var.deploy_env}_${var.default_name}_cognito_client"
+  name         = "${var.deploy_env}_trailplanner_cognito_client"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 
   generate_secret              = false
@@ -23,43 +23,55 @@ resource "aws_cognito_user_pool_client" "client" {
   supported_identity_providers = ["COGNITO"]
 }
 
-resource "aws_cognito_user" "admin" {
+resource "aws_cognito_user_group" "root_admin_group" {
+  name = "${var.deploy_env}_trailplanner_root_admin"
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username     = "${var.admin_username}"
-  password     = "${var.admin_password}"
-  attributes = {
-    email          = "admin@gmail.com"
-    email_verified = true
-  }
+  description  = "Root Admin group, managed by Terraform"
+  precedence   = 0
 }
 
-# aws trail manager user role
-resource "aws_cognito_user_group" "manager" {
-  name         = "${var.deploy_env}_${var.default_name}_trailManager"
+resource "aws_cognito_user_group" "admin_group" {
+  name         = "${var.deploy_env}_trailplanner_admin"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Admin group, managed by Terraform"
+  precedence   = 2
+}
+
+resource "aws_cognito_user_group" "trail_manager_group" {
+  name         = "${var.deploy_env}_trailplanner_trail_manager"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Trail Manager group, managed by Terraform"
   precedence   = 4
 }
 
-# aws admin user role
-resource "aws_cognito_user_group" "administrator" {
-  name         = "${var.deploy_env}_${var.default_name}_administrator"
+resource "aws_cognito_user_group" "default_user_group" {
+  name         = "${var.deploy_env}_trailplanner_user"
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  description  = "Administator group, managed by Terraform"
-  precedence   = 2
+  description  = "Default User group, managed by Terraform"
+  precedence   = 6
 }
 
-# aws root admin user role
-resource "aws_cognito_user_group" "root_administrator" {
-  name         = "${var.deploy_env}_${var.default_name}_rootAdministrator"
+# Create Predefined Users
+resource "aws_cognito_user" "users" {
+  for_each = var.users
+
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  description  = "Root Administator group, managed by Terraform"
-  precedence   = 0
+  username = each.value.username
+  password = each.value.password
+
+  attributes = {
+    email = each.value.email
+    email_verified = true
+  }
 }
 
-# add admin user to group
-resource "aws_cognito_user_in_group" "root_admin_users" {
+# Assign Predefined Users To Groups
+resource "aws_cognito_user_in_group" "assign_users" {
+  for_each = var.users
+
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username     = aws_cognito_user.admin.username
-  group_name   = aws_cognito_user_group.root_administrator.name
+  username     = each.value.username
+  group_name   = "${var.deploy_env}_trailplanner_${each.key}"
+
+  depends_on = [aws_cognito_user.users]
 }
