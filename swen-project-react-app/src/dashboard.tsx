@@ -9,6 +9,7 @@ import type { Layout } from "plotly.js";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
+import { useNavigate } from "react-router-dom";
 import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
@@ -18,10 +19,11 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
-import TrailSelector from "./components/trailselector";
 
 interface Trail {
     trail_id: number;
@@ -46,6 +48,11 @@ const trailgroupoptions: MultiSelectOption[] = [
 ];
 
 const dashboard = () => {
+    const navigate = useNavigate();
+    const handleLogout = () => {
+        sessionStorage.clear();
+        navigate("/login");
+    };
 
     const {
         getTrailLogsBetweenDates,
@@ -681,43 +688,7 @@ const dashboard = () => {
 
                     <label>Date Range:</label>
                     <DateRangePicker value={range} onChange={handleDateRangeChange} />
-
-                    {/* <label>Start Date:</label>
-                    <DatePicker
-                        selected={selectedDate}
-                        onChange={handleStartDateChange}
-                        dateFormat="MM/dd/yyyy"
-                        isClearable
-                        placeholderText="Select a date"
-                        className="date-picker-start-date"
-                    /> */}
                 </div>
-                {/* <div className="filter-group">
-                    <label>End Date:</label>
-                    <DatePicker
-                        selected={selectedDateEnd}
-                        onChange={handleEndDateChange}
-                        dateFormat="MM/dd/yyyy"
-                        isClearable
-                        placeholderText="Select a date"
-                        className="date-picker-end-date"
-                    />
-                </div>
-                <div className="filter-group">
-                    <label>Granularity:</label>
-                    <select
-                        id="granularity"
-                        className="select-box"
-                        value={granularity ?? ""}
-                        onChange={(e) => handleGranularityChange(e.target.value)}
-                    >
-                        {granularityOptions.map((option) => (
-                            <option key={option} value={option}>
-                                {option}
-                            </option>
-                        ))}
-                    </select>
-                </div> */}
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
@@ -743,19 +714,6 @@ const dashboard = () => {
             <div className="dashboard-div">
                 <div className="flex p-2.5 gap-2.5 justify-between items-center">
                     <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
-                    {/* <button
-                        className="action-button"
-                        type="button"
-                        onClick={toggleView}
-                        style={{
-                            backgroundColor: viewMode === "graph" ? "#007bff" : "#6c757d",
-                            color: "white",
-                        }}
-                    >
-                        {viewMode === "graph"
-                            ? "Switch to List View"
-                            : "Switch to Graph View"}
-                    </button> */}
                     <div className="flex gap-2.5">
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
