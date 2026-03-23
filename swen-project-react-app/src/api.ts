@@ -182,9 +182,9 @@ export function TrailData() {
     if (trailIdList !== undefined)
       trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
     if (startDate !== undefined)
-      queries.push(`start_date=${startDate}`)
+      queries.push(`start_date=${startDate.toISOString()}`)
     if (endDate !== undefined)
-      queries.push(`end_date=${endDate}`)
+      queries.push(`end_date=${endDate.toISOString()}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/csv${queryString}`, {
