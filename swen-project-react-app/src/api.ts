@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
+import { UserRole } from "./lib/apiTypes";
 
 export function TrailData() {
   /**
@@ -170,6 +171,91 @@ export function TrailData() {
     });
   }
 
+  /**
+   * Gets csv thats created from the database
+   * @param trailIdList - Optional List of trail IDs to include in the csv
+   * @param startDate - Optional ISO format date for earliest date to include in the csv
+   * @param endDate - Optional ISO format date for latest date to include in the csv
+   */
+  async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date) {
+    const queries: string[] = []
+    if (trailIdList !== undefined)
+      trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
+    if (startDate !== undefined)
+      queries.push(`start_date=${startDate.toISOString()}`)
+    if (endDate !== undefined)
+      queries.push(`end_date=${endDate.toISOString()}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/csv${queryString}`, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+      /**
+   * Takes in a .csv file and adds it to the database
+   * @param csvFile - Csv file itself
+   */
+      async function importCSV(csvFile: File) {
+
+        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv/csv-url`, {
+          method: "GET",
+          headers: authHeaders(),
+        }))["json"];
+    
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: csvFile
+        })
+    
+        return await request(`${API_URL}/csv`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            csv_file_path: s3FilePath,
+          }),
+        });
+      }
+
+  /**
+   * Gets a list of cognito users
+   * @param maxCount - Optional max number of users to retrieve; defaults to 99
+   * @param targetUserRole - Optional List of trail IDs to include in the csv
+   */
+  async function getUsers(maxCount?: number, targetUserRole?: UserRole) {
+    //?trails=${trailsParam}&start=${startdate}&end=${enddate}
+    const queries: string[] = []
+    if (maxCount !== undefined)
+      queries.push(`max_count=${maxCount.toString()}`)
+    if (targetUserRole !== undefined)
+      queries.push(`target_user_role=${targetUserRole}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/users${queryString}`, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
+  /**
+   * Updates cognito users role
+   * @param targetUserId - User ID for the user that will be updated
+   * @param targetUserRole - UserRole to set the given user to
+   */
+  async function updateUserRole(targetUserId: string, targetUserRole: UserRole) {
+    return await request(`${API_URL}/users`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        target_user_id: targetUserId,
+        target_user_role: targetUserRole
+      }),
+    });
+  }
+
+
+
   return {
     getTrailMetadata,
     getTrailGroups,
@@ -183,12 +269,16 @@ export function TrailData() {
     createTrailGroup,
     updateTrailGroup,
     deleteTrailGroup,
+    exportCSV,
+    importCSV,
+    getUsers,
+    updateUserRole,
   };
 }
 
 function authHeaders() {
   return {
-    Authorization: `Bearer ${sessionStorage.getItem("idToken")}`,
+    Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
     "Content-Type": "application/json",
   };
 }

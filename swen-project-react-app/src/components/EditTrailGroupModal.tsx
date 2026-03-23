@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrailData } from '../api';
 import './Modal.css';
+import { Button } from './ui/button';
 
 interface Trail {
   trail_id: number;
@@ -218,8 +219,8 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-        <div className="modal-header">
-          <h2>{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</h2>
+        <div className="modal-header bg-[var(--color-navbar)]">
+          <div className="font-primary text-white font-semibold">{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -325,12 +326,9 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <button type="button" onClick={onClose} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" disabled={loading}>
+            <Button variant="primary" disabled={loading}>
               {loading ? 'Saving...' : (isCreateMode ? 'Create Group' : 'Update Group')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
