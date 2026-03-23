@@ -518,7 +518,7 @@ resource "aws_api_gateway_integration_response" "csv_options_integration_respons
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,POST,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"       = "'*'"
     "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
   }
@@ -537,6 +537,15 @@ resource "aws_api_gateway_method" "csv_get" {
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
+# POST /csv
+resource "aws_api_gateway_method" "csv_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.csv.id
+  http_method   = "POST"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
 resource "aws_api_gateway_integration" "csv_get_integration" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.csv.id
@@ -544,6 +553,88 @@ resource "aws_api_gateway_integration" "csv_get_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.export_csv.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "csv_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.csv.id
+  http_method             = aws_api_gateway_method.csv_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.import_csv.invoke_arn
+}
+
+# /csv/csv-url Resource
+resource "aws_api_gateway_resource" "csv_url" {
+  path_part   = "csv-url"
+  parent_id   = aws_api_gateway_resource.csv.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /csv/csv-url
+resource "aws_api_gateway_method" "csv_url_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.csv_url.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "csv_url_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv_url.id
+  http_method = aws_api_gateway_method.csv_url_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "csv_url_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv_url.id
+  http_method = aws_api_gateway_method.csv_url_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "csv_url_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.csv_url.id
+  http_method = aws_api_gateway_method.csv_url_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.csv_url_options_integration,
+    aws_api_gateway_method_response.csv_url_options_response
+  ]
+}
+
+# GET /csv/csv-url
+resource "aws_api_gateway_method" "csv_url_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.csv_url.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "csv_url_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.csv_url.id
+  http_method             = aws_api_gateway_method.csv_url_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.generate_csv_upload_url.invoke_arn
 }
 
 # Cognito Authorizer
@@ -570,7 +661,9 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.device_metadata_get_integration.uri,
       aws_api_gateway_integration.device_metadata_put_integration.uri,
       aws_api_gateway_integration.trail_groups_get_integration.uri,
-      aws_api_gateway_integration.csv_get_integration.uri
+      aws_api_gateway_integration.csv_get_integration.uri,
+      aws_api_gateway_integration.csv_post_integration.uri,
+      aws_api_gateway_integration.csv_url_get_integration.uri,
     ]))
   }
 
@@ -590,12 +683,15 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.device_metadata_put_integration,
     aws_api_gateway_integration.trail_groups_get_integration,
     aws_api_gateway_integration.csv_get_integration,
+    aws_api_gateway_integration.csv_post_integration,
+    aws_api_gateway_integration.csv_url_get_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
     aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
     aws_api_gateway_integration_response.device_metadata_options_integration_response,
     aws_api_gateway_integration_response.trail_groups_options_integration_response,
-    aws_api_gateway_integration_response.csv_options_integration_response
+    aws_api_gateway_integration_response.csv_options_integration_response,
+    aws_api_gateway_integration_response.csv_url_options_integration_response
   ]
 }
 
