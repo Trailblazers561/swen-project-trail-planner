@@ -59,6 +59,7 @@ const dashboard = () => {
         getDeviceMetadata,
         getTrailMetadata,
         getTrailGroups,
+        exportCSV
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
@@ -213,8 +214,25 @@ const dashboard = () => {
 
     const handleAssociateDevice = () => {
         setIsAssociateDeviceModalOpen(true);
-    };
+    }; 
 
+    const handleExportData = async() => {
+        let trailList = [];
+        for (let i = 0; i < trailListData.length; i++) {
+            trailList.push(trailListData[i].trail_id)
+        }
+        const startDate = selectedDate === null ? undefined : selectedDate;
+        const endDate = selectedDateEnd === null ? undefined : selectedDateEnd;
+
+
+        const csv_url = (await exportCSV(trailList, startDate, endDate))["json"]["url"];
+        
+        try{
+            window.open(csv_url, "_self");
+        } catch (error) {
+            console.error("Download failed:", error);
+        }
+    }
     const handleTrailUpdated = async () => {
         await loadTrailData();
         // Refresh graph - wait for state to update
@@ -705,7 +723,7 @@ const dashboard = () => {
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Button variant="secondary">Export Data</Button>
+                        <Button variant="secondary" onClick={handleExportData}>Export Data</Button>
                         <Button variant="secondary">Import Data</Button>
                     </div>
                 </div>
