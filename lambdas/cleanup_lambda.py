@@ -22,7 +22,7 @@ def cleanup(event, context):
     to_delete = []
     for obj in response['Contents']:
         key = obj['Key']
-        if re.match(r'^import-hashes/[0-9a-f-]+\.json$', key):  # special exception for our hash import files
+        if re.match(r'^import-hashes/[0-9a-f]{64}\.json$', key):  # special exception for our hash import files
             if obj['LastModified'] < longTermCutoff:
                 to_delete.append({'Key': key})
         else:
