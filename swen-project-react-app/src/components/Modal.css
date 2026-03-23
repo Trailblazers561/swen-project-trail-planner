@@ -45,7 +45,7 @@
   border: none;
   font-size: 28px;
   cursor: pointer;
-  color: #666;
+  color: #FFF;
   padding: 0;
   width: 30px;
   height: 30px;
@@ -56,7 +56,7 @@
 }
 
 .modal-close:hover {
-  color: #000;
+  color: #666;
 }
 
 .modal-body {
