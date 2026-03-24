@@ -109,7 +109,7 @@ const customStyles = {
 
 const TrailDataTable: React.FC<Props> = ({ data, loading }) => {
   return (
-    <div className="bg-white shadow-md rounded-xl border border-gray-200">
+    <div className="bg-white shadow-md rounded-xl border border-gray-200" data-testid="trail-status-table">
       <DataTable
         columns={columns}
         data={data}

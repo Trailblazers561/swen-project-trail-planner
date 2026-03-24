@@ -698,7 +698,7 @@ const dashboard = () => {
     }
 
     return (
-        <div>
+        <div data-testid="dashboard-root">
             <Navbar />
         <div className="flex flex-col">
             <div className="filter-container">
@@ -710,49 +710,49 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} data-testid="trail-selector"/>
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" data-testid="trail-group-selector" />
 
                 </div>
                 <div className="options-container flex flex-col">
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
-                        <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Button variant="secondary" onClick={handleExportData}>Export Data</Button>
-                        <Button variant="secondary">Import Data</Button>
+                        <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                        <Button variant="secondary" onClick={handleExportData} data-testid="export-data">Export Data</Button>
+                        <Button variant="secondary" data-testid="import-data">Import Data</Button>
                     </div>
                 </div>
             </div>
         </div>
             <div className="dashboard-div">
                 <div className="flex p-2.5 gap-2.5 justify-between items-center">
-                    <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                    <Button variant="primary" onClick={toggleView} className="items-center" data-testid="toggle-view">Toggle View</Button>
                     <div className="flex gap-2.5">
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Options</Button>
+                            <Button variant="primary" data-testid="trail-options">Trail Options</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                         </DropdownMenu>
 
                         <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Group Options</Button>
+                            <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                             <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
                             </DropdownMenuGroup>
                         </DropdownMenuContent>
                         </DropdownMenu>
@@ -761,10 +761,10 @@ const dashboard = () => {
                 {viewMode === "graph" ? (
                 <div className="flex justify-center px-6 pb-8">
                     <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center" data-testid="graph-title">
                             {graphTitle}
                         </h2>
-                            <div className="h-[500px]">
+                            <div className="h-[500px]" data-testid="outer-dashboard-graph">
                                 <Plot 
                                     className="w-full h-full"
                                     config={{ displayModeBar: false, responsive: true }}

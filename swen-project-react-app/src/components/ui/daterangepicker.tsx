@@ -43,7 +43,7 @@ function handleSelect(range: DateRange | undefined) {
             : "Pick a date"}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-white text-black border border-gray-300 shadow-md" align="start">
+        <PopoverContent className="w-auto p-0 bg-white text-black border border-gray-300 shadow-md" align="start" data-testid="calandar-popup">
           <Calendar
             mode="range"
             selected={date}
