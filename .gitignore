@@ -73,6 +73,8 @@ var/
 nosetests.xml
 coverage.xml
 test-results.xml
+tests/ui_tests/downloads/*
+!tests/ui_tests/downloads/.gitkeep
 
 # Translations
 *.mo

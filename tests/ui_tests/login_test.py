@@ -52,6 +52,8 @@ def user_login_logout(driver, user: UserDTO):
         login_step = LoginStep(driver, user, LoginMode.NORMAL)
         login_step.run()
 
+        # TODO: validate navbar displays appropriate role
+
         logout_step = PerformUserActionStep(driver, UserAction.LOGOUT)
         logout_step.run()
     except Exception as e:

@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import os
 
 from ui_config import BASE_URL
 
@@ -19,7 +20,8 @@ class SeleniumHelper:
         service = Service(ChromeDriverManager().install())
 
         options = Options()
-        options.add_argument('--headless')
+        
+        # options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -28,9 +30,14 @@ class SeleniumHelper:
         # Memory optimization
         options.add_argument('--disk-cache-size=1')
         options.add_argument('--media-cache-size=1')
-        options.add_argument('--incognito')
         options.add_argument('--remote-debugging-port=9222')
         options.add_argument('--aggressive-cache-discard')
+
+        prefs = {
+            "download.default_directory": os.path.dirname(__file__) + "\downloads",
+            "download.prompt_for_download": False
+        }
+        options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(service=service, options=options)
         driver.get(BASE_URL)
@@ -66,6 +73,11 @@ class SeleniumHelper:
         print(f"Retrieving text from element {locator}")
         element = driver.find_element(*locator)
         return element.text
+
+    def retrieve_text_from_elements(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
+        print(f"Retrieving text from elements {locator}")
+        elements = driver.find_elements(*locator)
+        return [element.text for element in elements]
 
     def select_dropdown_option(driver: webdriver.Chrome, locator: tuple[str, str], option: str) -> None:
         print(f"Selecting element {locator} dropdown option {option}")
