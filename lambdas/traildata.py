@@ -415,18 +415,7 @@ def create_trail(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_name"})
             }
 
-        # Get all existing trails to find next available ID
-        try:
-            resp = trail_table.scan()
-            existing_trails = resp.get("Items", [])
-            if existing_trails:
-                existing_ids = [int(t.get("id", 0)) for t in existing_trails]
-                new_trail_id = max(existing_ids, default=0) + 1
-            else:
-                new_trail_id = 1
-        except Exception as e:
-            # If scan fails, start with ID 1
-            new_trail_id = 1
+        new_trail_id = get_next_trail_id()
 
         # Create trail metadata
         item = {
@@ -938,6 +927,7 @@ def get_next_device_id() -> int:
 
 def get_next_device_trail_id() -> int:
     print("Retrieving next device_trail_id")
+    # Get all existing device_trails to find next available ID
     try:
         resp = device_trail_table.scan()
         existing_device_trails = resp.get("Items", [])
@@ -958,4 +948,3 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
-update_device_trail_association({}, {})
