@@ -176,8 +176,9 @@ export function TrailData() {
    * @param trailIdList - Optional List of trail IDs to include in the csv
    * @param startDate - Optional ISO format date for earliest date to include in the csv
    * @param endDate - Optional ISO format date for latest date to include in the csv
+   * @param granularity - optional granularity setting for output, can be hourly, day, week, or month
    */
-  async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date) {
+  async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date, granularity?: string) {
     const queries: string[] = []
     if (trailIdList !== undefined)
       trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
@@ -185,6 +186,8 @@ export function TrailData() {
       queries.push(`start_date=${startDate.toISOString()}`)
     if (endDate !== undefined)
       queries.push(`end_date=${endDate.toISOString()}`)
+    if (granularity !== undefined)
+      queries.push(`granularity=${granularity}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/csv${queryString}`, {
