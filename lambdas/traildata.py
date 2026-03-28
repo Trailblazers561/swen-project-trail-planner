@@ -696,7 +696,6 @@ def delete_trail(event, context):
     """
     Delete a trail and all associated data.
     Deletes:
-    - Trail metadata
     - All trail device logs for that trail
     - Trail from all trail groups
     - Updates devices associated with this trail to trail_id 0
@@ -723,67 +722,125 @@ def delete_trail(event, context):
                 "body": json.dumps({"error": "Invalid trail_id format"})
             }
 
-        # Delete all trail device logs for this trail
-        try:
-            # Query all logs for this trail
-            response = logs_table.query(
-                KeyConditionExpression=Key("trail_id").eq(trail_id)
-            )
-            items = response.get("Items", [])
+        # get all relevant devicetrail ids for this trail
+        response = device_trail_table.query(
+            IndexName="trail-index",
+            KeyConditionExpression=Key("trail_id").eq(trail_id)
+        )
+        device_trail_items = response.get("Items", [])
+        device_trail_ids = [int(item["id"]) for item in device_trail_items if "id" in item]
 
-            # Delete all items in batches
-            if items:
-                with logs_table.batch_writer() as batch:
-                    for item in items:
-                        batch.delete_item(
-                            Key={
-                                "trail_id": item["trail_id"],
-                                "timestamp": item["timestamp"]
-                            }
-                        )
+        for device_trail_id in device_trail_ids:
+            # Delete all trail device logs for this trail
+            try:
+                # Query all logs for this trail in the hour table
+                response = device_trail_log_hour_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
+                )
+                items = response.get("Items", [])
+
+                # Delete all items in batches in the hour table
+                if items:
+                    with device_trail_log_hour_table.batch_writer() as batch:
+                        for item in items:
+                            batch.delete_item(
+                                Key={
+                                    "device_trail_id": item["device_trail_id"],
+                                    "start": item["start"]
+                                }
+                            )
+
+                # Query all logs for this trail in the day table
+                response = device_trail_log_day_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
+                )
+                items = response.get("Items", [])
+
+                # Delete all items in batches in the day table
+                if items:
+                    with device_trail_log_day_table.batch_writer() as batch:
+                        for item in items:
+                            batch.delete_item(
+                                Key={
+                                    "device_trail_id": item["device_trail_id"],
+                                    "start": item["start"]
+                                }
+                            )
+
+                # Query all logs for this trail in the week table
+                response = device_trail_log_week_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
+                )
+                items = response.get("Items", [])
+
+                # Delete all items in batches in the week table
+                if items:
+                    with device_trail_log_week_table.batch_writer() as batch:
+                        for item in items:
+                            batch.delete_item(
+                                Key={
+                                    "device_trail_id": item["device_trail_id"],
+                                    "start": item["start"]
+                                }
+                            )
+
+                # Query all logs for this trail in the month table
+                response = device_trail_log_month_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
+                )
+                items = response.get("Items", [])
+
+                # Delete all items in batches in the month table
+                if items:
+                    with device_trail_log_month_table.batch_writer() as batch:
+                        for item in items:
+                            batch.delete_item(
+                                Key={
+                                    "device_trail_id": item["device_trail_id"],
+                                    "start": item["start"]
+                                }
+                            )
+            except Exception as e:
+                # Log error but continue
+                print(f"Error deleting trail logs: {str(e)}")
+
+        # remove devicetrail entries from devicetrail
+        try:
+            with device_trail_table.batch_writer() as batch:
+                for item in device_trail_items:
+                    batch.delete_item(
+                        Key={
+                            "device_id": item["device_id"]
+                        }
+                    )
         except Exception as e:
             # Log error but continue
-            print(f"Error deleting trail logs: {str(e)}")
+            print(f"Error deleting devicetrail ids: {str(e)}")
 
         # Remove trail from all trail groups
         try:
-            resp = trail_groups_table.scan()
+            resp = trail_group_table.scan()
             groups = resp.get("Items", [])
 
             for group in groups:
-                trail_ids = group.get("trail_ids", [])
+                trail_ids = group.get("trails", [])
                 if isinstance(trail_ids, list) and trail_id in trail_ids:
                     trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                    trail_groups_table.put_item(Item={
-                        "group_name": group.get("group_name"),
-                        "trail_ids": trail_ids
+                    trail_group_table.put_item(Item={
+                        "name": group.get("name"),
+                        "trails": trail_ids
                     })
         except Exception as e:
             # Log error but continue
             print(f"Error removing trail from groups: {str(e)}")
 
-        # Update all devices associated with this trail to trail_id 0
         try:
-            resp = device_metadata_table.scan()
-            devices = resp.get("Items", [])
-
-            for device in devices:
-                if device.get("current_trail_id") == trail_id:
-                    device_id = device.get("device_id")
-                    battery = device.get("battery")
-                    update_device_metadata(device_id, 0, battery)
-        except Exception as e:
-            # Log error but continue
-            print(f"Error updating device associations: {str(e)}")
-
-        # Delete trail metadata
-        try:
-            trail_metadata_table.delete_item(Key={"trail_id": trail_id})
+            trail_table.delete_item(Key={"id": trail_id})
         except Exception as e:
             return {
                 "statusCode": 500,
                 "headers": cors_headers(),
-                "body": json.dumps({"error": f"Failed to delete trail metadata: {str(e)}"})
+                "body": json.dumps({"error": f"Failed to delete trail: {str(e)}"})
             }
 
         return {
