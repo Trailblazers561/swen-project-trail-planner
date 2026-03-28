@@ -49,21 +49,25 @@ def timestamp_conversion(timestamp, time_increment):
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
 
-
-def get_deviceTrail_id(device_id, trail_id):
+def get_deviceTrail_id(device_id, trail_id=None):
     """
     given the device id get the devicetrail id that we need for the time entries
     :param device_id: device id
-    :param trail_id: trail id
+    :param trail_id: trail id, optional but useful to prevent issues.
     :return: devicetrail id
     """
-    items = device_trail_table.query(
-        KeyConditionExpression=Key("device_id").eq(device_id),
-        FilterExpression=Attr("trail_id").eq(trail_id)
-    ).get("Items", [])
+    if trail_id is None:
+        items = device_trail_table.query(
+            KeyConditionExpression=Key("device_id").eq(device_id),
+        ).get("Items", [])
+    else:
+        items = device_trail_table.query(
+            KeyConditionExpression=Key("device_id").eq(device_id),
+            FilterExpression=Attr("trail_id").eq(trail_id)
+        ).get("Items", [])
     if not items:
         raise ValueError(f"No device trail association with device id {device_id}, trail_id={trail_id} found")
-    return int(items[0]["id"])  # just return the id, dont need all that
+    return int(items[0]["id"]), int(items[0]["trail_id"])  # just return the ids, dont need all that
 
 
 table_time_map = {
@@ -76,67 +80,82 @@ table_time_map = {
 
 # ========== GET TRAIL DATA ==========
 def get_trail_data(event, context):
-    params = event.get('queryStringParameters', {}) or {}
-    trails = params.get('trails')
-    start = params.get('start')
-    end = params.get('end')
-    granularity = params.get('granularity')
+    try:
+        params = event.get('queryStringParameters', {}) or {}
+        trails = params.get('trails')
+        start = params.get('start')
+        end = params.get('end')
+        granularity = params.get('granularity')
 
-    if granularity not in table_time_map:
-        logs_time_table = table_time_map["day"]
-    else:
-        logs_time_table = table_time_map[granularity]
+        if granularity not in table_time_map:
+            logs_time_table = table_time_map["day"]
+        else:
+            logs_time_table = table_time_map[granularity]
 
-    device_trail_ids = []
-    device_trail_cache = {}
+        device_trail_ids = []
+        device_trail_cache = {}
 
-    start_timestamp = Decimal(0) if not start else Decimal(datetime.fromisoformat(start).timestamp())
-    end_timestamp = Decimal(99999999999) if not end else Decimal(
-        datetime.fromisoformat(end).timestamp())  # suitably big enough for a default
+        start_timestamp = Decimal(0) if not start else Decimal(datetime.fromisoformat(start).timestamp())
+        end_timestamp = Decimal(99999999999) if not end else Decimal(
+            datetime.fromisoformat(end).timestamp())  # suitably big enough for a default
 
-    # get all relevant devicetrail ids from trail ids
-    if trails is None:
-        rows = device_trail_table.scan(ProjectionExpression="id, device_id, trail_id").get("Items", [])
-    else:
-        rows = []
-        for trail_id in [Decimal(t) for t in trails.split(',')]:
-            rows.extend(device_trail_table.query(
-                IndexName="trail-index",
-                KeyConditionExpression=Key("trail_id").eq(trail_id)
-            ).get("Items", []))
+        # get all relevant devicetrail ids from trail ids
+        if trails is None:
+            rows = device_trail_table.scan(ProjectionExpression="id, device_id, trail_id").get("Items", [])
+        else:
+            rows = []
+            for trail_id in [Decimal(t) for t in trails.split(',')]:
+                rows.extend(device_trail_table.query(
+                    IndexName="trail-index",
+                    KeyConditionExpression=Key("trail_id").eq(trail_id)
+                ).get("Items", []))
 
-    # cache device-trail-devicetrail relations
-    for row in rows:
-        if "id" in row:
-            device_trail_id = int(row["id"])
-            device_trail_ids.append(device_trail_id)
-            device_trail_cache[device_trail_id] = {
-                "device_id": int(row["device_id"]) if "device_id" in row else "",
-                "trail_id": int(row["trail_id"]) if "trail_id" in row else "",
-            }
+        # cache device-trail-devicetrail relations
+        for row in rows:
+            if "id" in row:
+                device_trail_id = int(row["id"])
+                device_trail_ids.append(device_trail_id)
+                device_trail_cache[device_trail_id] = {
+                    "device_id": int(row["device_id"]) if "device_id" in row else "",
+                    "trail_id": int(row["trail_id"]) if "trail_id" in row else "",
+                }
 
-    # fetch relevant device logs from table in timestamp bounds
-    device_log_rows = []
-    for device_trail_id in device_trail_ids:
-        rows = logs_time_table.query(
-            KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(start_timestamp,
-                                                                                                     end_timestamp)
-        ).get("Items", [])
-        device_log_rows.extend(rows)
+        # fetch relevant device logs from table in timestamp bounds
+        device_log_rows = []
+        for device_trail_id in device_trail_ids:
+            rows = logs_time_table.query(
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(start_timestamp,
+                                                                                                         end_timestamp)
+            ).get("Items", [])
+            device_log_rows.extend(rows)
 
-    device_log_rows = convert_decimals(device_log_rows)
+        device_log_rows = convert_decimals(device_log_rows)
 
-    # append rows with trail/device ids from cache
-    for row in device_log_rows:
-        device_trail_id = row["device_trail_id"]
-        row["device_id"] = device_trail_cache[device_trail_id].get("device_id", "")
-        row["trail_id"] = device_trail_cache[device_trail_id].get("trail_id", "")
+        # append rows with trail/device ids from cache
+        for row in device_log_rows:
+            device_trail_id = row["device_trail_id"]
+            row["device_id"] = device_trail_cache[device_trail_id].get("device_id", "")
+            row["trail_id"] = device_trail_cache[device_trail_id].get("trail_id", "")
 
-    return {
-        "statusCode": 200,
-        "headers": cors_headers(),
-        "body": json.dumps(device_log_rows)
-    }
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps(device_log_rows)
+        }
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": str(e)})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
 
 
 # ========== UPLOAD TRAIL DATA ==========
@@ -197,7 +216,7 @@ def upload_trail_data(event, context):
         device_trail_id_cache = {}
         for (device_id, hour_ts), data in row_data.items():
             if device_id not in device_trail_id_cache:
-                device_trail_id_cache[device_id] = get_deviceTrail_id(device_id, trail_id)
+                device_trail_id_cache[device_id] = get_deviceTrail_id(device_id, trail_id)[0]
             device_trail_id = device_trail_id_cache[device_id]
 
             current_day = (device_trail_id, timestamp_conversion(hour_ts, "day"))
@@ -294,27 +313,18 @@ def upload_device_data(event, context):
         "battery": 94,
         "data": [{"ts": 123}]
     }
-    The server automatically determines trail_id if not provided by:
-    1. Using trail_id from payload if provided
-    2. Checking DeviceMetadata table
-    3. Querying most recent entry in TrailDeviceLogs for that device
-    4. Defaulting to trail_id 1 for new devices
+    A device should be registered in the system before using this.
     """
     try:
         body = json.loads(event.get("body", "{}"))
 
         if not body:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Request body cannot be empty"})
-            }
+            raise ValueError("Request body cannot be empty")
 
         device_id_raw = body.get("device_id")
         device_id = str(device_id_raw) if device_id_raw is not None else None
         data_points = body.get("data")
         battery = body.get("battery")
-        trail_id_override = body.get("trail_id")
 
         missing_fields = []
         if not device_id:
@@ -323,136 +333,25 @@ def upload_device_data(event, context):
             missing_fields.append("data")
 
         if missing_fields:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": f"Missing required fields: {', '.join(missing_fields)}"})
-            }
+            raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
 
         if not isinstance(data_points, list):
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Data field must be an array"})
-            }
+            raise ValueError("Data field must be an array")
 
         if len(data_points) == 0:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Data array must be a non-empty list"})
-            }
+            raise ValueError("Data array must be a non-empty list")
 
-        # Determine trail_id using automatic resolution
-        resolved_trail_id = None
-        if trail_id_override is not None:
-            try:
-                resolved_trail_id = int(trail_id_override)
-            except (ValueError, TypeError):
-                return {
-                    "statusCode": 400,
-                    "headers": cors_headers(),
-                    "body": json.dumps({"error": "Invalid data format: trail_id must be an integer"})
-                }
-        else:
-            # Auto-resolve trail_id: check metadata, then logs, then default
-            try:
-                resolved_trail_id = resolve_trail_id_for_device(device_id)
-                # Update DeviceMetadata with resolved trail_id for future requests
-                update_device_metadata(device_id, resolved_trail_id, battery)
-            except Exception as e:
-                # If resolution fails, default to 0
-                resolved_trail_id = 0
-                update_device_metadata(device_id, resolved_trail_id, battery)
+        _, trail_id = get_deviceTrail_id(device_id)
 
-        # Ensure resolved_trail_id is set (should never be None at this point)
-        if resolved_trail_id is None:
-            resolved_trail_id = 0
-
-        prepared_items = []
-        # Track seen (device_id, timestamp) pairs to filter duplicates
-        seen_timestamps = set()
-        # Minimum allowed timestamp (1735707600 unix time or January 1, 2025)
-        MIN_TIMESTAMP = 1735707600
-
-        for idx, point in enumerate(data_points):
-            timestamp_raw = point.get("ts") or point.get("timestamp")
-            point_trail_raw = point.get("trail_id")
-
-            if timestamp_raw is None:
-                return {
-                    "statusCode": 400,
-                    "headers": cors_headers(),
-                    "body": json.dumps({"error": f"Missing required field ts (data[{idx}])"})
-                }
-
-            try:
-                timestamp = int(timestamp_raw)
-            except (ValueError, TypeError):
-                return {
-                    "statusCode": 400,
-                    "headers": cors_headers(),
-                    "body": json.dumps({"error": f"Invalid timestamp format (data[{idx}])"})
-                }
-
-            # Ignore timestamps before minimum allowed time
-            if timestamp < MIN_TIMESTAMP:
-                continue
-
-            # Check for duplicate timestamp from the same device
-            timestamp_key = (device_id, timestamp)
-            if timestamp_key in seen_timestamps:
-                # Skip duplicate timestamp from same device
-                continue
-            seen_timestamps.add(timestamp_key)
-
-            # Per-point trail_id override takes precedence
-            if point_trail_raw is not None:
-                try:
-                    trail_id = int(point_trail_raw)
-                except (ValueError, TypeError):
-                    return {
-                        "statusCode": 400,
-                        "headers": cors_headers(),
-                        "body": json.dumps({"error": f"Invalid trail_id format (data[{idx}])"})
-                    }
-            else:
-                trail_id = resolved_trail_id
-
-            item = {
-                "trail_id": trail_id,
-                "timestamp": timestamp,
-                "device_id": device_id,
-            }
-
-            # Determine battery priority: per-point > request-level
-            point_battery = point.get("battery")
-            battery_value = point_battery if point_battery is not None else battery
-            if battery_value is not None:
-                item["battery"] = Decimal(str(battery_value)) if isinstance(battery_value, float) else battery_value
-
-            for key, value in point.items():
-                if key in ["ts", "timestamp", "trail_id"]:
-                    continue
-                if isinstance(value, float):
-                    item[key] = Decimal(str(value))
-                else:
-                    item[key] = value
-
-            prepared_items.append(item)
-
-        if len(prepared_items) == 1:
-            logs_table.put_item(Item=prepared_items[0])
-        else:
-            with logs_table.batch_writer() as batch:
-                for item in prepared_items:
-                    batch.put_item(Item=item)
-
-        return {
-            "statusCode": 200,
-            "headers": cors_headers(),
-            "body": json.dumps({"message": "Device data uploaded successfully"})
+        new_body = {
+            "trail_id": trail_id,
+            "device_id": device_id,
+            "battery": battery,
+            "data": data_points
         }
+        new_event = {**event, "body": json.dumps(new_body)}
+        return upload_trail_data(new_event, context)
+
     except ValueError as e:
         return {
             "statusCode": 400,
@@ -466,76 +365,9 @@ def upload_device_data(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
-
-def resolve_trail_id_for_device(device_id):
-    """
-    Automatically resolve trail_id for a device using this priority:
-    1. Check DeviceMetadata table
-    2. Query most recent entry in TrailDeviceLogs for that device
-    3. Default to trail_id 1 for new devices
-    """
-    device_id_str = str(device_id)
-
-    # First, try DeviceMetadata
-    try:
-        resp = device_metadata_table.get_item(Key={"device_id": device_id_str})
-        item = resp.get("Item")
-        if item and "current_trail_id" in item:
-            try:
-                return int(item["current_trail_id"])
-            except (ValueError, TypeError):
-                pass  # Invalid format, continue to next method
-    except Exception:
-        pass  # Continue to next method if lookup fails
-
-    # Second, query TrailDeviceLogs for most recent entry using GSI
-    try:
-        resp = logs_table.query(
-            IndexName="device_id-timestamp-index",
-            KeyConditionExpression=Key("device_id").eq(device_id_str),
-            ScanIndexForward=False,  # Descending order (most recent first)
-            Limit=1
-        )
-        items = resp.get("Items", [])
-        if items and "trail_id" in items[0]:
-            try:
-                return int(items[0]["trail_id"])
-            except (ValueError, TypeError):
-                pass  # Invalid format, continue to default
-    except Exception:
-        pass  # Continue to default if query fails
-
-    # Default to trail_id 0 for new devices
-    return 0
-
-
-def update_device_metadata(device_id, trail_id, battery=None):
-    """
-    Update or create DeviceMetadata entry for a device.
-    This caches the trail_id for faster lookups on future requests.
-    """
-    device_id_str = str(device_id)
-    item = {
-        "device_id": device_id_str,
-        "current_trail_id": trail_id,
-    }
-
-    if battery is not None:
-        item["battery"] = Decimal(str(battery)) if isinstance(battery, float) else battery
-
-    # Add last_update timestamp
-    item["last_update"] = int(time.time())
-
-    try:
-        device_metadata_table.put_item(Item=item)
-    except Exception:
-        # Silently fail - metadata update is not critical for data upload
-        pass
-
-
 # ========== METADATA ENDPOINTS ==========
 def get_trail_metadata(event, context):
-    resp = trail_metadata_table.scan()
+    resp = trail_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
@@ -544,7 +376,7 @@ def get_trail_metadata(event, context):
 
 
 def get_device_metadata(event, context):
-    resp = device_metadata_table.scan()
+    resp = device_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
@@ -553,7 +385,7 @@ def get_device_metadata(event, context):
 
 
 def get_trail_groups(event, context):
-    resp = trail_groups_table.scan()
+    resp = trail_group_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
@@ -572,6 +404,9 @@ def create_trail(event, context):
 
         trail_name = body.get("trail_name")
         trail_group = body.get("trail_group")
+        notes = body.get("notes")
+        latitude = body.get("latitude")
+        longitude = body.get("longitude")
 
         if not trail_name:
             return {
@@ -582,10 +417,10 @@ def create_trail(event, context):
 
         # Get all existing trails to find next available ID
         try:
-            resp = trail_metadata_table.scan()
+            resp = trail_table.scan()
             existing_trails = resp.get("Items", [])
             if existing_trails:
-                existing_ids = [int(t.get("trail_id", 0)) for t in existing_trails]
+                existing_ids = [int(t.get("id", 0)) for t in existing_trails]
                 new_trail_id = max(existing_ids, default=0) + 1
             else:
                 new_trail_id = 1
@@ -595,12 +430,19 @@ def create_trail(event, context):
 
         # Create trail metadata
         item = {
-            "trail_id": new_trail_id,
-            "trail_name": str(trail_name)
+            "id": new_trail_id,
+            "name": str(trail_name)
         }
 
+        if notes is not None:
+            item["notes"] = notes
+        if latitude is not None:
+            item["latitude"] = Decimal(str(latitude))
+        if longitude is not None:
+            item["longitude"] = Decimal(str(longitude))
+
         try:
-            trail_metadata_table.put_item(Item=item)
+            trail_table.put_item(Item=item)
         except Exception as e:
             return {
                 "statusCode": 500,
@@ -611,53 +453,53 @@ def create_trail(event, context):
         # Always add trail to "All Areas" group
         # Then add to specified group if provided
         try:
-            resp = trail_groups_table.scan()
+            resp = trail_group_table.scan()
             groups = resp.get("Items", [])
 
             # Step 1: Add to "All Areas" group (all trails should be in this group)
             all_areas_found = False
             for group in groups:
-                if group.get("group_name") == "All Areas":
-                    trail_ids = group.get("trail_ids", [])
+                if group.get("name") == "All Areas":
+                    trail_ids = group.get("trails", [])
                     if not isinstance(trail_ids, list):
                         trail_ids = []
                     if new_trail_id not in trail_ids:
                         trail_ids.append(new_trail_id)
-                    trail_groups_table.put_item(Item={
-                        "group_name": "All Areas",
-                        "trail_ids": trail_ids
+                    trail_group_table.put_item(Item={
+                        "name": "All Areas",
+                        "trails": trail_ids
                     })
                     all_areas_found = True
                     break
 
             # If "All Areas" group doesn't exist, create it
             if not all_areas_found:
-                trail_groups_table.put_item(Item={
-                    "group_name": "All Areas",
-                    "trail_ids": [new_trail_id]
+                trail_group_table.put_item(Item={
+                    "name": "All Areas",
+                    "trails": [new_trail_id]
                 })
 
             # Step 2: Add to specified trail group if provided (in addition to "All Areas")
             if trail_group and trail_group != "All Areas":
                 group_found = False
                 for group in groups:
-                    if group.get("group_name") == trail_group:
-                        trail_ids = group.get("trail_ids", [])
+                    if group.get("name") == trail_group:
+                        trail_ids = group.get("trails", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if new_trail_id not in trail_ids:
                             trail_ids.append(new_trail_id)
-                        trail_groups_table.put_item(Item={
-                            "group_name": trail_group,
-                            "trail_ids": trail_ids
+                        trail_group_table.put_item(Item={
+                            "name": trail_group,
+                            "trails": trail_ids
                         })
                         group_found = True
                         break
 
                 if not group_found:
-                    trail_groups_table.put_item(Item={
-                        "group_name": trail_group,
-                        "trail_ids": [new_trail_id]
+                    trail_group_table.put_item(Item={
+                        "name": trail_group,
+                        "trails": [new_trail_id]
                     })
         except Exception as e:
             # Continue even if trail group update fails
@@ -682,7 +524,7 @@ def create_trail(event, context):
 def update_trail_metadata(event, context):
     """
     Update trail metadata (trail name, trail group).
-    Expects: { "trail_id": int, "trail_name": str, "trail_group": str }
+    Expects: { "trail_id": int, "trail_name": str, "trail_group": str, "trail_notes": str, "trail_latitude": float, "trail_longitude": float }
     """
     try:
         body = json.loads(event.get("body", "{}"))
@@ -690,6 +532,9 @@ def update_trail_metadata(event, context):
         trail_id = body.get("trail_id")
         trail_name = body.get("trail_name")
         trail_group = body.get("trail_group")
+        trail_notes = body.get("trail_notes")
+        trail_lat = body.get("trail_latitude")
+        trail_lon = body.get("trail_longitude")
 
         if trail_id is None:
             return {
@@ -708,12 +553,18 @@ def update_trail_metadata(event, context):
             }
 
         # Update trail metadata
-        item = {"trail_id": trail_id}
+        item = {"id": trail_id}
         if trail_name is not None:
-            item["trail_name"] = str(trail_name)
+            item["name"] = str(trail_name)
+        if trail_notes is not None:
+            item["notes"] = str(trail_notes)
+        if trail_lat is not None:
+            item["latitude"] = Decimal(str(trail_lat))
+        if trail_lon is not None:
+            item["longitude"] = Decimal(str(trail_lon))
 
         try:
-            trail_metadata_table.put_item(Item=item)
+            trail_table.put_item(Item=item)
         except Exception as e:
             return {
                 "statusCode": 500,
@@ -725,67 +576,67 @@ def update_trail_metadata(event, context):
         if trail_group is not None and trail_group != "":
             try:
                 # Get current trail groups
-                resp = trail_groups_table.scan()
+                resp = trail_group_table.scan()
                 groups = resp.get("Items", [])
 
                 # First, remove trail_id from all other groups (except "All Areas")
                 # "All Areas" should always contain all trails
                 for group in groups:
-                    group_name = group.get("group_name")
+                    group_name = group.get("name")
                     if group_name != trail_group and group_name != "All Areas":
-                        trail_ids = group.get("trail_ids", [])
+                        trail_ids = group.get("trails", [])
                         if isinstance(trail_ids, list) and trail_id in trail_ids:
                             trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                            trail_groups_table.put_item(Item={
-                                "group_name": group_name,
-                                "trail_ids": trail_ids
+                            trail_group_table.put_item(Item={
+                                "name": group_name,
+                                "trails": trail_ids
                             })
 
                 # Ensure trail is in "All Areas" (all trails should be in this group)
                 all_areas_found = False
                 for group in groups:
-                    if group.get("group_name") == "All Areas":
-                        trail_ids = group.get("trail_ids", [])
+                    if group.get("name") == "All Areas":
+                        trail_ids = group.get("trails", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if trail_id not in trail_ids:
                             trail_ids.append(trail_id)
-                        trail_groups_table.put_item(Item={
-                            "group_name": "All Areas",
-                            "trail_ids": trail_ids
+                        trail_group_table.put_item(Item={
+                            "name": "All Areas",
+                            "trails": trail_ids
                         })
                         all_areas_found = True
                         break
 
                 # If "All Areas" doesn't exist, create it
                 if not all_areas_found:
-                    trail_groups_table.put_item(Item={
-                        "group_name": "All Areas",
-                        "trail_ids": [trail_id]
+                    trail_group_table.put_item(Item={
+                        "name": "All Areas",
+                        "trails": [trail_id]
                     })
 
                 # Find the target group and add trail_id to it (if not "All Areas")
                 if trail_group != "All Areas":
                     group_found = False
                     for group in groups:
-                        if group.get("group_name") == trail_group:
-                            trail_ids = group.get("trail_ids", [])
+                        if group.get("name") == trail_group:
+                            trail_ids = group.get("trails", [])
                             if not isinstance(trail_ids, list):
                                 trail_ids = []
                             if trail_id not in trail_ids:
                                 trail_ids.append(trail_id)
-                            trail_groups_table.put_item(Item={
-                                "group_name": trail_group,
-                                "trail_ids": trail_ids
+                            trail_group_table.put_item(Item={
+                                "name": trail_group,
+                                "trails": trail_ids
                             })
                             group_found = True
                             break
 
                     # If group doesn't exist, create it
                     if not group_found:
-                        trail_groups_table.put_item(Item={
-                            "group_name": trail_group,
-                            "trail_ids": [trail_id]
+                        trail_group_table.put_item(Item={
+                            "name": trail_group,
+                            "trails": [trail_id]
                         })
             except Exception as e:
                 # Continue even if trail group update fails
@@ -794,42 +645,42 @@ def update_trail_metadata(event, context):
             # If trail_group is None (empty string), ensure trail is still in "All Areas"
             # This handles the case when removing a trail from a specific group
             try:
-                resp = trail_groups_table.scan()
+                resp = trail_group_table.scan()
                 groups = resp.get("Items", [])
 
                 # Remove from all groups except "All Areas"
                 for group in groups:
-                    group_name = group.get("group_name")
+                    group_name = group.get("name")
                     if group_name != "All Areas":
-                        trail_ids = group.get("trail_ids", [])
+                        trail_ids = group.get("trails", [])
                         if isinstance(trail_ids, list) and trail_id in trail_ids:
                             trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                            trail_groups_table.put_item(Item={
-                                "group_name": group_name,
-                                "trail_ids": trail_ids
+                            trail_group_table.put_item(Item={
+                                "name": group_name,
+                                "trails": trail_ids
                             })
 
                 # Ensure trail is in "All Areas"
                 all_areas_found = False
                 for group in groups:
-                    if group.get("group_name") == "All Areas":
-                        trail_ids = group.get("trail_ids", [])
+                    if group.get("name") == "All Areas":
+                        trail_ids = group.get("trails", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if trail_id not in trail_ids:
                             trail_ids.append(trail_id)
-                        trail_groups_table.put_item(Item={
-                            "group_name": "All Areas",
-                            "trail_ids": trail_ids
+                        trail_group_table.put_item(Item={
+                            "name": "All Areas",
+                            "trails": trail_ids
                         })
                         all_areas_found = True
                         break
 
                 # If "All Areas" doesn't exist, create it
                 if not all_areas_found:
-                    trail_groups_table.put_item(Item={
-                        "group_name": "All Areas",
-                        "trail_ids": [trail_id]
+                    trail_group_table.put_item(Item={
+                        "name": "All Areas",
+                        "trails": [trail_id]
                     })
             except Exception as e:
                 # Continue even if trail group update fails
