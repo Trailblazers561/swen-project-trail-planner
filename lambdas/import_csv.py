@@ -4,7 +4,7 @@ import json
 import csv
 import re
 from collections import defaultdict
-from datetime import timezone, datetime
+from datetime import timezone, datetime, timedelta
 
 import boto3
 from decimal import Decimal
@@ -16,11 +16,11 @@ dynamodb = boto3.resource('dynamodb')
 s3_client = boto3.client('s3')
 
 # Table references
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
 s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 
@@ -84,8 +84,8 @@ def timestamp_conversion(timestamp, time_increment):
     if time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
-        monday = dt_timestamp - __import__('datetime').timedelta(days=dt_timestamp.weekday())
-        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
+        return int(sunday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
@@ -99,6 +99,8 @@ def get_deviceTrail_id(device_id):
     """
     items = device_trail_table.query(
         KeyConditionExpression=Key("device_id").eq(device_id),
+        ScanIndexForward=False,
+        Limit=1
     ).get("Items", [])
     if not items:
         raise ValueError(f"No device trail association with tdevice id {device_id} found")
