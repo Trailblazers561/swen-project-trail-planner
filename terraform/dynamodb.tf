@@ -85,7 +85,7 @@ resource "aws_dynamodb_table" "trail_group_table" {
 
 # TABLE 5: DeviceTrailLogHour
 resource "aws_dynamodb_table" "device_trail_log_hour_table" {
-  name           = "${var.deploy_env}_DeviceTraiLogHour"
+  name           = "${var.deploy_env}_DeviceTrailLogHour"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_trail_id"
   range_key    = "start"
@@ -107,7 +107,7 @@ resource "aws_dynamodb_table" "device_trail_log_hour_table" {
 
 # TABLE 6: DeviceTrailLogDay
 resource "aws_dynamodb_table" "device_trail_log_day_table" {
-  name           = "${var.deploy_env}_DeviceTraiLogDays"
+  name           = "${var.deploy_env}_DeviceTrailLogDay"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_trail_id"
   range_key    = "start"
@@ -130,7 +130,7 @@ resource "aws_dynamodb_table" "device_trail_log_day_table" {
 
 # TABLE 7: DeviceTrailLogWeek
 resource "aws_dynamodb_table" "device_trail_log_week_table" {
-  name           = "${var.deploy_env}_DeviceTrailLogWeeks"
+  name           = "${var.deploy_env}_DeviceTrailLogWeek"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_trail_id"
   range_key    = "start"
@@ -153,7 +153,7 @@ resource "aws_dynamodb_table" "device_trail_log_week_table" {
 
 # TABLE 8: DeviceTrailLogMonth
 resource "aws_dynamodb_table" "device_trail_log_month_table" {
-  name           = "${var.deploy_env}_DeviceTraiLogMonths"
+  name           = "${var.deploy_env}_DeviceTrailLogMonth"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_trail_id"
   range_key    = "start"
