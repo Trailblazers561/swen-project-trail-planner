@@ -194,7 +194,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-testid="edit-trail-modal">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header bg-[var(--color-navbar)]">
           <div className="font-primary text-white font-semibold"> {isCreateMode ? 'Create New Trail' : 'Edit Trail Information'} </div>
@@ -275,13 +275,14 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     onClick={() => setShowDeleteConfirm(true)}
                     disabled={loading || deleting}
                     className="delete-button"
+                    data-testid="delete-button"
                   >
                     Delete Trail
                   </button>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <Button variant="primary" disabled={loading || deleting}>
+                <Button variant="primary" disabled={loading || deleting} data-testid="confirm-button">
                   {loading ? (isCreateMode ? 'Creating...' : 'Updating...') : (isCreateMode ? 'Create Trail' : 'Update Trail')}
                 </Button>
               </div>
@@ -316,7 +317,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 {success && <div className="success-message">{success}</div>}
               </div>
               <div className="modal-footer">
-                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null}>
+                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
                   Cancel
                 </button>
                 <button
@@ -324,6 +325,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                   onClick={handleDelete}
                   disabled={deleting}
                   className="delete-button"
+                  data-testid="confirm-delete"
                 >
                   {deleting ? 'Deleting...' : 'Yes, Delete Trail'}
                 </button>
