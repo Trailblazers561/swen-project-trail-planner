@@ -2,7 +2,7 @@ import os
 import json
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -43,8 +43,8 @@ def timestamp_conversion(timestamp, time_increment):
     if time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
-        monday = dt_timestamp - __import__('datetime').timedelta(days=dt_timestamp.weekday())
-        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
+        return int(sunday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
@@ -59,11 +59,15 @@ def get_deviceTrail_id(device_id, trail_id=None):
     if trail_id is None:
         items = device_trail_table.query(
             KeyConditionExpression=Key("device_id").eq(device_id),
+            ScanIndexForward=False,
+            Limit=1
         ).get("Items", [])
     else:
         items = device_trail_table.query(
             KeyConditionExpression=Key("device_id").eq(device_id),
-            FilterExpression=Attr("trail_id").eq(trail_id)
+            FilterExpression=Attr("trail_id").eq(trail_id),
+            ScanIndexForward=False,
+            Limit=1
         ).get("Items", [])
     if not items:
         raise ValueError(f"No device trail association with device id {device_id}, trail_id={trail_id} found")
@@ -806,8 +810,8 @@ def update_device_trail_association(event, context):
     try:
         body = json.loads(event.get("body", "{}"))
 
-        device_id = body.get("device_id") or 3
-        trail_id = body.get("trail_id") or 2
+        device_id = body.get("device_id")
+        trail_id = body.get("trail_id")
         date_installed = body.get("date_installed")
         date_removed = body.get("date_removed")
 
@@ -948,3 +952,4 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
+get_deviceTrail_id(3)
