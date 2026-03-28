@@ -42,6 +42,7 @@ resource "aws_dynamodb_table" "device_trail_table" {
   name           = "${var.deploy_env}_DeviceTrail"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_id"
+  range_key = "date_installed"
 
   attribute {
     name = "device_id"
@@ -53,16 +54,22 @@ resource "aws_dynamodb_table" "device_trail_table" {
     type = "N" // int (FK)
   }
 
+  attribute {
+    name = "date_installed"
+    type = "N" // number (UNIX timestamp)
+  }
+
+
   global_secondary_index {
     name            = "trail-index"
     hash_key        = "trail_id"
+    range_key = "date_installed"
     projection_type = "ALL"
   }
 
   /*
     id: number
     notes: string
-    date_installed: number (UNIX timestamp)
     date_removed: number (UNIX timestamp)
   */
 }
