@@ -3,17 +3,24 @@ import os
 import json
 import csv
 import re
+from collections import defaultdict
+from datetime import timezone, datetime
 
 import boto3
 from decimal import Decimal
 
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
 dynamodb = boto3.resource('dynamodb')
 s3_client = boto3.client('s3')
 
 # Table references
-logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDeviceLogs"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE"))
 s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 
@@ -66,6 +73,38 @@ def append_new_hash(fileHash):
     s3_client.put_object(Bucket=s3_bucket, Key=filePath)
 
 
+def timestamp_conversion(timestamp, time_increment):
+    """
+    Convert timestamp back to start of day/week/month as need be for higher grade time tables
+    :param timestamp: unix timestamp of current time
+    :param time_increment: string of day/week/month to convert it to
+    :return: timestamp of the start of that period, none if invalid time increment
+    """
+    dt_timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    if time_increment == "day":
+        return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    elif time_increment == "week":
+        monday = dt_timestamp - __import__('datetime').timedelta(days=dt_timestamp.weekday())
+        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    elif time_increment == "month":
+        return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
+    return None
+
+
+def get_deviceTrail_id(device_id):
+    """
+    given the device id get the devicetrail id that we need for the time entries
+    :param device_id: device id
+    :return: devicetrail id
+    """
+    items = device_trail_table.query(
+        KeyConditionExpression=Key("device_id").eq(device_id),
+    ).get("Items", [])
+    if not items:
+        raise ValueError(f"No device trail association with tdevice id {device_id} found")
+    return int(items[0]["id"])  # just return the id, dont need all that
+
+
 def parse_csv_and_export_data(event, context):
     """
     Take in a csv file, parse it, add it's contents to the database, and return a success or error state.
@@ -105,47 +144,111 @@ def parse_csv_and_export_data(event, context):
 
         csv_parser = csv.reader(raw_csv.splitlines(), delimiter=",")
         headers = next(csv_parser)  # Ditch the header but capture it to check
-        expected_headers = ["Device Name", "Trail ID", "Battery %", "Last Update Timestamp"]
+        expected_headers_alt = ["Device ID", "Count", "Start Timestamp", "Battery %", "Trail ID"]
+        expected_headers = ["Device ID", "Count", "Start Timestamp",
+                            "Battery %"]  # trail id is optional, both should be accepted
 
-        if headers != expected_headers:
+        if headers != expected_headers and headers != expected_headers_alt:
             raise ValueError(
-                f"Incorrect headers provided. The correct formatting is {expected_headers} and you provided "
+                f"Incorrect headers provided. The correct formatting is {expected_headers} or {expected_headers_alt} and you provided "
                 f"{headers}. Ensure the csv file is formatted correctly and try again.")
-        print(f"file headers match expected header set- {expected_headers}")
 
-        prepared_items = []
-        seen_timestamps = set()
+        print(f"file headers match expected header set")
+
         MIN_TIMESTAMP = 1735707600
+        row_data: dict[tuple, dict] = {}
 
         for row in csv_parser:
 
             # Load relevant field data
-            device_id = row[0]
-            trail_id = int(row[1])
-            battery = Decimal(row[2])
-            timestamp = int(row[3])
+            device_id = int(row[0])
+            count = int(row[1])
+            start_timestamp = int(row[2])
+            battery = Decimal(row[3])
 
             # Ignore timestamps before minimum allowed time
-            if timestamp < MIN_TIMESTAMP:
+            if start_timestamp < MIN_TIMESTAMP:
                 continue
 
             # Skip duplicate timestamp from same device
-            timestamp_key = (device_id, timestamp)
-            if timestamp_key in seen_timestamps:
-                continue
-            seen_timestamps.add(timestamp_key)
+            timestamp_key = (device_id, start_timestamp)
+            row_data[timestamp_key] = {"count": count, "battery": battery}
 
-            item = {"trail_id": trail_id, "timestamp": timestamp, "device_id": device_id,
-                    "battery": battery}
+        print(f"parsed {len(row_data)} unique hourly entries")
 
-            # Append item to list of rows to send
-            prepared_items.append(item)
+        # Build data structures for day/week/month
+        daily_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
+        weekly_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
+        monthly_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
 
-        # Send all data to table
-        with logs_table.batch_writer() as batch:
-            for item in prepared_items:
-                batch.put_item(Item=item)
-        print(f"writing {len(prepared_items)} to database")
+        device_trail_id_cache = {}
+        for (device_id, hour_ts), data in row_data.items():
+            if device_id not in device_trail_id_cache:
+                device_trail_id_cache[device_id] = get_deviceTrail_id(device_id)
+            device_trail_id = device_trail_id_cache[device_id]
+
+            current_day = (device_trail_id, timestamp_conversion(hour_ts, "day"))
+            current_week = (device_trail_id, timestamp_conversion(hour_ts, "week"))
+            current_month = (device_trail_id, timestamp_conversion(hour_ts, "month"))
+
+            # populate counts/battery %s on the daily/weekly/monthly levels
+            daily_logs[current_day]["count"] += data["count"]
+            if hour_ts > daily_logs[current_day]["latest_timestamp"] and data["battery"] is not None:
+                daily_logs[current_day]["battery"] = data["battery"]
+                daily_logs[current_day]["latest_timestamp"] = hour_ts
+
+            weekly_logs[current_week]["count"] += data["count"]
+            if hour_ts > weekly_logs[current_week]["latest_timestamp"] and data["battery"] is not None:
+                weekly_logs[current_week]["battery"] = data["battery"]
+                weekly_logs[current_week]["latest_timestamp"] = hour_ts
+
+            monthly_logs[current_month]["count"] += data["count"]
+            if hour_ts > monthly_logs[current_month]["latest_timestamp"] and data["battery"] is not None:
+                monthly_logs[current_month]["battery"] = data["battery"]
+                monthly_logs[current_month]["latest_timestamp"] = hour_ts
+
+        # Send data to hour table
+        with device_trail_log_hour_table.batch_writer() as batch:
+            for (device_id, hour_ts), data in row_data.items():
+                batch.put_item(Item={
+                    "device_trail_id": device_trail_id_cache[device_id],
+                    "start": hour_ts,
+                    "count": data["count"],
+                })
+        print(f"writing {len(row_data)} to hour database")
+
+        # Send data to day table
+        with device_trail_log_day_table.batch_writer() as batch:
+            for (device_trail_id, day_ts), data in daily_logs.items():
+                batch.put_item(Item={
+                    "device_trail_id": device_trail_id,
+                    "start": day_ts,
+                    "count": data["count"],
+                    "battery": data["battery"] if data["battery"] is not None else ""
+                })
+        print(f"writing {len(daily_logs)} to day database")
+
+        # Send data to week table
+        with device_trail_log_week_table.batch_writer() as batch:
+            for (device_trail_id, week_ts), data in weekly_logs.items():
+                batch.put_item(Item={
+                    "device_trail_id": device_trail_id,
+                    "start": week_ts,
+                    "count": data["count"],
+                    "battery": data["battery"] if data["battery"] is not None else ""
+                })
+        print(f"writing {len(weekly_logs)} to week database")
+
+        # Send data to month table
+        with device_trail_log_month_table.batch_writer() as batch:
+            for (device_trail_id, month_ts), data in monthly_logs.items():
+                batch.put_item(Item={
+                    "device_trail_id": device_trail_id,
+                    "start": month_ts,
+                    "count": data["count"],
+                    "battery": data["battery"] if data["battery"] is not None else ""
+                })
+        print(f"writing {len(monthly_logs)} to month database")
 
         append_new_hash(csv_hash)
 
