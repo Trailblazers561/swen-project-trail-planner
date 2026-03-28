@@ -134,16 +134,16 @@ def create_and_fill_csv(event, context):
         f = open(key, "w+", newline='')
         temp_csv_file = csv.writer(f)
 
-        headers = ["Device ID", "Trail ID", "Count", "Start Timestamp", "Battery %"]
+        headers = ["Device ID", "Count", "Start Timestamp", "Battery %", "Trail ID"]
         temp_csv_file.writerow(headers)
 
         for row in trail_log_rows:
             entry = [
                 row.get("device_id"),
-                row.get("trail_id", ""),
                 row.get("count", ""),
                 row.get("start", ""),
                 row.get("battery", ""),
+                row.get("trail_id", ""),
             ]
             temp_csv_file.writerow(entry)
         f.close()
