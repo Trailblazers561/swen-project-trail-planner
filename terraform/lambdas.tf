@@ -14,14 +14,16 @@ resource "aws_lambda_function" "get_trail_data" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "upload_trail_data" {
@@ -34,14 +36,16 @@ resource "aws_lambda_function" "upload_trail_data" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "upload_device_data" {
@@ -54,14 +58,16 @@ resource "aws_lambda_function" "upload_device_data" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "update_trail_metadata" {
@@ -74,14 +80,16 @@ resource "aws_lambda_function" "update_trail_metadata" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "update_device_trail_association" {
@@ -94,14 +102,16 @@ resource "aws_lambda_function" "update_device_trail_association" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "get_trail_metadata" {
@@ -114,14 +124,16 @@ resource "aws_lambda_function" "get_trail_metadata" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "get_device_metadata" {
@@ -134,14 +146,16 @@ resource "aws_lambda_function" "get_device_metadata" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "get_trail_groups" {
@@ -154,14 +168,16 @@ resource "aws_lambda_function" "get_trail_groups" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "delete_trail" {
@@ -174,14 +190,16 @@ resource "aws_lambda_function" "delete_trail" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "create_trail" {
@@ -194,14 +212,16 @@ resource "aws_lambda_function" "create_trail" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 # Map of function names to Lambda function resources
@@ -253,21 +273,16 @@ resource "aws_lambda_function" "simulate_data" {
   timeout = 30
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
     }
   }
-
-  # Since this function gets called immediatly after creation, it relies on the dynamodb to be in the correct format
-  depends_on = [
-    aws_iam_role.lambda_iam_role,
-    aws_dynamodb_table.trail_device_logs,
-    aws_dynamodb_table.device_metadata,
-    aws_dynamodb_table.trail_metadata,
-    aws_dynamodb_table.trail_groups
-    ]
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
@@ -347,20 +362,17 @@ resource "aws_lambda_function" "export_csv" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
-      TRAIL_METADATA_TABLE  = aws_dynamodb_table.trail_metadata.name
-      DEVICE_METADATA_TABLE = aws_dynamodb_table.device_metadata.name
-      TRAIL_GROUPS_TABLE    = aws_dynamodb_table.trail_groups.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
       TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }
-  depends_on = [
-    aws_iam_role.lambda_iam_role,
-    aws_dynamodb_table.trail_device_logs,
-    aws_dynamodb_table.device_metadata,
-    aws_dynamodb_table.trail_metadata,
-    aws_dynamodb_table.trail_groups
-    ]
 }
 
 data "archive_file" "import_csv_zip" {
@@ -380,14 +392,13 @@ resource "aws_lambda_function" "import_csv" {
 
   environment {
     variables = {
-      TRAIL_LOGS_TABLE      = aws_dynamodb_table.trail_device_logs.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
       TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }
-  depends_on = [
-    aws_iam_role.lambda_iam_role,
-    aws_dynamodb_table.trail_device_logs
-    ]
 }
 
 data "archive_file" "generate_csv_upload_url_zip" {
@@ -410,8 +421,6 @@ resource "aws_lambda_function" "generate_csv_upload_url" {
       TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }
-  depends_on = [
-    aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_cloudwatch_event_rule" "daily_cleanup" {
@@ -479,8 +488,6 @@ resource "aws_lambda_function" "get_users" {
       USER = aws_cognito_user_group.default_user_group.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
 
 resource "aws_lambda_function" "change_user_group" {
@@ -500,6 +507,4 @@ resource "aws_lambda_function" "change_user_group" {
       USER = aws_cognito_user_group.default_user_group.name
     }
   }
-
-  depends_on = [aws_iam_role.lambda_iam_role]
 }
