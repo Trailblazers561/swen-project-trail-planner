@@ -81,15 +81,23 @@ export function TrailData() {
    * Update device trail association
    * @param deviceId - The device ID to update
    * @param trailId - The trail ID to associate the device with
+   * @param dateInstalled - Optional: Date the device was installed on the new trail
+   * @param dateRemoved - Optional: Date the device was removed from the old trail
    */
-  async function updateDeviceTrailAssociation(deviceId: string, trailId: number) {
+  async function updateDeviceTrailAssociation(deviceId: string, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
+    const payload: Record<string, any> = {
+      device_id: deviceId,
+      trail_id: trailId,
+    }
+    if (dateInstalled)
+      payload.date_installed = dateInstalled.toISOString();
+    if (dateRemoved)
+      payload.date_removed = dateRemoved.toISOString();
+
     return await request(`${API_URL}/device_metadata`, {
       method: "PUT",
       headers: authHeaders(),
-      body: JSON.stringify({
-        device_id: deviceId,
-        trail_id: trailId,
-      }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -180,13 +188,13 @@ export function TrailData() {
    */
   async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date, granularity?: string) {
     const queries: string[] = []
-    if (trailIdList !== undefined)
+    if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
-    if (startDate !== undefined)
+    if (startDate)
       queries.push(`start_date=${startDate.toISOString()}`)
-    if (endDate !== undefined)
+    if (endDate)
       queries.push(`end_date=${endDate.toISOString()}`)
-    if (granularity !== undefined)
+    if (granularity)
       queries.push(`granularity=${granularity}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 

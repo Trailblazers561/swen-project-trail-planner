@@ -957,15 +957,19 @@ def delete_trail(event, context):
 
 def update_device_trail_association(event, context):
     """
-    Update device trail association. Updates DeviceMetadata to change which trail
+    Update device trail association. Updates DeviceTrail to change which trail
     a device is associated with. Future data from this device will use the new trail_id.
     Expects: { "device_id": str, "trail_id": int }
+    Optional: { "date_installed": str (ISO date), "date_removed": str (ISO date)}
     """
+    print(event)
     try:
         body = json.loads(event.get("body", "{}"))
 
-        device_id = body.get("device_id")
-        trail_id = body.get("trail_id")
+        device_id = body.get("device_id") or 3
+        trail_id = body.get("trail_id") or 2
+        date_installed = body.get("date_installed")
+        date_removed = body.get("date_removed")
 
         if device_id is None:
             return {
@@ -981,6 +985,16 @@ def update_device_trail_association(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_id"})
             }
 
+        if date_installed is None:
+            date_installed = int(time.time())
+        else:
+            date_installed = Decimal(datetime.fromisoformat(date_installed).timestamp())
+
+        if date_removed is None:
+            date_removed = int(time.time())
+        else:
+            date_removed = Decimal(datetime.fromisoformat(date_removed).timestamp())
+
         try:
             trail_id = int(trail_id)
         except (ValueError, TypeError):
@@ -990,19 +1004,40 @@ def update_device_trail_association(event, context):
                 "body": json.dumps({"error": "Invalid trail_id format"})
             }
 
-        # Update device metadata with new trail_id
-        device_id_str = str(device_id)
-
-        # Get existing device metadata to preserve battery
         try:
-            resp = device_metadata_table.get_item(Key={"device_id": device_id_str})
-            existing_item = resp.get("Item", {})
-            battery = existing_item.get("battery")
-        except Exception:
-            battery = None
+            device_id = int(device_id)
+        except (ValueError, TypeError):
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Invalid device_id format"})
+            }
 
-        # Update device metadata
-        update_device_metadata(device_id_str, trail_id, battery)
+        # Find current device_trail_assocation for device_id
+        resp = device_trail_table.query(
+            KeyConditionExpression=Key("device_id").eq(device_id)
+        )
+        items = resp.get("Items", [])
+
+        old_device_trail = next((item for item in items if item.get("date_removed") is None), None)
+        # If there is an existing device_trail with a different trail_id then consider it removed
+        if old_device_trail and old_device_trail["trail_id"] != trail_id:
+            device_trail_table.update_item(
+                Key={"device_id": device_id, "date_installed": old_device_trail["date_installed"]},
+                UpdateExpression="SET date_removed = :date_removed",
+                ExpressionAttributeValues={":date_removed": date_removed}
+            )
+
+        # If we don't have a current device_trail with this device/trail combo then create a new one
+        if not old_device_trail or old_device_trail["trail_id"] != trail_id:
+            device_trail_table.put_item(
+                Item={
+                    "id": get_next_device_trail_id(),
+                    "device_id": device_id,
+                    "trail_id": trail_id,
+                    "date_installed": date_installed,
+                }
+            )
 
         return {
             "statusCode": 200,
@@ -1016,6 +1051,55 @@ def update_device_trail_association(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+def get_next_trail_id() -> int:
+    print("Retrieving next trail_id")
+    # Get all existing trails to find next available ID
+    try:
+        resp = trail_table.scan()
+        existing_trails = resp.get("Items", [])
+        if existing_trails:
+            existing_ids = [int(t.get("id", 0)) for t in existing_trails]
+            new_trail_id = max(existing_ids, default=0) + 1
+        else:
+            new_trail_id = 1
+    except Exception as e:
+        # If scan fails, start with ID 1
+        new_trail_id = 1
+
+    return new_trail_id
+
+def get_next_device_id() -> int:
+    print("Retrieving next device_id")
+    # Get all existing devices to find next available ID
+    try:
+        resp = device_table.scan()
+        existing_devices = resp.get("Items", [])
+        if existing_devices:
+            existing_ids = [int(d.get("id", 0)) for d in existing_devices]
+            new_device_id = max(existing_ids, default=0) + 1
+        else:
+            new_device_id = 1
+    except Exception as e:
+        # If scan fails, start with ID 1
+        new_device_id = 1
+
+    return new_device_id
+
+def get_next_device_trail_id() -> int:
+    print("Retrieving next device_trail_id")
+    try:
+        resp = device_trail_table.scan()
+        existing_device_trails = resp.get("Items", [])
+        if existing_device_trails:
+            existing_ids = [int(dt.get("id", 0)) for dt in existing_device_trails]
+            new_device_trail_id = max(existing_ids, default=0) + 1
+        else:
+            new_device_trail_id = 1
+    except Exception as e:
+        # If scan fails, start with ID 1
+        new_device_trail_id = 1
+
+    return new_device_trail_id
 
 def cors_headers():
     return {
@@ -1023,3 +1107,4 @@ def cors_headers():
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
+update_device_trail_association({}, {})
