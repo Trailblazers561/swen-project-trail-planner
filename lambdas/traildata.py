@@ -8,19 +8,17 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from decimal import Decimal
 
-from simulate_data import logs_table
-
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE"))
-trail_group_table = dynamodb.Table(os.environ.get("TRAIL_GROUP_TABLE"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
+trail_group_table = dynamodb.Table(os.environ.get("TRAIL_GROUP_TABLE", "local_TrailGroup"))
 
 
 def convert_decimals(obj):
