@@ -28,3 +28,15 @@ class TrailStatusDTO:
         pytest_check.equal(self.weekly_count, other.weekly_count)
         pytest_check.equal(self.battery_status, other.battery_status)
         pytest_check.equal(self.last_updated, other.last_updated)
+
+# EXPECTED_TRAIL_STATUSES: list[TrailStatusDTO] = []
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Marcy", count, "98%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Giant Mountain", count, "89%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Poke-O-Moonshine Ranger Trail", count, "100%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Skylight", count, "85%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Cat Mountain", count, "60%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Bald Peak", count, "70%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Haystack", count, "99%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Beaver Meadow Trail", count, "94%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mud Lake", count, "51%", last_updated))
+# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Blueberry Trail", count, "62%", last_updated))

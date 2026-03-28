@@ -276,6 +276,7 @@ resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda_every_day" {
+    count = local.test_run ? 0 : 1
     rule = aws_cloudwatch_event_rule.trigger_simulate_data.name
     target_id = "${var.deploy_env}_simulate_data_event"
     arn = aws_lambda_function.simulate_data.arn
@@ -311,6 +312,7 @@ action "aws_lambda_invoke" "invoke_simulate_data" {
 }
 
 resource "terraform_data" "invoke_simulate_data" {
+  count = local.test_run ? 0 : 1
   # Change this value to trigger lambda on next apply
   input = "simulate-data"
 

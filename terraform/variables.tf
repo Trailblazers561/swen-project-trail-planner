@@ -8,6 +8,7 @@ locals {
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
+  test_run = var.deploy_env == "test"
 }
 
 // This can be changed later to not be defined here, but for now it's not less secure than before
