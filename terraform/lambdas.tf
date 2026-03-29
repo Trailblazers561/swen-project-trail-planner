@@ -49,6 +49,28 @@ resource "aws_lambda_function" "upload_trail_data" {
   }
 }
 
+resource "aws_lambda_function" "register_device" {
+  function_name = "${var.deploy_env}_traildata_register_device"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "traildata.register_device"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
+  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+    }
+  }
+}
+
 resource "aws_lambda_function" "upload_device_data" {
   function_name = "${var.deploy_env}_traildata_upload_device_data"
   role          = aws_iam_role.lambda_iam_role.arn
@@ -231,6 +253,7 @@ locals {
     "lambda_authorizer"                         = aws_lambda_function.lambda_authorizer
     "traildata_upload_trail_data"            = aws_lambda_function.upload_trail_data
     "traildata_get_trail_data"               = aws_lambda_function.get_trail_data
+    "traildata_register_device"               = aws_lambda_function.register_device
     "traildata_upload_device_data"           = aws_lambda_function.upload_device_data
     "traildata_update_trail_metadata"        = aws_lambda_function.update_trail_metadata
     "traildata_create_trail"                  = aws_lambda_function.create_trail

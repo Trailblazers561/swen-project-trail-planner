@@ -12,21 +12,20 @@ def test_update_device_trail_association_success():
     headers = get_cognito_headers()
     
     # First, create a device with some data to establish it
-    device_id = 11
     devices_url = f"{BASE_URL}/devices"
     api_headers = get_api_key_headers()
     
     # Post device data with trail_id=0
     device_payload = {
-        "device_id": device_id,
-        "battery": 90,
-        "data": [
-            {"ts": int(time.time()), "count": 40}
-        ]
+        "name": "deviceNameUpdateTrailSuccess",
+        "firmware_version": "1.23.15123", 
+        "date_manufactured": "2026-03-29"
     }
     
     device_response = requests.post(devices_url, json=device_payload, headers=api_headers)
     assert device_response.status_code == 200
+    
+    device_id = device_response.json()["device_id"]
     
     # Wait a moment
     time.sleep(1)
@@ -38,7 +37,7 @@ def test_update_device_trail_association_success():
     assert len(trails) > 0, "No trails found"
     
     # Use first trail
-    target_trail_id = trails[0].get("trail_id")
+    target_trail_id = trails[0].get("id")
     
     # Associate device to trail
     payload = {
@@ -60,7 +59,7 @@ def test_update_device_trail_association_success():
     get_response = requests.get(url, headers=headers)
     assert get_response.status_code == 200
     devices = get_response.json()
-    device = next((d for d in devices if d.get("device_id") == device_id), None)
+    device = next((d for d in devices if d.get("id") == device_id), None)
     assert device is not None
     assert device.get("current_trail_id") == target_trail_id
 

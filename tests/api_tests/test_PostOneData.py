@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated") # Devices no longer specify their trail
 def test_post_trail_data_single():
     """
     Test POST /trail_data with a single data point.

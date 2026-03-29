@@ -19,36 +19,15 @@ def test_delete_trail_success():
     
     # Create a test trail with a unique name
     test_trail_name = f"test_trail_delete_{int(time.time())}"
-    test_trail_id = max([t.get("trail_id", 0) for t in trails], default=0) + 1
     
     # Create the trail metadata
     create_payload = {
-        "trail_id": test_trail_id,
         "trail_name": test_trail_name
     }
     
-    create_response = requests.put(url, json=create_payload, headers=headers)
+    create_response = requests.post(url, json=create_payload, headers=headers)
     assert create_response.status_code == 200
-    
-    # Create some test device data associated with this trail
-    device_id = 12
-    devices_url = f"{BASE_URL}/devices"
-    api_headers = get_api_key_headers()
-    
-    device_payload = {
-        "device_id": device_id,
-        "trail_id": test_trail_id,
-        "battery": 90,
-        "data": [
-            {"ts": int(time.time()), "count": 32}
-        ]
-    }
-    
-    device_response = requests.post(devices_url, json=device_payload, headers=api_headers)
-    assert device_response.status_code == 200
-    
-    # Wait a moment for data to be written
-    time.sleep(1)
+    test_trail_id = create_response.json()["trail_id"]
     
     # Now delete the trail
     delete_payload = {
@@ -63,7 +42,7 @@ def test_delete_trail_success():
     assert response.status_code == 200
     response_data = response.json()
     assert "message" in response_data
-    assert "deleted successfully" in response_data["message"].lower()
+    assert "retired successfully" in response_data["message"].lower()
     
     # Verify the trail is deleted
     trails_response_2 = requests.get(url, headers=headers)
@@ -71,14 +50,6 @@ def test_delete_trail_success():
     updated_trails = trails_response_2.json()
     deleted_trail = next((t for t in updated_trails if t.get("trail_id") == test_trail_id), None)
     assert deleted_trail is None, "Trail should be deleted"
-    
-    # Verify device was reset to trail_id 0
-    device_metadata_response = requests.get(f"{BASE_URL}/device_metadata", headers=headers)
-    assert device_metadata_response.status_code == 200
-    devices = device_metadata_response.json()
-    device = next((d for d in devices if d.get("device_id") == device_id), None)
-    if device:
-        assert device.get("current_trail_id") == 0, "Device should be reset to trail_id 0"
 
 
 @pytest.mark.API

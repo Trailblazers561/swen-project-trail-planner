@@ -9,8 +9,18 @@ resource "aws_dynamodb_table" "device_table" {
     type = "N" // int (PK)
   }
 
+  attribute {
+    name = "name"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "name-index"
+    hash_key        = "name"
+    projection_type = "ALL"
+  }
+
   /*
-    name: string
     notes: string
     firmware_version: string
     date_manufactured: number (UNIX timestamp)
@@ -32,8 +42,10 @@ resource "aws_dynamodb_table" "trail_table" {
   /*
     notes: string
     name: string
-    latitude: number (UNIX timestamp)
-    longitude: number (UNIX timestamp)
+    latitude: number (float)
+    longitude: number (float)
+    date_activated: number (UNIX timestamp)
+    date_retired: number (UNIX timestamp)
   */
 }
 
@@ -68,7 +80,7 @@ resource "aws_dynamodb_table" "device_trail_table" {
   }
 
   /*
-    id: number
+    id: number (int)
     notes: string
     date_removed: number (UNIX timestamp)
   */
@@ -212,6 +224,7 @@ variable "device_sampledata" {
     firmware_version = string
     date_manufactured = string
   }))
+
   default = [
     {
       id = "1"
@@ -293,7 +306,9 @@ variable "trail_sampledata" {
     latitude = string
     longitude = string
     notes = string
+    date_activated = string
   }))
+
   default = [
     {
       id = "1"
@@ -301,6 +316,7 @@ variable "trail_sampledata" {
       latitude = "44.1829"
       longitude = "-73.96349"
       notes = "The highest peak in New York"
+      date_activated = "1767225600"
     },
     {
       id = "2"
@@ -308,6 +324,7 @@ variable "trail_sampledata" {
       latitude = "44.13838"
       longitude = "-73.74374"
       notes = "It's Giant"
+      date_activated = "1767225600"
     },
     {
       id = "3"
@@ -315,6 +332,7 @@ variable "trail_sampledata" {
       latitude = "44.4036"
       longitude = "-73.50241"
       notes = "Has some great rock climbing routes"
+      date_activated = "1767225600"
     },
     {
       id = "4"
@@ -322,6 +340,7 @@ variable "trail_sampledata" {
       latitude = "44.18123"
       longitude = "-73.96592"
       notes = "It is widely considered nature's skylight"
+      date_activated = "1767225600"
     },
     {
       id = "5"
@@ -329,6 +348,7 @@ variable "trail_sampledata" {
       latitude = "43.57609"
       longitude = "-73.68584"
       notes = "There could be cats!"
+      date_activated = "1767225600"
     },
     {
       id = "6"
@@ -336,6 +356,7 @@ variable "trail_sampledata" {
       latitude = "44.14989"
       longitude = "-73.62672"
       notes = "It's really bald!"
+      date_activated = "1767225600"
     },
     {
       id = "7"
@@ -343,6 +364,7 @@ variable "trail_sampledata" {
       latitude = "44.18896"
       longitude = "-73.81613"
       notes = "Filled with many steep, challenging obstacles"
+      date_activated = "1767225600"
     },
     {
       id = "8"
@@ -350,6 +372,7 @@ variable "trail_sampledata" {
       latitude = "44.14958"
       longitude = "-73.76836"
       notes = "Don't anger the beavers living here!"
+      date_activated = "1767225600"
     },
     {
       id = "9"
@@ -357,6 +380,7 @@ variable "trail_sampledata" {
       latitude = "43.21285"
       longitude = "-74.20863"
       notes = "Be sure to bring boots!"
+      date_activated = "1767225600"
     },
     {
       id = "10"
@@ -364,6 +388,7 @@ variable "trail_sampledata" {
       latitude = "44.19171"
       longitude = "-74.2635"
       notes = "A relaxing trail lined with the greatest blue fruit, blueberries!"
+      date_activated = "1767225600"
     }
   ]
 }
@@ -483,6 +508,7 @@ variable "device_trail_log_hour_sampledata" {
     start = string
     count = string
   }))
+
   # Empty for now
   default = [
   ]
@@ -495,6 +521,7 @@ variable "device_trail_log_day_sampledata" {
     count = string
     battery   = string
   }))
+
   # Empty for now
   default = [
   ]
@@ -507,6 +534,7 @@ variable "device_trail_log_week_sampledata" {
     count = string
     battery   = string
   }))
+
   # Empty for now
   default = [
   ]
@@ -519,6 +547,7 @@ variable "device_trail_log_month_sampledata" {
     count = string
     battery   = string
   }))
+
   # Empty for now
   default = [
   ]
@@ -553,6 +582,7 @@ resource "aws_dynamodb_table_item" "trail_items" {
     latitude = { "N" = each.value.latitude }
     longitude = { "N" = each.value.longitude }
     notes = { "S" = each.value.notes }
+    date_activated = { "N" = each.value.date_activated }
   })
 }
 
