@@ -81,7 +81,9 @@ def timestamp_conversion(timestamp, time_increment):
     :return: timestamp of the start of that period, none if invalid time increment
     """
     dt_timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-    if time_increment == "day":
+    if time_increment == "hour":
+        return int(dt_timestamp.replace(minute=0, second=0, microsecond=0).timestamp())
+    elif time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
         sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
@@ -91,7 +93,7 @@ def timestamp_conversion(timestamp, time_increment):
     return None
 
 
-def get_deviceTrail_id(device_id):
+def get_device_trail_id(device_id):
     """
     given the device id get the devicetrail id that we need for the time entries
     :param device_id: device id
@@ -185,8 +187,9 @@ def parse_csv_and_export_data(event, context):
 
         device_trail_id_cache = {}
         for (device_id, hour_ts), data in row_data.items():
+            hour_ts = timestamp_conversion(hour_ts, "hour")
             if device_id not in device_trail_id_cache:
-                device_trail_id_cache[device_id] = get_deviceTrail_id(device_id)
+                device_trail_id_cache[device_id] = get_device_trail_id(device_id)
             device_trail_id = device_trail_id_cache[device_id]
 
             current_day = (device_trail_id, timestamp_conversion(hour_ts, "day"))

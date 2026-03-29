@@ -4,7 +4,6 @@ from boto3.dynamodb.conditions import Key, Attr
 import random
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -35,8 +34,6 @@ trails = {
 weekday_modifier = {0: .8, 1: .65, 2: .50, 3: .60, 4: .90, 5: 1.95, 6: 1.6}
 hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40, 1.64, 1.40, 1.29, 1.17, 1.05, 1.05, 1.17, 1.40, 1.76, 2.11, 1.87, 1.52, 1.17, 0.82, 0.59, 0.35, 0.28]]
 
-seconds_in_day = 24 * 60 * 60
-
 def simulate_data(event, context):
     print(event)
     # Retrieve Timestamp for start of day (EST) when lambda was called
@@ -54,7 +51,9 @@ def simulate_data(event, context):
         # Check if device for the trail is in the database, create it if not
         device_trail_exists = device_trail_table.query(
             IndexName="trail-index",
-            KeyConditionExpression=Key("trail_id").eq(trail_id)
+            KeyConditionExpression=Key("trail_id").eq(trail_id),
+            ScanIndexForward=False,
+            Limit=1
         )["Items"]
         device_trail_id = device_trail_exists[0]["id"] if device_trail_exists else create_device_trail(trail_id)
 
@@ -62,7 +61,8 @@ def simulate_data(event, context):
             KeyConditionExpression=(
                 Key("device_trail_id").eq(device_trail_id) &
                 Key("start").eq(int((date - timedelta(days=1)).timestamp()))
-            )
+            ),
+            Limit=1
         )
         battery = response["Items"][0]["battery"] if response["Count"] >= 1 else 100
 

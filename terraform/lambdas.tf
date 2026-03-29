@@ -11,6 +11,7 @@ resource "aws_lambda_function" "get_trail_data" {
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
   code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+  timeout = 10
 
   environment {
     variables = {
@@ -158,10 +159,10 @@ resource "aws_lambda_function" "get_device_metadata" {
   }
 }
 
-resource "aws_lambda_function" "get_trail_groups" {
-  function_name = "${var.deploy_env}_traildata_get_trail_groups"
+resource "aws_lambda_function" "get_trail_group_metadata" {
+  function_name = "${var.deploy_env}_traildata_get_trail_group_metadata"
   role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.get_trail_groups"
+  handler       = "traildata.get_trail_group_metadata"
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
   code_sha256 = data.archive_file.traildata_zip.output_base64sha256
@@ -236,7 +237,7 @@ locals {
     "traildata_update_device_trail_association" = aws_lambda_function.update_device_trail_association
     "traildata_get_trail_metadata"           = aws_lambda_function.get_trail_metadata
     "traildata_get_device_metadata"          = aws_lambda_function.get_device_metadata
-    "traildata_get_trail_groups"             = aws_lambda_function.get_trail_groups
+    "traildata_get_trail_group_metadata"             = aws_lambda_function.get_trail_group_metadata
     "traildata_delete_trail"                 = aws_lambda_function.delete_trail
     "traildata_export_csv"                     = aws_lambda_function.export_csv
     "traildata_import_csv"                     = aws_lambda_function.import_csv
