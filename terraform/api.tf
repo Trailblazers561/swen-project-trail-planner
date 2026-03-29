@@ -470,7 +470,7 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
   http_method             = aws_api_gateway_method.trail_groups_get.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.get_trail_groups.invoke_arn
+  uri                     = aws_lambda_function.get_trail_group_metadata.invoke_arn
 }
 
 # /csv Resource

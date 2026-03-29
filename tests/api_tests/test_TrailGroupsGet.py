@@ -3,7 +3,7 @@ import pytest
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-def test_get_trail_groups_success():
+def test_get_trail_group_metadata_success():
     """
     Test GET /trail_groups to retrieve all trail groups.
     """
@@ -18,13 +18,13 @@ def test_get_trail_groups_success():
     
     # Verify group structure
     for group in groups:
-        assert "group_name" in group
+        assert "name" in group
         assert "trail_ids" in group
-        assert isinstance(group["group_name"], str)
+        assert isinstance(group["name"], str)
         assert isinstance(group["trail_ids"], list)
 
 @pytest.mark.API
-def test_get_trail_groups_structure():
+def test_get_trail_group_metadata_structure():
     """
     Test that trail groups have the correct structure and trail_ids are valid.
     """
@@ -40,15 +40,15 @@ def test_get_trail_groups_structure():
     trails_response = requests.get(trails_url, headers=headers)
     assert trails_response.status_code == 200
     trails = trails_response.json()
-    valid_trail_ids = {t["trail_id"] for t in trails}
+    valid_trail_ids = {t["id"] for t in trails}
     
     for group in groups:
-        if group.get("group_name") != "All Areas":  # Skip special "All Areas" group
+        if group.get("name") != "All Areas":  # Skip special "All Areas" group
             for trail_id in group.get("trail_ids", []):
-                assert trail_id in valid_trail_ids, f"Trail ID {trail_id} in group {group['group_name']} does not exist"
+                assert trail_id in valid_trail_ids, f"Trail ID {trail_id} in group {group['name']} does not exist"
 
 @pytest.mark.API
-def test_get_trail_groups_unauthorized():
+def test_get_trail_group_metadata_unauthorized():
     """
     Test GET /trail_groups without authentication.
     """

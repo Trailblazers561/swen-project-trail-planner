@@ -12,14 +12,14 @@ dynamodb = boto3.resource('dynamodb')
 s3_client = boto3.client('s3')
 
 # Table references
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE"))
-trail_group_table = dynamodb.Table(os.environ.get("TRAIL_GROUP_TABLE"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
+trail_group_table = dynamodb.Table(os.environ.get("TRAIL_GROUP_TABLE", "local_TrailGroup"))
 s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
 
 table_time_map = {
@@ -45,34 +45,30 @@ def create_and_fill_csv(event, context):
     """
     Creates a csv file from the given parameters and returns link to the file in a bucket.
     Dates in iso format, all payload parameters are optional
-    Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str}
+    Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str, "granularity": str (optional)}
     """
     try:
         single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        trail_id_list = multi_params.get("trail_id_list")
-        start_date = single_params.get("start_date")
-        end_date = single_params.get("end_date")
+        trail_id_list = multi_params.get("trail_id") or ["1"]
+        start_date = single_params.get("start_date") or "2026-01-01"
+        end_date = single_params.get("end_date") or "2026-12-31"
         granularity = single_params.get("granularity", "day").lower() # defaulting to day if not specified, prolly unnecessary but makes things easier
+
+        if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
+        if not all(id.isdigit() for id in trail_id_list): raise ValueError("Invalid trail_id_list format")
+        trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
+
+        if not start_date: raise ValueError("Missing required field: start_date")
+        start_date = Decimal(datetime.fromisoformat(start_date).timestamp())
+
+        if not end_date: raise ValueError("Missing required field: end_date")
+        end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
 
         if granularity not in table_time_map:
             raise ValueError(f"Invalid granularity of {granularity}. Make sure it is a valid option: {list(table_time_map.keys())}")
         log_table = table_time_map[granularity]
-
-        if trail_id_list is not None and not all(id.isdigit() for id in trail_id_list):
-            raise ValueError("Invalid trail_id_list format")
-        trail_id_list_decimals = [Decimal(id) for id in trail_id_list] if trail_id_list else None
-
-        if start_date is None:
-            start_date = Decimal(0)
-        else:
-            start_date = Decimal(datetime.fromisoformat(start_date).timestamp())
-
-        if end_date is None:
-            end_date = Decimal(4928325678)
-        else:
-            end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
 
         print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}] at granularity of [{granularity}]")
 
@@ -80,15 +76,12 @@ def create_and_fill_csv(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        if trail_id_list is None:
-            rows = device_trail_table.scan(ProjectionExpression="id, device_id, trail_id").get("Items", [])
-        else:
-            rows = []
-            for trail_id in trail_id_list_decimals:
-                rows.extend(device_trail_table.query(
-                    IndexName="trail-index",
-                    KeyConditionExpression=Key("trail_id").eq(trail_id)
-                ).get("Items", []))
+        rows = []
+        for trail_id in trail_id_list_decimals:
+            rows.extend(device_trail_table.query(
+                IndexName="trail-index",
+                KeyConditionExpression=Key("trail_id").eq(trail_id)
+            ).get("Items", []))
 
         for row in rows:
             if "id" in row:

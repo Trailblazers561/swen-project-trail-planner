@@ -31,7 +31,7 @@ def test_delete_trail_success():
     assert create_response.status_code == 200
     
     # Create some test device data associated with this trail
-    device_id = f"test_device_delete_{int(time.time())}"
+    device_id = 12
     devices_url = f"{BASE_URL}/devices"
     api_headers = get_api_key_headers()
     
@@ -40,7 +40,7 @@ def test_delete_trail_success():
         "trail_id": test_trail_id,
         "battery": 90,
         "data": [
-            {"ts": int(time.time())}
+            {"ts": int(time.time()), "count": 32}
         ]
     }
     
@@ -169,9 +169,9 @@ def test_delete_trail_removes_from_groups():
     
     # Use first trail and first group
     test_trail = trails[0]
-    trail_id = test_trail.get("trail_id")
+    trail_id = test_trail.get("id")
     test_group = groups[0]
-    group_name = test_group.get("group_name")
+    group_name = test_group.get("name")
     
     # Add trail to group first
     update_payload = {
@@ -188,7 +188,7 @@ def test_delete_trail_removes_from_groups():
     groups_response_2 = requests.get(f"{BASE_URL}/trail_groups", headers=headers)
     assert groups_response_2.status_code == 200
     updated_groups = groups_response_2.json()
-    updated_group = next((g for g in updated_groups if g.get("group_name") == group_name), None)
+    updated_group = next((g for g in updated_groups if g.get("name") == group_name), None)
     assert updated_group is not None
     assert trail_id in updated_group.get("trail_ids", [])
     
