@@ -91,10 +91,10 @@ def get_trail_data(event, context):
         single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        trail_id_list = multi_params.get('trail_id') or ["5"]
-        start = single_params.get('start') or "2026-03-27"
-        end = single_params.get('end') or "2026-03-29"
-        granularity = single_params.get('granularity')
+        trail_id_list = multi_params.get('trail_id')
+        start = single_params.get("start")
+        end = single_params.get("end")
+        granularity = single_params.get("granularity", "day")
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
         if not all(id.isdigit() for id in trail_id_list): raise ValueError("Invalid trail_id_list format")
@@ -176,7 +176,9 @@ def get_trail_data(event, context):
 # ========== UPLOAD TRAIL DATA ==========
 def upload_trail_data(event, context):
     try:
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
         trail_id_raw = body.get("trail_id")
         data = body.get("data", [])
 
@@ -318,64 +320,152 @@ def upload_trail_data(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
-
-# ========== UPLOAD DEVICE DATA ==========
-def upload_device_data(event, context):
+def register_device(event, context):
     """
-    Handle POST requests from devices to /devices/ endpoint.
-    Supports compact payloads such as:
-    {
-        "device_id": "deviceA",
-        "battery": 94,
-        "data": [{"ts": 123}]
-    }
-    A device should be registered in the system before using this.
+    Handle POST requests from devices to /devices/ endpoint
+    Registers a device to the database, must be called before uploading device data
+    Expects: { "name": str, "firmware_version": str, "date_manufactured": str (ISO date) }
+    Optional: { "notes": str}
     """
     try:
-        body = json.loads(event.get("body", "{}"))
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         if not body:
             raise ValueError("Request body cannot be empty")
 
-        device_id_raw = body.get("device_id")
-        device_id = int(device_id_raw) if device_id_raw is not None else None
+        name = body.get("name")
+        firmware_version = body.get("firmware_version")
+        date_manufactured = body.get("date_manufactured")
+        notes = body.get("notes")
+
+        if name is None: raise ValueError("Missing required field: name")
+        if firmware_version is None: raise ValueError("Missing required field: firmware_version")
+        if date_manufactured is None: raise ValueError("Missing required field: date_manufactured")
+
+        date_manufactured = Decimal(datetime.fromisoformat(date_manufactured).timestamp())
+        print(f"Attempting to register device with name [{name}], firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
+
+        id = get_next_device_id()
+
+        item = {
+            "id": id,
+            "name": name,
+            "firmware_version": firmware_version,
+            "date_manufactured": date_manufactured
+        }
+        if notes:
+            item["notes"] = notes
+        device_table.put_item(Item=item)
+        print(f"Successfully added device with id [{id}]")
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({
+                "message": "Device created successfully",
+                "device_id": id
+            })
+        }
+
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Invalid data format: {str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+# ========== UPLOAD DEVICE DATA ==========
+def upload_device_data(event, context):
+    """
+    Handle PUT requests from devices to /devices/ endpoint.
+    Supports compact payloads such as:
+    {
+        "name": "deviceA",
+        "battery": 94,
+        "data": [{"ts": 123}],
+        "firmware_version": "1.2.17"
+    }
+    A device should be registered in the system before using this.
+    """
+    try:
+        print(event)
+        body = event.get("body","{}")
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        if not body:
+            raise ValueError("Request body cannot be empty")
+
+        name = body.get("name")
+        if not name: raise ValueError("Missing required field: name")
+
+        firmware_version = body.get("firmware_version")
         data_points = body.get("data")
         battery = body.get("battery")
 
-        missing_fields = []
-        if not device_id:
-            missing_fields.append("device_id")
-        if data_points is None:
-            missing_fields.append("data")
+        if not firmware_version and not (data_points and battery): raise ValueError("Missing required field: firmware_version or (data_points and battery)")
 
-        if missing_fields:
-            raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
+        device_exists = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(name),
+            Limit=1
+        )["Items"]
+        device_id = device_exists[0]["id"] if device_exists else None
+        if not device_id: raise ValueError(f"Cannot find device with name [{name}], please register if not done already")
+        messages = []
 
-        if not isinstance(data_points, list):
-            raise ValueError("Data field must be an array")
+        if firmware_version:
+            print(f"Attempting to update firmware version of device [{device_id}] to version [{firmware_version}]")
+            device_table.update_item(
+                Key={"id": device_id},
+                UpdateExpression="SET firmware_version = :firmware_version",
+                ExpressionAttributeValues={
+                    ":firmware_version": firmware_version
+                }
+            )
+            messages.append("Firmware version updated successfully")
+            print("Successfully updated firmware version")
 
-        if len(data_points) == 0:
-            raise ValueError("Data array must be a non-empty list")
+        if data_points and battery:
+            if not isinstance(data_points, list):
+                raise ValueError("Data field must be an array")
 
-        _, trail_id = get_device_trail_id(device_id)
+            if len(data_points) == 0:
+                raise ValueError("Data array must be a non-empty list")
 
-        new_body = {
-            "trail_id": trail_id,
-            "device_id": device_id,
-            "battery": battery,
-            "data": data_points
-        }
-        new_event = {**event, "body": json.dumps(new_body)}
+            print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
 
-        upload_trail_data_call = upload_trail_data(new_event, context)
-        if upload_trail_data_call["statusCode"] == 200:
-            return {
-                "statusCode": 200,
-                "headers": cors_headers(),
-                "body": json.dumps({"message": "Device data uploaded successfully"})
+            _, trail_id = get_device_trail_id(device_id)
+
+            new_body = {
+                "trail_id": trail_id,
+                "device_id": device_id,
+                "battery": battery,
+                "data": data_points
             }
-        return upload_trail_data_call
+            new_event = {**event, "body": new_body}
 
+            upload_trail_data_call = upload_trail_data(new_event, context)
+            if upload_trail_data_call["statusCode"] == 200:
+                messages.append("Device data uploaded successfully")
+            else:
+                return upload_trail_data_call
+
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": ", ".join(messages)})
+        }
     except ValueError as e:
         print(e)
         return {
@@ -414,7 +504,7 @@ def get_trail_metadata(event, context):
                 )["Responses"].get(trail_table.name, [])
                 items.extend(response)
         else:   
-            items = trail_table.scan().get("Items", [])
+            items = trail_table.scan(FilterExpression=Attr("date_retired").not_exists()).get("Items", [])
 
         print(f"Successfully found trail metadata [{items[:3]}]")
         return {
@@ -555,7 +645,9 @@ def create_trail(event, context):
     """
     try:
         print(event)
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         trail_name = body.get("trail_name")
         trail_group = body.get("trail_group")
@@ -678,7 +770,9 @@ def update_trail_metadata(event, context):
     """
     try:
         print(event)
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         trail_id = body.get("trail_id")
         trail_name = body.get("trail_name")
@@ -859,18 +953,21 @@ def update_trail_metadata(event, context):
 
 def delete_trail(event, context):
     """
-    Delete a trail and all associated data.
+    Retires a trail and all associated data.
     Deletes:
-    - All trail device logs for that trail
     - Trail from all trail groups
-    - Updates devices associated with this trail to trail_id 0
-    Expects: { "trail_id": int }
+    - Updates devices_trail date removed to given date
+    - Updates trail date retired to given date
+    Expects: { "trail_id": int, date: str (ISO Date, optional) }
     """
     try:
         print(event)
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         trail_id = body.get("trail_id")
+        date = body.get("date")
 
         if trail_id is None:
             print("Missing required field: trial_id")
@@ -890,7 +987,12 @@ def delete_trail(event, context):
                 "body": json.dumps({"error": "Invalid trail_id format"})
             }
 
-        print(f"Attempting to delete trail with trail_id [{trail_id}]")
+        if date is None:
+            date = int(time.time())
+        else:
+            date = Decimal(datetime.fromisoformat(date).timestamp())
+
+        print(f"Attempting to retire trail with trail_id [{trail_id}] with date [{date}]")
 
         # get all relevant devicetrail ids for this trail
         response = device_trail_table.query(
@@ -898,94 +1000,14 @@ def delete_trail(event, context):
             KeyConditionExpression=Key("trail_id").eq(trail_id)
         )
         device_trail_items = response.get("Items", [])
-        device_trail_ids = [int(item["id"]) for item in device_trail_items if "id" in item]
 
-        for device_trail_id in device_trail_ids:
-            # Delete all trail device logs for this trail
-            try:
-                # Query all logs for this trail in the hour table
-                response = device_trail_log_hour_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
+        for device_trail_item in device_trail_items:
+            if not device_trail_item["date_removed"]:
+                device_trail_table.update_item(
+                    Key={"device_id": device_trail_item["device_id"], "date_installed": device_trail_item["date_installed"]},
+                    UpdateExpression="SET date_removed = :date_removed",
+                    ExpressionAttributeValues={":date_removed": date}
                 )
-                items = response.get("Items", [])
-
-                # Delete all items in batches in the hour table
-                if items:
-                    with device_trail_log_hour_table.batch_writer() as batch:
-                        for item in items:
-                            batch.delete_item(
-                                Key={
-                                    "device_trail_id": item["device_trail_id"],
-                                    "start": item["start"]
-                                }
-                            )
-
-                # Query all logs for this trail in the day table
-                response = device_trail_log_day_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
-                )
-                items = response.get("Items", [])
-
-                # Delete all items in batches in the day table
-                if items:
-                    with device_trail_log_day_table.batch_writer() as batch:
-                        for item in items:
-                            batch.delete_item(
-                                Key={
-                                    "device_trail_id": item["device_trail_id"],
-                                    "start": item["start"]
-                                }
-                            )
-
-                # Query all logs for this trail in the week table
-                response = device_trail_log_week_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
-                )
-                items = response.get("Items", [])
-
-                # Delete all items in batches in the week table
-                if items:
-                    with device_trail_log_week_table.batch_writer() as batch:
-                        for item in items:
-                            batch.delete_item(
-                                Key={
-                                    "device_trail_id": item["device_trail_id"],
-                                    "start": item["start"]
-                                }
-                            )
-
-                # Query all logs for this trail in the month table
-                response = device_trail_log_month_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id)
-                )
-                items = response.get("Items", [])
-
-                # Delete all items in batches in the month table
-                if items:
-                    with device_trail_log_month_table.batch_writer() as batch:
-                        for item in items:
-                            batch.delete_item(
-                                Key={
-                                    "device_trail_id": item["device_trail_id"],
-                                    "start": item["start"]
-                                }
-                            )
-            except Exception as e:
-                # Log error but continue
-                print(f"Error deleting trail logs: {str(e)}")
-
-        # remove devicetrail entries from devicetrail
-        try:
-            with device_trail_table.batch_writer() as batch:
-                for item in device_trail_items:
-                    batch.delete_item(
-                        Key={
-                            "device_id": item["device_id"]
-                        }
-                    )
-        except Exception as e:
-            # Log error but continue
-            print(f"Error deleting devicetrail ids: {str(e)}")
 
         # Remove trail from all trail groups
         try:
@@ -1005,20 +1027,24 @@ def delete_trail(event, context):
             print(f"Error removing trail from groups: {str(e)}")
 
         try:
-            trail_table.delete_item(Key={"id": trail_id})
+            trail_table.update_item(
+                Key={"id": trail_id},
+                UpdateExpression="SET date_retired = :date_retired",
+                ExpressionAttributeValues={":date_retired": date}
+            )
         except Exception as e:
             print(e)
             return {
                 "statusCode": 500,
                 "headers": cors_headers(),
-                "body": json.dumps({"error": f"Failed to delete trail: {str(e)}"})
+                "body": json.dumps({"error": f"Failed to retire trail: {str(e)}"})
             }
 
-        print("Successfully deleted trail")
+        print("Successfully retired trail")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
-            "body": json.dumps({"message": "Trail and all associated data deleted successfully"})
+            "body": json.dumps({"message": "Trail and all associated data retired successfully"})
         }
     except Exception as e:
         print(e)
@@ -1038,7 +1064,9 @@ def update_device_trail_association(event, context):
     """
     try:
         print(event)
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         device_id = body.get("device_id")
         trail_id = body.get("trail_id")

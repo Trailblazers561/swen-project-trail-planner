@@ -128,7 +128,25 @@ resource "aws_api_gateway_integration_response" "devices_options_integration_res
   ]
 }
 
-# POST /devices -> Lambda: upload_device_data (requires API key, no Cognito auth)
+# PUT /devices -> Lambda: upload_device_data (requires API key, no lambda auth)
+resource "aws_api_gateway_method" "devices_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.devices.id
+  http_method   = "PUT"
+  authorization = "NONE"
+  api_key_required = true
+}
+
+resource "aws_api_gateway_integration" "devices_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.devices.id
+  http_method             = aws_api_gateway_method.devices_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.upload_device_data.invoke_arn
+}
+
+# POST /devices -> Lambda: register_device
 resource "aws_api_gateway_method" "devices_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.devices.id
@@ -143,7 +161,7 @@ resource "aws_api_gateway_integration" "devices_post_integration" {
   http_method             = aws_api_gateway_method.devices_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.upload_device_data.invoke_arn
+  uri                     = aws_lambda_function.register_device.invoke_arn
 }
 
 # POST /trail_data -> Lambda: upload_trail_data
@@ -746,6 +764,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       # Integrations
       aws_api_gateway_integration.trail_data_post_integration.uri,
       aws_api_gateway_integration.trail_data_get_integration.uri,
+      aws_api_gateway_integration.devices_put_integration.uri,
       aws_api_gateway_integration.devices_post_integration.uri,
       aws_api_gateway_integration.trail_metadata_get_integration.uri,
       aws_api_gateway_integration.trail_metadata_post_integration.uri,
@@ -769,6 +788,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.trail_data_post.authorization,
       aws_api_gateway_method.trail_data_get.authorization,
       aws_api_gateway_method.devices_options.authorization,
+      aws_api_gateway_method.devices_put.authorization,
       aws_api_gateway_method.devices_post.authorization,
       aws_api_gateway_method.trail_metadata_options.authorization,
       aws_api_gateway_method.trail_metadata_get.authorization,
@@ -801,6 +821,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [
     aws_api_gateway_integration.trail_data_post_integration,
     aws_api_gateway_integration.trail_data_get_integration,
+    aws_api_gateway_integration.devices_put_integration,
     aws_api_gateway_integration.devices_post_integration,
     aws_api_gateway_integration.trail_metadata_get_integration,
     aws_api_gateway_integration.trail_metadata_post_integration,

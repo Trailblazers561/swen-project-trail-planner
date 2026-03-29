@@ -44,9 +44,9 @@ def test_get_device_metadata_structure():
         if "firmware_version" in device:
             assert isinstance(device["firmware_version"], str)
         if "date_manufactured" in device:
-            assert isinstance(device["trail_id"], (int, type(None)))
+            assert isinstance(device["date_manufactured"], (int, type(None)))
         if "date_retired" in device:
-            assert isinstance(device["trail_id"], (int, type(None)))
+            assert isinstance(device["date_retired"], (int, type(None)))
 
 @pytest.mark.API
 def test_get_device_metadata_unauthorized():
