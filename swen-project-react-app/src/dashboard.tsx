@@ -6,11 +6,10 @@ import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout } from "plotly.js";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
-import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
+import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
 import { Button } from "./components/ui/button.tsx";
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 
 interface Trail {
     id: number;
@@ -108,7 +108,7 @@ const dashboard = () => {
         new Date()
     );
     
-    const [range, setRange] = React.useState<DateRange | undefined>(undefined)
+    const [range, setRange] = React.useState<DateRange | undefined>()
     const [trails, setTrails] = useState<string[]>([]);
     
     const [granularity, setGranularity] = useState<Granularity | null>(null);
@@ -268,7 +268,7 @@ const dashboard = () => {
         startDate: Date | null,
         endDate: Date | null
     ) {
-        if (!startDate || !endDate) return;
+        if (!startDate || !endDate) return [];
 
         const daysDiff = getDateDifference(startDate, endDate);
 
@@ -289,8 +289,7 @@ const dashboard = () => {
             options = [Granularity.Day];
         }
 
-        setGranularityOptions(options);
-        setGranularity(options[0]);
+        return options;
     }
 
     useEffect(() => {
@@ -482,9 +481,21 @@ const dashboard = () => {
         setSelectedDateEnd(endDate);
     };
 
-    const handleDateRangeChange = (range: DateRange | undefined) => {
-        setRange(range);
+    const handleDateRangeChange = (DateRange: DateRange | undefined) => {
+        const formattedRange: DateRange | undefined = DateRange?.from && DateRange?.to ? {from: DateRange.from, to: DateRange.to,} : undefined
+        setRange(formattedRange)
+
+    if (!DateRange?.from || !DateRange?.to) return
+
+    const options = updateGranularityOptions(DateRange.from, DateRange.to)
+
+    setGranularityOptions(options)
+    // keep selected value valid
+    if (!options.includes(granularity!)) {
+        setGranularity(options[0] ?? null)
     }
+    }
+
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
@@ -496,9 +507,32 @@ const dashboard = () => {
         }
     };
 
-    const handleGranularityChange = (granularity: Granularity) => {
-        setGranularity(granularity);
+    const fillTrailsMultiselect = (): MultiSelectOption[] => {
+        const options: MultiSelectOption[] = [
+            { value: "All Trails", label: "All Trails" },
+        ];
+
+        trailMetadata.forEach((trail) => {
+            if (trail && trail.name && trail.name.trim().length > 0) {
+                options.push({ value: trail.name, label: trail.name });
+            }
+        });
+
+        return options;
     };
+
+    const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
+        const options: MultiSelectOption[] = [];
+
+        trailGroups.forEach((group) => {
+            if (group && group.name && group.name.trim().length > 0) {
+                options.push({ value: group.name, label: group.name });
+            }
+        });
+
+        return options;
+    };
+
 
     // Load device metadata once and cache it
     useEffect(() => {
@@ -686,22 +720,40 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container">
+            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end">
                 <div className="filter-group flex flex-col">
 
                     <label>Date Range:</label>
-                    <DateRangePicker value={range} onChange={handleDateRangeChange} />
+                    <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                </div>
+                <div className="filter-group flex flex-col">
+                    <label>Granularity:</label>
+                    <Select value={granularity ?? undefined}>
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                        <SelectGroup>
+                        {granularityOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                            {GranularityText[option]}
+                            </SelectItem>
+                        ))}
+                        </SelectGroup>
+                    </SelectContent>
+                    </Select>
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
 
                 </div>
                 <div className="options-container flex flex-col">
