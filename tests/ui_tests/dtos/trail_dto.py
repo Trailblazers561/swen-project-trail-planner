@@ -1,9 +1,10 @@
 import pytest_check
 
 class TrailDTO:
-    def __init__(self, trail_name: str, trail_id: int=None):
+    def __init__(self, trail_name: str, trail_id: int=None, trail_group: str=""):
         self.trail_name = trail_name
         self.trail_id = trail_id
+        self.trail_group = trail_group #Likely needs a refactor
 
     def __str__(self):
         return f"TrailDTO [trail_name={self.trail_name}, trail_id={self.trail_id}]"
