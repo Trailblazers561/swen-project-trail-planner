@@ -2,20 +2,16 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
 
-from datetime import datetime
 import re
 from selenium.common.exceptions import NoSuchElementException
 
 from dtos.device_dto import DeviceDTO
 from dtos.trail_dto import TrailDTO
-from dtos.trail_group_dto import TrailGroupDTO
-from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
-from dtos.trail_status_dto import TrailStatusDTO
 
-class EditTrailPage:
+class AssociateDevicePage:
     root = (By.XPATH, "//div[@data-testid='associate-device-modal']")
-    unpaired_devices = (By.XPATH, "//div[@data-testid='unpaired-device-item']") #'2\nCurrently on: Giant Mountain\nBattery: 88%'
-    paired_devices = (By.XPATH, "//div[@data-testid='paired-device-item']") #'2\nCurrently on: Giant Mountain\nBattery: 88%'a
+    unpaired_devices = (By.XPATH, "//div[@data-testid='unpaired-device-item']")
+    paired_devices = (By.XPATH, "//div[@data-testid='paired-device-item']")
     trail_select = (By.XPATH, "//select[@id='trail-select']")
     device_button_xpath = "//*[@data-testid='associate-device-id' and text()='{}']"
     associate_device_button = (By.XPATH, "associate-device-button")

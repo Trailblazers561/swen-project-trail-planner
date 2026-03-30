@@ -110,6 +110,11 @@ class SeleniumHelper:
         element = driver.find_element(*locator)
         return element.get_attribute(attribute)
 
+    def retrieve_checkbox_selected(driver: webdriver.Chrome, locator: tuple[str, str]) -> bool:
+        print(f"Retrieving element {locator} selected")
+        element = driver.find_element(*locator)
+        return element.is_selected()
+
     def dismiss_alert(driver: webdriver.Chrome) -> str:
         print(f"Dismissing alert")
         wait = WebDriverWait(driver, timeout=DEFAULT_WAIT)
