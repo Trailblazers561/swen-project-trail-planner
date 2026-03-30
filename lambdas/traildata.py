@@ -654,6 +654,7 @@ def create_trail(event, context):
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
+        date_activated = body.get("date_activated")
 
         if not trail_name:
             return {
@@ -662,14 +663,20 @@ def create_trail(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_name"})
             }
 
-        print(f"Attempting to create trail with trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
+        if date_activated is None:
+            date_activated = int(time.time())
+        else:
+            date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
+
+        print(f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
         # Create trail metadata
         item = {
             "id": new_trail_id,
-            "name": str(trail_name)
+            "name": str(trail_name),
+            "date_activated": date_activated
         }
 
         if notes is not None:
