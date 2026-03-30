@@ -24,10 +24,12 @@ PERMISSIONS = {
     ("/csv/csv-url", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/device_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/devices", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER], # Not actaully used, currently just API key
     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER], # Not actaully used, currently just API key
     ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_groups", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
+    ("/trail_groups", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],

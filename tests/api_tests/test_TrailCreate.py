@@ -31,9 +31,9 @@ def test_create_trail_success():
     get_response = requests.get(url, headers=headers)
     assert get_response.status_code == 200
     trails = get_response.json()
-    created_trail = next((t for t in trails if t.get("trail_name") == trail_name), None)
+    created_trail = next((t for t in trails if t.get("name") == trail_name), None)
     assert created_trail is not None
-    assert created_trail["trail_id"] == data["trail_id"]
+    assert created_trail["id"] == data["trail_id"]
 
 @pytest.mark.API
 def test_create_trail_with_group():
@@ -62,7 +62,7 @@ def test_create_trail_with_group():
     groups_response = requests.get(groups_url, headers=headers)
     assert groups_response.status_code == 200
     groups = groups_response.json()
-    test_group = next((g for g in groups if g.get("group_name") == group_name), None)
+    test_group = next((g for g in groups if g.get("name") == group_name), None)
     assert test_group is not None
     assert data["trail_id"] in test_group.get("trail_ids", [])
 

@@ -1,22 +1,34 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { UserRole } from "./lib/apiTypes";
+import { UserRole, Granularity } from "./lib/apiTypes";
 
 export function TrailData() {
   /**
-   * Get all trail metadata (names, IDs, etc.) 
+   * Get trail metadata (names, IDs, notes, etc.) 
+   * @param trailIdList - Optional list of trail ids of trails to retrieve
    */
-  async function getTrailMetadata() {
-    return await request(`${API_URL}/trail_metadata`, {
+  async function getTrailMetadata(trailIdList?: number[]) {
+    const queries: string[] = []
+    if (trailIdList)
+      trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
       headers: authHeaders(),
     });
   }
 
   /**
-   * Get all trail groups 
+   * Get trail groups
+   * @param trailGroupList - Optional list of trail group names of trail groups to retrieve
    */
-  async function getTrailGroups() {
-    return await request(`${API_URL}/trail_groups`, {
+  async function getTrailGroupMetadata(trailGroupList?: string[]) {
+    const queries: string[] = []
+    if (trailGroupList)
+      trailGroupList.forEach(trailGroup => {queries.push(`trail_group=${encodeURIComponent(trailGroup)}`)})
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/trail_groups${queryString}`, {
       method: "GET",
       headers: authHeaders(),
     });
@@ -24,9 +36,15 @@ export function TrailData() {
 
   /** 
    * Get device metadata (battery, current trail, etc.) 
+   * @param trailIdList - Optional list of trail ids of trails to retrieve
    */
-  async function getDeviceMetadata() {
-    return await request(`${API_URL}/device_metadata`, {
+  async function getDeviceMetadata(deviceIdList?: number[]) {
+    const queries: string[] = []
+    if (deviceIdList)
+      deviceIdList.forEach(id => {queries.push(`device_id=${id}`)})
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    return await request(`${API_URL}/device_metadata${queryString}`, {
       method: "GET",
       headers: authHeaders(),
     });
@@ -34,25 +52,18 @@ export function TrailData() {
 
   /**
    * Get device logs for specific trails between two dates
-   * @param startdate ISO or epoch start date
-   * @param enddate ISO or epoch end date
-   * @param trailIDs number or array of trail IDs
+   * @param trailIdList array of trail ids of trails to retrieve data for
+   * @param startDate ISO format date for earliest date to retrieve
+   * @param endDate ISO format date for earliest date to retrieve
+   * Note: If your date range includes partials for the granularity it will not have all the counts for that
+   * (eg. week data with startDate of Friday will only retrieve the Friday/Saturday data for that week)
    */
-  async function getTrailLogsBetweenDates(startdate: number, enddate: number, trailIDs: number | number[]) {
-    const trailsParam = Array.isArray(trailIDs) ? trailIDs.join(",") : trailIDs;
-    const url = `${API_URL}/trail_data?trails=${trailsParam}&start=${startdate}&end=${enddate}`;
-    return await request(url, {
-      method: "GET",
-      headers: authHeaders(),
-    });
-  }
+  async function getTrailLogs(trailIdList: number[], startDate: Date, endDate: Date, granularity: Granularity) {
+    const trailIdQueries: string[] = []
+    trailIdList.forEach(id => {trailIdQueries.push(`trail_id=${id}`)})
+    const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
 
-  /** Get all logs between two dates
-   * @param startdate ISO or epoch start date
-   * @param enddate ISO or epoch end date
-   */
-  async function getAllLogsBetweenDates(startdate: number, enddate: number) {
-    const url = `${API_URL}/trail_data?start=${startdate}&end=${enddate}`;
+    const url = `${API_URL}/trail_data?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: authHeaders(),
@@ -62,7 +73,7 @@ export function TrailData() {
   /**
    * Update trail metadata (name and/or trail group)
    * @param trailId - The ID of the trail to update
-   * @param trailName - Optional new name for the trail
+   * @param trailName - new name for the trail
    * @param trailGroup - Optional trail group name to assign the trail to
    */
   async function updateTrailMetadata(trailId: number, trailName?: string, trailGroup?: string) {
@@ -81,15 +92,23 @@ export function TrailData() {
    * Update device trail association
    * @param deviceId - The device ID to update
    * @param trailId - The trail ID to associate the device with
+   * @param dateInstalled - Optional: Date the device was installed on the new trail
+   * @param dateRemoved - Optional: Date the device was removed from the old trail
    */
-  async function updateDeviceTrailAssociation(deviceId: string, trailId: number) {
+  async function updateDeviceTrailAssociation(deviceId: string, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
+    const payload: Record<string, any> = {
+      device_id: deviceId,
+      trail_id: trailId,
+    }
+    if (dateInstalled)
+      payload.date_installed = dateInstalled.toISOString();
+    if (dateRemoved)
+      payload.date_removed = dateRemoved.toISOString();
+
     return await request(`${API_URL}/device_metadata`, {
       method: "PUT",
       headers: authHeaders(),
-      body: JSON.stringify({
-        device_id: deviceId,
-        trail_id: trailId,
-      }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -97,20 +116,34 @@ export function TrailData() {
    * Create a new trail
    * @param trailName - The name of the trail to create
    * @param trailGroup - Optional trail group name to assign the trail to
+   * @param notes - Optional notes for the created trail
+   * @param latitude - Optional latitude of the trail head
+   * @param longitude - Optional longitude of the trail head
+   * @param dateActivated - Optional date trail was activated, defaults to current time if not specified
    */
-  async function createTrail(trailName: string, trailGroup?: string) {
+  async function createTrail(trailName: string, trailGroup?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
+    const payload: Record<string, any> = {
+      trail_name: trailName
+    }
+    if (trailGroup)
+      payload.trail_group = trailGroup;
+    if (notes)
+      payload.notes = notes;
+    if (latitude)
+      payload.latitude = latitude;
+    if (longitude)
+      payload.longitude = longitude;
+    if (dateActivated)
+      payload.date_activated = dateActivated.toISOString();
     return await request(`${API_URL}/trail_metadata`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({
-        trail_name: trailName,
-        trail_group: trailGroup,
-      }),
+      body: JSON.stringify(payload)
     });
   }
 
   /**
-   * Delete a trail and all associated data
+   * Retires a trail and all associated data
    * @param trailId - The ID of the trail to delete
    */
   async function deleteTrail(trailId: number) {
@@ -124,7 +157,7 @@ export function TrailData() {
   }
 
   /**
-   * Create a new trail group
+   * Create a new trail group (NOT Implemented)
    * @param groupName - The name of the trail group to create
    * @param trailIds - Optional array of trail IDs to include in the group
    */
@@ -140,7 +173,7 @@ export function TrailData() {
   }
 
   /**
-   * Update a trail group (rename or change trail IDs)
+   * Update a trail group (rename or change trail IDs) (NOT Implemented)
    * @param oldGroupName - The current name of the trail group
    * @param newGroupName - Optional new name for the trail group
    * @param trailIds - Optional array of trail IDs to update in the group
@@ -173,18 +206,18 @@ export function TrailData() {
 
   /**
    * Gets csv thats created from the database
-   * @param trailIdList - Optional List of trail IDs to include in the csv
-   * @param startDate - Optional ISO format date for earliest date to include in the csv
-   * @param endDate - Optional ISO format date for latest date to include in the csv
+   * @param trailIdList - List of trail IDs to include in the csv
+   * @param startDate - ISO format date for earliest date to include in the csv
+   * @param endDate - ISO format date for latest date to include in the csv
+   * @param granularity - Optional granularity setting for output, can be hourly, day, week, or month
    */
-  async function exportCSV(trailIdList?: number[], startDate?: Date, endDate?: Date) {
+  async function exportCSV(trailIdList: number[], startDate: Date, endDate: Date, granularity?: Granularity) {
     const queries: string[] = []
-    if (trailIdList !== undefined)
-      trailIdList.forEach(id => {queries.push(`trail_id_list=${id}`)})
-    if (startDate !== undefined)
-      queries.push(`start_date=${startDate.toISOString()}`)
-    if (endDate !== undefined)
-      queries.push(`end_date=${endDate.toISOString()}`)
+    trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
+    queries.push(`start_date=${startDate.toISOString()}`)
+    queries.push(`end_date=${endDate.toISOString()}`)
+    if (granularity)
+      queries.push(`granularity=${granularity}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/csv${queryString}`, {
@@ -258,10 +291,9 @@ export function TrailData() {
 
   return {
     getTrailMetadata,
-    getTrailGroups,
+    getTrailGroupMetadata,
     getDeviceMetadata,
-    getTrailLogsBetweenDates,
-    getAllLogsBetweenDates,
+    getTrailLogs,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,

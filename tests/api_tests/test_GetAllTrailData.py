@@ -10,8 +10,13 @@ def test_get_all_trail_data():
     """
     url = f"{BASE_URL}/trail_data"
     headers = get_cognito_headers()
+    params = {
+        "trail_id": [1,2,3,4,5,6,7,8,9,10],
+        "start": "2026-01-01",
+        "end": "2026-12-31"
+    }
     
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, params=params)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -26,4 +31,7 @@ def test_get_all_trail_data():
         item = response_data[0]
         assert "trail_id" in item
         assert "device_id" in item
-        assert "timestamp" in item
+        assert "device_trail_id" in item
+        assert "start" in item
+        assert "count" in item
+        assert "battery" in item
