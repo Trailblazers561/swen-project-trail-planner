@@ -797,11 +797,11 @@ const dashboard = () => {
                 </div>
                 {viewMode === "graph" ? (
                 <div className="flex justify-center px-6 pb-8">
-                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
+                    <div className="bg-white w-full max-w-6xl p-6">
                         <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                             {graphTitle}
                         </h2>
-                            <div className="h-[500px]">
+                            <div className="h-[500px] shadow-md rounded-xl border border-gray-200">
                                 <Plot 
                                     className="w-full h-full"
                                     config={{ displayModeBar: false, responsive: true }}
