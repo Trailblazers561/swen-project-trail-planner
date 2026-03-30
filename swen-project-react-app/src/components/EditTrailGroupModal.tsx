@@ -4,12 +4,12 @@ import './Modal.css';
 import { Button } from './ui/button';
 
 interface Trail {
-  trail_id: number;
-  trail_name: string;
+  id: number;
+  name: string;
 }
 
 interface TrailGroup {
-  group_name: string;
+  name: string;
   trail_ids: number[];
 }
 
@@ -36,7 +36,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { updateTrailMetadata, getTrailGroups } = TrailData();
+  const { updateTrailMetadata } = TrailData();
 
   useEffect(() => {
     if (isOpen) {
@@ -50,9 +50,9 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
 
   useEffect(() => {
     if (selectedGroupName && !isCreateMode) {
-      const group = trailGroups.find(g => g.group_name === selectedGroupName);
+      const group = trailGroups.find(g => g.name === selectedGroupName);
       if (group) {
-        setNewGroupName(group.group_name);
+        setNewGroupName(group.name);
         setSelectedTrailIds([...group.trail_ids]);
       }
     }
@@ -92,15 +92,15 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
       // Create a map of trail_id to trail_name for preserving names
       const trailIdToName = new Map<number, string>();
       availableTrails.forEach(trail => {
-        if (trail && trail.trail_name) {
-          trailIdToName.set(trail.trail_id, trail.trail_name);
+        if (trail && trail.name) {
+          trailIdToName.set(trail.id, trail.name);
         }
       });
 
       if (isRenaming && oldGroupName) {
         // When renaming, we need to update the group entry itself
 
-        const oldGroup = trailGroups.find(g => g.group_name === oldGroupName);
+        const oldGroup = trailGroups.find(g => g.name === oldGroupName);
         if (oldGroup) {
           const oldGroupTrailIds = oldGroup.trail_ids || [];
 
@@ -132,7 +132,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
           // First remove them from any other groups
           const allOtherGroupTrailIds = new Set<number>();
           trailGroups.forEach(group => {
-            if (group.group_name && group.group_name !== "All Areas" && group.group_name !== oldGroupName) {
+            if (group.name && group.name !== "All Areas" && group.name !== oldGroupName) {
               group.trail_ids.forEach(id => allOtherGroupTrailIds.add(id));
             }
           });
@@ -154,7 +154,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         // Step 1: Remove selected trails from ALL existing groups
         const allGroupTrailIds = new Set<number>();
         trailGroups.forEach(group => {
-          if (group.group_name && group.group_name !== "All Areas") {
+          if (group.name && group.name !== "All Areas") {
             group.trail_ids.forEach(id => allGroupTrailIds.add(id));
           }
         });
@@ -206,13 +206,13 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   // Filter out empty groups and "All Areas"
   const availableGroups = trailGroups.filter(g =>
     g &&
-    g.group_name &&
-    g.group_name !== "All Areas" &&
+    g.name &&
+    g.name !== "All Areas" &&
     g.trail_ids &&
     Array.isArray(g.trail_ids) &&
     g.trail_ids.length > 0
   );
-  const validTrails = availableTrails.filter(t => t && t.trail_name && t.trail_name.trim().length > 0);
+  const validTrails = availableTrails.filter(t => t && t.name && t.name.trim().length > 0);
 
   if (!isOpen) return null;
 
@@ -236,8 +236,8 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                 >
                   <option value="">Select a group</option>
                   {availableGroups.map((group) => (
-                    <option key={group.group_name} value={group.group_name}>
-                      {group.group_name} ({group.trail_ids.length} trails)
+                    <option key={group.name} value={group.name}>
+                      {group.name} ({group.trail_ids.length} trails)
                     </option>
                   ))}
                 </select>
@@ -265,11 +265,11 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                 padding: '0'
               }}>
                 {validTrails.map((trail, index) => {
-                  const isChecked = selectedTrailIds.includes(trail.trail_id);
+                  const isChecked = selectedTrailIds.includes(trail.id);
                   const isEven = index % 2 === 0;
                   return (
                     <div
-                      key={trail.trail_id}
+                      key={trail.id}
                       style={{
                         padding: '12px 10px',
                         borderBottom: index < validTrails.length - 1 ? '1px solid #e0e0e0' : 'none',
@@ -281,7 +281,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                         marginBottom: '8px',
                         color: '#333'
                       }}>
-                        {trail.trail_name}
+                        {trail.name}
                       </div>
                       <label
                         onClick={(e) => e.stopPropagation()}
@@ -299,7 +299,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                           onChange={(e) => {
                             e.stopPropagation();
                             if (isCreateMode || selectedGroupName) {
-                              handleTrailToggle(trail.trail_id);
+                              handleTrailToggle(trail.id);
                             }
                           }}
                           onClick={(e) => e.stopPropagation()}
