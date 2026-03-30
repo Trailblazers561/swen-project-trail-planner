@@ -116,15 +116,29 @@ export function TrailData() {
    * Create a new trail
    * @param trailName - The name of the trail to create
    * @param trailGroup - Optional trail group name to assign the trail to
+   * @param notes - Optional notes for the created trail
+   * @param latitude - Optional latitude of the trail head
+   * @param longitude - Optional longitude of the trail head
+   * @param dateActivated - Optional date trail was activated, defaults to current time if not specified
    */
-  async function createTrail(trailName: string, trailGroup?: string) {
+  async function createTrail(trailName: string, trailGroup?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
+    const payload: Record<string, any> = {
+      trail_name: trailName
+    }
+    if (trailGroup)
+      payload.trail_group = trailGroup;
+    if (notes)
+      payload.notes = notes;
+    if (latitude)
+      payload.latitude = latitude;
+    if (longitude)
+      payload.longitude = longitude;
+    if (dateActivated)
+      payload.date_activated = dateActivated.toISOString();
     return await request(`${API_URL}/trail_metadata`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({
-        trail_name: trailName,
-        trail_group: trailGroup,
-      }),
+      body: JSON.stringify(payload)
     });
   }
 
