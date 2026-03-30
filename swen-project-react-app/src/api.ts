@@ -143,7 +143,7 @@ export function TrailData() {
   }
 
   /**
-   * Delete a trail and all associated data
+   * Retires a trail and all associated data
    * @param trailId - The ID of the trail to delete
    */
   async function deleteTrail(trailId: number) {
@@ -157,7 +157,7 @@ export function TrailData() {
   }
 
   /**
-   * Create a new trail group
+   * Create a new trail group (NOT Implemented)
    * @param groupName - The name of the trail group to create
    * @param trailIds - Optional array of trail IDs to include in the group
    */
@@ -173,7 +173,7 @@ export function TrailData() {
   }
 
   /**
-   * Update a trail group (rename or change trail IDs)
+   * Update a trail group (rename or change trail IDs) (NOT Implemented)
    * @param oldGroupName - The current name of the trail group
    * @param newGroupName - Optional new name for the trail group
    * @param trailIds - Optional array of trail IDs to update in the group
