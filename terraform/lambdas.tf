@@ -374,7 +374,7 @@ action "aws_lambda_invoke" "invoke_simulate_data" {
 
 resource "terraform_data" "invoke_simulate_data" {
   # Change this value to trigger lambda on next apply
-  input = "simulate-data"
+  input = "simulate-data-again"
 
   lifecycle {
     action_trigger {
