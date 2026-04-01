@@ -2,7 +2,8 @@ import os
 import json
 import time
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -39,7 +40,7 @@ def timestamp_conversion(timestamp, time_increment):
     :param time_increment: string of day/week/month to convert it to
     :return: timestamp of the start of that period, none if invalid time increment
     """
-    dt_timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    dt_timestamp = datetime.fromtimestamp(timestamp, tz=ZoneInfo("America/New_York"))
     if time_increment == "hour":
         return int(dt_timestamp.replace(minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "day":
@@ -113,8 +114,29 @@ def get_trail_data(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        start_timestamp = Decimal(datetime.fromisoformat(start).timestamp())
-        end_timestamp = Decimal(datetime.fromisoformat(end).timestamp())  # suitably big enough for a default
+        start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
+
+        # Round down start_time and round up end_time
+        if granularity == "hour":
+            start_time = start_time.replace(minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(minute=0, second=0, microsecond=0)
+        else:
+            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        if granularity in ("week", "month"):
+            partial_start_timestamp = int(start_time.timestamp())
+            partial_end_timestamp = int(end_time.timestamp())
+            if granularity == "week":
+                query_start_timestamp = int((start_time + timedelta(days=(6 - start_time.weekday()) % 7)).timestamp())
+                query_end_timestamp = int((end_time - timedelta(days=(end_time.weekday() - 6) % 7)).timestamp())
+            if granularity == "month":
+                query_start_timestamp = int((start_time if start_time.day == 1 else (start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
+                query_end_timestamp = int(end_time.replace(day=1).timestamp())
+        else:
+            query_start_timestamp = int(start_time.timestamp())
+            query_end_timestamp = int(end_time.timestamp())
 
         # get all relevant devicetrail ids from trail ids
         rows = []
@@ -136,12 +158,44 @@ def get_trail_data(event, context):
 
         # fetch relevant device logs from table in timestamp bounds
         device_log_rows = []
-        for device_trail_id in device_trail_ids:
-            rows = logs_time_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(start_timestamp,
-                                                                                                         end_timestamp)
+        if (query_end_timestamp > query_start_timestamp):
+            for device_trail_id in device_trail_ids:
+                rows = logs_time_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_start_timestamp, query_end_timestamp -1)
+                ).get("Items", [])
+                device_log_rows.extend(rows)
+
+        # Turn the extra starting days into a "partial" result
+        if granularity in ("week", "month") and partial_start_timestamp < query_start_timestamp:
+            start_results = device_trail_log_day_table.query(
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(partial_start_timestamp, query_start_timestamp - 1)
             ).get("Items", [])
-            device_log_rows.extend(rows)
+
+            if start_results:
+                rows = {}
+                for result in start_results:
+                    if result["device_trail_id"] in rows.keys():
+                        rows[result["device_trail_id"]]["count"] += result["count"]
+                        rows[result["device_trail_id"]]["battery"] = result["battery"]
+                    else:
+                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                device_log_rows.extend(rows.values())
+
+        # Turn the extra ending days into a "partial" result
+        if granularity in ("week", "month") and partial_end_timestamp > query_end_timestamp:
+            end_results = device_trail_log_day_table.query(
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp)
+            ).get("Items", [])
+
+            if end_results:
+                rows = {}
+                for result in end_results:
+                    if result["device_trail_id"] in rows.keys():
+                        rows[result["device_trail_id"]]["count"] += result["count"]
+                        rows[result["device_trail_id"]]["battery"] = result["battery"]
+                    else:
+                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)
 
