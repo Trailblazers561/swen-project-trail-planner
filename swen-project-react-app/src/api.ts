@@ -318,7 +318,6 @@ async function authHeaders() {
 
   // If token is expired refresh it
   if (expiration < Date.now()) {
-    console.log("REFRESHINGTOKENS");
     await refreshTokens();
   }
 
