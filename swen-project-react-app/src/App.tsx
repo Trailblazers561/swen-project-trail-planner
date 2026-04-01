@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import ConfirmUserPage from "./cognito/confirmUserPage";
+import LandingPage from "./landingPage";
 import React from 'react';
 import Test from './Test';
 
@@ -21,14 +22,14 @@ function App() {
               isAuthenticated() ? (
                 <Navigate replace to="/dashboard" />
               ) : (
-                <Navigate replace to="/login" />
+                <LandingPage />
               )
             }
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirm" element={<ConfirmUserPage />} />
           <Route path="/dashboard" 
-            element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/" />}
+            element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/login" />}
           />
           <Route path="/test" element={<Test />} />
         </Routes>
