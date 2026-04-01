@@ -484,6 +484,10 @@ const dashboard = () => {
     const handleDateRangeChange = (DateRange: DateRange | undefined) => {
         const formattedRange: DateRange | undefined = DateRange?.from && DateRange?.to ? {from: DateRange.from, to: DateRange.to,} : undefined
         setRange(formattedRange)
+        setSelectedDate(DateRange?.from ?? null);
+        setSelectedDateEnd(DateRange?.to ?? null);
+        handleStartDateChange(DateRange?.from ?? null);
+        handleEndDateChange(DateRange?.to ?? null);
 
     if (!DateRange?.from || !DateRange?.to) return
 
@@ -720,7 +724,7 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end">
+            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end border-2">
                 <div className="filter-group flex flex-col">
 
                     <label>Date Range:</label>
@@ -747,13 +751,13 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
 
                 </div>
                 <div className="options-container flex flex-col">
