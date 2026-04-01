@@ -724,7 +724,7 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end border-2">
+            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end border-b-2">
                 <div className="filter-group flex flex-col">
 
                     <label>Date Range:</label>
