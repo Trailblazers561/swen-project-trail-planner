@@ -120,10 +120,10 @@ def get_trail_data(event, context):
         # Round down start_time and round up end_time
         if granularity == "hour":
             start_time = start_time.replace(minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
         else:
             start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
         if granularity in ("week", "month"):
             partial_start_timestamp = int(start_time.timestamp())
@@ -184,7 +184,7 @@ def get_trail_data(event, context):
         # Turn the extra ending days into a "partial" result
         if granularity in ("week", "month") and partial_end_timestamp > query_end_timestamp:
             end_results = device_trail_log_day_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp)
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp - 1)
             ).get("Items", [])
 
             if end_results:
