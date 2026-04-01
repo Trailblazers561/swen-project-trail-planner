@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { UserRole, Granularity } from "./lib/apiTypes";
+import {refreshTokens} from "./cognito/authService";
 
 export function TrailData() {
   /**
@@ -14,7 +15,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -30,7 +31,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/trail_groups${queryString}`, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -46,7 +47,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/device_metadata${queryString}`, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -66,7 +67,7 @@ export function TrailData() {
     const url = `${API_URL}/trail_data?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -79,7 +80,7 @@ export function TrailData() {
   async function updateTrailMetadata(trailId: number, trailName?: string, trailGroup?: string) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "PUT",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
         trail_name: trailName,
@@ -107,7 +108,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/device_metadata`, {
       method: "PUT",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify(payload),
     });
   }
@@ -137,7 +138,7 @@ export function TrailData() {
       payload.date_activated = dateActivated.toISOString();
     return await request(`${API_URL}/trail_metadata`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify(payload)
     });
   }
@@ -149,7 +150,7 @@ export function TrailData() {
   async function deleteTrail(trailId: number) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "DELETE",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
       }),
@@ -164,7 +165,7 @@ export function TrailData() {
   async function createTrailGroup(groupName: string, trailIds: number[] = []) {
     return await request(`${API_URL}/trail_groups`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         group_name: groupName,
         trail_ids: trailIds,
@@ -181,7 +182,7 @@ export function TrailData() {
   async function updateTrailGroup(oldGroupName: string, newGroupName?: string, trailIds?: number[]) {
     return await request(`${API_URL}/trail_groups`, {
       method: "PUT",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         old_group_name: oldGroupName,
         new_group_name: newGroupName,
@@ -197,7 +198,7 @@ export function TrailData() {
   async function deleteTrailGroup(groupName: string) {
     return await request(`${API_URL}/trail_groups`, {
       method: "DELETE",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         group_name: groupName,
       }),
@@ -222,7 +223,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/csv${queryString}`, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -234,7 +235,7 @@ export function TrailData() {
 
         const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv/csv-url`, {
           method: "GET",
-          headers: authHeaders(),
+          headers: await authHeaders(),
         }))["json"];
     
         await fetch(uploadUrl, {
@@ -244,7 +245,7 @@ export function TrailData() {
     
         return await request(`${API_URL}/csv`, {
           method: "POST",
-          headers: authHeaders(),
+          headers: await authHeaders(),
           body: JSON.stringify({
             csv_file_path: s3FilePath,
           }),
@@ -267,7 +268,7 @@ export function TrailData() {
 
     return await request(`${API_URL}/users${queryString}`, {
       method: "GET",
-      headers: authHeaders(),
+      headers: await authHeaders(),
     });
   }
 
@@ -279,7 +280,7 @@ export function TrailData() {
   async function updateUserRole(targetUserId: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: await authHeaders(),
       body: JSON.stringify({
         target_user_id: targetUserId,
         target_user_role: targetUserRole
@@ -308,7 +309,19 @@ export function TrailData() {
   };
 }
 
-function authHeaders() {
+async function authHeaders() {
+  const idToken = sessionStorage.getItem("idToken");
+  if (!idToken)
+    return {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`, "Content-Type": "application/json"};
+
+  const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
+
+  // If token is expired refresh it
+  if (expiration < Date.now()) {
+    console.log("REFRESHINGTOKENS");
+    await refreshTokens();
+  }
+
   return {
     Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
     "Content-Type": "application/json",
