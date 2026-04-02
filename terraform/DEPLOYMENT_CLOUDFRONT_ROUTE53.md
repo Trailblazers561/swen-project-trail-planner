@@ -262,6 +262,25 @@ When `has_cdn = true`:
 3. Wait for DNS propagation
 4. Verify with: `dig NS your-domain.com`
 
+### Cloudfront Site Not Updating After Changes Applied
+
+Cloudfront caches the information from the bucket so that it doesn't need to query the bucket every time. When this happens you need to create an invalidation in the distribution to tell cloudfront to look at the bucket again.
+
+To do this in the AWS Console (web application):
+1. Navigate to the specific cloudfront distribution
+2. Go to the invalidations tab and click _Create invalidation_
+3. Set the path to /* and click _Create invalidation_
+
+To do this in the command line:
+If you are logged into the account with the distribution run the following command:
+
+```aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "/*"```
+
+If you are not logged into the account with the distribution, create a profile that is logged into the account and run:
+
+```aws cloudfront create-invalidation --distribution-id <DISTRIBUTION_ID> --paths "/*" --profile <PROFILE_NAME>```
+
+
 ## Example terraform.tfvars
 
 ```hcl
