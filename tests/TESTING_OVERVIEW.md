@@ -2,7 +2,8 @@
 
 ## Overview
 
-This directory contains all tests for the Trail Planner application. All tests use pytest with the format defined in [pytest.ini](pytest.ini).
+This directory contains all tests for the Trail Planner application. All tests use pytest with the format defined in [pytest.ini](pytest.ini). More information on testing can be found in the [Testing Guidebook](https://docs.google.com/document/d/1MuMDhpsaSYin0_dwiCYS0pto_3ukT58MzCKLO7v9ang/edit?tab=t.0) 
+<span style="color: red;font-size: 50pt;font-family: Comic Sans MS;"> UPDATE THIS TO INTERNAL LINK </span>
 
 ## Prerequisites
 
