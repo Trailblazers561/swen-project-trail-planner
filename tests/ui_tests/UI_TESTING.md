@@ -21,7 +21,6 @@ The tests use Chrome WebDriver. You need to have:
 
 Configuration is automatically determined from the `tests/.env` file, more information in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
-
 ## Running Tests
 
 Information about running tests in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
