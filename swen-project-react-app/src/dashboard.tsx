@@ -924,12 +924,6 @@ const dashboard = () => {
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
             />  
-            {/* <Modal
-                isOpen={isModalOpen}
-                // onClose={() => setIsModalOpen(false)}
-                // // onUpdate={handleTrailUpdated}
-                // content='this is a test'
-            />   */}
     </div>
     );
 };
