@@ -135,7 +135,7 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
-    const [exportPopOverOpen, setExportPopOverOpen] = useState(false);
+    const [exportPopUpOpen, setExportPopUpOpen] = useState(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
 
 
@@ -231,7 +231,7 @@ const dashboard = () => {
 
     const handleExportData = async() => {
         setIsDownloadingStatus("downloading");
-        setExportPopOverOpen(true);
+        setExportPopUpOpen(true);
         let trailList = [];
         for (let i = 0; i < trailListData.length; i++) {
             trailList.push(trailListData[i].trail_id)
@@ -249,14 +249,19 @@ const dashboard = () => {
         
         try{
             window.open(csv_url, "_self");
-            setIsDownloadingStatus("done")
+            setTimeout(() => setIsDownloadingStatus("done"), 2000);
         } catch (error) {
             console.error("Download failed:", error);
             setIsDownloadingStatus("error");
         } finally {
-            setIsDownloadingStatus("idle");
-            setExportPopOverOpen(false);
+            // setIsDownloadingStatus("idle");
+            setTimeout(() => setExportPopUpOpen(false), 3000)
         }
+        
+    
+        // setTimeout(() => setIsDownloadingStatus("done"), 2000);
+        // setTimeout(() => setExportPopUpOpen(false), 3000);
+        // setTimeout(() => setIsDownloadingStatus("idle"), 4000);
      }
 
 
