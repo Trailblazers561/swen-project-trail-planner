@@ -18,14 +18,10 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={
-              isAuthenticated() ? (
-                <Navigate replace to="/dashboard" />
-              ) : (
-                <LandingPage />
-              )
+            element={<Navigate replace to="/home" />
             }
           />
+          <Route path="/home" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirm" element={<ConfirmUserPage />} />
           <Route path="/dashboard" 
