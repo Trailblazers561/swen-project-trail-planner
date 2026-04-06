@@ -11,7 +11,10 @@ const LandingPage = () => {
 
         <div className="h-screen w-screen relative">
 
-                <div className="absolute top-6 right-6 z-[1000]">
+             <Navbar/>
+
+                <div className="absolute top-4 right-52 z-[1000]">
+                    
                     <Button
                         variant="primary"
                         onClick={() => navigate("/login")}

@@ -20,7 +20,7 @@ export function UserIcon() {
             <User />
           </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent className = "z-[1000]">
           <DropdownMenuGroup id="user-icon-group">
           <DropdownMenuItem data-testid="manage-users">Manage Users</DropdownMenuItem>
           <DropdownMenuSeparator />
