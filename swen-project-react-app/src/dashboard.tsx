@@ -36,16 +36,6 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
-const trailoptions: MultiSelectOption[] = [
-    {value: "test 1", label: "RT Test Trail 1"},
-    {value: "test 2", label: "RT Test Trail 2"},
-];
-
-const trailgroupoptions: MultiSelectOption[] = [
-    {value: "test group 1", label: "RT Test Trail Group 1"},
-    {value: "test group 2", label: "RT Test Trail Group 2"},
-];
-
 
 const dashboard = () => {
     const navigate = useNavigate();
@@ -503,6 +493,7 @@ const dashboard = () => {
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
+        setSelectedTrails(selectedTrails);
 
         if (selectedTrails.length === 0) {
             setGraphLines([]);
