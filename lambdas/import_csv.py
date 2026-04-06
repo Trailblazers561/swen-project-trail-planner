@@ -87,8 +87,8 @@ def timestamp_conversion(timestamp, time_increment):
     elif time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
-        sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
-        return int(sunday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        monday = dt_timestamp - timedelta(days=dt_timestamp.weekday())
+        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
