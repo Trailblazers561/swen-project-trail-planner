@@ -135,7 +135,6 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
-    const [exportPopUpOpen, setExportPopUpOpen] = useState(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
 
 
@@ -231,7 +230,6 @@ const dashboard = () => {
 
     const handleExportData = async() => {
         setIsDownloadingStatus("downloading");
-        setExportPopUpOpen(true);
         let trailList = [];
         for (let i = 0; i < trailListData.length; i++) {
             trailList.push(trailListData[i].trail_id)
@@ -244,24 +242,17 @@ const dashboard = () => {
             console.error("Error exporting: endDate must not be null");
             return;
         }
-
-        const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
         
         try{
+            const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
             window.open(csv_url, "_self");
-            setTimeout(() => setIsDownloadingStatus("done"), 2000);
+            setIsDownloadingStatus("done");
         } catch (error) {
             console.error("Download failed:", error);
             setIsDownloadingStatus("error");
         } finally {
-            // setIsDownloadingStatus("idle");
-            setTimeout(() => setExportPopUpOpen(false), 3000)
+            setTimeout(() => setIsDownloadingStatus("idle"), 1000);
         }
-        
-    
-        // setTimeout(() => setIsDownloadingStatus("done"), 2000);
-        // setTimeout(() => setExportPopUpOpen(false), 3000);
-        // setTimeout(() => setIsDownloadingStatus("idle"), 4000);
      }
 
 
