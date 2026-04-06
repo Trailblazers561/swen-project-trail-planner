@@ -4,7 +4,8 @@ import json
 import csv
 import re
 from collections import defaultdict
-from datetime import timezone, datetime, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import boto3
 from decimal import Decimal
@@ -80,7 +81,7 @@ def timestamp_conversion(timestamp, time_increment):
     :param time_increment: string of day/week/month to convert it to
     :return: timestamp of the start of that period, none if invalid time increment
     """
-    dt_timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    dt_timestamp = datetime.fromtimestamp(timestamp, tz=ZoneInfo("America/New_York"))
     if time_increment == "hour":
         return int(dt_timestamp.replace(minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "day":
