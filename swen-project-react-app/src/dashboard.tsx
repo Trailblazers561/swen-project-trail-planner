@@ -6,6 +6,7 @@ import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout } from "plotly.js";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 
 interface Trail {
     id: number;
@@ -38,11 +38,6 @@ interface TrailGroup {
 
 
 const dashboard = () => {
-    const navigate = useNavigate();
-    const handleLogout = () => {
-        sessionStorage.clear();
-        navigate("/login");
-    };
 
     const {
         getTrailLogs,
@@ -54,7 +49,7 @@ const dashboard = () => {
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
     const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
-    
+    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
     const [selectedTrails, setSelectedTrails] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
@@ -98,7 +93,7 @@ const dashboard = () => {
         new Date()
     );
     
-    const [range, setRange] = React.useState<DateRange | undefined>()
+    const [range, setRange] = React.useState<DateRange | undefined>(undefined)
     const [trails, setTrails] = useState<string[]>([]);
     
     const [granularity, setGranularity] = useState<Granularity | null>(null);
@@ -258,7 +253,7 @@ const dashboard = () => {
         startDate: Date | null,
         endDate: Date | null
     ) {
-        if (!startDate || !endDate) return [];
+        if (!startDate || !endDate) return;
 
         const daysDiff = getDateDifference(startDate, endDate);
 
@@ -279,7 +274,8 @@ const dashboard = () => {
             options = [Granularity.Day];
         }
 
-        return options;
+        setGranularityOptions(options);
+        setGranularity(options[0]);
     }
 
     useEffect(() => {
@@ -481,19 +477,12 @@ const dashboard = () => {
 
     if (!DateRange?.from || !DateRange?.to) return
 
-    const options = updateGranularityOptions(DateRange.from, DateRange.to)
+    updateGranularityOptions(DateRange.from, DateRange.to)
 
-    setGranularityOptions(options)
-    // keep selected value valid
-    if (!options.includes(granularity!)) {
-        setGranularity(options[0] ?? null)
     }
-    }
-
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
-        setSelectedTrails(selectedTrails);
 
         if (selectedTrails.length === 0) {
             setGraphLines([]);
@@ -502,7 +491,34 @@ const dashboard = () => {
         }
     };
 
-    const fillTrailsMultiselect = (): MultiSelectOption[] => {
+    const handleTrailGroupChange = (groupNames: string[]) => {
+        setSelectedGroups(groupNames);
+
+        // find matching TrailGroups
+        const selectedGroupObjects = trailGroups.filter(group =>
+            groupNames.includes(group.name)
+        );
+
+        let autoSelectedTrails: string[] = [];
+
+        if (groupNames.includes("All Areas")) {
+            autoSelectedTrails = ["All Trails"];
+        } else {
+            autoSelectedTrails = selectedGroupObjects.flatMap(group =>
+                group.trail_ids
+                    .map(id => trailMetadata.find(t => t.id === id))
+                    .filter((t): t is Trail => t !== undefined)
+                    .map(trail => trail.name)
+            );
+        }
+
+        // remove duplicates
+        autoSelectedTrails = [...new Set(autoSelectedTrails)];
+
+        setSelectedTrails(autoSelectedTrails);
+    };
+
+     const fillTrailsMultiselect = (): MultiSelectOption[] => {
         const options: MultiSelectOption[] = [
             { value: "All Trails", label: "All Trails" },
         ];
@@ -528,6 +544,9 @@ const dashboard = () => {
         return options;
     };
 
+    const handleGranularityChange = (granularity: Granularity) => {
+        setGranularity(granularity);
+    };
 
     // Load device metadata once and cache it
     useEffect(() => {
@@ -715,7 +734,7 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end border-b-2">
+            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end">
                 <div className="filter-group flex flex-col">
 
                     <label>Date Range:</label>
@@ -748,7 +767,7 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailGroupChange} value={selectedGroups} />
 
                 </div>
                 <div className="options-container flex flex-col">
@@ -792,11 +811,11 @@ const dashboard = () => {
                 </div>
                 {viewMode === "graph" ? (
                 <div className="flex justify-center px-6 pb-8">
-                    <div className="bg-white w-full max-w-6xl p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
+                        <div className="text-lg font-semibold text-gray-800 mb-4 text-center">
                             {graphTitle}
-                        </h2>
-                            <div className="h-[500px] shadow-md rounded-xl border border-gray-200">
+                        </div>
+                            <div className="h-[500px]">
                                 <Plot 
                                     className="w-full h-full"
                                     config={{ displayModeBar: false, responsive: true }}
