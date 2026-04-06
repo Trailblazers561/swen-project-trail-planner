@@ -86,7 +86,7 @@ def simulate_data(event, context):
 
         log_day(device_trail_id, timestamp, hikers, battery)
 
-        week_timestamp = int((date - timedelta(days=(date.weekday() + 1) % 7)).timestamp())
+        week_timestamp = int((date - timedelta(days=date.weekday())).timestamp())
         log_week(device_trail_id, week_timestamp, hikers, battery)
 
         month_timestamp = int((date.replace(day=1)).timestamp())

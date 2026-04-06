@@ -5,6 +5,7 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
+ GetTokensFromRefreshTokenCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Get Cognito configuration from environment variables
@@ -92,3 +93,29 @@ export const confirmSignUp = async (username: string, code: string) => {
     throw error;
   }
 };
+
+export const refreshTokens = async () => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    RefreshToken: sessionStorage.getItem("refreshToken")
+  };
+  try {
+    const command = new GetTokensFromRefreshTokenCommand(params);
+    const { AuthenticationResult } = await cognitoClient.send(command);
+    if (AuthenticationResult) {
+      sessionStorage.setItem("idToken", AuthenticationResult.IdToken || "");
+      sessionStorage.setItem(
+        "accessToken",
+        AuthenticationResult.AccessToken || "",
+      );
+      sessionStorage.setItem(
+        "refreshToken",
+        AuthenticationResult.RefreshToken || "",
+      );
+      return AuthenticationResult;
+    }
+  } catch (error) {
+    console.error("Error refreshing tokens: ", error);
+    throw error;
+  }
+}
