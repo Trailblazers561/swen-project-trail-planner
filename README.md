@@ -55,9 +55,8 @@ Edit `variables.tf` or create `terraform.tfvars` with your configuration:
 
 ```hcl
 # Basic configuration
-default_name = "trailplanner"
+env = "local"
 bucket_name = "trailplanner-bucket"
-react_app_directory = "../swen-project-react-app"
 
 # For CloudFront deployment (see DEPLOYMENT_CLOUDFRONT_ROUTE53.md)
 has_cdn = false  # Set to true for production
@@ -123,9 +122,8 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 
 ### Required Variables
 
-- `default_name`: Default resource name prefix
+- `env`: Default resource name prefix, should be _local_ for local runs
 - `bucket_name`: S3 bucket name (if not using custom domain)
-- `react_app_directory`: Path to React application directory
 
 ### Optional Variables
 
@@ -135,7 +133,8 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 - `sub`: Subdomain (e.g., `adiron` for `adiron.example.com`)
 - `acm_certificate_arn`: SSL certificate ARN (required if `has_domain = true`)
 - `bucket_acl`: S3 bucket ACL (`private` for CloudFront, `public-read` for S3 website)
-- `authorization_type`: API Gateway authorization (`COGNITO_USER_POOLS` or `NONE`)
+- `authorization_enabled`: Enable API Gateway authorization (default: `true`)
+- `users`: Users to create on startup. (default: [`root_admin`, `admin`, `trail_manager`, `user`])
 
 ## Infrastructure Components
 
@@ -149,14 +148,23 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 
 - **API Gateway**: RESTful API endpoints
 - **Lambda Functions**: Serverless compute for:
-  - Trail data management (`traildata.py`)
+  - Trail data management [traildata.py](lambdas/traildata.py)
   - Device data ingestion
+  - Simulate trail data [simulate_data.py](lambdas/simulate_data.py)
+  - CSV handling [export_csv.py](lambdas/export_csv.py), [import_csv.py](lambdas/import_csv.py), [generage_csv_upload_url.py](lambdas/generage_csv_upload_url.py)
+  - User management [user_management.py](user_management.py)
 - **Cognito User Pool**: User authentication
+- **Lambda Authorizer**: API authorization
 - **DynamoDB Tables**:
-  - `TrailDeviceLogs`: Trail sensor data
-  - `TrailMetadata`: Trail information
-  - `TrailGroups`: Trail group/organization data
-  - `DeviceMetadata`: Device information and associations
+  - `<env>_Device`: Devices and all device information
+  - `<env>_Trail`: Trails and all trail information
+  - `<env>_DeviceTrail`: Linking between devices and trails and all link information
+  - `<env>_TrailGroup`: Trail groups and trails within them
+  - `<env>_DeviceTrailLogHour`: Device trail logs for hourly granularity
+  - `<env>_DeviceTrailLogDay`: Device trail logs for daily granularity
+  - `<env>_DeviceTrailLogWeek`: Device trail logs for weekly granularity
+  - `<env>_DeviceTrailLogMonth`: Device trail logs for monthly granularity
+  - `<env>_Error`: Errors that have happened with the error, device, and time
 
 ## Additional Commands
 
@@ -211,19 +219,13 @@ Ensure that your AWS IAM user has sufficient permissions for:
 
 ## Documentation
 
+- **Github Actions**: See [.github/GITHUB_ACTIONS.md](.github/GITHUB_ACTIONS.md)
+- **React Frontend**: See [swen-project-react-app/REACT_FRONTEND.md](swen-project-react-app/REACT_FRONTEND.md)
 - **CloudFront/Route53 Deployment**: See [terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md)
 - **API Documentation**: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-- **API Tests**: See [swen-project-react-app-API-tests/completed/README.md](swen-project-react-app-API-tests/completed/README.md)
-- **UI Tests**: See [swen-project-react-app-UI-tests/completed/README.md](swen-project-react-app-UI-tests/completed/README.md)
-
-## Device Trail Assignment
-
-The `/devices` API automatically handles device-to-trail linking without requiring manual registration:
-
-- **New devices**: Automatically assigned to trail_id 0 on first use
-- **Existing devices**: Server looks up the most recent trail assignment from previous data
-- **Trail updates**: Include `trail_id` in the payload to change a device's trail assignment
-- **Caching**: Trail assignments are automatically cached in DeviceMetadata for faster lookups
+- **Testing**: See [tests/TESTING_OVERVIEW.md](tests/TESTING_OVERVIEW.md)
+- **API Testing**: See [tests/api_tests/API_TESTING.md](tests/api_tests/API_TESTING.md)
+- **UI Testing**: See [tests/ui_tests/UI_TESTING.md](tests/ui_tests/UI_TESTING.md)
 
 ## Additional Resources
 
