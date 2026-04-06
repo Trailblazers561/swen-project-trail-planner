@@ -46,8 +46,8 @@ def timestamp_conversion(timestamp, time_increment):
     elif time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
-        sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
-        return int(sunday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        monday = dt_timestamp - timedelta(days=dt_timestamp.weekday())
+        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
@@ -129,8 +129,8 @@ def get_trail_data(event, context):
             partial_start_timestamp = int(start_time.timestamp())
             partial_end_timestamp = int(end_time.timestamp())
             if granularity == "week":
-                query_start_timestamp = int((start_time + timedelta(days=(6 - start_time.weekday()) % 7)).timestamp())
-                query_end_timestamp = int((end_time - timedelta(days=(end_time.weekday() - 6) % 7)).timestamp())
+                query_start_timestamp = int((start_time + timedelta(days=(7 - start_time.weekday()) % 7)).timestamp())
+                query_end_timestamp = int((end_time - timedelta(days=end_time.weekday())).timestamp())
             if granularity == "month":
                 query_start_timestamp = int((start_time if start_time.day == 1 else (start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
                 query_end_timestamp = int(end_time.replace(day=1).timestamp())
