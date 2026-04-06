@@ -25,6 +25,10 @@ import {
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
+import { Loader2, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover"
+
 
 interface Trail {
     id: number;
@@ -131,6 +135,9 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
+    const [exportPopUpOpen, setExportPopUpOpen] = useState(false);
+    const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
+
 
     // Load trail metadata and groups from database
     useEffect(() => {
@@ -223,6 +230,8 @@ const dashboard = () => {
     }; 
 
     const handleExportData = async() => {
+        setIsDownloadingStatus("downloading");
+        setExportPopUpOpen(true);
         let trailList = [];
         for (let i = 0; i < trailListData.length; i++) {
             trailList.push(trailListData[i].trail_id)
@@ -236,15 +245,21 @@ const dashboard = () => {
             return;
         }
 
-
         const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
         
         try{
             window.open(csv_url, "_self");
+            setIsDownloadingStatus("done")
         } catch (error) {
             console.error("Download failed:", error);
+            setIsDownloadingStatus("error");
+        } finally {
+            setIsDownloadingStatus("idle");
+            setExportPopUpOpen(false);
         }
-    }
+     }
+
+
     const handleTrailUpdated = async () => {
         await loadTrailData();
         // Refresh graph - wait for state to update
@@ -760,7 +775,27 @@ const dashboard = () => {
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Button variant="secondary" onClick={handleExportData}>Export Data</Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="secondary" onClick={handleExportData}>
+                                    Export Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                {isDownloadingStatus === "downloading" && (
+                                    <div>
+                                        <Loader2 className="animate-spin" />
+                                        <span>Downloading...</span>
+                                    </div>
+                                )}
+                                {isDownloadingStatus === "done" && (
+                                    <div>
+                                        <Check/>
+                                        <span>Downloaded</span>
+                                    </div>
+                                )}
+                            </PopoverContent>
+                        </Popover>
                         <Button variant="secondary">Import Data</Button>
                     </div>
                 </div>
@@ -880,7 +915,13 @@ const dashboard = () => {
                 isOpen={isAssociateDeviceModalOpen}
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
-            />    
+            />  
+            {/* <Modal
+                isOpen={isModalOpen}
+                // onClose={() => setIsModalOpen(false)}
+                // // onUpdate={handleTrailUpdated}
+                // content='this is a test'
+            />   */}
     </div>
     );
 };
