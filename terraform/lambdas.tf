@@ -247,6 +247,28 @@ resource "aws_lambda_function" "create_trail" {
   }
 }
 
+resource "aws_lambda_function" "delete_trail_group" {
+  function_name = "${var.deploy_env}_traildata_delete_trail_group"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "traildata.delete_trail_group"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
+  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+    }
+  }
+}
+
 # Map of function names to Lambda function resources
 locals {
   api_lambda_functions = {
@@ -262,6 +284,7 @@ locals {
     "traildata_get_device_metadata"          = aws_lambda_function.get_device_metadata
     "traildata_get_trail_group_metadata"             = aws_lambda_function.get_trail_group_metadata
     "traildata_delete_trail"                 = aws_lambda_function.delete_trail
+    "traildata_delete_trail_group"        = aws_lambda_function.delete_trail_group
     "traildata_export_csv"                     = aws_lambda_function.export_csv
     "traildata_import_csv"                     = aws_lambda_function.import_csv
     "traildata_generate_csv_upload_url"        = aws_lambda_function.generate_csv_upload_url
@@ -351,7 +374,7 @@ action "aws_lambda_invoke" "invoke_simulate_data" {
 
 resource "terraform_data" "invoke_simulate_data" {
   # Change this value to trigger lambda on next apply
-  input = "simulate-data"
+  input = "simulate-data-again"
 
   lifecycle {
     action_trigger {

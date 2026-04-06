@@ -6,6 +6,7 @@ import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout } from "plotly.js";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
@@ -40,23 +41,8 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
-const trailoptions: MultiSelectOption[] = [
-    {value: "test 1", label: "RT Test Trail 1"},
-    {value: "test 2", label: "RT Test Trail 2"},
-];
-
-const trailgroupoptions: MultiSelectOption[] = [
-    {value: "test group 1", label: "RT Test Trail Group 1"},
-    {value: "test group 2", label: "RT Test Trail Group 2"},
-];
-
 
 const dashboard = () => {
-    const navigate = useNavigate();
-    const handleLogout = () => {
-        sessionStorage.clear();
-        navigate("/login");
-    };
 
     const {
         getTrailLogs,
@@ -68,7 +54,7 @@ const dashboard = () => {
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
     const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
-    
+    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
     const [selectedTrails, setSelectedTrails] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
@@ -112,7 +98,7 @@ const dashboard = () => {
         new Date()
     );
     
-    const [range, setRange] = React.useState<DateRange | undefined>()
+    const [range, setRange] = React.useState<DateRange | undefined>(undefined)
     const [trails, setTrails] = useState<string[]>([]);
     
     const [granularity, setGranularity] = useState<Granularity | null>(null);
@@ -279,7 +265,7 @@ const dashboard = () => {
         startDate: Date | null,
         endDate: Date | null
     ) {
-        if (!startDate || !endDate) return [];
+        if (!startDate || !endDate) return;
 
         const daysDiff = getDateDifference(startDate, endDate);
 
@@ -300,7 +286,8 @@ const dashboard = () => {
             options = [Granularity.Day];
         }
 
-        return options;
+        setGranularityOptions(options);
+        setGranularity(options[0]);
     }
 
     useEffect(() => {
@@ -495,18 +482,16 @@ const dashboard = () => {
     const handleDateRangeChange = (DateRange: DateRange | undefined) => {
         const formattedRange: DateRange | undefined = DateRange?.from && DateRange?.to ? {from: DateRange.from, to: DateRange.to,} : undefined
         setRange(formattedRange)
+        setSelectedDate(DateRange?.from ?? null);
+        setSelectedDateEnd(DateRange?.to ?? null);
+        handleStartDateChange(DateRange?.from ?? null);
+        handleEndDateChange(DateRange?.to ?? null);
 
     if (!DateRange?.from || !DateRange?.to) return
 
-    const options = updateGranularityOptions(DateRange.from, DateRange.to)
+    updateGranularityOptions(DateRange.from, DateRange.to)
 
-    setGranularityOptions(options)
-    // keep selected value valid
-    if (!options.includes(granularity!)) {
-        setGranularity(options[0] ?? null)
     }
-    }
-
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
@@ -518,7 +503,33 @@ const dashboard = () => {
         }
     };
 
-    const fillTrailsMultiselect = (): MultiSelectOption[] => {
+    const handleTrailGroupChange = (groupNames: string[]) => {
+        setSelectedGroups(groupNames);
+
+        const selectedGroupObjects = trailGroups.filter(group =>
+            groupNames.includes(group.name)
+        );
+
+        let autoSelectedTrails: string[] = [];
+
+        if (groupNames.includes("All Areas")) {
+            autoSelectedTrails = ["All Trails"];
+        } else {
+            autoSelectedTrails = selectedGroupObjects.flatMap(group =>
+                group.trail_ids
+                    .map(id => trailMetadata.find(t => t.id === id))
+                    .filter((t): t is Trail => t !== undefined)
+                    .map(trail => trail.name)
+            );
+        }
+
+        // remove duplicates
+        autoSelectedTrails = [...new Set(autoSelectedTrails)];
+
+        setSelectedTrails(autoSelectedTrails);
+    };
+
+     const fillTrailsMultiselect = (): MultiSelectOption[] => {
         const options: MultiSelectOption[] = [
             { value: "All Trails", label: "All Trails" },
         ];
@@ -544,6 +555,9 @@ const dashboard = () => {
         return options;
     };
 
+    const handleGranularityChange = (granularity: Granularity) => {
+        setGranularity(granularity);
+    };
 
     // Load device metadata once and cache it
     useEffect(() => {
@@ -758,13 +772,13 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailGroupChange} value={selectedGroups} />
 
                 </div>
                 <div className="options-container flex flex-col">
@@ -797,78 +811,76 @@ const dashboard = () => {
                 </div>
             </div>
         </div>
-            <div className="dashboard-div">
-                <div className="flex p-2.5 gap-2.5 justify-between items-center">
-                    <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
-                    <div className="flex gap-2.5">
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
+            <div className="w-full border-t bg-gray-50">
+                <div className="max-w-6xl mx-auto px-2 py-0.5 flex-col rounded-b-lg">
+                    <div className="flex p-2.5 justify-between items-center">
+                        <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                        <div className="flex gap-2.5">
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
 
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Group Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-                {viewMode === "graph" ? (
-                <div className="flex justify-center px-6 pb-8">
-                    <div className="bg-white w-full max-w-6xl p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                            {graphTitle}
-                        </h2>
-                            <div className="h-[500px] shadow-md rounded-xl border border-gray-200">
-                                <Plot 
-                                    className="w-full h-full"
-                                    config={{ displayModeBar: false, responsive: true }}
-                                    useResizeHandler={true}
-                                    style={{ width: "100%", height: "100%" }}
-                                    data={graphLines.map((line) => ({
-                                        x: line.x.map(d => d.toISOString()),
-                                        y: line.y,
-                                        type: "scatter",
-                                        mode: "lines+markers",
-                                        name: line.name,
-                                        line: {
-                                            width: 3,
-                                        },
-                                        marker: {
-                                            size: 6,
-                                        },
-                                    }))}
-                                    layout={getPlotLayout(graphLines)}
-                                />
-                         </div>
-                    </div>
-                </div>
-               ) : (
-                <div className="list-view">
-                    <div className="list-container">
-                        <div className="list-card">
-                            <h2 className="list-title">Trail Status Overview</h2>
-                                <TrailStatusTable
-                                    data={trailListData}
-                                    loading={loadingListData}
-                                />
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Group Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
-            )}
+                <div className="w-full pb-8 bg-gray-50">
+                    <div className="w-full border-t border-gray-200">
+                        {viewMode === "graph" ? (
+                        <div className="w-full h-[65vh] min-h-[400px]">
+                            <div className="text-lg font-semibold text-gray-800 mb-4 pt-4">
+                                {graphTitle}
+                            </div>
+                            <Plot 
+                                className="w-full h-full"
+                                config={{ displayModeBar: false, responsive: true }}
+                                useResizeHandler={true}
+                                style={{ width: "100%", height: "100%" }}
+                                data={graphLines.map((line) => ({
+                                    x: line.x.map(d => d.toISOString()),
+                                    y: line.y,
+                                    type: "scatter",
+                                    mode: "lines+markers",
+                                    name: line.name,
+                                    line: {
+                                        width: 3,
+                                    },
+                                    marker: {
+                                        size: 6,
+                                    },
+                                }))}
+                                layout={getPlotLayout(graphLines)}
+                            />
+                        </div>
+                        ) : (
+                            <div className="pt-4">
+                                <h2 className="text-[26px] mb-[18px] text-gray-900">Trail Status Overview</h2>
+                                    <TrailStatusTable
+                                        data={trailListData}
+                                        loading={loadingListData}
+                                    />
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
             <EditTrailModal
                 isOpen={isEditTrailModalOpen}

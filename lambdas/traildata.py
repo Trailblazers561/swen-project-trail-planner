@@ -2,7 +2,8 @@ import os
 import json
 import time
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -39,14 +40,14 @@ def timestamp_conversion(timestamp, time_increment):
     :param time_increment: string of day/week/month to convert it to
     :return: timestamp of the start of that period, none if invalid time increment
     """
-    dt_timestamp = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    dt_timestamp = datetime.fromtimestamp(timestamp, tz=ZoneInfo("America/New_York"))
     if time_increment == "hour":
         return int(dt_timestamp.replace(minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "day":
         return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "week":
-        sunday = dt_timestamp - timedelta(days=(dt_timestamp.weekday() + 1) % 7)
-        return int(sunday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        monday = dt_timestamp - timedelta(days=dt_timestamp.weekday())
+        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
@@ -113,8 +114,29 @@ def get_trail_data(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        start_timestamp = Decimal(datetime.fromisoformat(start).timestamp())
-        end_timestamp = Decimal(datetime.fromisoformat(end).timestamp())  # suitably big enough for a default
+        start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
+
+        # Round down start_time and round up end_time
+        if granularity == "hour":
+            start_time = start_time.replace(minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+        else:
+            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+
+        if granularity in ("week", "month"):
+            partial_start_timestamp = int(start_time.timestamp())
+            partial_end_timestamp = int(end_time.timestamp())
+            if granularity == "week":
+                query_start_timestamp = int((start_time + timedelta(days=(7 - start_time.weekday()) % 7)).timestamp())
+                query_end_timestamp = int((end_time - timedelta(days=end_time.weekday())).timestamp())
+            if granularity == "month":
+                query_start_timestamp = int((start_time if start_time.day == 1 else (start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
+                query_end_timestamp = int(end_time.replace(day=1).timestamp())
+        else:
+            query_start_timestamp = int(start_time.timestamp())
+            query_end_timestamp = int(end_time.timestamp())
 
         # get all relevant devicetrail ids from trail ids
         rows = []
@@ -136,12 +158,44 @@ def get_trail_data(event, context):
 
         # fetch relevant device logs from table in timestamp bounds
         device_log_rows = []
-        for device_trail_id in device_trail_ids:
-            rows = logs_time_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(start_timestamp,
-                                                                                                         end_timestamp)
+        if (query_end_timestamp > query_start_timestamp):
+            for device_trail_id in device_trail_ids:
+                rows = logs_time_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_start_timestamp, query_end_timestamp -1)
+                ).get("Items", [])
+                device_log_rows.extend(rows)
+
+        # Turn the extra starting days into a "partial" result
+        if granularity in ("week", "month") and partial_start_timestamp < query_start_timestamp:
+            start_results = device_trail_log_day_table.query(
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(partial_start_timestamp, query_start_timestamp - 1)
             ).get("Items", [])
-            device_log_rows.extend(rows)
+
+            if start_results:
+                rows = {}
+                for result in start_results:
+                    if result["device_trail_id"] in rows.keys():
+                        rows[result["device_trail_id"]]["count"] += result["count"]
+                        rows[result["device_trail_id"]]["battery"] = result["battery"]
+                    else:
+                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                device_log_rows.extend(rows.values())
+
+        # Turn the extra ending days into a "partial" result
+        if granularity in ("week", "month") and partial_end_timestamp > query_end_timestamp:
+            end_results = device_trail_log_day_table.query(
+                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp - 1)
+            ).get("Items", [])
+
+            if end_results:
+                rows = {}
+                for result in end_results:
+                    if result["device_trail_id"] in rows.keys():
+                        rows[result["device_trail_id"]]["count"] += result["count"]
+                        rows[result["device_trail_id"]]["battery"] = result["battery"]
+                    else:
+                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)
 
@@ -654,6 +708,7 @@ def create_trail(event, context):
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
+        date_activated = body.get("date_activated")
 
         if not trail_name:
             return {
@@ -662,14 +717,20 @@ def create_trail(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_name"})
             }
 
-        print(f"Attempting to create trail with trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
+        if date_activated is None:
+            date_activated = int(time.time())
+        else:
+            date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
+
+        print(f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
         # Create trail metadata
         item = {
             "id": new_trail_id,
-            "name": str(trail_name)
+            "name": str(trail_name),
+            "date_activated": date_activated
         }
 
         if notes is not None:
@@ -1054,6 +1115,50 @@ def delete_trail(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+def delete_trail_group(event, context):
+    """
+    Deletes a trail group
+    Expects: { "name": string }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        name = body.get("group_name")
+
+        if name is None: raise ValueError("Missing required field: group_name")
+
+        print(f"Attempting to delete trail group with name [{name}")
+        trail_group_exists = trail_group_table.query(
+            KeyConditionExpression=Key("name").eq(name),
+            Limit=1
+        )["Items"]
+        if not trail_group_exists: raise ValueError(f"Cannot find trail_group with name [{name}]")
+
+        trail_group_table.delete_item(Key={"name": name})
+
+        print("Successfully deleted trail group")
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Trail group deleted successfully"})
+        }
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
 
 def update_device_trail_association(event, context):
     """
