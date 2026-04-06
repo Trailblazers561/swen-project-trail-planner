@@ -161,5 +161,5 @@ output "website_url" {
 }
 
 output "distribution_id" {
-  value = "${aws_cloudfront_distribution.s3_distribution[0].domain_name}"
+  value = "${aws_cloudfront_distribution.s3_distribution[0].id}"
 }
