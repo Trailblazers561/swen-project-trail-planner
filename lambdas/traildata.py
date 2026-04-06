@@ -708,6 +708,7 @@ def create_trail(event, context):
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
+        date_activated = body.get("date_activated")
 
         if not trail_name:
             return {
@@ -716,14 +717,20 @@ def create_trail(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_name"})
             }
 
-        print(f"Attempting to create trail with trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
+        if date_activated is None:
+            date_activated = int(time.time())
+        else:
+            date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
+
+        print(f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
         # Create trail metadata
         item = {
             "id": new_trail_id,
-            "name": str(trail_name)
+            "name": str(trail_name),
+            "date_activated": date_activated
         }
 
         if notes is not None:
@@ -1108,6 +1115,50 @@ def delete_trail(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+def delete_trail_group(event, context):
+    """
+    Deletes a trail group
+    Expects: { "name": string }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        name = body.get("group_name")
+
+        if name is None: raise ValueError("Missing required field: group_name")
+
+        print(f"Attempting to delete trail group with name [{name}")
+        trail_group_exists = trail_group_table.query(
+            KeyConditionExpression=Key("name").eq(name),
+            Limit=1
+        )["Items"]
+        if not trail_group_exists: raise ValueError(f"Cannot find trail_group with name [{name}]")
+
+        trail_group_table.delete_item(Key={"name": name})
+
+        print("Successfully deleted trail group")
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Trail group deleted successfully"})
+        }
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
 
 def update_device_trail_association(event, context):
     """

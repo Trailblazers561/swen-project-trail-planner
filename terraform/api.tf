@@ -491,6 +491,24 @@ resource "aws_api_gateway_integration" "trail_groups_get_integration" {
   uri                     = aws_lambda_function.get_trail_group_metadata.invoke_arn
 }
 
+# DELETE /trail_groups
+resource "aws_api_gateway_method" "trail_groups_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.trail_groups.id
+  http_method   = "DELETE"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "trail_groups_delete_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.trail_groups.id
+  http_method             = aws_api_gateway_method.trail_groups_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.delete_trail_group.invoke_arn
+}
+
 # /csv Resource
 resource "aws_api_gateway_resource" "csv" {
   path_part   = "csv"
@@ -773,6 +791,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.device_metadata_get_integration.uri,
       aws_api_gateway_integration.device_metadata_put_integration.uri,
       aws_api_gateway_integration.trail_groups_get_integration.uri,
+      aws_api_gateway_integration.trail_groups_delete_integration.uri,
       aws_api_gateway_integration.csv_get_integration.uri,
       aws_api_gateway_integration.csv_post_integration.uri,
       aws_api_gateway_integration.csv_url_get_integration.uri,
@@ -800,6 +819,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.device_metadata_put.authorization,
       aws_api_gateway_method.trail_groups_options.authorization,
       aws_api_gateway_method.trail_groups_get.authorization,
+      aws_api_gateway_method.trail_groups_delete.authorization,
       aws_api_gateway_method.csv_options.authorization,
       aws_api_gateway_method.csv_get.authorization,
       aws_api_gateway_method.csv_post.authorization,
@@ -830,7 +850,10 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.device_metadata_get_integration,
     aws_api_gateway_integration.device_metadata_put_integration,
     aws_api_gateway_integration.trail_groups_get_integration,
+    aws_api_gateway_integration.trail_groups_delete_integration,
     aws_api_gateway_integration.csv_get_integration,
+    aws_api_gateway_integration.csv_post_integration,
+    aws_api_gateway_integration.csv_url_get_integration,
     aws_api_gateway_integration.users_get_integration,
     aws_api_gateway_integration.users_post_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
