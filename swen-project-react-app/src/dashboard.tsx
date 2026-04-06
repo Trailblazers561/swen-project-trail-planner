@@ -28,7 +28,7 @@ import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 
 interface Trail {
