@@ -12,6 +12,10 @@ export function UserIcon() {
         sessionStorage.clear();
         navigate("/login");
   };
+    const handleManageUsers = () => {
+        sessionStorage.clear();
+        navigate("/userconfig");
+  };
 
   return (
     <DropdownMenu>
@@ -22,7 +26,9 @@ export function UserIcon() {
       </DropdownMenuTrigger>
       <DropdownMenuContent>
           <DropdownMenuGroup id="user-icon-group">
-          <DropdownMenuItem data-testid="manage-users">Manage Users</DropdownMenuItem>
+          <DropdownMenuItem data-testid="manage-users" onClick={handleManageUsers} >
+            Manage Users
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} data-testid="logout">
             <div className={"hover:bg-[var(--color-logout)] hover:text-white rounded-md px-2 py-1 flex items-center gap-2"}>
