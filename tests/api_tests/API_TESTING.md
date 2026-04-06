@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains API tests for the Trail Planner API. All tests have been updated to match the new database schema and include comprehensive tests for all endpoints.
+This directory contains API tests for the Trail Planner API. All tests have been updated to match the new database schema and include comprehensive tests for all endpoints. The general purpose testing documentation can be found in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
 ## Prerequisites
 

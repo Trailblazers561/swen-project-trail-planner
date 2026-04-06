@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains UI tests for the Trail Planner application using Selenium WebDriver. All tests use pytest and are configured to test the React frontend application.
+This directory contains UI tests for the Trail Planner application using Selenium WebDriver. All tests use pytest and are configured to test the React frontend application. The general purpose testing documentation can be found in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
 ## Prerequisites
 
@@ -27,8 +27,7 @@ Information about running tests in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
 ## Test Structure
 
-The UI testing structure consists of breaking down the code into four major components, DTOs, pages, steps, and workflows, and using those to easily construct new tests. A more in-depth overview with examples can be found in the [Testing Guidebook](https://docs.google.com/document/d/1MuMDhpsaSYin0_dwiCYS0pto_3ukT58MzCKLO7v9ang/edit?tab=t.0) 
-<span style="color: red;font-size: 50pt;font-family: Comic Sans MS;"> UPDATE THIS TO INTERNAL LINK </span>
+The UI testing structure consists of breaking down the code into four major components, DTOs, pages, steps, and workflows, and using those to easily construct new tests.
 
 ### Selenium Helper
 
