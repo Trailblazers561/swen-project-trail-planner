@@ -94,9 +94,15 @@ jobs:
             -H "Content-Type: application/vnd.api+json" \
             "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
             | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "react_bucket_name") | .attributes.value')
+          DISTRIBUTION_ID=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.TF_API_ORG_TOKEN }}" \
+            -H "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
+            | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "distribution_id") | .attributes.value')
           
           cd swen-project-react-app
           python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           npm install
           npm run build
           aws s3 sync ./dist s3://$BUCKET_NAME --delete
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
