@@ -135,7 +135,7 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
-    const [exportPopUpOpen, setExportPopUpOpen] = useState(false);
+    const [exportPopOverOpen, setExportPopOverOpen] = useState(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
 
 
@@ -231,7 +231,7 @@ const dashboard = () => {
 
     const handleExportData = async() => {
         setIsDownloadingStatus("downloading");
-        setExportPopUpOpen(true);
+        setExportPopOverOpen(true);
         let trailList = [];
         for (let i = 0; i < trailListData.length; i++) {
             trailList.push(trailListData[i].trail_id)
@@ -255,7 +255,7 @@ const dashboard = () => {
             setIsDownloadingStatus("error");
         } finally {
             setIsDownloadingStatus("idle");
-            setExportPopUpOpen(false);
+            setExportPopOverOpen(false);
         }
      }
 
