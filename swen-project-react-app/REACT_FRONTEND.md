@@ -47,8 +47,7 @@ The Trail Planner frontend provides:
 - **Node.js** 16.x or higher
 - **npm** or **yarn**
 - **AWS Cognito** configured (credentials injected via Terraform)
-- **AWS dev-role** configured by following [AWS User Creation Guide](https://docs.google.com/document/d/1bVgSodD6-sztRKshKu_xEwyjUxdQsLA1IpUGAA8z3fo/edit?tab=t.0) then [AWS Configure Role Guide](https://docs.google.com/document/d/1-q-g2ilJLfb8EOUKldb73A2wNj-NR16T-eo1YBT97UU/edit?tab=t.0)
-<span style="color: red;font-size: 50pt;font-family: Comic Sans MS;"> UPDATE THIS TO INTERNAL LINK </span>
+- **AWS dev-role** configured by following [AWS User Creation Guide](../docs/AWS-User-Creation-Guide.md) then [AWS Configure Role Guide](../docs/AWS-Configure-Role-Guide.md)
 
 ## Installation
 

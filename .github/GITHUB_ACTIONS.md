@@ -1,7 +1,6 @@
 # Github Actions Overview
 
-Github actions can be used to automatically do different things based off predefined triggers in the website. In this case, it is used to run tests when making pull requests, and to automatically keep environments deployed with the latest code. More information on github actions can be found in the Github Actions Guide [Testing Guidebook](https://docs.google.com/document/d/1MuMDhpsaSYin0_dwiCYS0pto_3ukT58MzCKLO7v9ang/edit?tab=t.0) 
-<span style="color: red;font-size: 50pt;font-family: Comic Sans MS;"> UPDATE THIS TO INTERNAL LINK </span>
+Github actions can be used to automatically do different things based off predefined triggers in the website. In this case, it is used to run tests when making pull requests, and to automatically keep environments deployed with the latest code. 
 
 ## Github Action Parts
 
