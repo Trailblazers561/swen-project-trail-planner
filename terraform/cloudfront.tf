@@ -160,3 +160,6 @@ output "website_url" {
   value = var.has_cdn ? "https://${var.has_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
 }
 
+output "distribution_id" {
+  value = "${aws_cloudfront_distribution.s3_distribution[0].domain_name}"
+}
