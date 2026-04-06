@@ -494,7 +494,6 @@ const dashboard = () => {
     const handleTrailGroupChange = (groupNames: string[]) => {
         setSelectedGroups(groupNames);
 
-        // find matching TrailGroups
         const selectedGroupObjects = trailGroups.filter(group =>
             groupNames.includes(group.name)
         );
@@ -780,78 +779,76 @@ const dashboard = () => {
                 </div>
             </div>
         </div>
-            <div className="dashboard-div">
-                <div className="flex p-2.5 gap-2.5 justify-between items-center">
-                    <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
-                    <div className="flex gap-2.5">
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
+            <div className="w-full border-t bg-gray-50">
+                <div className="max-w-6xl mx-auto px-2 py-0.5 flex-col rounded-b-lg">
+                    <div className="flex p-2.5 justify-between items-center">
+                        <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                        <div className="flex gap-2.5">
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
 
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Group Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-                {viewMode === "graph" ? (
-                <div className="flex justify-center px-6 pb-8">
-                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
-                        <div className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                            {graphTitle}
-                        </div>
-                            <div className="h-[500px]">
-                                <Plot 
-                                    className="w-full h-full"
-                                    config={{ displayModeBar: false, responsive: true }}
-                                    useResizeHandler={true}
-                                    style={{ width: "100%", height: "100%" }}
-                                    data={graphLines.map((line) => ({
-                                        x: line.x.map(d => d.toISOString()),
-                                        y: line.y,
-                                        type: "scatter",
-                                        mode: "lines+markers",
-                                        name: line.name,
-                                        line: {
-                                            width: 3,
-                                        },
-                                        marker: {
-                                            size: 6,
-                                        },
-                                    }))}
-                                    layout={getPlotLayout(graphLines)}
-                                />
-                         </div>
-                    </div>
-                </div>
-               ) : (
-                <div className="list-view">
-                    <div className="list-container">
-                        <div className="list-card">
-                            <h2 className="list-title">Trail Status Overview</h2>
-                                <TrailStatusTable
-                                    data={trailListData}
-                                    loading={loadingListData}
-                                />
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Group Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
-            )}
+                <div className="w-full pb-8 bg-gray-50">
+                    <div className="w-full border-t border-gray-200">
+                        {viewMode === "graph" ? (
+                        <div className="w-full h-[65vh] min-h-[400px]">
+                            <div className="text-lg font-semibold text-gray-800 mb-4 pt-4">
+                                {graphTitle}
+                            </div>
+                            <Plot 
+                                className="w-full h-full"
+                                config={{ displayModeBar: false, responsive: true }}
+                                useResizeHandler={true}
+                                style={{ width: "100%", height: "100%" }}
+                                data={graphLines.map((line) => ({
+                                    x: line.x.map(d => d.toISOString()),
+                                    y: line.y,
+                                    type: "scatter",
+                                    mode: "lines+markers",
+                                    name: line.name,
+                                    line: {
+                                        width: 3,
+                                    },
+                                    marker: {
+                                        size: 6,
+                                    },
+                                }))}
+                                layout={getPlotLayout(graphLines)}
+                            />
+                        </div>
+                        ) : (
+                            <div className="pt-4">
+                                <h2 className="text-[26px] mb-[18px] text-gray-900">Trail Status Overview</h2>
+                                    <TrailStatusTable
+                                        data={trailListData}
+                                        loading={loadingListData}
+                                    />
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
             <EditTrailModal
                 isOpen={isEditTrailModalOpen}
