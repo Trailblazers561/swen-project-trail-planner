@@ -47,6 +47,7 @@ The Trail Planner frontend provides:
 - **Node.js** 16.x or higher
 - **npm** or **yarn**
 - **AWS Cognito** configured (credentials injected via Terraform)
+- **AWS dev-role** configured by following [AWS User Creation Guide](../docs/AWS-User-Creation-Guide.md) then [AWS Configure Role Guide](../docs/AWS-Configure-Role-Guide.md)
 
 ## Installation
 
@@ -55,6 +56,10 @@ The Trail Planner frontend provides:
 ```bash
 npm install
 ```
+
+## Setup Env
+
+There is a file [setup_env.py](setup_env.py) that when the **AWS dev-role** prerequisite is complete will automatically be run when the development server is started. This code creates a .env file and fills it with the neccisary information to link the development server to the tst backend.
 
 ## Development
 
@@ -68,11 +73,11 @@ npm run dev
 
 ## Deployment
 
-The React app is automatically deployed to S3 via Terraform. See the main [README.md](../README.md) and [terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md](../terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md) for deployment instructions.
+The React app is automatically deployed to S3 via Terraform. See the main [README.md](../README.md) and [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](../terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md) for deployment instructions.
 
 ### Environment Variables
 
-The application uses environment variables configured in `.env` or `vite.config.ts`:
+The application uses environment variables configured in `.env` or `vite.config.ts`, which is automatically linked to the existing tst deployment when running `npm run dev`:
 
 - `VITE_API_URL`: API Gateway base URL (set by Terraform)
 - `VITE_COGNITO_REGION`: AWS region for Cognito (defaults to `us-east-1`)
@@ -98,7 +103,12 @@ swen-project-react-app/
 │   │   ├── trailselector.tsx    # Trail selection dropdowns
 │   │   ├── EditTrailModal.tsx   # Trail add/edit modal
 │   │   ├── EditTrailGroupModal.tsx  # Group management modal
-│   │   └── AssociateDeviceModal.tsx  # Device association modal
+│   │   ├── AssociateDeviceModal.tsx  # Device association modal
+│   │   ├── Listview.tsx # Empty
+│   │   ├── Modal.css # CSS for the modals to use
+│   │   ├── Navbar.tsx # Navbar at the top of all pages
+│   │   ├── TrailDataTable.tsx # Trail Data Table in dashboard
+│   │   └── trailselector.tsx # Unused?
 │   ├── cognito/             # Cognito authentication
 │   ├── styles/              # CSS stylesheets
 │   ├── api.ts               # API client functions
@@ -164,7 +174,7 @@ See [API_DOCUMENTATION.md](../API_DOCUMENTATION.md) for API details.
 
 ## Testing
 
-UI tests are located in `../swen-project-react-app-UI-tests/`. See the [UI Tests README](../swen-project-react-app-UI-tests/completed/README.md) for testing instructions.
+UI tests are located in `../tests/ui_tests/`. See [UI_TESTING.md](../tests/ui_tests/UI_TESTING.md) for testing instructions.
 
 ## Troubleshooting
 

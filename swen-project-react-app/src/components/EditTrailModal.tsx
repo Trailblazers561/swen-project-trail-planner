@@ -5,12 +5,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { Button } from './ui/button';
 
 interface Trail {
-  trail_id: number;
-  trail_name: string;
+  id: number;
+  name: string;
 }
 
 interface TrailGroup {
-  group_name: string;
+  name: string;
   trail_ids: number[];
 }
 
@@ -33,7 +33,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { getTrailGroups, updateTrailMetadata, createTrail, deleteTrail } = TrailData();
+  const { getTrailGroupMetadata, updateTrailMetadata, createTrail, deleteTrail } = TrailData();
 
   useEffect(() => {
     if (isOpen) {
@@ -45,8 +45,8 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         setSelectedGroup('');
       } else if (propTrail) {
         // Edit mode with specific trail
-        setSelectedTrailId(propTrail.trail_id);
-        setTrailName(propTrail.trail_name);
+        setSelectedTrailId(propTrail.id);
+        setTrailName(propTrail.name);
       } else {
         // Edit mode - allow selection
         setSelectedTrailId(0);
@@ -57,15 +57,15 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
 
   useEffect(() => {
     if (selectedTrailId > 0) {
-      const selectedTrail = availableTrails.find(t => t.trail_id === selectedTrailId);
+      const selectedTrail = availableTrails.find(t => t.id === selectedTrailId);
       if (selectedTrail) {
-        setTrailName(selectedTrail.trail_name);
+        setTrailName(selectedTrail.name);
         // Find which group this trail belongs to
         const trailGroup = trailGroups.find((g: TrailGroup) =>
           g.trail_ids && g.trail_ids.includes(selectedTrailId)
         );
         if (trailGroup) {
-          setSelectedGroup(trailGroup.group_name);
+          setSelectedGroup(trailGroup.name);
         } else {
           setSelectedGroup('');
         }
@@ -75,17 +75,17 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
 
   const loadTrailGroups = async () => {
     try {
-      const response = await getTrailGroups();
+      const response = await getTrailGroupMetadata();
       if (response.success) {
         const groups = await response.json;
         setTrailGroups(groups);
 
         // Find which group trail belongs to
         const trailGroup = groups.find((g: TrailGroup) =>
-          g.trail_ids && g.trail_ids.includes(propTrail?.trail_id || 0)
+          g.trail_ids && g.trail_ids.includes(propTrail?.id || 0)
         );
         if (trailGroup) {
-          setSelectedGroup(trailGroup.group_name);
+          setSelectedGroup(trailGroup.name);
         }
       }
     } catch (err) {
@@ -213,8 +213,8 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 >
                   <option value={0}>Select a trail</option>
                   {availableTrails.map((trail) => (
-                    <option key={trail.trail_id} value={trail.trail_id}>
-                      {trail.trail_name} (ID: {trail.trail_id})
+                    <option key={trail.id} value={trail.id}>
+                      {trail.name} (ID: {trail.id})
                     </option>
                   ))}
                 </select>
@@ -254,9 +254,9 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     onChange={(e) => setSelectedGroup(e.target.value)}
                   >
                     <option value="">Select a group (optional)</option>
-                    {trailGroups.filter(g => g.group_name !== "All Areas").map((group) => (
-                      <option key={group.group_name} value={group.group_name}>
-                        {group.group_name}
+                    {trailGroups.filter(g => g.name !== "All Areas").map((group) => (
+                      <option key={group.name} value={group.name}>
+                        {group.name}
                       </option>
                     ))}
                   </select>

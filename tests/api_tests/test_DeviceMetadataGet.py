@@ -15,11 +15,10 @@ def test_get_device_metadata_success():
     assert response.status_code == 200
     devices = response.json()
     assert isinstance(devices, list)
-    
     # Verify device structure if devices exist
     for device in devices:
-        assert "device_id" in device
-        assert isinstance(device["device_id"], str)
+        assert "id" in device
+        assert isinstance(device["id"], int)
 
 @pytest.mark.API
 def test_get_device_metadata_structure():
@@ -36,12 +35,18 @@ def test_get_device_metadata_structure():
     # If devices exist, verify they have expected fields
     if len(devices) > 0:
         device = devices[0]
-        assert "device_id" in device
-        # trail_id and battery_level are optional
-        if "trail_id" in device:
-            assert isinstance(device["trail_id"], (int, type(None)))
-        if "battery_level" in device:
-            assert isinstance(device["battery_level"], (int, float, type(None)))
+        assert "id" in device
+        # name, notes, firmware_version, date_manufactured, and date_retired are optional
+        if "name" in device:
+            assert isinstance(device["name"], str)
+        if "notes" in device:
+            assert isinstance(device["notes"], str)
+        if "firmware_version" in device:
+            assert isinstance(device["firmware_version"], str)
+        if "date_manufactured" in device:
+            assert isinstance(device["date_manufactured"], (int, type(None)))
+        if "date_retired" in device:
+            assert isinstance(device["date_retired"], (int, type(None)))
 
 @pytest.mark.API
 def test_get_device_metadata_unauthorized():

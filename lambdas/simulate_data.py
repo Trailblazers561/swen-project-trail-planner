@@ -2,16 +2,19 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "local_TrailDeviceLogs"))
-trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "local_TrailMetadata"))
-device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "local_DeviceMetadata"))
-trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "local_TrailGroups"))
+log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
+log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
+log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
+log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
 
 # Trails to update, Name: [mean, std_dev]
 trails = {
@@ -29,57 +32,74 @@ trails = {
 
 # Hiker Multiplier based on day of the week Monday - Sunday
 weekday_modifier = {0: .8, 1: .65, 2: .50, 3: .60, 4: .90, 5: 1.95, 6: 1.6}
-
-seconds_in_day = 24 * 60 * 60
+hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40, 1.64, 1.40, 1.29, 1.17, 1.05, 1.05, 1.17, 1.40, 1.76, 2.11, 1.87, 1.52, 1.17, 0.82, 0.59, 0.35, 0.28]]
 
 def simulate_data(event, context):
+    print(event)
     # Retrieve Timestamp for start of day (EST) when lambda was called
     date = datetime.fromisoformat(event["time"][:10]).replace(tzinfo=ZoneInfo("America/New_York"))
     timestamp = int(date.timestamp())
+
+    trail_list = trail_table.scan(FilterExpression=Attr("name").is_in(list(trails.keys())))["Items"]
+
     for trail, stats in trails.items():
+        print(f"Attempting to simulate data for trail [{trail}]")
         # Check if trail is in the database, create it if not found
-        response = trail_metadata_table.query(
-            IndexName="trail_name-index",
-            KeyConditionExpression=Key("trail_name").eq(trail)
-        )
-        if response["Count"] >= 1:
-            trail_id = response["Items"][0]["trail_id"]
-        else:
-            trail_id = create_trail(trail)
+        trail_exists = next((t for t in trail_list if t["name"] == trail), None)
+        trail_id = trail_exists["id"] if trail_exists else create_trail(trail)
 
         # Check if device for the trail is in the database, create it if not
-        response = device_metadata_table.scan(
-            FilterExpression=Attr("current_trail_id").eq(trail_id)
+        device_trail_exists = device_trail_table.query(
+            IndexName="trail-index",
+            KeyConditionExpression=Key("trail_id").eq(trail_id),
+            ScanIndexForward=False,
+            Limit=1
+        )["Items"]
+        device_trail_id = device_trail_exists[0]["id"] if device_trail_exists else create_device_trail(trail_id)
+
+        response = log_day_table.query(
+            KeyConditionExpression=(
+                Key("device_trail_id").eq(device_trail_id) &
+                Key("start").eq(int((date - timedelta(days=1)).timestamp()))
+            ),
+            Limit=1
         )
-        if response["Count"] >= 1:
-            device_id = response["Items"][0]["device_id"]
-            battery = response["Items"][0]["battery"]
-        else:
-            device_id = create_device(trail_id)
-            battery = 100
+        battery = response["Items"][0]["battery"] if response["Count"] >= 1 else 100
+
         # 1/3 chance to decrement battery
         if (battery > 1 and random.random() < 1/3):
             battery = battery - 1
 
         # Determine amount of hikers for the day
         hikers = max(int(random.normalvariate(*stats) * weekday_modifier[date.weekday()]), 0)
-        # Space timestamps across the day and log them
-        interval = int(seconds_in_day / (hikers + 1))
-        temp_timestamp = timestamp + int(interval/2)
-        for i in range(hikers):
-            add_log(trail_id, device_id, battery, temp_timestamp)
-            temp_timestamp += interval
+        today_start_utc = date.astimezone(timezone.utc)
+        tomorrow_start_utc = (date + timedelta(days=1)).astimezone(timezone.utc)
+        today_hours = int((tomorrow_start_utc - today_start_utc).total_seconds() / 3600)
 
-        # Update device to reflect updated battery and last_update
-        update_device(device_id, battery, temp_timestamp)
+        counts  = [int(hikers * m) + (random.random() < (hikers * m % 1)) for m in hour_modifier[:today_hours]]
+        hikers = sum(counts)
+
+        hour_timestamp = timestamp
+        for count in counts:
+            log_hour(device_trail_id, hour_timestamp, count)
+            hour_timestamp += 60 * 60
+
+        log_day(device_trail_id, timestamp, hikers, battery)
+
+        week_timestamp = int((date - timedelta(days=date.weekday())).timestamp())
+        log_week(device_trail_id, week_timestamp, hikers, battery)
+
+        month_timestamp = int((date.replace(day=1)).timestamp())
+        log_month(device_trail_id, month_timestamp, hikers, battery)
 
 def create_trail(trail: str) -> int:
+    print(f"Creating trail with name [{trail}]")
     # Get all existing trails to find next available ID
     try:
-        resp = trail_metadata_table.scan()
+        resp = trail_table.scan()
         existing_trails = resp.get("Items", [])
         if existing_trails:
-            existing_ids = [int(t.get("trail_id", 0)) for t in existing_trails]
+            existing_ids = [int(t.get("id", 0)) for t in existing_trails]
             new_trail_id = max(existing_ids, default=0) + 1
         else:
             new_trail_id = 1
@@ -87,44 +107,107 @@ def create_trail(trail: str) -> int:
         # If scan fails, start with ID 1
         new_trail_id = 1
 
-    trail_metadata_table.put_item(Item={
-        "trail_id": new_trail_id,
-        "trail_name": trail
+    trail_table.put_item(Item={
+        "id": new_trail_id,
+        "name": trail,
+        "notes": "trail auto created by simulate_data"
     })
     return new_trail_id
 
-def create_device(trail_id: int) -> int:
-    # Get all existing trails to find next available ID
+def create_device_trail(trail_id: int) -> int:
+    print(f"Creating device for trail_id [{trail_id}]")
+    # Get all existing devices to find next available ID
     try:
-        resp = device_metadata_table.scan()
+        resp = device_table.scan()
         existing_devices = resp.get("Items", [])
         if existing_devices:
-            existing_ids = [int(d.get("device_id", 0)) for d in existing_devices if str(d.get("device_id", "")).isdigit()]
-            new_device_id = str(max(existing_ids, default=0) + 1)
+            existing_ids = [int(d.get("id", 0)) for d in existing_devices]
+            new_device_id = max(existing_ids, default=0) + 1
         else:
-            new_device_id = "1"
+            new_device_id = 1
     except Exception as e:
         # If scan fails, start with ID 1
-        new_device_id = "1"
+        new_device_id = 1
 
-    device_metadata_table.put_item(Item={
-        "device_id": new_device_id,
-        "current_trail_id": trail_id,
-        "battery": 100
+    device_table.put_item(Item={
+        "id": new_device_id,
+        "name": "simulator_device",
+        "notes": "device auto created by simulate_data"
     })
-    return new_device_id
 
-def update_device(device_id: int, battery: int, last_update: int) -> None:
-    device_metadata_table.update_item(
-        Key={"device_id": device_id},
-        UpdateExpression="SET battery=:b, last_update=:u",
-        ExpressionAttributeValues={":b": battery, ":u": last_update}
+    print(f"Creating device_trail for trail_id [{trail_id}] and device_id [{new_device_id}]")
+    # Get all existing device_trails to find next available ID
+    try:
+        resp = device_trail_table.scan()
+        existing_device_trails = resp.get("Items", [])
+        if existing_device_trails:
+            existing_ids = [int(dt.get("id", 0)) for dt in existing_device_trails]
+            new_device_trail_id = max(existing_ids, default=0) + 1
+        else:
+            new_device_trail_id = 1
+    except Exception as e:
+        # If scan fails, start with ID 1
+        new_device_trail_id = 1
+
+    device_trail_table.put_item(Item={
+        "id": new_device_trail_id,
+        "device_id": new_device_id,
+        "trail_id": trail_id,
+        "notes": "device_trail auto created by simulate_data"
+    })
+    return new_device_trail_id
+
+def log_hour(device_trail_id: int, start: int, count: int):
+    print(f"Adding hour log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}]")
+    log_hour_table.put_item(Item={
+        "device_trail_id": device_trail_id,
+        "start": start,
+        "count": count
+    })
+
+def log_day(device_trail_id: int, start: int, count: int, battery: int):
+    print(f"Adding day log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+    log_day_table.put_item(Item={
+        "device_trail_id": device_trail_id,
+        "start": start,
+        "count": count,
+        "battery": battery
+    })
+
+def log_week(device_trail_id: int, start: int, count: int, battery: int):
+    print(f"Adding week log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+    log_week_table.update_item(
+        Key={
+            "device_trail_id": device_trail_id,
+            "start": start
+        },
+        UpdateExpression="ADD #count :count SET #battery = :battery",
+        ExpressionAttributeNames={
+            "#count": "count",
+            "#battery": "battery"
+        },
+        ExpressionAttributeValues={
+            ":count": count,
+            ":battery": battery
+        },
+        ReturnValues="ALL_NEW"
     )
 
-def add_log(trail_id: int, device_id: int, battery: int, timestamp: int):
-    logs_table.put_item(Item={
-        "trail_id": trail_id,
-        "device_id": device_id,
-        "battery": battery,
-        "timestamp": timestamp
-    })
+def log_month(device_trail_id: int, start: int, count: int, battery: int):
+    print(f"Adding month log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+    log_month_table.update_item(
+        Key={
+            "device_trail_id": device_trail_id,
+            "start": start
+        },
+        UpdateExpression="ADD #count :count SET #battery = :battery",
+        ExpressionAttributeNames={
+            "#count": "count",
+            "#battery": "battery"
+        },
+        ExpressionAttributeValues={
+            ":count": count,
+            ":battery": battery
+        },
+        ReturnValues="ALL_NEW"
+    )

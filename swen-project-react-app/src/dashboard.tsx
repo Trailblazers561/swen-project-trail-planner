@@ -6,11 +6,11 @@ import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout } from "plotly.js";
-import DatePicker from "react-datepicker";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { useNavigate } from "react-router-dom";
-import { DateRangePicker } from "./components/ui/daterangepicker.tsx";
+import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
 import { Button } from "./components/ui/button.tsx";
@@ -24,56 +24,45 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
+import { Granularity, GranularityText } from "./lib/apiTypes";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
+import { Loader2, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 
 interface Trail {
-    trail_id: number;
-    trail_name: string;
+    id: number;
+    name: string;
 }
 
 interface TrailGroup {
-    group_name: string;
+    name: string;
     trail_ids: number[];
 }
 
 
-
-const trailoptions: MultiSelectOption[] = [
-    {value: "test 1", label: "RT Test Trail 1"},
-    {value: "test 2", label: "RT Test Trail 2"},
-];
-
-const trailgroupoptions: MultiSelectOption[] = [
-    {value: "test group 1", label: "RT Test Trail Group 1"},
-    {value: "test group 2", label: "RT Test Trail Group 2"},
-];
-
 const dashboard = () => {
-    const navigate = useNavigate();
-    const handleLogout = () => {
-        sessionStorage.clear();
-        navigate("/login");
-    };
 
     const {
-        getTrailLogsBetweenDates,
+        getTrailLogs,
         getDeviceMetadata,
         getTrailMetadata,
-        getTrailGroups,
+        getTrailGroupMetadata,
         exportCSV
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
     const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
-    
+    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
     const [selectedTrails, setSelectedTrails] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
         const map: Record<string, number> = { "All Trails": 0 };
         trailMetadata
-            .filter((t) => t && t.trail_name && t.trail_name.trim().length > 0)
+            .filter((t) => t && t.name && t.name.trim().length > 0)
             .forEach((trail: Trail) => {
-                map[trail.trail_name] = trail.trail_id;
+                map[trail.name] = trail.id;
             });
         return map;
     }, [trailMetadata]);
@@ -95,9 +84,14 @@ const dashboard = () => {
         }>
     >([]);
 
-    // Auto-select 01/01/2025 as start date
+    // Auto-select one year ago as start date
     const [selectedDate, setSelectedDate] = useState<Date | null>(
-        new Date("2025-01-01")
+        (() => {
+            const now = new Date();
+            const lastYear = new Date(now);
+            lastYear.setFullYear(now.getFullYear() - 1);
+            return lastYear;
+        })()
     );
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(
         new Date()
@@ -106,8 +100,8 @@ const dashboard = () => {
     const [range, setRange] = React.useState<DateRange | undefined>(undefined)
     const [trails, setTrails] = useState<string[]>([]);
     
-    const [granularity, setGranularity] = useState<string | null>(null);
-    const [granularityOptions, setGranularityOptions] = useState<string[]>([]);
+    const [granularity, setGranularity] = useState<Granularity | null>(null);
+    const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
@@ -118,6 +112,7 @@ const dashboard = () => {
             weeklyCount: number;
             batteryStatus: number | null;
             lastUpdated: string | null;
+            device_id: number;
         }>
     >([]);
     const [loadingListData, setLoadingListData] = useState(false);
@@ -125,6 +120,8 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
+    const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
+
 
     // Load trail metadata and groups from database
     useEffect(() => {
@@ -161,7 +158,7 @@ const dashboard = () => {
         try {
             const [metadataResponse, groupsResponse] = await Promise.all([
                 getTrailMetadata(),
-                getTrailGroups(),
+                getTrailGroupMetadata(),
             ]);
 
             if (metadataResponse.success && groupsResponse.success) {
@@ -172,16 +169,16 @@ const dashboard = () => {
                 const validMetadata = (metadata || []).filter(
                     (t: Trail) =>
                         t &&
-                        t.trail_id !== undefined &&
-                        t.trail_name &&
-                        t.trail_name.trim().length > 0
+                        t.id !== undefined &&
+                        t.name &&
+                        t.name.trim().length > 0
                 );
                 // Filter out invalid groups and empty groups (groups with no trails)
                 const validGroups = (groups || []).filter(
                     (g: TrailGroup) =>
                         g &&
-                        g.group_name &&
-                        g.group_name.trim().length > 0 &&
+                        g.name &&
+                        g.name.trim().length > 0 &&
                         g.trail_ids &&
                         Array.isArray(g.trail_ids) &&
                         g.trail_ids.length > 0
@@ -217,22 +214,33 @@ const dashboard = () => {
     }; 
 
     const handleExportData = async() => {
+        setIsDownloadingStatus("downloading");
         let trailList = [];
         for (let i = 0; i < trailListData.length; i++) {
             trailList.push(trailListData[i].trail_id)
         }
-        const startDate = selectedDate === null ? undefined : selectedDate;
-        const endDate = selectedDateEnd === null ? undefined : selectedDateEnd;
-
-
-        const csv_url = (await exportCSV(trailList, startDate, endDate))["json"]["url"];
+        if (selectedDate === null) {
+            console.error("Error exporting: startDate must not be null");
+            return;
+        }
+        if (selectedDateEnd === null) {
+            console.error("Error exporting: endDate must not be null");
+            return;
+        }
         
         try{
+            const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
             window.open(csv_url, "_self");
+            setIsDownloadingStatus("done");
         } catch (error) {
             console.error("Download failed:", error);
+            setIsDownloadingStatus("error");
+        } finally {
+            setTimeout(() => setIsDownloadingStatus("idle"), 1000);
         }
-    }
+     }
+
+
     const handleTrailUpdated = async () => {
         await loadTrailData();
         // Refresh graph - wait for state to update
@@ -260,21 +268,21 @@ const dashboard = () => {
 
         const daysDiff = getDateDifference(startDate, endDate);
 
-        let options: string[] = [];
+        let options: Granularity[] = [];
         if (daysDiff >= 1825) {
-            options = ["Yearly", "Monthly"];
+            options = [Granularity.Year, Granularity.Month];
         } else if (daysDiff >= 730) {
-            options = ["Yearly", "Monthly", "Weekly", "Daily"];
+            options = [Granularity.Year, Granularity.Month, Granularity.Week, Granularity.Day];
         } else if (daysDiff >= 60) {
-            options = ["Monthly", "Weekly", "Daily"];
+            options = [Granularity.Month, Granularity.Week, Granularity.Day];
         } else if (daysDiff >= 30) {
-            options = ["Weekly", "Daily"];
+            options = [Granularity.Week, Granularity.Day];
         } else if (daysDiff >= 7) {
-            options = ["Daily"];
+            options = [Granularity.Day];
         } else if (daysDiff <= 3) {
-            options = ["Daily", "Hourly"];
+            options = [Granularity.Day, Granularity.Hour];
         } else {
-            options = ["Daily"];
+            options = [Granularity.Day];
         }
 
         setGranularityOptions(options);
@@ -294,7 +302,7 @@ const dashboard = () => {
     function getDateRanges(
         startDate: Date,
         endDate: Date,
-        granularity: string = "Daily"
+        granularity: Granularity = Granularity.Day
     ): { start: Date; end: Date }[] {
         let ranges: { start: Date; end: Date }[] = [];
         let current: Date = new Date(startDate);
@@ -302,15 +310,15 @@ const dashboard = () => {
 
         while (current < end) {
             let next: Date = new Date(current);
-            if (granularity === "Hourly") {
+            if (granularity === Granularity.Hour) {
                 next.setHours(next.getHours() + 1);
-            } else if (granularity === "Daily") {
+            } else if (granularity === Granularity.Day) {
                 next.setDate(next.getDate() + 1);
-            } else if (granularity === "Weekly") {
+            } else if (granularity === Granularity.Week) {
                 next.setDate(next.getDate() + 7);
-            } else if (granularity === "Monthly") {
+            } else if (granularity === Granularity.Month) {
                 next.setMonth(next.getMonth() + 1);
-            } else if (granularity === "Yearly") {
+            } else if (granularity === Granularity.Year) {
                 next.setFullYear(next.getFullYear() + 1);
             }
 
@@ -328,24 +336,28 @@ const dashboard = () => {
 
     function countOccurrencesInRanges(
         ranges: { start: Date; end: Date }[],
-        events: Date[]
+        events: {start: Date, count: number}[]
     ): Map<Date, number> {
         let occurrences = new Map<Date, number>();
 
         for (let range of ranges) {
-            let count = events.filter(
-                (date) => date >= range.start && date <= range.end
-            ).length;
-            occurrences.set(range.start, count);
+            const eventInRange = events.find(
+                (event) => event.start >= range.start && event.start < range.end
+            );
+    
+            if (eventInRange) 
+                occurrences.set(range.start, eventInRange.count); // Can change range.start to eventInRange.start to make it have the correct start, but the other points are still messed up
+            else 
+                occurrences.set(range.start, 0);
         }
         return occurrences;
     }
 
     async function getResponse(
-        startDate: Date | null,
-        endDate: Date | null,
+        startDate: Date,
+        endDate: Date,
         trails: string[],
-        granularity: string = "Daily"
+        granularity: Granularity = Granularity.Day
     ) {
         if (!startDate || !endDate || !granularity || trails.length === 0) return;
 
@@ -355,8 +367,8 @@ const dashboard = () => {
 
             if (includesAllTrails) {
                 trailIds = trailMetadata
-                    .filter((t) => t && t.trail_id && t.trail_id !== 0)
-                    .map((t) => t.trail_id);
+                    .filter((t) => t && t.id && t.id !== 0)
+                    .map((t) => t.id);
             } else {
                 for (var i = 0; i < trails.length; i++) {
                     const trailId = trailMap[trails[i]];
@@ -368,23 +380,24 @@ const dashboard = () => {
 
             if (trailIds.length === 0 && !includesAllTrails) return;
 
-            const response = await getTrailLogsBetweenDates(
-                Math.floor(startDate.getTime() / 1000),
-                Math.floor(endDate.getTime() / 1000),
-                trailIds
+            const response = await getTrailLogs(
+                trailIds,
+                startDate,
+                endDate,
+                granularity
             );
 
             const responseJson = await response.json;
 
             let ranges = getDateRanges(startDate, endDate, granularity);
-            let events: Map<number, Date[]> = new Map<number, Date[]>();
+            let events: Map<number, {start: Date, count: number}[]> = new Map<number, {start: Date, count: number}[]>();
 
-            (responseJson as { trail_id: number; timestamp: number }[]).forEach(
+            (responseJson as { trail_id: number; start: number, count: number }[]).forEach(
                 (entry) => {
                     if (!events.has(entry.trail_id)) {
                         events.set(entry.trail_id, []);
                     }
-                    events.get(entry.trail_id)!.push(new Date(entry.timestamp * 1000));
+                    events.get(entry.trail_id)!.push({start: new Date(entry.start * 1000), count: entry.count});
                 }
             );
 
@@ -392,16 +405,16 @@ const dashboard = () => {
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
-                .filter((t) => t && t.trail_name)
+                .filter((t) => t && t.name)
                 .forEach((trail: Trail) => {
-                    trailIdToName.set(trail.trail_id, trail.trail_name);
+                    trailIdToName.set(trail.id, trail.name);
                 });
 
             if (includesAllTrails) {
-                events.forEach((dates, trailId) => {
-                    if (trailId !== 0 && dates.length > 0) {
+                events.forEach((dateCountArray, trailId) => {
+                    if (trailId !== 0 && dateCountArray.length > 0) {
                         const trailName = trailIdToName.get(trailId) || `Trail ${trailId}`;
-                        const occurrences = countOccurrencesInRanges(ranges, dates);
+                        const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
                         lines.push({
                             name: trailName,
                             x: Array.from(occurrences.keys()),
@@ -415,10 +428,10 @@ const dashboard = () => {
                     const trailId = trailMap[trailName];
                     if (trailId === undefined) continue;
 
-                    const dates: Date[] = events.get(trailId) ?? [];
-                    if (dates.length === 0) continue;
+                    const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
+                    if (dateCountArray.length === 0) continue;
 
-                    const occurrences = countOccurrencesInRanges(ranges, dates);
+                    const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
                     const xData = Array.from(occurrences.keys());
                     const yData = Array.from(occurrences.values());
 
@@ -465,8 +478,18 @@ const dashboard = () => {
         setSelectedDateEnd(endDate);
     };
 
-    const handleDateRangeChange = (range: DateRange | undefined) => {
-        setRange(range);
+    const handleDateRangeChange = (DateRange: DateRange | undefined) => {
+        const formattedRange: DateRange | undefined = DateRange?.from && DateRange?.to ? {from: DateRange.from, to: DateRange.to,} : undefined
+        setRange(formattedRange)
+        setSelectedDate(DateRange?.from ?? null);
+        setSelectedDateEnd(DateRange?.to ?? null);
+        handleStartDateChange(DateRange?.from ?? null);
+        handleEndDateChange(DateRange?.to ?? null);
+
+    if (!DateRange?.from || !DateRange?.to) return
+
+    updateGranularityOptions(DateRange.from, DateRange.to)
+
     }
 
     const handleTrailChange = (selectedTrails: string[]) => {
@@ -479,7 +502,59 @@ const dashboard = () => {
         }
     };
 
-    const handleGranularityChange = (granularity: string) => {
+    const handleTrailGroupChange = (groupNames: string[]) => {
+        setSelectedGroups(groupNames);
+
+        const selectedGroupObjects = trailGroups.filter(group =>
+            groupNames.includes(group.name)
+        );
+
+        let autoSelectedTrails: string[] = [];
+
+        if (groupNames.includes("All Areas")) {
+            autoSelectedTrails = ["All Trails"];
+        } else {
+            autoSelectedTrails = selectedGroupObjects.flatMap(group =>
+                group.trail_ids
+                    .map(id => trailMetadata.find(t => t.id === id))
+                    .filter((t): t is Trail => t !== undefined)
+                    .map(trail => trail.name)
+            );
+        }
+
+        // remove duplicates
+        autoSelectedTrails = [...new Set(autoSelectedTrails)];
+
+        setSelectedTrails(autoSelectedTrails);
+    };
+
+     const fillTrailsMultiselect = (): MultiSelectOption[] => {
+        const options: MultiSelectOption[] = [
+            { value: "All Trails", label: "All Trails" },
+        ];
+
+        trailMetadata.forEach((trail) => {
+            if (trail && trail.name && trail.name.trim().length > 0) {
+                options.push({ value: trail.name, label: trail.name });
+            }
+        });
+
+        return options;
+    };
+
+    const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
+        const options: MultiSelectOption[] = [];
+
+        trailGroups.forEach((group) => {
+            if (group && group.name && group.name.trim().length > 0) {
+                options.push({ value: group.name, label: group.name });
+            }
+        });
+
+        return options;
+    };
+
+    const handleGranularityChange = (granularity: Granularity) => {
         setGranularity(granularity);
     };
 
@@ -512,13 +587,11 @@ const dashboard = () => {
                     // Get last week's date range
                     const now = new Date();
                     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    const startTimestamp = Math.floor(oneWeekAgo.getTime() / 1000);
-                    const endTimestamp = Math.floor(now.getTime() / 1000);
 
                     // Get all trail IDs
                     const trailIds = trailMetadata
-                        .filter((t) => t && t.trail_id && t.trail_id !== 0)
-                        .map((t) => t.trail_id);
+                        .filter((t) => t && t.id && t.id !== 0)
+                        .map((t) => t.id);
 
                     if (trailIds.length === 0) {
                         setTrailListData([]);
@@ -528,81 +601,51 @@ const dashboard = () => {
                     }
 
                     // Fetch weekly counts
-                    const logsResponse = await getTrailLogsBetweenDates(
-                        startTimestamp,
-                        endTimestamp,
-                        trailIds
+                    const logsResponse = await getTrailLogs(
+                        trailIds,
+                        oneWeekAgo,
+                        now,
+                        Granularity.Day
                     );
                     const logs = logsResponse.success ? await logsResponse.json : [];
                     const devices = deviceMetadataCache || [];
 
-                    // Group devices by trail_id and find most recent for each trail
-                    const trailDeviceMap = new Map<
-                        number,
-                        { battery: number | null; lastUpdate: number | null }
-                    >();
-
-                    devices.forEach((device: any) => {
-                        const trailId = device.current_trail_id;
-                        if (trailId && trailId !== 0) {
-                            const lastUpdate = device.last_update
-                                ? typeof device.last_update === "number"
-                                    ? device.last_update
-                                    : parseInt(device.last_update)
-                                : null;
-                            const battery =
-                                device.battery !== undefined && device.battery !== null
-                                    ? typeof device.battery === "number"
-                                        ? device.battery
-                                        : parseFloat(device.battery)
-                                    : null;
-
-                            const existing = trailDeviceMap.get(trailId);
-                            if (
-                                !existing ||
-                                (lastUpdate &&
-                                    (!existing.lastUpdate || lastUpdate > existing.lastUpdate))
-                            ) {
-                                trailDeviceMap.set(trailId, { battery, lastUpdate });
-                            }
-                        }
-                    });
-
                     // Count logs per trail for the week
-                    const trailCounts = new Map<number, number>();
-                    logs.forEach((log: { trail_id: number }) => {
-                        const trailId = log.trail_id;
-                        trailCounts.set(trailId, (trailCounts.get(trailId) || 0) + 1);
+                    const deviceCounts = new Map<number, number>();
+
+                    logs.forEach((log: { device_id: number, count: number }) => {
+                        const deviceId = log.device_id;
+                        deviceCounts.set(deviceId, (deviceCounts.get(deviceId) || 0) + log.count);
                     });
 
-                    // Build the list data
-                    const listData = trailMetadata
-                        .filter((t) => t && t.trail_name && t.trail_id && t.trail_id !== 0)
-                        .map((trail) => {
-                            const weeklyCount = trailCounts.get(trail.trail_id) || 0;
-                            const deviceInfo = trailDeviceMap.get(trail.trail_id);
-                            const batteryStatus = deviceInfo?.battery ?? null;
-                            const lastUpdateTimestamp = deviceInfo?.lastUpdate ?? null;
+                    const listData = devices
+                    .filter((d) => d && d.name && d.id && d.id !== 0)
+                    .map((device) => {
+                        const weeklyCount = deviceCounts.get(device.id) || 0;
+                        const trail = trailMetadata.find(trail => trail.id === device.current_trail_id);
+                        let trailName = trail ? trail.name : ""
+                        const lastUpdateTimestamp = device.last_updated ?? null;
 
-                            let lastUpdated: string | null = null;
-                            if (lastUpdateTimestamp) {
-                                const date = new Date(lastUpdateTimestamp * 1000);
-                                const month = String(date.getMonth() + 1).padStart(2, "0");
-                                const day = String(date.getDate()).padStart(2, "0");
-                                const year = date.getFullYear();
-                                // Format as MM/DD/YYYY
-                                lastUpdated = `${month}/${day}/${year}`;
-                            }
+                        let lastUpdated: string | null = null;
+                        if (lastUpdateTimestamp) {
+                            const date = new Date(lastUpdateTimestamp * 1000);
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const day = String(date.getDate()).padStart(2, "0");
+                            const year = date.getFullYear();
+                            // Format as MM/DD/YYYY
+                            lastUpdated = `${month}/${day}/${year}`;
+                        }
 
-                            return {
-                                trail_id: trail.trail_id,
-                                trail_name: trail.trail_name,
-                                weeklyCount,
-                                batteryStatus,
-                                lastUpdated,
-                            };
-                        })
-                        .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
+                        return {
+                            trail_id: device.current_trail_id,
+                            trail_name: trailName,
+                            weeklyCount,
+                            batteryStatus: device.battery,
+                            lastUpdated,
+                            device_id: device.id
+                        }
+                    })
+                    .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
 
                     setTrailListData(listData);
                     setLoadingListData(false);
@@ -701,106 +744,142 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container">
+            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end">
                 <div className="filter-group flex flex-col">
 
                     <label>Date Range:</label>
-                    <DateRangePicker value={range} onChange={handleDateRangeChange} />
+                    <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                </div>
+                <div className="filter-group flex flex-col">
+                    <label>Granularity:</label>
+                    <Select value={granularity ?? undefined}>
+                    <SelectTrigger className="w-[150px]">
+                        <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                        <SelectGroup>
+                        {granularityOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                            {GranularityText[option]}
+                            </SelectItem>
+                        ))}
+                        </SelectGroup>
+                    </SelectContent>
+                    </Select>
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={trailoptions} onValueChange={setSelectedTrails} value={selectedTrails} />
+                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={trailgroupoptions} onValueChange={setSelectedTrails} value={selectedTrails} className="bg-white text-black border-gray-300" />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailGroupChange} value={selectedGroups} />
 
                 </div>
                 <div className="options-container flex flex-col">
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Button variant="secondary" onClick={handleExportData}>Export Data</Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="secondary" onClick={handleExportData}>
+                                    Export Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                {isDownloadingStatus === "downloading" && (
+                                    <div>
+                                        <Loader2 className="animate-spin" />
+                                        <span>Downloading...</span>
+                                    </div>
+                                )}
+                                {isDownloadingStatus === "done" && (
+                                    <div>
+                                        <Check/>
+                                        <span>Downloaded</span>
+                                    </div>
+                                )}
+                            </PopoverContent>
+                        </Popover>
                         <Button variant="secondary">Import Data</Button>
                     </div>
                 </div>
             </div>
         </div>
-            <div className="dashboard-div">
-                <div className="flex p-2.5 gap-2.5 justify-between items-center">
-                    <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
-                    <div className="flex gap-2.5">
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
+            <div className="w-full border-t bg-gray-50">
+                <div className="max-w-6xl mx-auto px-2 py-0.5 flex-col rounded-b-lg">
+                    <div className="flex p-2.5 justify-between items-center">
+                        <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                        <div className="flex gap-2.5">
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
 
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="primary">Trail Group Options</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
-                            </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-                {viewMode === "graph" ? (
-                <div className="flex justify-center px-6 pb-8">
-                    <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-6xl p-6">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                            {graphTitle}
-                        </h2>
-                            <div className="h-[500px]">
-                                <Plot 
-                                    className="w-full h-full"
-                                    config={{ displayModeBar: false, responsive: true }}
-                                    useResizeHandler={true}
-                                    style={{ width: "100%", height: "100%" }}
-                                    data={graphLines.map((line) => ({
-                                        x: line.x.map(d => d.toISOString()),
-                                        y: line.y,
-                                        type: "scatter",
-                                        mode: "lines+markers",
-                                        name: line.name,
-                                        line: {
-                                            width: 3,
-                                        },
-                                        marker: {
-                                            size: 6,
-                                        },
-                                    }))}
-                                    layout={getPlotLayout(graphLines)}
-                                />
-                         </div>
-                    </div>
-                </div>
-               ) : (
-                <div className="list-view">
-                    <div className="list-container">
-                        <div className="list-card">
-                            <h2 className="list-title">Trail Status Overview</h2>
-                                <TrailStatusTable
-                                    data={trailListData}
-                                    loading={loadingListData}
-                                />
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="primary">Trail Group Options</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
-            )}
+                <div className="w-full pb-8 bg-gray-50">
+                    <div className="w-full border-t border-gray-200">
+                        {viewMode === "graph" ? (
+                        <div className="w-full h-[65vh] min-h-[400px]">
+                            <div className="text-lg font-semibold text-gray-800 mb-4 pt-4">
+                                {graphTitle}
+                            </div>
+                            <Plot 
+                                className="w-full h-full"
+                                config={{ displayModeBar: false, responsive: true }}
+                                useResizeHandler={true}
+                                style={{ width: "100%", height: "100%" }}
+                                data={graphLines.map((line) => ({
+                                    x: line.x.map(d => d.toISOString()),
+                                    y: line.y,
+                                    type: "scatter",
+                                    mode: "lines+markers",
+                                    name: line.name,
+                                    line: {
+                                        width: 3,
+                                    },
+                                    marker: {
+                                        size: 6,
+                                    },
+                                }))}
+                                layout={getPlotLayout(graphLines)}
+                            />
+                        </div>
+                        ) : (
+                            <div className="pt-4">
+                                <h2 className="text-[26px] mb-[18px] text-gray-900">Trail Status Overview</h2>
+                                    <TrailStatusTable
+                                        data={trailListData}
+                                        loading={loadingListData}
+                                    />
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
             <EditTrailModal
                 isOpen={isEditTrailModalOpen}
@@ -843,7 +922,7 @@ const dashboard = () => {
                 isOpen={isAssociateDeviceModalOpen}
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
-            />    
+            />  
     </div>
     );
 };

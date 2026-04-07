@@ -21,8 +21,8 @@ def test_update_trail_metadata_success():
     
     # Use the first trail for testing
     test_trail = trails[0]
-    trail_id = test_trail.get("trail_id")
-    original_name = test_trail.get("trail_name", "")
+    trail_id = test_trail.get("id")
+    original_name = test_trail.get("name", "")
     
     # Update trail with new name
     new_name = f"{original_name}_updated_{int(time.time())}"
@@ -45,9 +45,9 @@ def test_update_trail_metadata_success():
     get_response_2 = requests.get(get_url, headers=headers)
     assert get_response_2.status_code == 200
     updated_trails = get_response_2.json()
-    updated_trail = next((t for t in updated_trails if t.get("trail_id") == trail_id), None)
+    updated_trail = next((t for t in updated_trails if t.get("id") == trail_id), None)
     assert updated_trail is not None
-    assert updated_trail.get("trail_name") == new_name
+    assert updated_trail.get("name") == new_name
     
     # Cleanup: restore original name
     restore_payload = {
@@ -80,9 +80,9 @@ def test_update_trail_metadata_with_group():
     
     # Use first trail and first group
     test_trail = trails[0]
-    trail_id = test_trail.get("trail_id")
+    trail_id = test_trail.get("id")
     test_group = groups[0]
-    group_name = test_group.get("group_name")
+    group_name = test_group.get("name")
     
     # Update trail with group
     payload = {
@@ -103,7 +103,7 @@ def test_update_trail_metadata_with_group():
     groups_response_2 = requests.get(f"{BASE_URL}/trail_groups", headers=headers)
     assert groups_response_2.status_code == 200
     updated_groups = groups_response_2.json()
-    updated_group = next((g for g in updated_groups if g.get("group_name") == group_name), None)
+    updated_group = next((g for g in updated_groups if g.get("name") == group_name), None)
     assert updated_group is not None
     assert trail_id in updated_group.get("trail_ids", [])
 
