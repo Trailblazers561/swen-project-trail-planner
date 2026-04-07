@@ -35,6 +35,14 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
+interface Line {
+    trail_name: string;
+    startDate: Date[];
+    endDate: Date[];
+    count: number[];
+    granularity: Granularity;
+}
+
 const dashboard = () => {
     const {
         getTrailLogs,
@@ -68,15 +76,7 @@ const dashboard = () => {
     const [isAssociateDeviceModalOpen, setIsAssociateDeviceModalOpen] =
         useState(false);
 
-    const [graphLines, setGraphLines] = useState<
-        Array<{
-            trail_name: string;
-            startDate: Date[];
-            endDate: Date[];
-            count: number[];
-            granularity: Granularity;
-        }>
-    >([]);
+    const [graphLines, setGraphLines] = useState<Line[]>([]);
 
     // Auto-select one year ago as start date
     const [selectedDate, setSelectedDate] = useState<Date | null>(
@@ -91,7 +91,7 @@ const dashboard = () => {
         new Date()
     );
     
-    const [range, setRange] = React.useState<DateRange | undefined>(undefined)
+    const [range, setRange] = React.useState<DateRange | undefined>({from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined})
     const [trails, setTrails] = useState<string[]>([]);
     
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
@@ -413,7 +413,6 @@ const dashboard = () => {
                 if (trailId === undefined) continue;
 
                 const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
-                if (dateCountArray.length === 0) continue;
 
                 let dateMap = new Map<Date, Date>();
                 let countMap = new Map<Date, number>();
@@ -648,8 +647,8 @@ const dashboard = () => {
         setViewMode((prev) => (prev === "graph" ? "list" : "graph"));
     };
 
-    //
-    function getPlotLayout(lines: any[]): Partial<Layout> {
+    // Creates the Plotly Layout With Custom Ranges and Shapes
+    function getPlotLayout(lines: Line[]): Partial<Layout> {
 
     return {   
         margin: { l: 60, r: 30, t: 20, b: 60 },
@@ -657,6 +656,7 @@ const dashboard = () => {
         paper_bgcolor: "white",
 
         xaxis: {
+            range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
             type: "date",
             title: {
                 text: "Date",
@@ -665,9 +665,11 @@ const dashboard = () => {
             showgrid: false,
             zeroline: false,
             tickfont: { size: 12 },
+            rangemode: "normal"
         },
 
         yaxis: {
+            range: lines.length === 0 ? [0, 100] : undefined,
             title: {
               text: "Hikers",
               font: { size: 14, color: "#6b7280" },
@@ -690,12 +692,12 @@ const dashboard = () => {
     }
 
     //Makes graph columns have alternating colors
-    function generateVerticalBands(lines: any[]): NonNullable<Layout["shapes"]> { 
+    function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> { 
         const shapes: NonNullable<Layout["shapes"]> = [];
         
         if (!lines.length || !lines[0].startDate?.length) return shapes;
 
-        const dates: Date[] = lines[0].startDate;
+        const dates = lines[0].startDate.map(d => d.toISOString());
 
         for (let i = 0; i < dates.length - 1; i++) {
             if (i % 2 === 0) {
