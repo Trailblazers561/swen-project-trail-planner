@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated") # Data is uploaded by device, not by trail
 def test_post_trail_data_multiple():
     """
     Test POST /trail_data with multiple data points in a batch.

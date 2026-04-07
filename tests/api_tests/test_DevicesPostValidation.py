@@ -17,14 +17,14 @@ def test_post_device_data_missing_api_key():
     current_timestamp = int(time.time())
     payload = {
         "trail_id": 1,
-        "device_id": "deviceF",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "battery": 94,
         "data": [
-            {"ts": current_timestamp}
+            {"ts": current_timestamp, "count": 21}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.text}")
@@ -46,14 +46,14 @@ def test_post_device_data_invalid_api_key():
     current_timestamp = int(time.time())
     payload = {
         "trail_id": 1,
-        "device_id": "deviceG",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "battery": 94,
         "data": [
-            {"ts": current_timestamp}
+            {"ts": current_timestamp, "count": 422}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.text}")
@@ -73,11 +73,11 @@ def test_post_device_data_missing_device_id():
         "trail_id": 1,
         "battery": 95,
         "data": [
-            {"ts": int(time.time())}
+            {"ts": int(time.time()), "count": 74}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -85,7 +85,7 @@ def test_post_device_data_missing_device_id():
     assert response.status_code == 400
     response_data = response.json()
     assert "error" in response_data
-    assert "device_id" in response_data["error"]
+    assert "name" in response_data["error"]
 
 
 @pytest.mark.API
@@ -98,11 +98,11 @@ def test_post_device_data_missing_data_array():
 
     payload = {
         "trail_id": 1,
-        "device_id": "deviceH",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "battery": 92
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -122,18 +122,18 @@ def test_post_device_data_empty_data_array():
 
     payload = {
         "trail_id": 1,
-        "device_id": "deviceI",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "data": []
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
 
     assert response.status_code == 400
     response_data = response.json()
-    assert "data array" in response_data["error"].lower()
+    assert "data_points" in response_data["error"]
 
 
 @pytest.mark.API
@@ -146,13 +146,13 @@ def test_post_device_data_missing_timestamp_in_entry():
 
     payload = {
         "trail_id": 1,
-        "device_id": "deviceJ",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "data": [
             {}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -163,6 +163,7 @@ def test_post_device_data_missing_timestamp_in_entry():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="deprecated") # No more trail id override
 def test_post_device_data_invalid_trail_id_override():
     """
     Test POST /devices with invalid trail_id override - should return 400 Bad Request.
@@ -171,14 +172,14 @@ def test_post_device_data_invalid_trail_id_override():
     headers = get_api_key_headers()
 
     payload = {
-        "device_id": "deviceK",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "trail_id": "not-an-int",
         "data": [
-            {"ts": int(time.time())}
+            {"ts": int(time.time()), "count": 93}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -198,13 +199,14 @@ def test_post_device_data_invalid_timestamp_type():
 
     payload = {
         "trail_id": 1,
-        "device_id": "deviceL",
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "data": [
-            {"ts": "not-a-number"}
-        ]
+            {"ts": "not-a-number", "count": 12}
+        ],
+        "battery": 87
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
 
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -224,7 +226,7 @@ def test_post_device_data_empty_body():
     
     payload = {}
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -248,18 +250,18 @@ def test_post_device_data_duplicate_timestamps():
 
     payload = {
         "trail_id": 1,
-        "device_id": device_id,
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "battery": 90,
         "data": [
-            {"ts": current_timestamp},
-            {"ts": current_timestamp},
-            {"ts": current_timestamp + 1},
-            {"ts": current_timestamp},
-            {"ts": current_timestamp + 2}
+            {"ts": current_timestamp, "count": 32},
+            {"ts": current_timestamp, "count": 32},
+            {"ts": current_timestamp + 1, "count": 32},
+            {"ts": current_timestamp, "count": 32},
+            {"ts": current_timestamp + 2, "count": 32}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
@@ -285,18 +287,18 @@ def test_post_device_data_old_timestamps():
     
     payload = {
         "trail_id": 1,
-        "device_id": device_id,
+        "name": "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3",
         "battery": 85,
         "data": [
-            {"ts": MIN_TIMESTAMP - 1000},
-            {"ts": MIN_TIMESTAMP - 1},
-            {"ts": current_timestamp},
-            {"ts": MIN_TIMESTAMP},
-            {"ts": current_timestamp + 1}
+            {"ts": MIN_TIMESTAMP - 1000, "count": 88},
+            {"ts": MIN_TIMESTAMP - 1, "count": 88},
+            {"ts": current_timestamp, "count": 88},
+            {"ts": MIN_TIMESTAMP, "count": 88},
+            {"ts": current_timestamp + 1, "count": 88}
         ]
     }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.put(url, json=payload, headers=headers)
     
     print(f"Response Status: {response.status_code}")
     print(f"Response Body: {response.json()}")
