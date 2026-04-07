@@ -9,7 +9,6 @@ import type { Layout } from "plotly.js";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-import { useNavigate } from "react-router-dom";
 import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
@@ -19,10 +18,8 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
@@ -50,7 +47,6 @@ const dashboard = () => {
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
     const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
     const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-    const [selectedTrails, setSelectedTrails] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
@@ -74,9 +70,11 @@ const dashboard = () => {
 
     const [graphLines, setGraphLines] = useState<
         Array<{
-            name: string;
-            x: Date[];
-            y: number[];
+            trail_name: string;
+            startDate: Date[];
+            endDate: Date[];
+            count: number[];
+            granularity: Granularity;
         }>
     >([]);
 
@@ -306,52 +304,57 @@ const dashboard = () => {
         granularity: Granularity = Granularity.Day
     ): { start: Date; end: Date }[] {
         let ranges: { start: Date; end: Date }[] = [];
-        let current: Date = new Date(startDate);
-        let end: Date = new Date(endDate);
 
-        while (current < end) {
-            let next: Date = new Date(current);
-            if (granularity === Granularity.Hour) {
-                next.setHours(next.getHours() + 1);
-            } else if (granularity === Granularity.Day) {
-                next.setDate(next.getDate() + 1);
-            } else if (granularity === Granularity.Week) {
-                next.setDate(next.getDate() + 7);
-            } else if (granularity === Granularity.Month) {
-                next.setMonth(next.getMonth() + 1);
-            } else if (granularity === Granularity.Year) {
-                next.setFullYear(next.getFullYear() + 1);
+        const getNextGranularityDates = (date: Date, granularity: Granularity): {end: Date, start: Date} => {
+            const nextDate = new Date(date);
+            switch (granularity) {
+                case Granularity.Hour:
+                    nextDate.setHours(nextDate.getHours() + 1);
+                    break;
+                case Granularity.Day:
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    break;
+                case Granularity.Week:
+                    nextDate.setDate(nextDate.getDate() + 7 - ((nextDate.getDay() - 1) % 7));
+                    break;
+                case Granularity.Month:
+                    nextDate.setMonth(nextDate.getMonth() + 1, 1);
+                    break;
+                case Granularity.Year:
+                    nextDate.setFullYear(nextDate.getFullYear() + 1, 1, 1);
+                    break;
             }
 
-            if (next > endDate) break;
+            const endDate = new Date(nextDate);
+            if (granularity === Granularity.Hour)
+                    endDate.setMinutes(endDate.getMinutes() - 1);
+            else
+                endDate.setHours(endDate.getHours() - 1);
 
-            ranges.push({ start: new Date(current), end: new Date(next) });
-            current = next;
+            return {end: endDate, start: nextDate};
         }
-        if (current < endDate) {
-            ranges.push({ start: new Date(current), end: endDate });
+
+        let currentStart = new Date(startDate);
+        if (granularity === Granularity.Hour)
+            currentStart.setMinutes(0, 0, 0);
+        else
+            currentStart.setHours(0, 0, 0, 0);
+
+        let currentEnd = currentStart;
+        let nextStart;
+
+        while (currentEnd < endDate) {
+            const nextGranularityDates = getNextGranularityDates(currentStart, granularity);
+            currentEnd = nextGranularityDates.end
+            nextStart = nextGranularityDates.start;
+            if (currentEnd > endDate)
+                currentEnd = endDate;
+
+            ranges.push({ start: currentStart, end: currentEnd });
+            currentStart = nextStart;
         }
 
         return ranges;
-    }
-
-    function countOccurrencesInRanges(
-        ranges: { start: Date; end: Date }[],
-        events: {start: Date, count: number}[]
-    ): Map<Date, number> {
-        let occurrences = new Map<Date, number>();
-
-        for (let range of ranges) {
-            const eventInRange = events.find(
-                (event) => event.start >= range.start && event.start < range.end
-            );
-    
-            if (eventInRange) 
-                occurrences.set(range.start, eventInRange.count); // Can change range.start to eventInRange.start to make it have the correct start, but the other points are still messed up
-            else 
-                occurrences.set(range.start, 0);
-        }
-        return occurrences;
     }
 
     async function getResponse(
@@ -395,7 +398,7 @@ const dashboard = () => {
                 }
             );
 
-            var lines: { name: string; x: Date[]; y: number[] }[] = [];
+            var lines: { trail_name: string; startDate: Date[]; endDate: Date[]; count: number[]; granularity: Granularity}[] = [];
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
@@ -412,11 +415,25 @@ const dashboard = () => {
                 const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
                 if (dateCountArray.length === 0) continue;
 
-                const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
-                const xData = Array.from(occurrences.keys());
-                const yData = Array.from(occurrences.values());
+                let dateMap = new Map<Date, Date>();
+                let countMap = new Map<Date, number>();
 
-                lines.push({ name: trailName, x: xData, y: yData });
+                for (let range of ranges) {
+                    const eventsInRange = dateCountArray.filter(
+                        (event) => event.start >= range.start && event.start < range.end
+                    );
+
+                    const totalCount = eventsInRange.reduce((sum, event) => sum + event.count, 0);
+
+                    dateMap.set(range.start, range.end);
+                    countMap.set(range.start, totalCount);
+                }
+
+                const startDates = Array.from(dateMap.keys());
+                const endDates = Array.from(dateMap.values());
+                const counts = Array.from(countMap.values());
+
+                lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity});
             }
 
             setGraphLines(lines);
@@ -481,32 +498,6 @@ const dashboard = () => {
         }
     };
 
-    const handleTrailGroupChange = (groupNames: string[]) => {
-        setSelectedGroups(groupNames);
-
-        const selectedGroupObjects = trailGroups.filter(group =>
-            groupNames.includes(group.name)
-        );
-
-        let autoSelectedTrails: string[] = [];
-
-        if (groupNames.includes("All Areas")) {
-            autoSelectedTrails = ["All Trails"];
-        } else {
-            autoSelectedTrails = selectedGroupObjects.flatMap(group =>
-                group.trail_ids
-                    .map(id => trailMetadata.find(t => t.id === id))
-                    .filter((t): t is Trail => t !== undefined)
-                    .map(trail => trail.name)
-            );
-        }
-
-        // remove duplicates
-        autoSelectedTrails = [...new Set(autoSelectedTrails)];
-
-        setSelectedTrails(autoSelectedTrails);
-    };
-
      const updateTrailsOptions = () => {
         const options: MultiSelectOption[] = [];
         if (selectedGroups.length === 0) {
@@ -542,10 +533,6 @@ const dashboard = () => {
         });
 
         return options;
-    };
-
-    const handleGranularityChange = (granularity: Granularity) => {
-        setGranularity(granularity);
     };
 
     // Load device metadata once and cache it
@@ -706,18 +693,18 @@ const dashboard = () => {
     function generateVerticalBands(lines: any[]): NonNullable<Layout["shapes"]> { 
         const shapes: NonNullable<Layout["shapes"]> = [];
         
-        if (!lines.length || !lines[0].x?.length) return shapes;
+        if (!lines.length || !lines[0].startDate?.length) return shapes;
 
-        const xValues: Date[] = lines[0].x;
+        const dates: Date[] = lines[0].startDate;
 
-        for (let i = 0; i < xValues.length - 1; i++) {
+        for (let i = 0; i < dates.length - 1; i++) {
             if (i % 2 === 0) {
                 shapes.push({
                     type: "rect",
                     xref: "x",
                     yref: "paper",
-                    x0: xValues[i],
-                    x1: xValues[i + 1],
+                    x0: dates[i],
+                    x1: dates[i + 1],
                     y0: 0,
                     y1: 1,
                     fillcolor: "rgba(0,0,0,0.04)",
@@ -761,13 +748,13 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={trailOptions} onValueChange={handleTrailChange} value={selectedTrails} />
+                    <MultiSelect options={trailOptions} onValueChange={handleTrailChange} value={trails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
 
                     <label>Trail Groups:</label>
-                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={handleTrailGroupChange} value={selectedGroups} />
+                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} />
 
                 </div>
                 <div className="options-container flex flex-col">
@@ -844,17 +831,34 @@ const dashboard = () => {
                                 useResizeHandler={true}
                                 style={{ width: "100%", height: "100%" }}
                                 data={graphLines.map((line) => ({
-                                    x: line.x.map(d => d.toISOString()),
-                                    y: line.y,
+                                    x: line.startDate.map(d => d.toISOString()),
+                                    y: line.count,
                                     type: "scatter",
                                     mode: "lines+markers",
-                                    name: line.name,
+                                    name: line.trail_name,
                                     line: {
                                         width: 3,
                                     },
                                     marker: {
                                         size: 6,
                                     },
+                                    hovertemplate: line.count.map((count: number, i: number) => {
+                                        const s = new Date(line.startDate[i]);
+                                        const e = new Date(line.endDate[i]);
+                                        const sString = s.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+                                        const sYear = s.toLocaleDateString("en-US", {year: "numeric"});
+                                        const eString = e.toLocaleDateString("en-US", {month: "short", day: "numeric"});
+                                        const eYear = e.toLocaleDateString("en-US", {year: "numeric"});
+                                        const sHour = s.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
+
+                                        if (line.granularity === Granularity.Hour) {
+                                            return `${sString} ${sHour} | Count: ${count}`;
+                                        } else if (line.granularity === Granularity.Day) {
+                                            return `${sString}, ${sYear} | Count: ${count}`;
+                                        } else {
+                                            return `${sString}, ${sYear} - ${eString}, ${eYear} | Count: ${count}`;
+                                        }
+                                      }),
                                 }))}
                                 layout={getPlotLayout(graphLines)}
                             />
