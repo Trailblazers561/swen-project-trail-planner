@@ -25,10 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 
 interface Trail {
     id: number;
@@ -40,9 +38,7 @@ interface TrailGroup {
     trail_ids: number[];
 }
 
-
 const dashboard = () => {
-
     const {
         getTrailLogs,
         getDeviceMetadata,
@@ -58,7 +54,7 @@ const dashboard = () => {
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
-        const map: Record<string, number> = { "All Trails": 0 };
+        const map: Record<string, number> = {};
         trailMetadata
             .filter((t) => t && t.name && t.name.trim().length > 0)
             .forEach((trail: Trail) => {
@@ -100,8 +96,9 @@ const dashboard = () => {
     const [range, setRange] = React.useState<DateRange | undefined>(undefined)
     const [trails, setTrails] = useState<string[]>([]);
     
-    const [granularity, setGranularity] = useState<Granularity | null>(null);
+    const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
+    const [trailOptions, setTrailOptions] = useState<MultiSelectOption[]>([])
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
@@ -137,7 +134,7 @@ const dashboard = () => {
             selectedDateEnd &&
             !hasDefaulted
         ) {
-            const defaultTrails = ["All Trails"];
+            const defaultTrails: string[] = [];
             setTrails(defaultTrails);
             setHasDefaulted(true);
             // Trigger graph load after a small delay to ensure state is set
@@ -245,7 +242,7 @@ const dashboard = () => {
         await loadTrailData();
         // Refresh graph - wait for state to update
         setTimeout(() => {
-            const currentTrails = trails.length > 0 ? trails : ["All Trails"];
+            const currentTrails = trails.length > 0 ? trails : [];
             if (selectedDate && selectedDateEnd && granularity) {
                 if (trails.length === 0) {
                     setTrails(currentTrails);
@@ -292,6 +289,10 @@ const dashboard = () => {
     useEffect(() => {
         updateGranularityOptions(selectedDate, selectedDateEnd);
     }, [selectedDate, selectedDateEnd]);
+
+    useEffect(() => {
+        updateTrailsOptions();
+    }, [trailMetadata, selectedGroups])
 
     useEffect(() => {
         if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
@@ -363,22 +364,15 @@ const dashboard = () => {
 
         try {
             let trailIds: number[] = [];
-            let includesAllTrails = trails.includes("All Trails");
 
-            if (includesAllTrails) {
-                trailIds = trailMetadata
-                    .filter((t) => t && t.id && t.id !== 0)
-                    .map((t) => t.id);
-            } else {
-                for (var i = 0; i < trails.length; i++) {
-                    const trailId = trailMap[trails[i]];
-                    if (trailId !== undefined) {
-                        trailIds.push(trailId);
-                    }
+            for (var i = 0; i < trails.length; i++) {
+                const trailId = trailMap[trails[i]];
+                if (trailId !== undefined) {
+                    trailIds.push(trailId);
                 }
             }
-
-            if (trailIds.length === 0 && !includesAllTrails) return;
+            
+            if (trailIds.length === 0) return;
 
             const response = await getTrailLogs(
                 trailIds,
@@ -410,34 +404,21 @@ const dashboard = () => {
                     trailIdToName.set(trail.id, trail.name);
                 });
 
-            if (includesAllTrails) {
-                events.forEach((dateCountArray, trailId) => {
-                    if (trailId !== 0 && dateCountArray.length > 0) {
-                        const trailName = trailIdToName.get(trailId) || `Trail ${trailId}`;
-                        const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
-                        lines.push({
-                            name: trailName,
-                            x: Array.from(occurrences.keys()),
-                            y: Array.from(occurrences.values()),
-                        });
-                    }
-                });
-            } else {
-                for (let i = 0; i < trails.length; i++) {
-                    const trailName = trails[i];
-                    const trailId = trailMap[trailName];
-                    if (trailId === undefined) continue;
+            for (let i = 0; i < trails.length; i++) {
+                const trailName = trails[i];
+                const trailId = trailMap[trailName];
+                if (trailId === undefined) continue;
 
-                    const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
-                    if (dateCountArray.length === 0) continue;
+                const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
+                if (dateCountArray.length === 0) continue;
 
-                    const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
-                    const xData = Array.from(occurrences.keys());
-                    const yData = Array.from(occurrences.values());
+                const occurrences = countOccurrencesInRanges(ranges, dateCountArray);
+                const xData = Array.from(occurrences.keys());
+                const yData = Array.from(occurrences.values());
 
-                    lines.push({ name: trailName, x: xData, y: yData });
-                }
+                lines.push({ name: trailName, x: xData, y: yData });
             }
+
             setGraphLines(lines);
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
         } catch (error) {
@@ -455,12 +436,10 @@ const dashboard = () => {
 
         const startStr = startDate.toLocaleDateString();
         const endStr = endDate.toLocaleDateString();
-        const includesAll = trails.includes("All Trails");
+        const includesAll = trails.length == trailMetadata.length
 
-        if (includesAll && trails.length === 1) {
+        if (includesAll) {
             return `All Trails from ${startStr} to ${endStr}`;
-        } else if (includesAll && trails.length > 1) {
-            return `All Trails and others from ${startStr} to ${endStr}`;
         } else if (trails.length === 1) {
             return `${trails[0]} from ${startStr} to ${endStr}`;
         } else if (trails.length === 2) {
@@ -528,18 +507,29 @@ const dashboard = () => {
         setSelectedTrails(autoSelectedTrails);
     };
 
-     const fillTrailsMultiselect = (): MultiSelectOption[] => {
-        const options: MultiSelectOption[] = [
-            { value: "All Trails", label: "All Trails" },
-        ];
+     const updateTrailsOptions = () => {
+        const options: MultiSelectOption[] = [];
+        if (selectedGroups.length === 0) {
+            trailMetadata.forEach((trail) => {
+                if (trail && trail.name && trail.name.trim().length > 0) {
+                    options.push({ value: trail.name, label: trail.name });
+                }
+            });
+        } else {
+            const allowedTrailIds: number[] = [];
+            trailGroups.forEach((group) => {
+                if (selectedGroups.includes(group.name)) {
+                    group.trail_ids.forEach((id) => allowedTrailIds.push(id));
+                }
+            })
+            trailMetadata.forEach((trail) => {
+                if (trail && trail.name && trail.name.trim().length > 0 && allowedTrailIds.includes(trail.id)) {
+                    options.push({ value: trail.name, label: trail.name });
+                }
+            });
+        }
 
-        trailMetadata.forEach((trail) => {
-            if (trail && trail.name && trail.name.trim().length > 0) {
-                options.push({ value: trail.name, label: trail.name });
-            }
-        });
-
-        return options;
+        setTrailOptions(options);
     };
 
     const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
@@ -752,7 +742,7 @@ const dashboard = () => {
                 </div>
                 <div className="filter-group flex flex-col">
                     <label>Granularity:</label>
-                    <Select value={granularity ?? undefined}>
+                    <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
                     <SelectTrigger className="w-[150px]">
                         <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
@@ -771,7 +761,7 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={fillTrailsMultiselect()} onValueChange={handleTrailChange} value={selectedTrails} />
+                    <MultiSelect options={trailOptions} onValueChange={handleTrailChange} value={selectedTrails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
@@ -784,9 +774,9 @@ const dashboard = () => {
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
-                        <Popover>
+                        <Popover open={isDownloadingStatus !== "idle"}>
                             <PopoverTrigger asChild>
-                                <Button variant="secondary" onClick={handleExportData}>
+                                <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"}>
                                     Export Data
                                 </Button>
                             </PopoverTrigger>
