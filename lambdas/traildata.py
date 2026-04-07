@@ -167,35 +167,37 @@ def get_trail_data(event, context):
 
         # Turn the extra starting days into a "partial" result
         if granularity in ("week", "month") and partial_start_timestamp < query_start_timestamp:
-            start_results = device_trail_log_day_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(partial_start_timestamp, query_start_timestamp - 1)
-            ).get("Items", [])
+            for device_trail_id in device_trail_ids:
+                start_results = device_trail_log_day_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(partial_start_timestamp, query_start_timestamp - 1)
+                ).get("Items", [])
 
-            if start_results:
-                rows = {}
-                for result in start_results:
-                    if result["device_trail_id"] in rows.keys():
-                        rows[result["device_trail_id"]]["count"] += result["count"]
-                        rows[result["device_trail_id"]]["battery"] = result["battery"]
-                    else:
-                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
-                device_log_rows.extend(rows.values())
+                if start_results:
+                    rows = {}
+                    for result in start_results:
+                        if result["device_trail_id"] in rows.keys():
+                            rows[result["device_trail_id"]]["count"] += result["count"]
+                            rows[result["device_trail_id"]]["battery"] = result["battery"]
+                        else:
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                    device_log_rows.extend(rows.values())
 
         # Turn the extra ending days into a "partial" result
         if granularity in ("week", "month") and partial_end_timestamp > query_end_timestamp:
-            end_results = device_trail_log_day_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp - 1)
-            ).get("Items", [])
+            for device_trail_id in device_trail_ids:
+                end_results = device_trail_log_day_table.query(
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp - 1)
+                ).get("Items", [])
 
-            if end_results:
-                rows = {}
-                for result in end_results:
-                    if result["device_trail_id"] in rows.keys():
-                        rows[result["device_trail_id"]]["count"] += result["count"]
-                        rows[result["device_trail_id"]]["battery"] = result["battery"]
-                    else:
-                        rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
-                device_log_rows.extend(rows.values())
+                if end_results:
+                    rows = {}
+                    for result in end_results:
+                        if result["device_trail_id"] in rows.keys():
+                            rows[result["device_trail_id"]]["count"] += result["count"]
+                            rows[result["device_trail_id"]]["battery"] = result["battery"]
+                        else:
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                    device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)
 
