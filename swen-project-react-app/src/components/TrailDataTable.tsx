@@ -73,7 +73,6 @@ const columns: TableColumn<TrailRow>[] = [
 const customStyles = {
   table: {
     style: {
-      borderRadius: "0.75rem",
       overflow: "hidden",
     },
   },
