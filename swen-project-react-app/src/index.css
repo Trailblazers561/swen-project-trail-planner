@@ -51,6 +51,10 @@
 
   --accent-foreground: oklch(0.205 0 0);
 
+  --accent-darker: oklch(0.92 0 0);
+
+  --accent-darker-hover: oklch(.86 0 0);
+
   --destructive: oklch(0.577 0.245 27.325);
 
   --border: oklch(0.922 0 0);
@@ -84,6 +88,10 @@
   --sidebar-border: oklch(0.922 0 0);
 
   --sidebar-ring: oklch(0.708 0 0);
+
+  --yellow-green: #DFD858;
+
+  --yellow-green-hover: #CEC848;
 
   --font-primary: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
@@ -161,19 +169,6 @@ button:focus-visible {
     font-size: 15px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -196,6 +191,8 @@ button:focus-visible {
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-darker: var(--accent-darker);
+  --color-accent-darker-hover: var(--accent-darker-hover);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -213,8 +210,12 @@ button:focus-visible {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --color-button: #DFD858;
+  --color-yellow-green: var(--yellow-green);
+  --color-yellow-green-hover: var(--yellow-green-hover);
+  --color-button: var(--yellow-green);
+  --color-button-hover: var(--yellow-green-hover);
   --color-button-secondary: #C0D3D1;
+  --color-button-secondary-hover: #a5bfbc;
   --color-navbar: #2B6B64;
   --color-logout: #DC3545;
 }
