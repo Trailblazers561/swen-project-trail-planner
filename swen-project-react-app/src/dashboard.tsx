@@ -474,8 +474,7 @@ const dashboard = () => {
     };
 
     const handleDateRangeChange = (DateRange: DateRange | undefined) => {
-        const formattedRange: DateRange | undefined = DateRange?.from && DateRange?.to ? {from: DateRange.from, to: DateRange.to,} : undefined
-        setRange(formattedRange)
+        setRange(DateRange)
         setSelectedDate(DateRange?.from ?? null);
         setSelectedDateEnd(DateRange?.to ?? null);
         handleStartDateChange(DateRange?.from ?? null);
@@ -691,13 +690,17 @@ const dashboard = () => {
     };
     }
 
-    //Makes graph columns have alternating colors
+    // Makes graph columns have alternating colors
     function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> { 
         const shapes: NonNullable<Layout["shapes"]> = [];
-        
-        if (!lines.length || !lines[0].startDate?.length) return shapes;
-
-        const dates = lines[0].startDate.map(d => d.toISOString());
+        let dates;
+        if (!lines.length || !lines[0].startDate?.length) {
+            if (!selectedDate || !selectedDateEnd)
+                return shapes;
+            dates = getDateRanges(selectedDate, selectedDateEnd, granularity).map(d => d.start.toISOString())
+        } else {
+            dates = lines[0].startDate.map(d => d.toISOString());
+        }
 
         for (let i = 0; i < dates.length - 1; i++) {
             if (i % 2 === 0) {
@@ -866,7 +869,7 @@ const dashboard = () => {
                             />
                         </div>
                         ) : (
-                            <div className="pt-4">
+                            <div className="pt-4 m-4">
                                 <h2 className="text-[26px] mb-[18px] text-gray-900">Trail Status Overview</h2>
                                     <TrailStatusTable
                                         data={trailListData}
