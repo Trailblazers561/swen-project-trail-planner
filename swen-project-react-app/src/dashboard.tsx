@@ -11,7 +11,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
-import { MultiSelect, MultiSelectOption } from "./components/ui/multi-select.tsx";
+import { MultiSelect, MultiSelectOption, MultiSelectGroup } from "./components/ui/multi-select.tsx";
 import { Button } from "./components/ui/button.tsx";
 import {
   DropdownMenu,
@@ -96,7 +96,7 @@ const dashboard = () => {
     
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
-    const [trailOptions, setTrailOptions] = useState<MultiSelectOption[]>([])
+    const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
@@ -497,28 +497,26 @@ const dashboard = () => {
     };
 
      const updateTrailsOptions = () => {
-        const options: MultiSelectOption[] = [];
         if (selectedGroups.length === 0) {
+            const options: MultiSelectOption[] = [];
             trailMetadata.forEach((trail) => {
                 if (trail && trail.name && trail.name.trim().length > 0) {
                     options.push({ value: trail.name, label: trail.name });
                 }
             });
+            setTrailOptions(options);
         } else {
-            const allowedTrailIds: number[] = [];
+            const groups: MultiSelectGroup[] = [];
+            const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
             trailGroups.forEach((group) => {
                 if (selectedGroups.includes(group.name)) {
-                    group.trail_ids.forEach((id) => allowedTrailIds.push(id));
+                    const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({label: name, value: name}));
+                    if (groupOptions.length > 0) 
+                        groups.push({heading: group.name, options: groupOptions});
                 }
             })
-            trailMetadata.forEach((trail) => {
-                if (trail && trail.name && trail.name.trim().length > 0 && allowedTrailIds.includes(trail.id)) {
-                    options.push({ value: trail.name, label: trail.name });
-                }
-            });
+            setTrailOptions(groups);
         }
-
-        setTrailOptions(options);
     };
 
     const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {

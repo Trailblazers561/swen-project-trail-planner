@@ -132,7 +132,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
           // First remove them from any other groups
           const allOtherGroupTrailIds = new Set<number>();
           trailGroups.forEach(group => {
-            if (group.name && group.name !== "All Areas" && group.name !== oldGroupName) {
+            if (group.name && group.name !== oldGroupName) {
               group.trail_ids.forEach(id => allOtherGroupTrailIds.add(id));
             }
           });
@@ -154,7 +154,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         // Step 1: Remove selected trails from ALL existing groups
         const allGroupTrailIds = new Set<number>();
         trailGroups.forEach(group => {
-          if (group.name && group.name !== "All Areas") {
+          if (group.name) {
             group.trail_ids.forEach(id => allGroupTrailIds.add(id));
           }
         });
@@ -203,11 +203,10 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
     );
   };
 
-  // Filter out empty groups and "All Areas"
+  // Filter out empty groups
   const availableGroups = trailGroups.filter(g =>
     g &&
     g.name &&
-    g.name !== "All Areas" &&
     g.trail_ids &&
     Array.isArray(g.trail_ids) &&
     g.trail_ids.length > 0
