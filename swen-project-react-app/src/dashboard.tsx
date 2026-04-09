@@ -730,43 +730,47 @@ const dashboard = () => {
         <div>
             <Navbar />
         <div className="flex flex-col">
-            <div className="filter-container flex flex-row gap-6 px-6 py-4 items-end">
-                <div className="filter-group flex flex-col">
+            <div className="filter-container flex w-full justify-between items-end px-6 py-2">
+                <div className="flex gap-8 items-start flex-wrap">
+                    <div className="flex gap-2">
+                        <div className="filter-group flex flex-col">
 
-                    <label>Date Range:</label>
-                    <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                            <label>Date Range:</label>
+                            <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                        </div>
+                        <div className="filter-group flex flex-col">
+                            <label>Granularity:</label>
+                            <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
+                            <SelectTrigger className="w-[150px]">
+                                <SelectValue placeholder="Select an option" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                <SelectGroup>
+                                {granularityOptions.map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                    {GranularityText[option]}
+                                    </SelectItem>
+                                ))}
+                                </SelectGroup>
+                            </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="filter-group flex flex-col">
+
+                        <label>Trails:</label>
+                        <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} />
+
+                    </div>
+                    <div className="filter-group flex flex-col">
+
+                        <label>Trail Groups:</label>
+                        <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} />
+
+                    </div>
                 </div>
-                <div className="filter-group flex flex-col">
-                    <label>Granularity:</label>
-                    <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
-                    <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                        <SelectGroup>
-                        {granularityOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                            {GranularityText[option]}
-                            </SelectItem>
-                        ))}
-                        </SelectGroup>
-                    </SelectContent>
-                    </Select>
-                </div>
-                <div className="filter-group flex flex-col">
-
-                    <label>Trails:</label>
-                    <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} />
-
-                </div>
-                <div className="filter-group flex flex-col">
-
-                    <label>Trail Groups:</label>
-                    <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} />
-
-                </div>
-                <div className="options-container flex flex-col">
+                <div className="options-container flex flex-col ml-auto">
                     <label className="">Additional Options:</label>
                     <div className="flex flex-row gap-2">
                         <Button variant="secondary" onClick={handleAssociateDevice} >Associate Device</Button>
@@ -797,9 +801,16 @@ const dashboard = () => {
             </div>
         </div>
             <div className="w-full border-t bg-gray-50">
-                <div className="max-w-6xl mx-auto px-2 py-0.5 flex-col rounded-b-lg">
+                <div>
                     <div className="flex p-2.5 justify-between items-center">
                         <Button variant="primary" onClick={toggleView} className="items-center" >Toggle View</Button>
+                            {viewMode === "graph" ? (
+                                <div className="text-lg font-bold text-gray-800">
+                                {graphTitle}
+                                </div>
+                            ) : (
+                                <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
+                            )}
                         <div className="flex gap-2.5">
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -831,9 +842,6 @@ const dashboard = () => {
                     <div className="w-full border-t border-gray-200">
                         {viewMode === "graph" ? (
                         <div className="w-full h-[65vh] min-h-[400px]">
-                            <div className="text-lg font-semibold text-gray-800 mb-4 pt-4">
-                                {graphTitle}
-                            </div>
                             <Plot 
                                 className="w-full h-full"
                                 config={{ displayModeBar: false, responsive: true }}
@@ -874,7 +882,6 @@ const dashboard = () => {
                         </div>
                         ) : (
                             <div className="pt-4 m-4">
-                                <h2 className="text-[26px] mb-[18px] text-gray-900">Trail Status Overview</h2>
                                     <TrailStatusTable
                                         data={trailListData}
                                         loading={loadingListData}
