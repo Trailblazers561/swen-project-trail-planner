@@ -11,7 +11,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
-import { MultiSelect, MultiSelectOption, MultiSelectGroup } from "./components/ui/multi-select.tsx";
+import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/ui/multi-select.tsx";
 import { Button } from "./components/ui/button.tsx";
 import {
   DropdownMenu,
@@ -496,12 +496,15 @@ const dashboard = () => {
         }
     };
 
-     const updateTrailsOptions = () => {
+    const trailSelectRef = useRef<MultiSelectRef>(null);
+    const updateTrailsOptions = () => {
+        const availableTrails: string[] = [];
         if (selectedGroups.length === 0) {
             const options: MultiSelectOption[] = [];
             trailMetadata.forEach((trail) => {
                 if (trail && trail.name && trail.name.trim().length > 0) {
                     options.push({ value: trail.name, label: trail.name });
+                    availableTrails.push(trail.name);
                 }
             });
             setTrailOptions(options);
@@ -513,10 +516,13 @@ const dashboard = () => {
                     const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({label: name, value: name}));
                     if (groupOptions.length > 0) 
                         groups.push({heading: group.name, options: groupOptions});
+                    availableTrails.push(... groupOptions.map(option => option.label))
                 }
             })
             setTrailOptions(groups);
         }
+        const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? []
+        trailSelectRef.current?.setSelectedValues(trailValues)
     };
 
     const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
@@ -751,7 +757,7 @@ const dashboard = () => {
                 <div className="filter-group flex flex-col">
 
                     <label>Trails:</label>
-                    <MultiSelect options={trailOptions} onValueChange={handleTrailChange} value={trails} />
+                    <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} />
 
                 </div>
                 <div className="filter-group flex flex-col">
