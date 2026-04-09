@@ -57,10 +57,6 @@ Edit `variables.tf` or create `terraform.tfvars` with your configuration:
 # Basic configuration
 env = "local"
 bucket_name = "trailplanner-bucket"
-
-# For CloudFront deployment (see DEPLOYMENT_CLOUDFRONT_ROUTE53.md)
-has_cdn = false  # Set to true for production
-has_domain = false  # Set to true if using custom domain
 ```
 
 ### 4. Apply the Terraform Configuration
@@ -88,19 +84,7 @@ terraform output api_gateway_url
 terraform output route53_nameservers
 ```
 
-## Deployment Modes
-
-### Development/Testing Mode (Default)
-
-- Direct S3 website hosting
-- Public bucket access
-- No CDN
-- Fast deployment for testing
-
-**Configuration:**
-```hcl
-has_cdn = false
-```
+## Deployment Mode
 
 ### Production Mode (CloudFront)
 
@@ -110,13 +94,7 @@ has_cdn = false
 - Geographic restrictions
 - Optimized caching
 
-**Configuration:**
-```hcl
-has_cdn = true
-has_domain = false  # or true for custom domain
-```
-
-See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md) for detailed CloudFront/Route53 setup.
+See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed CloudFront setup.
 
 ## Key Variables
 
@@ -127,12 +105,10 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 
 ### Optional Variables
 
-- `has_cdn`: Enable CloudFront CDN (default: `false`)
-- `has_domain`: Enable custom domain with Route53 (default: `false`)
-- `domain`: Root domain name (e.g., `example.com`)
-- `sub`: Subdomain (e.g., `adiron` for `adiron.example.com`)
-- `acm_certificate_arn`: SSL certificate ARN (required if `has_domain = true`)
-- `bucket_acl`: S3 bucket ACL (`private` for CloudFront, `public-read` for S3 website)
+- `use_domain`: Enable custom domain (set whenever not `local` or `test` run)
+- `domain`: Root domain name (e.g., `adirondackwilderness.org`)
+- `sub`: Subdomain (e.g., `trailblazers-tst` for `trailblazers-tst.adirondackwilderness.org`)
+- `acm_certificate_arn`: SSL certificate ARN (required if `use_domain = true`)
 - `authorization_enabled`: Enable API Gateway authorization (default: `true`)
 - `users`: Users to create on startup. (default: [`root_admin`, `admin`, `trail_manager`, `user`])
 
