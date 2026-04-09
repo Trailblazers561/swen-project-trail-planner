@@ -484,10 +484,6 @@ variable "trail_groups_sampledata" {
 
   default = [
     {
-      name = "All Areas"
-      trail_ids = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-    },
-    {
       name = "High Peaks Wilderness"
       trail_ids  = ["1", "4", "7", "10"] # Mt. Marcy, Mt. Skylight, Mt. Haystack, Blueberry Trail
     },

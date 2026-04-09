@@ -29,6 +29,8 @@ table_time_map = {
     "month": device_trail_log_month_table,
 }
 
+fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly"}
+
 def convert_decimals(obj):
     if isinstance(obj, list):
         return [convert_decimals(i) for i in obj]
@@ -51,9 +53,9 @@ def create_and_fill_csv(event, context):
         single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        trail_id_list = multi_params.get("trail_id") or ["1"]
-        start_date = single_params.get("start_date") or "2026-01-01"
-        end_date = single_params.get("end_date") or "2026-12-31"
+        trail_id_list = multi_params.get("trail_id")
+        start_date = single_params.get("start_date")
+        end_date = single_params.get("end_date")
         granularity = single_params.get("granularity", "day").lower() # defaulting to day if not specified, prolly unnecessary but makes things easier
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
@@ -72,27 +74,41 @@ def create_and_fill_csv(event, context):
 
         print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}] at granularity of [{granularity}]")
 
-        # take trail ids, get relevant device ids
+        # take trail ids, get relevant device trail ids
         device_trail_ids = []
         device_trail_cache = {}
 
-        rows = []
+        device_trail_rows = []
         for trail_id in trail_id_list_decimals:
-            rows.extend(device_trail_table.query(
+            device_trail_rows.extend(device_trail_table.query(
                 IndexName="trail-index",
                 KeyConditionExpression=Key("trail_id").eq(trail_id)
             ).get("Items", []))
 
-        for row in rows:
+        for row in device_trail_rows:
             if "id" in row:
                 dt_id = int(row["id"])
                 device_trail_ids.append(dt_id)
                 device_trail_cache[dt_id] = {
-                    "device_id": int(row["device_id"]) if "device_id" in row else "",
+                    # "device_id": int(row["device_id"]) if "device_id" in row else "", # Commented out because Craig doesn't want it
                     "trail_id": int(row["trail_id"]) if "trail_id" in row else "",
                 }
         if not device_trail_ids:
             raise ValueError(f"No trails found for [{trail_id_list_decimals}]")
+
+        trail_rows = []
+        # split batch by 100 (that is the cap for keys in a batch)
+        for hundred in (trail_id_list_decimals[i:i+100] for i in range(0, len(trail_id_list_decimals), 100)):
+            response = dynamodb.batch_get_item(
+                RequestItems={
+                    trail_table.name: {"Keys": [{"id": id} for id in hundred]}
+                }
+            )["Responses"].get(trail_table.name, [])
+            trail_rows.extend(response)
+        trail_id_to_name = {0: ""}
+        for row in trail_rows:
+            trail_id_to_name[row.get("id", 0)] = row.get("name", "")
+
 
         # take device ids, read all data from the relevant table over the date range
         trail_log_rows = []
@@ -105,7 +121,7 @@ def create_and_fill_csv(event, context):
 
         for row in trail_log_rows:
             dt_id = row["device_trail_id"]
-            row["device_id"] = device_trail_cache[dt_id].get("device_id", "")
+            # row["device_id"] = device_trail_cache[dt_id].get("device_id", "") # Commented out because Craig doesn't want it
             row["trail_id"] = device_trail_cache[dt_id].get("trail_id", "")
 
         # brute forcing battery on an hourly basis
@@ -127,16 +143,25 @@ def create_and_fill_csv(event, context):
         f = open(key, "w+", newline='')
         temp_csv_file = csv.writer(f)
 
-        headers = ["Device ID", "Count", "Start Timestamp", "Battery %", "Trail ID"]
+        headers = ["Trail ID", "Trail Name", "Start Time", f"{fancy_granularity[granularity]} Count", "Battery %"]
         temp_csv_file.writerow(headers)
 
         for row in trail_log_rows:
+            start_date
+            if row.get("start"):
+                start_datetime = datetime.fromtimestamp(row["start"])
+                if granularity == "hour":
+                    start_date = start_datetime.strftime("%Y/%m/%d %I:%M %p")
+                else:
+                    start_date = start_datetime.strftime("%Y/%m/%d")
+            else:
+                start_date = ""
             entry = [
-                row.get("device_id"),
-                row.get("count", ""),
-                row.get("start", ""),
-                row.get("battery", ""),
                 row.get("trail_id", ""),
+                trail_id_to_name[row.get("trail_id", "")],
+                start_date,
+                row.get("count", ""),
+                row.get("battery", "")
             ]
             temp_csv_file.writerow(entry)
         f.close()

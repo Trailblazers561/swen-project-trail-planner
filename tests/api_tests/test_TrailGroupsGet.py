@@ -43,9 +43,8 @@ def test_get_trail_group_metadata_structure():
     valid_trail_ids = {t["id"] for t in trails}
     
     for group in groups:
-        if group.get("name") != "All Areas":  # Skip special "All Areas" group
-            for trail_id in group.get("trail_ids", []):
-                assert trail_id in valid_trail_ids, f"Trail ID {trail_id} in group {group['name']} does not exist"
+        for trail_id in group.get("trail_ids", []):
+            assert trail_id in valid_trail_ids, f"Trail ID {trail_id} in group {group['name']} does not exist"
 
 @pytest.mark.API
 def test_get_trail_group_metadata_unauthorized():
