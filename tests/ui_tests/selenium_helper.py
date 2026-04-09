@@ -33,7 +33,7 @@ class SeleniumHelper:
         options.add_argument('--aggressive-cache-discard')
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(BASE_URL)
+        driver.get(BASE_URL+"/login")
         SeleniumHelper.wait_for_element_appear(driver, WEBSITE_ROOT, 30)
         return driver
 
