@@ -1,279 +1,676 @@
-# TABLE 1: TrailDeviceLogs
-resource "aws_dynamodb_table" "trail_device_logs" {
-  name         = "${var.deploy_env}_TrailDeviceLogs"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "trail_id"
-  range_key    = "timestamp"
+# TABLE 1: Device
+resource "aws_dynamodb_table" "device_table" {
+  name           = "${var.deploy_env}_Device"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
 
   attribute {
-    name = "trail_id"
-    type = "N"
+    name = "id"
+    type = "N" // int (PK)
   }
 
   attribute {
-    name = "timestamp"
-    type = "N"
-  }
-
-  attribute {
-    name = "device_id"
+    name = "name"
     type = "S"
   }
 
   global_secondary_index {
-    name            = "device_id-timestamp-index"
-    hash_key        = "device_id"
-    range_key       = "timestamp"
+    name            = "name-index"
+    hash_key        = "name"
     projection_type = "ALL"
   }
 
-  tags = {
-    Environment = "dev"
-    TableType   = "Logs"
-  }
+  /*
+    notes: string
+    firmware_version: string
+    date_manufactured: number (UNIX timestamp)
+    date_retired: number (UNIX timestamp)
+  */
 }
 
-# TABLE 2: DeviceMetadata
-resource "aws_dynamodb_table" "device_metadata" {
-  name           = "${var.deploy_env}_DeviceMetadata"
+# TABLE 2: Trail
+resource "aws_dynamodb_table" "trail_table" {
+  name           = "${var.deploy_env}_Trail"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
+
+  attribute {
+    name = "id"
+    type = "N" // int (PK)
+  }
+
+  /*
+    notes: string
+    name: string
+    latitude: number (float)
+    longitude: number (float)
+    date_activated: number (UNIX timestamp)
+    date_retired: number (UNIX timestamp)
+  */
+}
+
+# TABLE 3: DeviceTrail
+resource "aws_dynamodb_table" "device_trail_table" {
+  name           = "${var.deploy_env}_DeviceTrail"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_id"
+  range_key = "date_installed"
 
   attribute {
     name = "device_id"
-    type = "S"
+    type = "N" // int (FK)
   }
-
-  tags = {
-    Environment = "dev"
-    TableType   = "Metadata"
-  }
-}
-
-# TABLE 3: TrailMetadata
-resource "aws_dynamodb_table" "trail_metadata" {
-  name           = "${var.deploy_env}_TrailMetadata"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "trail_id"
 
   attribute {
     name = "trail_id"
-    type = "N"
+    type = "N" // int (FK)
   }
 
   attribute {
-    name = "trail_name"
-    type = "S"
+    name = "date_installed"
+    type = "N" // number (UNIX timestamp)
   }
 
+
   global_secondary_index {
-    name            = "trail_name-index"
-    hash_key        = "trail_name"
+    name            = "trail-index"
+    hash_key        = "trail_id"
+    range_key = "date_installed"
     projection_type = "ALL"
   }
 
-  tags = {
-    Environment = "dev"
-    TableType   = "TrailMetadata"
-  }
+  /*
+    id: number (int)
+    notes: string
+    date_removed: number (UNIX timestamp)
+  */
 }
 
-# TABLE 4: TrailGroups
-resource "aws_dynamodb_table" "trail_groups" {
-  name           = "${var.deploy_env}_TrailGroups"
+# TABLE 4: TrailGroup
+resource "aws_dynamodb_table" "trail_group_table" {
+  name           = "${var.deploy_env}_TrailGroup"
   billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "group_name"
+  hash_key       = "name"
 
   attribute {
-    name = "group_name"
-    type = "S"
+    name = "name"
+    type = "S" // PK
   }
 
-  tags = {
-    Environment = "dev"
-    TableType   = "TrailGroups"
+  /*
+    trails: number list (trail_id)
+  */
+}
+
+# TABLE 5: DeviceTrailLogHour
+resource "aws_dynamodb_table" "device_trail_log_hour_table" {
+  name           = "${var.deploy_env}_DeviceTrailLogHour"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_trail_id"
+  range_key    = "start"
+
+  attribute {
+    name = "device_trail_id"
+    type = "N" // FK
   }
+
+  attribute {
+    name = "start"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+  */
+}
+
+# TABLE 6: DeviceTrailLogDay
+resource "aws_dynamodb_table" "device_trail_log_day_table" {
+  name           = "${var.deploy_env}_DeviceTrailLogDay"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_trail_id"
+  range_key    = "start"
+
+  attribute {
+    name = "device_trail_id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "start"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+    battery: number (percentage)
+  */
+}
+
+# TABLE 7: DeviceTrailLogWeek
+resource "aws_dynamodb_table" "device_trail_log_week_table" {
+  name           = "${var.deploy_env}_DeviceTrailLogWeek"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_trail_id"
+  range_key    = "start"
+
+  attribute {
+    name = "device_trail_id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "start"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+    battery: number (percentage)
+  */
+}
+
+# TABLE 8: DeviceTrailLogMonth
+resource "aws_dynamodb_table" "device_trail_log_month_table" {
+  name           = "${var.deploy_env}_DeviceTrailLogMonth"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_trail_id"
+  range_key    = "start"
+
+  attribute {
+    name = "device_trail_id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "start"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+    battery: number (percentage)
+  */
+}
+
+# TABLE 9: Errors
+resource "aws_dynamodb_table" "error_table" {
+  name           = "${var.deploy_env}_Error"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
+  range_key = "time"
+
+  attribute {
+    name = "id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "time"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    error: string
+  */
 }
 
 # VARIABLES: SAMPLE DATA
-variable "trail_device_logs_sampledata" {
+variable "device_sampledata" {
   type = list(object({
-    trail_id  = string
-    device_id = string
-    timestamp = string
-    battery   = string
+    id = string
+    name = string
+    notes = string
+    firmware_version = string
+    date_manufactured = string
   }))
-  # Sample data will get created 
+
   default = [
+    {
+      id = "1"
+      name = "f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "2"
+      name = "6ae48c0dcbd66a4d287f9cf05d2f2d2ff93a39b3dcd7db4a4f16279806b4f083"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "3"
+      name = "20f244d703c66e79ebfa8c7c978bcf2a9e92c1d4f894f5e2eb39e5c9b32c9f44"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "4"
+      name = "3e6e3bb1da8d5903b59b308fc7db71e1d2da4d1e9dfe239e95ed6f9f851a5b57"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "5"
+      name = "521d2b7e4208a8c6480c78ec4c92f4877fa9f2b16f57d9df514f8c84e218c3d1"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "6"
+      name = "a0fa9d6459f4b6e446c7d5c9e38e4e6d9ffb21c5dcf2f3f18a9230ed86d6fa32"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "7"
+      name = "9e62b2b0c7f4f94e3b95f65e324d64c34e94f3e20a7b5f492c4b0d8f9a7c6f2d"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "8"
+      name = "bcf4d9f0c3a54e1c8b2f9d7f4e8a2c9b7d1f6e3a9c8d0e5b1f3a6c7d2e8f9b0a"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "9"
+      name = "7d3b2f1c4e5a6d7b8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
+    {
+      id = "10"
+      name = "c2b3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3"
+      notes = "this is a pretty neat device right"
+      firmware_version = "1.0.0"
+      date_manufactured = "1767225600"
+    },
   ]
 }
 
-variable "device_metadata_sampledata" {
+variable "trail_sampledata" {
   type = list(object({
-    device_id         = string
-    current_trail_id  = string
-    battery           = string
-    last_update       = string
+    id   = string
+    name = string
+    latitude = string
+    longitude = string
+    notes = string
+    date_activated = string
   }))
+
   default = [
     {
-      device_id        = "1"
-      current_trail_id = "1"
-      battery          = "98"
-      last_update      = "1771863877"
+      id = "1"
+      name = "Mt. Marcy"
+      latitude = "44.1829"
+      longitude = "-73.96349"
+      notes = "The highest peak in New York"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "2"
-      current_trail_id = "2"
-      battery          = "89"
-      last_update      = "1771863877"
+      id = "2"
+      name = "Giant Mountain"
+      latitude = "44.13838"
+      longitude = "-73.74374"
+      notes = "It's Giant"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "3"
-      current_trail_id = "3"
-      battery          = "100"
-      last_update      = "1771863877"
+      id = "3"
+      name = "Poke-O-Moonshine Ranger Trail"
+      latitude = "44.4036"
+      longitude = "-73.50241"
+      notes = "Has some great rock climbing routes"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "4"
-      current_trail_id = "4"
-      battery          = "85"
-      last_update      = "1771863877"
+      id = "4"
+      name = "Mt. Skylight"
+      latitude = "44.18123"
+      longitude = "-73.96592"
+      notes = "It is widely considered nature's skylight"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "5"
-      current_trail_id = "5"
-      battery          = "60"
-      last_update      = "1771863877"
+      id = "5"
+      name = "Cat Mountain"
+      latitude = "43.57609"
+      longitude = "-73.68584"
+      notes = "There could be cats!"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "6"
-      current_trail_id = "6"
-      battery          = "70"
-      last_update      = "1771863877"
+      id = "6"
+      name = "Bald Peak"
+      latitude = "44.14989"
+      longitude = "-73.62672"
+      notes = "It's really bald!"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "7"
-      current_trail_id = "7"
-      battery          = "99"
-      last_update      = "1771863877"
+      id = "7"
+      name = "Mt. Haystack"
+      latitude = "44.18896"
+      longitude = "-73.81613"
+      notes = "Filled with many steep, challenging obstacles"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "8"
-      current_trail_id = "8"
-      battery          = "94"
-      last_update      = "1771863877"
+      id = "8"
+      name = "Beaver Meadow Trail"
+      latitude = "44.14958"
+      longitude = "-73.76836"
+      notes = "Don't anger the beavers living here!"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "9"
-      current_trail_id = "9"
-      battery          = "51"
-      last_update      = "1771863877"
+      id = "9"
+      name = "Mud Lake"
+      latitude = "43.21285"
+      longitude = "-74.20863"
+      notes = "Be sure to bring boots!"
+      date_activated = "1767225600"
     },
     {
-      device_id        = "10"
-      current_trail_id = "10"
-      battery          = "62"
-      last_update      = "1771863877"
+      id = "10"
+      name = "Blueberry Trail"
+      latitude = "44.19171"
+      longitude = "-74.2635"
+      notes = "A relaxing trail lined with the greatest blue fruit, blueberries!"
+      date_activated = "1767225600"
     }
   ]
 }
 
-variable "trail_metadata_sampledata" {
+variable "device_trail_sampledata" {
   type = list(object({
-    trail_id   = string
-    trail_name = string
+    id = string
+    device_id = string
+    trail_id = string
+    notes = string
+    date_installed = string
   }))
+
   default = [
-    { trail_id = "1", trail_name = "Mt. Marcy" },
-    { trail_id = "2", trail_name = "Giant Mountain" },
-    { trail_id = "3", trail_name = "Poke-O-Moonshine Ranger Trail" },
-    { trail_id = "4", trail_name = "Mt. Skylight" },
-    { trail_id = "5", trail_name = "Cat Mountain" },
-    { trail_id = "6", trail_name = "Bald Peak" },
-    { trail_id = "7", trail_name = "Mt. Haystack" },
-    { trail_id = "8", trail_name = "Beaver Meadow Trail" },
-    { trail_id = "9", trail_name = "Mud Lake" },
-    { trail_id = "10", trail_name = "Blueberry Trail"}
+    {
+      id = "1"
+      device_id = "1"
+      trail_id = "1"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "2"
+      device_id = "2"
+      trail_id = "2"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "3"
+      device_id = "3"
+      trail_id = "3"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "4"
+      device_id = "4"
+      trail_id = "4"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "5"
+      device_id = "5"
+      trail_id = "5"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "6"
+      device_id = "6"
+      trail_id = "6"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "7"
+      device_id = "7"
+      trail_id = "7"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "8"
+      device_id = "8"
+      trail_id = "8"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "9"
+      device_id = "9"
+      trail_id = "9"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
+    {
+      id = "10"
+      device_id = "10"
+      trail_id = "10"
+      notes = "device trail association notes"
+      date_installed = "1767225600"
+    },
   ]
 }
 
 variable "trail_groups_sampledata" {
   type = list(object({
-    group_name = string
+    name = string
     trail_ids  = list(string)
   }))
 
   default = [
     {
-      group_name = "High Peaks Wilderness"
+      name = "High Peaks Wilderness"
       trail_ids  = ["1", "4", "7", "10"] # Mt. Marcy, Mt. Skylight, Mt. Haystack, Blueberry Trail
     },
     {
-      group_name = "Giant Mountain Wilderness"
+      name = "Giant Mountain Wilderness"
       trail_ids  = ["2", "6"] # Giant Mountain, Bald Peak
     },
     {
-      group_name = "Adirondack Park"
-      trail_ids = [ "5", "9" ] # Cat Mountain, Mud Lake
+      name = "Adirondack Park"
+      trail_ids = ["5", "9"] # Cat Mountain, Mud Lake
     }
   ]
 }
 
+variable "device_trail_log_hour_sampledata" {
+  type = list(object({
+    device_trail_id  = string
+    start = string
+    count = string
+  }))
 
-# INSERT TEST DATA INTO TrailDeviceLogs
-resource "aws_dynamodb_table_item" "trail_device_logs_items" {
-  for_each = { for idx, item in var.trail_device_logs_sampledata : idx => item }
+  # Empty for now
+  default = [
+  ]
+}
 
-  table_name = aws_dynamodb_table.trail_device_logs.name
-  hash_key   = aws_dynamodb_table.trail_device_logs.hash_key
-  range_key  = aws_dynamodb_table.trail_device_logs.range_key
+variable "device_trail_log_day_sampledata" {
+  type = list(object({
+    device_trail_id  = string
+    start = string
+    count = string
+    battery   = string
+  }))
+
+  # Empty for now
+  default = [
+  ]
+}
+
+variable "device_trail_log_week_sampledata" {
+  type = list(object({
+    device_trail_id  = string
+    start = string
+    count = string
+    battery   = string
+  }))
+
+  # Empty for now
+  default = [
+  ]
+}
+
+variable "device_trail_log_month_sampledata" {
+  type = list(object({
+    device_trail_id  = string
+    start = string
+    count = string
+    battery   = string
+  }))
+
+  # Empty for now
+  default = [
+  ]
+}
+
+# INSERT TEST DATA INTO Device
+resource "aws_dynamodb_table_item" "device_items" {
+  for_each = { for idx, item in var.device_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.device_table.name
+  hash_key = aws_dynamodb_table.device_table.hash_key
 
   item = jsonencode({
-    trail_id  = { "N" = each.value.trail_id }
-    timestamp = { "N" = each.value.timestamp }
-    device_id = { "S" = each.value.device_id }
-    battery   = { "N" = each.value.battery }
+    id = { "N" = each.value.id }
+    name = { "S" = each.value.name }
+    notes = { "S" = each.value.notes }
+    firmware_version = { "S" = each.value.firmware_version }
+    date_manufactured = { "N" = each.value.date_manufactured }
   })
 }
 
-# INSERT TEST DATA INTO DeviceMetadata
-resource "aws_dynamodb_table_item" "device_metadata_items" {
-  for_each = { for idx, item in var.device_metadata_sampledata : idx => item }
+# INSERT TEST DATA INTO Trail
+resource "aws_dynamodb_table_item" "trail_items" {
+  for_each = { for idx, item in var.trail_sampledata : idx => item }
 
-  table_name = aws_dynamodb_table.device_metadata.name
-  hash_key   = aws_dynamodb_table.device_metadata.hash_key
+  table_name = aws_dynamodb_table.trail_table.name
+  hash_key = aws_dynamodb_table.trail_table.hash_key
 
   item = jsonencode({
-    device_id        = { "S" = each.value.device_id }
-    current_trail_id = { "N" = each.value.current_trail_id }
-    battery          = { "N" = each.value.battery }
-    last_update      = { "N" = each.value.last_update }
+    id = { "N" = each.value.id }
+    name = { "S" = each.value.name }
+    latitude = { "N" = each.value.latitude }
+    longitude = { "N" = each.value.longitude }
+    notes = { "S" = each.value.notes }
+    date_activated = { "N" = each.value.date_activated }
   })
 }
 
-# INSERT TEST DATA INTO TrailMetadata
-resource "aws_dynamodb_table_item" "trail_metadata_items" {
-  for_each = { for idx, item in var.trail_metadata_sampledata : idx => item }
+# INSERT TEST DATA INTO DeviceTrail
+resource "aws_dynamodb_table_item" "device_trail_items" {
+  for_each = { for idx, item in var.device_trail_sampledata : idx => item }
 
-  table_name = aws_dynamodb_table.trail_metadata.name
-  hash_key   = aws_dynamodb_table.trail_metadata.hash_key
+  table_name = aws_dynamodb_table.device_trail_table.name
+  hash_key = aws_dynamodb_table.device_trail_table.hash_key
+  range_key = aws_dynamodb_table.device_trail_table.range_key
 
   item = jsonencode({
-    trail_id   = { "N" = each.value.trail_id }
-    trail_name = { "S" = each.value.trail_name }
+    id = { "N" = each.value.id }
+    device_id = { "N" = each.value.device_id }
+    trail_id = { "N" = each.value.trail_id }
+    notes = { "S" = each.value.notes }
+    date_installed = { "N" = each.value.date_installed }
   })
 }
 
 # INSERT TEST DATA INTO TrailGroups
-resource "aws_dynamodb_table_item" "trail_groups_items" {
+resource "aws_dynamodb_table_item" "trail_group_items" {
   for_each = { for idx, item in var.trail_groups_sampledata : idx => item }
 
-  table_name = aws_dynamodb_table.trail_groups.name
-  hash_key   = aws_dynamodb_table.trail_groups.hash_key
+  table_name = aws_dynamodb_table.trail_group_table.name
+  hash_key   = aws_dynamodb_table.trail_group_table.hash_key
 
   item = jsonencode({
-    group_name = { "S" = each.value.group_name }
+    name = { "S" = each.value.name }
     trail_ids  = { "L" = [for id in each.value.trail_ids : { "N" = id }] }
+  })
+}
+
+# INSERT TEST DATA INTO DeviceTrailLogHour
+resource "aws_dynamodb_table_item" "device_trail_log_hour_items" {
+  for_each = { for idx, item in var.device_trail_log_hour_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.device_trail_log_hour_table.name
+  hash_key   = aws_dynamodb_table.device_trail_log_hour_table.hash_key
+  range_key  = aws_dynamodb_table.device_trail_log_hour_table.range_key
+
+  item = jsonencode({
+    device_trail_id  = { "N" = each.value.device_trail_id }
+    start = { "N" = each.value.start }
+    count = { "N" = each.value.count }
+  })
+}
+
+# INSERT TEST DATA INTO DeviceTrailLogDay
+resource "aws_dynamodb_table_item" "device_trail_log_day_items" {
+  for_each = { for idx, item in var.device_trail_log_hour_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.device_trail_log_day_table.name
+  hash_key   = aws_dynamodb_table.device_trail_log_day_table.hash_key
+  range_key  = aws_dynamodb_table.device_trail_log_day_table.range_key
+
+  item = jsonencode({
+    device_trail_id  = { "N" = each.value.device_trail_id }
+    start = { "N" = each.value.start }
+    count = { "N" = each.value.count }
+    battery = { "N" = each.value.battery }
+  })
+}
+
+# INSERT TEST DATA INTO DeviceTrailLogWeek
+resource "aws_dynamodb_table_item" "device_trail_log_week_items" {
+  for_each = { for idx, item in var.device_trail_log_week_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.device_trail_log_week_table.name
+  hash_key   = aws_dynamodb_table.device_trail_log_week_table.hash_key
+  range_key  = aws_dynamodb_table.device_trail_log_week_table.range_key
+
+  item = jsonencode({
+    device_trail_id  = { "N" = each.value.device_trail_id }
+    start = { "N" = each.value.start }
+    count = { "N" = each.value.count }
+    battery = { "N" = each.value.battery }
+  })
+}
+
+# INSERT TEST DATA INTO DeviceTrailLogMonth
+resource "aws_dynamodb_table_item" "device_trail_log_month_items" {
+  for_each = { for idx, item in var.device_trail_log_month_sampledata : idx => item }
+
+  table_name = aws_dynamodb_table.device_trail_log_month_table.name
+  hash_key   = aws_dynamodb_table.device_trail_log_month_table.hash_key
+  range_key  = aws_dynamodb_table.device_trail_log_month_table.range_key
+
+  item = jsonencode({
+    device_trail_id  = { "N" = each.value.device_trail_id }
+    start = { "N" = each.value.start }
+    count = { "N" = each.value.count }
+    battery = { "N" = each.value.battery }
   })
 }

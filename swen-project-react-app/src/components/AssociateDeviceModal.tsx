@@ -4,14 +4,14 @@ import './Modal.css';
 import { Button } from './ui/button';
 
 interface Device {
-  device_id: string;
+  id: string;
   current_trail_id: number;
   battery?: number;
 }
 
 interface Trail {
-  trail_id: number;
-  trail_name: string;
+  id: number;
+  name: string;
 }
 
 interface AssociateDeviceModalProps {
@@ -96,8 +96,8 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   const pairedDevices = devices.filter(d => d.current_trail_id !== 0);
 
   const getTrailName = (trailId: number) => {
-    const trail = trails.find(t => t.trail_id === trailId);
-    return trail ? trail.trail_name : `Trail ${trailId}`;
+    const trail = trails.find(t => t.id === trailId);
+    return trail ? trail.name : `Trail ${trailId}`;
   };
 
   return (
@@ -118,13 +118,13 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                   <div className="device-list">
                     {unpairedDevices.map((device) => (
                       <div
-                        key={device.device_id}
-                        className={`device-item ${selectedDevice === device.device_id ? 'selected' : ''}`}
-                        onClick={() => setSelectedDevice(device.device_id)}
+                        key={device.id}
+                        className={`device-item ${selectedDevice === device.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedDevice(device.id)}
                         data-testid="unpaired-device-item"
                       >
                         <div className="device-info">
-                          <strong data-testid="associate-device-id">{device.device_id}</strong>
+                          <strong data-testid="associate-device-id">{device.id}</strong>
                           {device.battery !== undefined && (
                             <span className="battery">Battery: {device.battery}%</span>
                           )}
@@ -143,13 +143,13 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                   <div className="device-list">
                     {pairedDevices.map((device) => (
                       <div
-                        key={device.device_id}
-                        className={`device-item ${selectedDevice === device.device_id ? 'selected' : ''}`}
-                        onClick={() => setSelectedDevice(device.device_id)}
+                        key={device.id}
+                        className={`device-item ${selectedDevice === device.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedDevice(device.id)}
                         data-testid="paired-device-item"
                       >
                         <div className="device-info">
-                          <strong data-testid="associate-device-id">{device.device_id}</strong>
+                          <strong data-testid="associate-device-id">{device.id}</strong>
                           <span className="trail-association">
                             Currently on: {getTrailName(device.current_trail_id)}
                           </span>
@@ -175,8 +175,8 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                 >
                   <option value={0}>Select a trail</option>
                   {trails.map((trail) => (
-                    <option key={trail.trail_id} value={trail.trail_id}>
-                      {trail.trail_name} (ID: {trail.trail_id})
+                    <option key={trail.id} value={trail.id}>
+                      {trail.name} (ID: {trail.id})
                     </option>
                   ))}
                 </select>

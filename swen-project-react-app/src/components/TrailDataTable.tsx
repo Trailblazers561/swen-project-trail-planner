@@ -73,7 +73,6 @@ const columns: TableColumn<TrailRow>[] = [
 const customStyles = {
   table: {
     style: {
-      borderRadius: "0.75rem",
       overflow: "hidden",
     },
   },
@@ -109,7 +108,7 @@ const customStyles = {
 
 const TrailDataTable: React.FC<Props> = ({ data, loading }) => {
   return (
-    <div className="bg-white shadow-md rounded-xl border border-gray-200" data-testid="trail-status-table">
+    <div className="bg-gray-50 shadow-md" data-testid="trail-status-table">
       <DataTable
         columns={columns}
         data={data}
