@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Select from "react-select";
+import { MultiSelectOption } from "./ui/multi-select";
 
 interface Trail {
-    trail_id: number;
-    trail_name: string;
+    id: number;
+    name: string;
 }
 
 interface TrailGroup {
-    group_name: string;
+    name: string;
     trail_ids: number[];
 }
 
@@ -28,42 +29,38 @@ const TrailSelector = ({
     trailMetadata = [],
     trailGroups = []
 }: TrailSelectorProps) => {
-    const [selectedWilderness, setSelectedWilderness] = useState<string>("All Areas");
+    const [selectedWilderness, setSelectedWilderness] = useState<string>("");
     const [selectedTrails, setSelectedTrails] = useState<Array<{ value: string; label: string }>>([]);
 
     // Build wilderness options from trail groups (exclude empty groups)
     const wildernessOptions = useMemo(() => {
-        const options = [{ value: "All Areas", label: "All Areas" }];
+        const options: MultiSelectOption[] = [];
         trailGroups.forEach(group => {
-            if (group.group_name &&
-                group.group_name !== "All Areas" &&
+            if (group.name &&
                 group.trail_ids &&
                 Array.isArray(group.trail_ids) &&
                 group.trail_ids.length > 0) {
-                options.push({ value: group.group_name, label: group.group_name });
+                options.push({ value: group.name, label: group.name });
             }
         });
         return options;
     }, [trailGroups]);
 
-    // Build trail data map - "All Areas" always contains ALL trails, groups contain their specific trails
+    // Build trail data map -  groups contain their specific trails
     const trailData = useMemo(() => {
         const data: Record<string, string[]> = {};
 
         // Filter out any trails with invalid names
-        const validTrails = trailMetadata.filter(t => t && t.trail_name && t.trail_name.trim().length > 0);
-
-        // "All Areas" always includes "All Trails" option plus all valid trails
-        data["All Areas"] = ["All Trails", ...validTrails.map(t => t.trail_name)];
+        const validTrails = trailMetadata.filter(t => t && t.name && t.name.trim().length > 0);
 
         // Add trails for each group (only trails that exist in metadata)
         trailGroups.forEach(group => {
-            if (group.group_name && group.group_name !== "All Areas") {
+            if (group.name) {
                 const groupTrails = (group.trail_ids || [])
-                    .map(id => validTrails.find(t => t.trail_id === id))
+                    .map(id => validTrails.find(t => t.id === id))
                     .filter((t): t is Trail => t !== undefined)
-                    .map(t => t.trail_name);
-                data[group.group_name] = groupTrails;
+                    .map(t => t.name);
+                data[group.name] = groupTrails;
             }
         });
 
@@ -87,16 +84,12 @@ const TrailSelector = ({
         if (trailMetadata.length > 0 && selectedTrails.length > 0) {
             const validTrailNames = new Set(
                 trailMetadata
-                    .filter(t => t && t.trail_name && t.trail_name.trim().length > 0)
-                    .map(t => t.trail_name)
+                    .filter(t => t && t.name && t.name.trim().length > 0)
+                    .map(t => t.name)
             );
 
             const updatedTrails = selectedTrails
                 .map(selected => {
-                    // Always keep "All Trails" if selected
-                    if (selected.value === "All Trails") {
-                        return selected;
-                    }
                     // Keep trail if it still exists (even if name changed, we'll update it)
                     if (validTrailNames.has(selected.value)) {
                         return { value: selected.value, label: selected.value };
@@ -119,11 +112,11 @@ const TrailSelector = ({
     }, [trailMetadata]);
 
     const selectKey = useMemo(() => {
-        const trailCount = trailMetadata.filter(t => t && t.trail_name).length;
+        const trailCount = trailMetadata.filter(t => t && t.name).length;
         const groupCount = trailGroups.length;
         const trailIds = trailMetadata
-            .filter(t => t && t.trail_id)
-            .map(t => t.trail_id)
+            .filter(t => t && t.id)
+            .map(t => t.id)
             .sort()
             .join(',');
         return `trail-select-${trailCount}-${groupCount}-${trailIds}-${selectedWilderness}`;
@@ -138,17 +131,12 @@ const TrailSelector = ({
         // Auto-select appropriate trails based on wilderness
         let autoSelectedTrails: Array<{ value: string; label: string }> = [];
 
-        if (newWilderness === "All Areas") {
-            // Default to "All Trails" when "All Areas" is selected
-            autoSelectedTrails = [{ value: "All Trails", label: "All Trails" }];
-        } else {
-            // Select all trails in the group
-            const trailsForWilderness = trailData[newWilderness] || [];
-            autoSelectedTrails = trailsForWilderness.map(trail => ({
-                value: trail,
-                label: trail,
-            }));
-        }
+        // Select all trails in the group
+        const trailsForWilderness = trailData[newWilderness] || [];
+        autoSelectedTrails = trailsForWilderness.map(trail => ({
+            value: trail,
+            label: trail,
+        }));
 
         setSelectedTrails(autoSelectedTrails);
         onChange(autoSelectedTrails.map(option => option.value));

@@ -40,7 +40,7 @@ class SeleniumHelper:
         options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(BASE_URL)
+        driver.get(BASE_URL+"/login")
         SeleniumHelper.wait_for_element_appear(driver, WEBSITE_ROOT, 30)
         return driver
 

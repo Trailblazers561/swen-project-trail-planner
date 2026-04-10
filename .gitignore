@@ -72,7 +72,7 @@ var/
 .cache
 nosetests.xml
 coverage.xml
-test-results.xml
+test-results.*
 tests/ui_tests/downloads/*
 !tests/ui_tests/downloads/.gitkeep
 
