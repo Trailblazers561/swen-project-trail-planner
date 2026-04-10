@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Navbar from "./components/Navbar";
 
@@ -13,7 +13,7 @@ const LandingPage = () => {
 
              <Navbar/>
 
-                <div className="absolute top-4 right-52 z-[1000]">
+                <div className="absolute top-5 right-52 z-[1000]">
                     
                     <Button
                         variant="primary"
@@ -26,6 +26,7 @@ const LandingPage = () => {
                 <MapContainer
                     center={[44.02, -73.82]} 
                     zoom={9}
+                    zoomControl={false}
                     scrollWheelZoom={true}
                     className="h-full w-full"
                     >
@@ -33,6 +34,7 @@ const LandingPage = () => {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution="&copy; OpenStreetMap contributors"
                         />
+                        <ZoomControl position="bottomright" />
                 </MapContainer>
                 
         </div>

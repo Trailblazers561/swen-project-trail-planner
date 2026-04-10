@@ -18,6 +18,7 @@ export function UserIcon() {
   };
 
   return (
+    <div className="z-[3000]">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
           <Button className="bg-[var(--color-navbar)]" size="icon" id="user-icon-button">
@@ -31,7 +32,7 @@ export function UserIcon() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} data-testid="logout">
-            <div className={"hover:bg-[var(--color-logout)] hover:text-white rounded-md px-2 py-1 flex items-center gap-2"}>
+            <div className={"text-[var(--color-logout)] font-bold rounded-md px-2 py-1 flex items-center gap-2"}>
               Logout
               <LogOut />
             </div>
@@ -39,5 +40,6 @@ export function UserIcon() {
           </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+    </div>
   )
 }
