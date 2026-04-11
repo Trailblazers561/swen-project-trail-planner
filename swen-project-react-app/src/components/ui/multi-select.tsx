@@ -1064,7 +1064,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 													selectedValues.length ===
 														getAllOptions().filter((opt) => !opt.disabled)
 															.length
-														? "bg-primary text-primary-foreground"
+														? "bg-[#DFD858] text-primary-foreground"
 														: "opacity-50 [&_svg]:invisible"
 												)}
 												aria-hidden="true">
@@ -1106,7 +1106,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 															className={cn(
 																"mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
 																isSelected
-																	? "bg-primary text-primary-foreground"
+																	? "bg-[#DFD858] text-primary-foreground"
 																	: "opacity-50 [&_svg]:invisible"
 															)}
 															aria-hidden="true">
@@ -1147,7 +1147,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 														className={cn(
 															"mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
 															isSelected
-																? "bg-primary text-primary-foreground"
+																? "bg-[#DFD858] text-primary-foreground"
 																: "opacity-50 [&_svg]:invisible"
 														)}
 														aria-hidden="true">
