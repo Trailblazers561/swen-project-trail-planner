@@ -35,7 +35,6 @@ The Trail Planner frontend provides:
 - **Edit Trail**: Update trail names and group associations
 - **Delete Trail**: Remove trails and associated data
 - **Trail Groups**: Organize trails into wilderness areas/groups
-- **All Areas**: Default group containing all trails
 
 ### Device Management
 

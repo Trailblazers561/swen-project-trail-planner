@@ -1,11 +1,9 @@
-"use client"
-import * as React from "react"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { type DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Field, FieldLabel } from "@/components/ui/field"
+import { Field } from "@/components/ui/field"
 import {
   Popover,
   PopoverContent,
@@ -14,25 +12,38 @@ import {
 
 type DatePickerWithRangeProps = {
   value?: DateRange
-  onChange?: (range: DateRange | undefined) => void
+  onChange: (range: DateRange | undefined) => void
 }
 
 
 export function DatePickerWithRange({ value, onChange }: DatePickerWithRangeProps) {
-  const [internalDate, setInternalDate] = React.useState<DateRange | undefined>({
-  from: new Date(new Date().getFullYear(), 0, 20),
-  to: addDays(new Date(new Date().getFullYear(), 0, 20), 20),
-})
+  const date: DateRange | undefined = value;
 
-const date = value ?? internalDate
+  const handleSelect = ( rangeItGivesMeIDontWantIt: DateRange | undefined, selectedDay: Date) => {
+    if (!selectedDay) return;
 
-const handleSelect = (newDate: DateRange | undefined) => {
-  if (onChange) {
-    onChange(newDate) // controlled
-  } else {
-    setInternalDate(newDate) // uncontrolled fallback
+    // If there is a completed date range then reset
+    if (date?.from && date?.to) {
+      onChange({from: selectedDay, to: undefined});
+    } else {
+      const newRange: DateRange = {from: undefined, to: undefined}
+
+      if (date?.from) 
+        newRange.from = date.from;
+      if (date?.to)
+        newRange.from = date.to;
+      newRange.to = selectedDay;
+
+      if (newRange.from && newRange.to < newRange.from) {
+        const swap = newRange.from;
+        newRange.from = newRange.to;
+        newRange.to = swap;
+      }
+
+      onChange(newRange);
+    }
   }
-}
+
   return (
     <Field className="mx-auto w-60">
       <Popover>

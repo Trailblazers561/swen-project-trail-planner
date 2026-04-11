@@ -254,7 +254,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     onChange={(e) => setSelectedGroup(e.target.value)}
                   >
                     <option value="">Select a group (optional)</option>
-                    {trailGroups.filter(g => g.name !== "All Areas").map((group) => (
+                    {trailGroups.map((group) => (
                       <option key={group.name} value={group.name}>
                         {group.name}
                       </option>
