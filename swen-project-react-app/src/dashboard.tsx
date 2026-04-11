@@ -808,7 +808,7 @@ const dashboard = () => {
                     <div className="flex p-2.5 justify-between items-center">
                         <Button variant="primary" onClick={toggleView} className="items-center" data-testid="toggle-view">Toggle View</Button>
                             {viewMode === "graph" ? (
-                                <div className="text-lg font-bold text-gray-800">
+                                <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
                                 {graphTitle}
                                 </div>
                             ) : (
@@ -817,24 +817,24 @@ const dashboard = () => {
                         <div className="flex gap-2.5">
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="primary">Trail Options</Button>
+                                <Button variant="primary" data-testid="trail-options">Trail Options</Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={handleAddTrail}>Add Trail</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleEditTrail}>Edit Trail Info</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
                                 </DropdownMenuGroup>
                             </DropdownMenuContent>
                             </DropdownMenu>
 
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="primary">Trail Group Options</Button>
+                                <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={handleAddGroup}>Add Group</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleEditGroup}>Edit Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
                                 </DropdownMenuGroup>
                             </DropdownMenuContent>
                             </DropdownMenu>
@@ -844,7 +844,7 @@ const dashboard = () => {
                 <div className="w-full pb-8 bg-gray-50">
                     <div className="w-full border-t border-gray-200">
                         {viewMode === "graph" ? (
-                        <div className="w-full h-[65vh] min-h-[400px]">
+                        <div className="w-full h-[65vh] min-h-[400px]" data-testid="outer-dashboard-graph">
                             <Plot 
                                 className="w-full h-full"
                                 config={{ displayModeBar: false, responsive: true }}
