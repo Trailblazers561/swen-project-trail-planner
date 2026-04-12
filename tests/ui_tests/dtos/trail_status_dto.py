@@ -11,6 +11,9 @@ class TrailStatusDTO:
     def __str__(self):
         return f"TrailStatusDTO [trail_name={self.trail_name}, weekly_count={self.weekly_count}, battery_status={self.battery_status}, last_updated={self.last_updated}]"
 
+    def __repr__(self):
+        return str(self)
+
     def __eq__(self, other):
         if not isinstance(other, TrailStatusDTO):
             return False

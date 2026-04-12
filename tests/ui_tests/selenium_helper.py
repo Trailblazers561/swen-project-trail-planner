@@ -6,6 +6,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import StaleElementReferenceException
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -65,9 +66,16 @@ class SeleniumHelper:
 
     def enter_text_to_element(driver: webdriver.Chrome, locator: tuple[str, str], text: str) -> None:
         print(f"Entering into element {locator} the text: {text}")
-        element = driver.find_element(*locator)
-        element.clear()
-        element.send_keys(text)
+        try:
+            element = driver.find_element(*locator)
+            element.clear()
+            element.send_keys(text)
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.clear()
+            element.send_keys(text)
 
     def retrieve_text_from_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
         print(f"Retrieving text from element {locator}")
@@ -96,8 +104,14 @@ class SeleniumHelper:
 
     def click_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> None:
         print(f"Clicking on element {locator}")
-        element = driver.find_element(*locator)
-        element.click()
+        try:
+            element = driver.find_element(*locator)
+            element.click()
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.click()
 
     def hover_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> None:
         print(f"Hovering over element {locator}")

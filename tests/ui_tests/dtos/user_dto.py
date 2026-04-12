@@ -15,6 +15,9 @@ class UserDTO:
     def __str__(self):
         return f"UserDTO [email={self.email}, password={self.password}, name={self.name}]"
 
+    def __repr__(self):
+        return str(self)
+
     def __eq__(self, other):
         if not isinstance(other, UserDTO):
             return False

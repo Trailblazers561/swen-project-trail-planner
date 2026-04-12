@@ -10,7 +10,7 @@ class EditTrailGroupStep:
         if old_group_name:
             self.old_group_name = old_group_name
         else:
-            old_group_name = trail_group.group_name
+            old_group_name = trail_group.name
 
     def run(self):
         po = DashboardPage(self.driver)
