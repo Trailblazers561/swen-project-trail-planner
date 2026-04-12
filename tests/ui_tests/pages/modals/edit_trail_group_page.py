@@ -22,8 +22,8 @@ class EditTrailGroupPage:
         SH.select_dropdown_option(group_name)
 
     def set_group_information(self, group: TrailGroupDTO):
-        if group.group_name:
-            self._set_group_name(self, group.group_name)
+        if group.name:
+            self._set_group_name(self, group.name)
         if group.trails:
             self._select_trails(group.trails)
     

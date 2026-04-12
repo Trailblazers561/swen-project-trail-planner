@@ -267,7 +267,9 @@ const dashboard = () => {
         if (daysDiff >= 1825) {
             options = [Granularity.Year, Granularity.Month];
         } else if (daysDiff >= 730) {
-            options = [Granularity.Year, Granularity.Month, Granularity.Week, Granularity.Day];
+            options = [Granularity.Year, Granularity.Month, Granularity.Week];
+        } else if (daysDiff >= 180) {
+            options = [Granularity.Month, Granularity.Week];
         } else if (daysDiff >= 60) {
             options = [Granularity.Month, Granularity.Week, Granularity.Day];
         } else if (daysDiff >= 30) {
@@ -321,7 +323,7 @@ const dashboard = () => {
                     nextDate.setMonth(nextDate.getMonth() + 1, 1);
                     break;
                 case Granularity.Year:
-                    nextDate.setFullYear(nextDate.getFullYear() + 1, 1, 1);
+                    nextDate.setFullYear(nextDate.getFullYear() + 1, 0, 1);
                     break;
             }
 
@@ -419,7 +421,7 @@ const dashboard = () => {
 
                 for (let range of ranges) {
                     const eventsInRange = dateCountArray.filter(
-                        (event) => event.start >= range.start && event.start < range.end
+                        (event) => (event.start >= range.start && event.start < range.end) || (event.start.getTime() == range.start.getTime())
                     );
 
                     const totalCount = eventsInRange.reduce((sum, event) => sum + event.count, 0);
@@ -741,14 +743,14 @@ const dashboard = () => {
                         <div className="filter-group flex flex-col">
                             <label>Granularity:</label>
                             <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
-                            <SelectTrigger className="w-[150px]">
-                                <SelectValue placeholder="Select an option" />
+                            <SelectTrigger className="w-[150px]" data-testid="granularity-select">
+                                <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
                             </SelectTrigger>
 
                             <SelectContent>
                                 <SelectGroup>
                                 {granularityOptions.map((option) => (
-                                    <SelectItem key={option} value={option}>
+                                    <SelectItem key={option} value={option} data-testid="granularity-option">
                                     {GranularityText[option]}
                                     </SelectItem>
                                 ))}

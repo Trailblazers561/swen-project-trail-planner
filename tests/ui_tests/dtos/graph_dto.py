@@ -9,6 +9,9 @@ class PointDTO:
     def __str__(self):
         return f"PointDTO [date={self.date}, count={self.count}]"
 
+    def __repr__(self):
+        return str(self)
+
     def __eq__(self, other):
         if not isinstance(other, PointDTO):
             return False
@@ -24,7 +27,10 @@ class LineDTO:
         self.points = points
 
     def __str__(self):
-        return f"LineDTO [trail_name={self.trail_name}, points={self.points}]"
+        return f"LineDTO [trail_name={self.trail_name}, len(points)={len(self.points)}]"
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         if not isinstance(other, LineDTO):
@@ -43,6 +49,9 @@ class GraphDTO:
 
     def __str__(self):
         return f"GraphDTO [title={self.title}, lines={self.lines}]"
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         if not isinstance(other, GraphDTO):
