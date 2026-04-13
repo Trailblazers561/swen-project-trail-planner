@@ -107,7 +107,6 @@ const dashboard = () => {
             weeklyCount: number;
             batteryStatus: number | null;
             lastUpdated: string | null;
-            device_id: number;
         }>
     >([]);
     const [loadingListData, setLoadingListData] = useState(false);
@@ -210,10 +209,9 @@ const dashboard = () => {
 
     const handleExportData = async() => {
         setIsDownloadingStatus("downloading");
-        let trailList = [];
-        for (let i = 0; i < trailListData.length; i++) {
-            trailList.push(trailListData[i].trail_id)
-        }
+
+        const trailList = trails.map(trail_name => trailMap[trail_name]);
+
         if (selectedDate === null) {
             console.error("Error exporting: startDate must not be null");
             return;
@@ -224,7 +222,8 @@ const dashboard = () => {
         }
         
         try{
-            const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
+            const dayEnd = new Date(selectedDateEnd.getTime() + 23 * 60 * 60 * 1000); // Get date object for 11:00 PM instead of 12:00 AM
+            const csv_url = (await exportCSV(trailList, selectedDate, dayEnd, granularity))["json"]["url"];
             window.open(csv_url, "_self");
             setIsDownloadingStatus("done");
         } catch (error) {
@@ -589,23 +588,25 @@ const dashboard = () => {
                         Granularity.Day
                     );
                     const logs = logsResponse.success ? await logsResponse.json : [];
-                    const devices = deviceMetadataCache || [];
+                    const trails = trailMetadata || [];
 
                     // Count logs per trail for the week
-                    const deviceCounts = new Map<number, number>();
+                    const trailInformation = new Map<number, {count: number, battery: number, lastUpdatedTimestamp: number}>();
 
-                    logs.forEach((log: { device_id: number, count: number }) => {
-                        const deviceId = log.device_id;
-                        deviceCounts.set(deviceId, (deviceCounts.get(deviceId) || 0) + log.count);
+                    logs.forEach((log: { trail_id: number, device_id: number, count: number, battery: number, start: number}) => {
+                        const trailId = log.trail_id;
+                        const currentInformation = trailInformation.get(trailId) || {count: 0, battery: 0, lastUpdatedTimestamp: 0}
+                        currentInformation.count += log.count;
+                        currentInformation.battery = log.battery;
+                        currentInformation.lastUpdatedTimestamp = log.start;
+                        trailInformation.set(trailId, currentInformation);
                     });
 
-                    const listData = devices
-                    .filter((d) => d && d.name && d.id && d.id !== 0)
-                    .map((device) => {
-                        const weeklyCount = deviceCounts.get(device.id) || 0;
-                        const trail = trailMetadata.find(trail => trail.id === device.current_trail_id);
-                        let trailName = trail ? trail.name : ""
-                        const lastUpdateTimestamp = device.last_updated ?? null;
+                    const listData = trails
+                    .filter((t) => t && t.name && t.id && t.id !== 0)
+                    .map((trail) => {
+                        const information = trailInformation.get(trail.id);
+                        const lastUpdateTimestamp = information?.lastUpdatedTimestamp ?? null;
 
                         let lastUpdated: string | null = null;
                         if (lastUpdateTimestamp) {
@@ -618,12 +619,11 @@ const dashboard = () => {
                         }
 
                         return {
-                            trail_id: device.current_trail_id,
-                            trail_name: trailName,
-                            weeklyCount,
-                            batteryStatus: device.battery,
-                            lastUpdated,
-                            device_id: device.id
+                            trail_id: trail.id,
+                            trail_name: trail.name,
+                            weeklyCount: information?.count ?? 0,
+                            batteryStatus: information?.battery ?? null,
+                            lastUpdated: lastUpdated
                         }
                     })
                     .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
@@ -778,7 +778,7 @@ const dashboard = () => {
                         <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
                         <Popover open={isDownloadingStatus !== "idle"}>
                             <PopoverTrigger asChild>
-                                <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"}>
+                                <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
                                     Export Data
                                 </Button>
                             </PopoverTrigger>
@@ -797,9 +797,6 @@ const dashboard = () => {
                                 )}
                             </PopoverContent>
                         </Popover>
-                        <Button variant="secondary">Import Data</Button>
-                        <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
-                        <Button variant="secondary" onClick={handleExportData} data-testid="export-data">Export Data</Button>
                         <Button variant="secondary" data-testid="import-data">Import Data</Button>
                     </div>
                 </div>

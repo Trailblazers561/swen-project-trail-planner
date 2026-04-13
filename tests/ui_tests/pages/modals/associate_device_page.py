@@ -15,6 +15,7 @@ class AssociateDevicePage:
     trail_select = (By.XPATH, "//select[@id='trail-select']")
     device_button_xpath = "//*[@data-testid='associate-device-id' and text()='{}']"
     associate_device_button = (By.XPATH, "associate-device-button")
+    close_button = (By.XPATH, "//button[@data-testid='modal-close']")
 
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
@@ -66,3 +67,6 @@ class AssociateDevicePage:
 
     def _click_associate_device(self) -> None:
         SH.click_element(self.driver, self.associate_device_button)
+
+    def close_modal(self) -> None:
+        SH.click_element(self.driver, self.close_button)

@@ -105,7 +105,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
       <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header bg-[var(--color-navbar)]">
           <div className="font-primary text-white font-semibold">Associate Device to Trail</div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">

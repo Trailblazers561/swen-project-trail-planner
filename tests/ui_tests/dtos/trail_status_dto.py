@@ -22,24 +22,12 @@ class TrailStatusDTO:
         return self.trail_name == other.trail_name and self.weekly_count == other.weekly_count \
             and self.battery_status == other.battery_status and self.last_updated == other.last_updated
 
-    def compare(self, other):
-        if not pytest_check.is_instance(other, TrailStatusDTO):
+    def compare(self, other, label: str="TrailStatusDTO"):
+        if not pytest_check.is_instance(other, TrailStatusDTO, f"Other is not TrailStatusDTO for Table [{label}] for trail [{self.trail_name}]"):
             return
         other: TrailStatusDTO = other
 
-        pytest_check.equal(self.trail_name, other.trail_name)
-        pytest_check.equal(self.weekly_count, other.weekly_count)
-        pytest_check.equal(self.battery_status, other.battery_status)
-        pytest_check.equal(self.last_updated, other.last_updated)
-
-# EXPECTED_TRAIL_STATUSES: list[TrailStatusDTO] = []
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Marcy", count, "98%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Giant Mountain", count, "89%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Poke-O-Moonshine Ranger Trail", count, "100%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Skylight", count, "85%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Cat Mountain", count, "60%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Bald Peak", count, "70%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mt. Haystack", count, "99%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Beaver Meadow Trail", count, "94%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Mud Lake", count, "51%", last_updated))
-# EXPECTED_TRAIL_STATUSES.append(TrailStatusDTO("Blueberry Trail", count, "62%", last_updated))
+        pytest_check.equal(self.trail_name, other.trail_name, f"TrailStatusDTO trail_name not equal for Table [{label}]")
+        pytest_check.equal(self.weekly_count, other.weekly_count, f"TrailStatusDTO weekly_count not equal for Table [{label}] for trails [{self.trail_name}] [{other.trail_name}]")
+        pytest_check.equal(self.battery_status, other.battery_status, f"TrailStatusDTO battery_status not equal for Table [{label}] for trails [{self.trail_name}] [{other.trail_name}]")
+        pytest_check.equal(self.last_updated, other.last_updated, f"TrailStatusDTO last_updated not equal for Table [{label}] for trails [{self.trail_name}] [{other.trail_name}]")

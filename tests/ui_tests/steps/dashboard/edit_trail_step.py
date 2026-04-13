@@ -10,7 +10,7 @@ class EditTrailStep:
         if old_trail_name:
             self.old_trail_name = old_trail_name
         else:
-            old_trail_name = trail.trail_name
+            self.old_trail_name = trail.name
         self.delete = delete
 
     def run(self):

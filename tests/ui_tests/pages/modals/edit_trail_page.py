@@ -1,9 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
-
-import re
 from selenium.common.exceptions import NoSuchElementException
+import re
 
 from dtos.trail_dto import TrailDTO
 
@@ -18,6 +17,7 @@ class EditTrailPage:
     trail_name_input = (By.XPATH, "//input[@id='trail-name']")
     trail_group_select = (By.XPATH, "//select[@id='trail-group']")
     create_update_trail_button = (By.XPATH, "//button[@data-testid='confirm-button']")
+    close_button = (By.XPATH, "//button[@data-testid='modal-close']")
 
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
@@ -35,10 +35,10 @@ class EditTrailPage:
         SH.select_dropdown_option(self.driver, self.trail_select, correct_option)
 
     def set_trail_information(self, trail: TrailDTO):
-        if trail.trail_name:
-            self._set_trail_name(trail.trail_name)
-        if trail.trail_group:
-            self._set_trail_group(trail.trail_group)
+        if trail.name:
+            self._set_trail_name(trail.name)
+        if trail.trail_group_name:
+            self._set_trail_group(trail.trail_group_name)
 
     def delete_trail(self, confirm=True):
         SH.click_element(self.driver, self.delete_trail_button)
@@ -56,3 +56,10 @@ class EditTrailPage:
 
     def _set_trail_group(self, group: str):
         SH.select_dropdown_option(self.driver, self.trail_group_select, group)
+
+    def retrieve_trail_options(self) -> list[TrailDTO]:
+        options = SH.retrieve_dropdown_options(self.driver, self.trail_select)[1:] #Skip Select a trail
+        return [TrailDTO(re.match(r"^(?P<name>.*?) \(ID: (?P<id>[0-9]+?)\)$", option).group("name")) for option in options]
+
+    def close_modal(self) -> None:
+        SH.click_element(self.driver, self.close_button)

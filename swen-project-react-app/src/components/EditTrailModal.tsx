@@ -198,7 +198,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header bg-[var(--color-navbar)]">
           <div className="font-primary text-white font-semibold"> {isCreateMode ? 'Create New Trail' : 'Edit Trail Information'} </div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">

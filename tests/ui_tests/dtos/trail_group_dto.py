@@ -18,10 +18,10 @@ class TrailGroupDTO:
             return False
         other: TrailGroupDTO = other
 
-        return self.name == other.name and self.trails == other.trails
+        return self.name == other.name
 
     def __hash__(self):
-        return hash((self.name, frozenset(self.trails)))
+        return hash(self.name)
 
     def compare(self, other):
         if not pytest_check.is_instance(other, TrailGroupDTO):
