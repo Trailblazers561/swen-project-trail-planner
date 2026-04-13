@@ -312,7 +312,8 @@ resource "aws_dynamodb_table_item" "error_items" {
 }
 
 resource "null_resource" "load_test_data" {
-  count = local.test_run ? 1 : 0
+  # Yes this isn't possible for regular scenario, but when testing locally it is helpful
+  count = local.test_run && local.local_run ? 1 : 0 
 
   triggers = {
     always_run = timestamp()

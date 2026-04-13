@@ -101,6 +101,7 @@ jobs:
 
       - name: Install Dependiencies And Test
         run: |
+          python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           pytest -s tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
