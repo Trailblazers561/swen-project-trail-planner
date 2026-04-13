@@ -4,10 +4,17 @@ import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
-import React from 'react';
+import React, { useState } from 'react';
 import Test from './Test';
+import AppContext from './AppContext';
 
 function App() {
+  const [role, setRole] = useState('user');
+
+  const toggleRole = () => {
+    true;
+  }
+
   const isAuthenticated = () => {
     const accessToken = sessionStorage.getItem("accessToken");
     return !!accessToken;

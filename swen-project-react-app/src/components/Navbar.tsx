@@ -1,6 +1,6 @@
 import { UserIcon } from "@/components/ui/usericon"
 import logo from "@/assets/images/awa-logo.png"
-import { useAuth } from "@/AuthContext";
+import { useAuth } from "@/AppContext";
 import { Link } from "react-router-dom";
 
 function Navbar() {
