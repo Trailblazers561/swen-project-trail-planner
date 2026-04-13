@@ -10,6 +10,24 @@ resource "aws_api_gateway_rest_api" "api" {
   name = "${var.deploy_env}_trailplanner_api"
 }
 
+resource "aws_api_gateway_domain_name" "api_domain" {
+  domain_name = "${local.api_sub_domain}.${local.domain}"
+  regional_certificate_arn = var.acm_certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  security_policy = "SecurityPolicy_TLS13_1_2_2021_06"
+  endpoint_access_mode = "STRICT"
+}
+
+resource "aws_api_gateway_base_path_mapping" "api_mapping" {
+  api_id      = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.api_stage.stage_name
+  domain_name = aws_api_gateway_domain_name.api_domain.domain_name
+}
+
 # /trail_data Resource
 resource "aws_api_gateway_resource" "trail_data" {
   path_part   = "trail_data"
