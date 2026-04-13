@@ -1,6 +1,7 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from dtos.graph_dto import GraphDTO
+from pages.dashboard_page import DashboardPage
 
 class RetrieveGraphStep:
     def __init__(self, driver: webdriver.Chrome):

@@ -37,7 +37,7 @@ def import_export_data_test():
         # Verify Export For Each Granularity
         selected_trails = {next(iter(TRAIL_GROUPS[0].trails)), next(iter(TRAIL_GROUPS[1].trails))}
         granularity_filters = [
-            # DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
+            DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.MONTH, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.WEEK, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.DAY, trails=selected_trails),
@@ -74,5 +74,8 @@ def verify_export(driver, filter: DashboardFilterDTO):
         if expected_headers != reader.fieldnames: return
         expected_rows = retrieve_csv_list(filter.date_start, filter.date_end, filter.granularity, [trail.id for trail in filter.trails])
         for i, row in enumerate(reader):
+            if (i >= len(expected_rows)):
+                pytest_check.fail(f"Export CSV Contained Too Many Rows For Granularity [{filter.granularity.value}]")
+                break
             pytest_check.equal(expected_rows[i], row)
         pytest_check.equal(len(expected_rows), i + 1, f"Export CSV Didn't Contain All Rows For Granularity [{filter.granularity.value}]")

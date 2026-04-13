@@ -1,6 +1,7 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from dtos.trail_dto import TrailDTO
+from pages.dashboard_page import DashboardPage
 from pages.modals.edit_trail_page import EditTrailPage
 
 class EditTrailStep:
