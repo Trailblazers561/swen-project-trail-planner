@@ -116,7 +116,7 @@ with open(Path(__file__).parent / "../../sample_data/hours.csv") as f:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not HOUR_DATA.get(trail):
             HOUR_DATA[trail] = []
-        HOUR_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        HOUR_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
 with open(Path(__file__).parent / "../../sample_data/days.csv") as f:
     reader = csv.DictReader(f)
@@ -124,7 +124,7 @@ with open(Path(__file__).parent / "../../sample_data/days.csv") as f:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not DAY_DATA.get(trail):
             DAY_DATA[trail] = []
-        DAY_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        DAY_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
 with open(Path(__file__).parent / "../../sample_data/weeks.csv") as f:
     reader = csv.DictReader(f)
@@ -132,7 +132,7 @@ with open(Path(__file__).parent / "../../sample_data/weeks.csv") as f:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not WEEK_DATA.get(trail):
             WEEK_DATA[trail] = []
-        WEEK_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        WEEK_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
 with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
     reader = csv.DictReader(f)
@@ -140,15 +140,15 @@ with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not MONTH_DATA.get(trail):
             MONTH_DATA[trail] = []
-        MONTH_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        MONTH_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
 for trail, datas in MONTH_DATA.items():
     YEAR_DATA[trail] = []
     current_year = datetime.fromtimestamp(datas[0]["start"]).year
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1).timestamp()), "count": 0, "battery": 100})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1).timestamp()), "count": 0, "battery": 100})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1).timestamp()), "count": 0, "battery": 100})
-    year_data = {"start": int(datetime(current_year, 1, 1).timestamp()), "count": 0, "battery": 100}
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    year_data = {"start": int(datetime(current_year, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": True}
     for data in datas:
         data_year = datetime.fromtimestamp(data["start"]).year
         if current_year == data_year:
@@ -156,7 +156,7 @@ for trail, datas in MONTH_DATA.items():
             year_data["battery"] = data["battery"]
         else:
             YEAR_DATA[trail].append(year_data)
-            year_data = {"start": int(datetime(data_year, 1, 1).timestamp()), "count": data["count"], "battery": data["battery"]}
+            year_data = {"start": int(datetime(data_year, 1, 1).timestamp()), "count": data["count"], "battery": data["battery"], "recorded": True}
     YEAR_DATA[trail].append(year_data)
 
 with open(Path(__file__).parent / "../../sample_data/days_recent.csv") as f:
@@ -166,7 +166,7 @@ with open(Path(__file__).parent / "../../sample_data/days_recent.csv") as f:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not RECENT_DATA.get(trail):
             RECENT_DATA[trail] = []
-        RECENT_DATA[trail].append({"start": int((current_midnight - timedelta(days=int(row["days_ago"]))).timestamp()), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        RECENT_DATA[trail].append({"start": int((current_midnight - timedelta(days=int(row["days_ago"]))).timestamp()), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
         DEVICE_TRAIL_DEVICES[int(row["device_trail_id"])].battery = f"{int(row['battery'])}%"
 
 for trail in TRAILS.values():
@@ -279,7 +279,7 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
             "Start Time": datetime.fromtimestamp(log["start"]).astimezone(ZoneInfo("America/New_York")).strftime(f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}"),
             f"{granularity.value} Count": str(log["count"]),
             "Battery %": log["battery"][:-1]
-        } for log in DATA[TRAILS[trail_id]] if start.timestamp() <= log["start"] <= end.timestamp()])
-    rows.sort(key=lambda row: (row["Trail ID"], datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
+        } for log in DATA[TRAILS[trail_id]] if start.timestamp() <= log["start"] <= end.timestamp() and log["recorded"]])
+    rows.sort(key=lambda row: (int(row["Trail ID"]), datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
 
     return rows

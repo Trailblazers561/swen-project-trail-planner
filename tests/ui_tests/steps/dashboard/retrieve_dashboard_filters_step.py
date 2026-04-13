@@ -1,6 +1,7 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from dtos.dashboard_filter_dto import DashboardFilterDTO
+from pages.dashboard_page import DashboardPage
 
 class RetrieveDashboardFiltersStep:
     def __init__(self, driver: webdriver.Chrome):

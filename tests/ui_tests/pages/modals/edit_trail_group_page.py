@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
+
 import re
 
 from dtos.trail_dto import TrailDTO

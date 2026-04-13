@@ -1,6 +1,7 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from dtos.trail_status_dto import TrailStatusDTO
+from pages.dashboard_page import DashboardPage
 
 class RetrieveTrailStatusStep:
     def __init__(self, driver: webdriver.Chrome):

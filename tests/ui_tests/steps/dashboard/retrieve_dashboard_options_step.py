@@ -1,8 +1,9 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from dtos.trail_dto import TrailDTO
 from dtos.trail_group_dto import TrailGroupDTO
 from enums.granularity import Granularity
+from pages.dashboard_page import DashboardPage
 
 class RetrieveDashboardOptionsStep:
     def __init__(self, driver: webdriver.Chrome):

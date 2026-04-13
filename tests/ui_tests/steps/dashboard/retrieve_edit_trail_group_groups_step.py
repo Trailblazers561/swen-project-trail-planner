@@ -1,7 +1,7 @@
 from selenium import webdriver
 
-from pages.dashboard_page import DashboardPage
 from dtos.trail_group_dto import TrailGroupDTO
+from pages.dashboard_page import DashboardPage
 from pages.modals.edit_trail_group_page import EditTrailGroupPage
 
 class RetrieveEditTrailGroupGroupsStep:

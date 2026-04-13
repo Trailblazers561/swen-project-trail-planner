@@ -29,6 +29,7 @@ class SeleniumHelper:
         options.add_argument('--disable-gpu')
         options.add_argument('--disable-extensions')
         options.add_argument('--start-maximized')
+        options.add_argument("--log-level=3")
         # Memory optimization
         options.add_argument('--disk-cache-size=1')
         options.add_argument('--media-cache-size=1')
@@ -36,7 +37,7 @@ class SeleniumHelper:
         options.add_argument('--aggressive-cache-discard')
 
         prefs = {
-            "download.default_directory": os.path.dirname(__file__) + "\downloads",
+            "download.default_directory": os.path.dirname(__file__) + r"\downloads",
             "download.prompt_for_download": False
         }
         options.add_experimental_option("prefs", prefs)
@@ -80,13 +81,25 @@ class SeleniumHelper:
 
     def retrieve_text_from_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
         print(f"Retrieving text from element {locator}")
-        element = driver.find_element(*locator)
-        return element.text
+        try:
+            element = driver.find_element(*locator)
+            return element.text
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            return element.text
 
     def retrieve_text_from_elements(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
         print(f"Retrieving text from elements {locator}")
-        elements = driver.find_elements(*locator)
-        return [element.text for element in elements]
+        try:
+            elements = driver.find_elements(*locator)
+            return [element.text for element in elements]
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            elements = driver.find_elements(*locator)
+            return [element.text for element in elements]
 
     def select_dropdown_option(driver: webdriver.Chrome, locator: tuple[str, str], option: str) -> None:
         print(f"Selecting element {locator} dropdown option {option}")

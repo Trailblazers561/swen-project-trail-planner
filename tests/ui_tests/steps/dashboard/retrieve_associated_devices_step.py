@@ -1,7 +1,7 @@
 from selenium import webdriver
 
-from pages.dashboard_page import DashboardPage
 from dtos.device_dto import DeviceDTO
+from pages.dashboard_page import DashboardPage
 from pages.modals.associate_device_page import AssociateDevicePage
 
 class RetrieveAssociatedDevicesStep:

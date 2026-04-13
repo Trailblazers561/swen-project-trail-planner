@@ -1,8 +1,9 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
 
-import time
 from pathlib import Path
+import time
+
+from pages.dashboard_page import DashboardPage
 
 class ExportDataStep:
     def __init__(self, driver: webdriver.Chrome):

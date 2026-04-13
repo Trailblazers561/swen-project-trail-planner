@@ -6,9 +6,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
+from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from dtos.trail_dto import TrailDTO
 from dtos.trail_group_dto import TrailGroupDTO
-from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from dtos.trail_status_dto import TrailStatusDTO
 from enums.granularity import Granularity
 from enums.trail_status_column import TrailStatusColumn

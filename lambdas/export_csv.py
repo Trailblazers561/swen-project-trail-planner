@@ -28,9 +28,10 @@ table_time_map = {
     "day":   device_trail_log_day_table,
     "week":  device_trail_log_week_table,
     "month": device_trail_log_month_table,
+    "year": device_trail_log_month_table
 }
 
-fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly"}
+fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly", "year": "Yearly"}
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -67,7 +68,11 @@ def create_and_fill_csv(event, context):
         start_date = Decimal(datetime.fromisoformat(start_date).timestamp())
 
         if not end_date: raise ValueError("Missing required field: end_date")
-        end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
+        if granularity == "year":
+            end_date = Decimal(datetime.fromisoformat(end_date).replace(month=12).timestamp())
+        else:
+            end_date = Decimal(datetime.fromisoformat(end_date).timestamp())
+
 
         if granularity not in table_time_map:
             raise ValueError(f"Invalid granularity of {granularity}. Make sure it is a valid option: {list(table_time_map.keys())}")
@@ -115,7 +120,23 @@ def create_and_fill_csv(event, context):
         for device_trail_id in device_trail_ids:
             rows = log_table.query(KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) &
                                    Key("start").between(start_date, end_date)).get("Items", [])
-            trail_log_rows.extend(rows)
+            if granularity == "year" and rows:
+                year_rows = []
+                last_year = int(datetime.fromtimestamp(int(rows[0]["start"])).astimezone(ZoneInfo("America/New_York")).replace(month=1).timestamp())
+                current_year_log = {"device_trail_id": device_trail_id, "start": last_year, "count": 0, "battery": None}
+                for row in rows:
+                    current_year = int(datetime.fromtimestamp(int(row["start"])).astimezone(ZoneInfo("America/New_York")).replace(month=1).timestamp())
+                    if current_year == last_year:
+                        current_year_log["count"] += row["count"]
+                        current_year_log["battery"] = row["battery"]
+                    else:
+                        year_rows.append(current_year_log)
+                        current_year_log = {"device_trail_id": device_trail_id, "start": current_year, "count": 0, "battery": None}
+                        last_year = current_year
+                year_rows.append(current_year_log)
+                trail_log_rows.extend(year_rows)
+            else:
+                trail_log_rows.extend(rows)
         trail_log_rows = convert_decimals(trail_log_rows)
         print(f"Found {len(trail_log_rows)} entries")
 
@@ -159,10 +180,10 @@ def create_and_fill_csv(event, context):
                 start_date = ""
             entry = [
                 row.get("trail_id", ""),
-                trail_id_to_name[row.get("trail_id", "")],
+                trail_id_to_name[row.get("trail_id", 0) or 0],
                 start_date,
-                row.get("count", ""),
-                row.get("battery", "")
+                row.get("count", 0) or 0,
+                row.get("battery", "") or ""
             ]
             temp_csv_file.writerow(entry)
         f.close()

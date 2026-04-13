@@ -1,6 +1,7 @@
 from selenium import webdriver
-from pages.dashboard_page import DashboardPage
+
 from enums.trail_status_column import TrailStatusColumn
+from pages.dashboard_page import DashboardPage
 
 class ClickTrailStatusHeaderStep:
     def __init__(self, driver: webdriver.Chrome, column: TrailStatusColumn):
