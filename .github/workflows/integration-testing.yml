@@ -49,6 +49,8 @@ jobs:
           cp -r swen-project-react-app/* terraform/swen-project-react-app/
           mkdir -p terraform/tests
           cp -r tests/* terraform/tests/
+          mkdir -p terraform/sample_data
+          cp -r sample_data/* terraform/sample_data/
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
