@@ -30,6 +30,7 @@ locals {
   use_domain = !local.local_run && !local.test_run
   domain = "adirondackwilderness.org"
   sub_domain = "trailblazers-${var.deploy_env}"
+  api_sub_domain = "trailblazers-api-${var.deploy_env}"
 }
 
 // Will get populated from github actions and stored in the repo, not populated in a local run
