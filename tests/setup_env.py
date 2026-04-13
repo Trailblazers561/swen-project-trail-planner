@@ -38,7 +38,7 @@ def retrieve_token(env):
         AuthFlow="USER_PASSWORD_AUTH",
         AuthParameters={
             "USERNAME": "admin@gmail.com",
-            "PASSWORD": "password"
+            "PASSWORD": "testPassword123!"
         }
     )
     return response['AuthenticationResult']['AccessToken']
