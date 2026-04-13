@@ -71,7 +71,7 @@ export function DatePickerWithRange({ value, onChange }: DatePickerWithRangeProp
         <PopoverContent className="w-auto p-0" align="start" data-testid="calandar-popup">
           <Calendar
             mode="range"
-            defaultMonth={date?.to ?? date?.from}
+            defaultMonth={date?.from}
             selected={date}
             onSelect={handleSelect}
             numberOfMonths={2}

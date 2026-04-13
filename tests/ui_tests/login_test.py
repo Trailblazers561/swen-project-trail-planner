@@ -1,13 +1,16 @@
 import pytest
 import pytest_check
+from pathlib import Path
+import time
+
 from selenium_helper import SeleniumHelper as SH
 
 from dtos.user_dto import UserDTO
+from enums.login_mode import LoginMode
+from enums.user_action import UserAction
 from enums.user_enum import User
 from steps.login.login_step import LoginStep
 from steps.other.perform_user_action_step import PerformUserActionStep
-from enums.login_mode import LoginMode
-from enums.user_action import UserAction
 
 @pytest.mark.UI
 def login_test():
@@ -44,6 +47,9 @@ def login_test():
 
         for alert in alerts:
             alert_check(driver, alert)
+    except:
+        driver.save_screenshot(Path(__file__).parent / f"errors/login_test_error_{int(time.time())}.png")
+        raise
     finally:
         driver.quit()
 

@@ -1,8 +1,9 @@
 import os
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import boto3
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Key
 import csv
 from pathlib import Path
 import hashlib
@@ -109,7 +110,6 @@ def create_and_fill_csv(event, context):
         for row in trail_rows:
             trail_id_to_name[row.get("id", 0)] = row.get("name", "")
 
-
         # take device ids, read all data from the relevant table over the date range
         trail_log_rows = []
         for device_trail_id in device_trail_ids:
@@ -124,12 +124,14 @@ def create_and_fill_csv(event, context):
             # row["device_id"] = device_trail_cache[dt_id].get("device_id", "") # Commented out because Craig doesn't want it
             row["trail_id"] = device_trail_cache[dt_id].get("trail_id", "")
 
+        trail_log_rows.sort(key=lambda log: (log["trail_id"], log["start"]))
+
         # brute forcing battery on an hourly basis
         if granularity == "hour":
             cached_battery_values = {}
             for row in trail_log_rows:
                 start_timestamp = row["start"]
-                start_of_day = int(datetime.fromtimestamp(float(start_timestamp)).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+                start_of_day = int(datetime.fromtimestamp(float(start_timestamp)).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
                 cache_value = (row["device_trail_id"], start_of_day)
                 if cache_value not in cached_battery_values:
                     day_entry = device_trail_log_day_table.get_item(Key={"device_trail_id": row["device_trail_id"], "start": Decimal(start_of_day)}).get("Item")
@@ -147,9 +149,8 @@ def create_and_fill_csv(event, context):
         temp_csv_file.writerow(headers)
 
         for row in trail_log_rows:
-            start_date
             if row.get("start"):
-                start_datetime = datetime.fromtimestamp(row["start"])
+                start_datetime = datetime.fromtimestamp(row["start"]).astimezone(ZoneInfo("America/New_York"))
                 if granularity == "hour":
                     start_date = start_datetime.strftime("%Y/%m/%d %I:%M %p")
                 else:
@@ -196,7 +197,6 @@ def create_and_fill_csv(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
 
 def cors_headers():
     return {

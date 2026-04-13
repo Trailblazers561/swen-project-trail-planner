@@ -8,22 +8,18 @@ locals {
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
-  sampledata_directory = local.local_run ? "../sampledata" : "./sampledata"
+  sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
   test_run = var.deploy_env == "test"
 }
 
 // This can be changed later to not be defined here, but for now it's not less secure than before
-variable "users" {
-  type = map(object({
-    username = string
-    password = string
-    email = string
-  }))
-  default = {
-    root_admin = { username = "root_admin@gmail.com",    password = "password", email = "root_admin@gmail.com" }
-    admin = { username = "admin@gmail.com",    password = "password", email = "admin@gmail.com" }
-    trail_manager = { username = "trail_manager@gmail.com", password = "password", email = "trail_manager@gmail.com" }
-    user = { username = "user@gmail.com",   password = "password",  email = "user@gmail.com" }
+locals {
+  password = local.test_run ? "testPassword123!" : "password" # Sometimes google tells you your password has been found, this avoids that issue when testing
+  users = {
+    root_admin = { username = "root_admin@gmail.com",    password = local.password, email = "root_admin@gmail.com" }
+    admin = { username = "admin@gmail.com",    password = local.password, email = "admin@gmail.com" }
+    trail_manager = { username = "trail_manager@gmail.com", password = local.password, email = "trail_manager@gmail.com" }
+    user = { username = "user@gmail.com",   password = local.password,  email = "user@gmail.com" }
   }
 }
 

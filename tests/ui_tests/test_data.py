@@ -6,19 +6,43 @@ from dtos.trail_dto import TrailDTO
 from dtos.trail_group_dto import TrailGroupDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from enums.granularity import Granularity
+from enums.trail_status_column import TrailStatusColumn
+from dtos.trail_status_dto import TrailStatusDTO
+from dtos.device_dto import DeviceDTO
 
 TRAILS: dict[int, TrailDTO] = {}
+DEVICES: dict[int, DeviceDTO] = {}
 TRAIL_GROUPS: list[TrailGroupDTO] = []
-DEVICE_TRAILS: dict[int, TrailDTO] = {}
+DEVICE_TRAIL_TRAILS: dict[int, TrailDTO] = {}
+DEVICE_TRAIL_DEVICES: dict[int, DeviceDTO] = {}
+DEVICE_TO_TRAIL: dict[int, TrailDTO] = {}
 HOUR_DATA: dict[TrailDTO, dict[str, int]] = {}
 DAY_DATA: dict[TrailDTO, dict[str, int]] = {}
 WEEK_DATA: dict[TrailDTO, dict[str, int]] = {}
 MONTH_DATA: dict[TrailDTO, dict[str, int]] = {}
 YEAR_DATA: dict[TrailDTO, dict[str, int]] = {}
+RECENT_DATA: dict[TrailDTO, dict[str, int]] = {}
+TRAIL_STATUSES: list[TrailStatusDTO] = []
 def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, trail_ids: list) -> GraphDTO:
     ...
+def retrieve_trail_status_overview(column: TrailStatusColumn=TrailStatusColumn.TRAIL_NAME, reverse: bool=False) -> list[TrailStatusDTO]:
+    ...
+def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, trail_ids: list) -> list[dict[str, str]]:
+    ...
 
-with open(Path(__file__).parent / "../../sampledata/trails.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/trails.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        trail = TrailDTO(
+            id=int(row["id"]),
+            name=row["name"],
+            notes=row["notes"],
+            latitude=float(row["latitude"]),
+            longitude=float(row["longitude"]),
+            date_activated=(datetime.fromtimestamp(int(row["date_activated"])))
+        )
+        TRAILS[trail.id] = trail
+with open(Path(__file__).parent / "../../sample_data/test_trails.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         trail = TrailDTO(
@@ -31,7 +55,7 @@ with open(Path(__file__).parent / "../../sampledata/trails.csv") as f:
         )
         TRAILS[trail.id] = trail
 
-with open(Path(__file__).parent / "../../sampledata/trail_groups.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/trail_groups.csv") as f:
     groups = {}
     reader = csv.DictReader(f)
     for row in reader:
@@ -43,43 +67,80 @@ with open(Path(__file__).parent / "../../sampledata/trail_groups.csv") as f:
         else:
             groups[group_name] = TrailGroupDTO(group_name, {TRAILS[trail_id]})
     TRAIL_GROUPS = list(groups.values())
-
-with open(Path(__file__).parent / "../../sampledata/device_trails.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/test_trail_groups.csv") as f:
+    groups = {}
     reader = csv.DictReader(f)
     for row in reader:
-        DEVICE_TRAILS[int(row["id"])] = TRAILS[int(row["trail_id"])]
+        trail_id = int(row["trail_id"])
+        group_name = row["name"]
+        TRAILS[trail_id].trail_group_name = group_name
+        if groups.get(group_name):
+            groups[group_name].trails.add(TRAILS[trail_id])
+        else:
+            groups[group_name] = TrailGroupDTO(group_name, {TRAILS[trail_id]})
+    TRAIL_GROUPS.extend(groups.values())
 
-with open(Path(__file__).parent / "../../sampledata/hours.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/devices.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        trail = DEVICE_TRAILS[int(row["device_trail_id"])]
+        device = DeviceDTO(
+            id=int(row["id"])
+        )
+        DEVICES[device.id] = device
+with open(Path(__file__).parent / "../../sample_data/test_devices.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        device = DeviceDTO(
+            id=int(row["id"])
+        )
+        DEVICES[device.id] = device
+
+with open(Path(__file__).parent / "../../sample_data/device_trails.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        DEVICE_TRAIL_TRAILS[int(row["id"])] = TRAILS[int(row["trail_id"])]
+        DEVICE_TO_TRAIL[int(row["device_id"])] = TRAILS[int(row["trail_id"])]
+        DEVICE_TRAIL_DEVICES[int(row["id"])] = DEVICES[int(row["device_id"])]
+        DEVICES[int(row["device_id"])].current_trail = TRAILS[int(row["trail_id"])]
+with open(Path(__file__).parent / "../../sample_data/test_device_trails.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        DEVICE_TRAIL_TRAILS[int(row["id"])] = TRAILS[int(row["trail_id"])]
+        DEVICE_TO_TRAIL[int(row["device_id"])] = TRAILS[int(row["trail_id"])]
+        DEVICE_TRAIL_DEVICES[int(row["id"])] = DEVICES[int(row["device_id"])]
+        DEVICES[int(row["device_id"])].current_trail = TRAILS[int(row["trail_id"])]
+
+with open(Path(__file__).parent / "../../sample_data/hours.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not HOUR_DATA.get(trail):
             HOUR_DATA[trail] = []
-        HOUR_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"])})
+        HOUR_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
 
-with open(Path(__file__).parent / "../../sampledata/days.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/days.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        trail = DEVICE_TRAILS[int(row["device_trail_id"])]
+        trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not DAY_DATA.get(trail):
             DAY_DATA[trail] = []
-        DAY_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": int(row["battery"])})
+        DAY_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
 
-with open(Path(__file__).parent / "../../sampledata/weeks.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/weeks.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        trail = DEVICE_TRAILS[int(row["device_trail_id"])]
+        trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not WEEK_DATA.get(trail):
             WEEK_DATA[trail] = []
-        WEEK_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": int(row["battery"])})
+        WEEK_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
 
-with open(Path(__file__).parent / "../../sampledata/months.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        trail = DEVICE_TRAILS[int(row["device_trail_id"])]
+        trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
         if not MONTH_DATA.get(trail):
             MONTH_DATA[trail] = []
-        MONTH_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": int(row["battery"])})
+        MONTH_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
 
 for trail, datas in MONTH_DATA.items():
     YEAR_DATA[trail] = []
@@ -97,8 +158,24 @@ for trail, datas in MONTH_DATA.items():
             YEAR_DATA[trail].append(year_data)
             year_data = {"start": int(datetime(data_year, 1, 1).timestamp()), "count": data["count"], "battery": data["battery"]}
     YEAR_DATA[trail].append(year_data)
-    
-    
+
+with open(Path(__file__).parent / "../../sample_data/days_recent.csv") as f:
+    reader = csv.DictReader(f)
+    current_midnight = datetime.now().astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
+    for row in reader:
+        trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
+        if not RECENT_DATA.get(trail):
+            RECENT_DATA[trail] = []
+        RECENT_DATA[trail].append({"start": int((current_midnight - timedelta(days=int(row["days_ago"]))).timestamp()), "count": int(row["count"]), "battery": f"{int(row['battery'])}%"})
+        DEVICE_TRAIL_DEVICES[int(row["device_trail_id"])].battery = f"{int(row['battery'])}%"
+
+for trail in TRAILS.values():
+    status = RECENT_DATA.get(trail, [])
+    weekly_count = sum(day["count"] for day in status) if status else 0
+    battery_status = status[-1]["battery"]  if status else ""
+    last_updated = datetime.fromtimestamp(status[-1]["start"]) if status else None
+
+    TRAIL_STATUSES.append(TrailStatusDTO(trail.name, weekly_count, battery_status, last_updated))
 
 def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, trail_ids: list) -> GraphDTO:
     DATA = {}
@@ -131,14 +208,6 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
             regular_start_timestamp = int((start if start.day == 1 else (start.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
             regular_end_timestamp = int((end.replace(day=1) - timedelta(minutes=1)).timestamp())
 
-    a1 = datetime.fromtimestamp(partial_start_timestamp)
-    a2 = datetime.fromtimestamp(partial_end_timestamp)
-    a3 = datetime.fromtimestamp(regular_start_timestamp)
-    a4 = datetime.fromtimestamp(regular_end_timestamp)
-
-
-
-
     lines = {}
     for trail_id in trail_ids:
         lines[trail_id] = {
@@ -168,3 +237,49 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
         graph_title = f"{len(trail_ids)} Trails from {start.month}/{start.day}/{start.year} to {end.month}/{end.day}/{end.year}"
 
     return GraphDTO(graph_title, graph_lines)
+
+def retrieve_trail_status_overview(column: TrailStatusColumn=TrailStatusColumn.TRAIL_NAME, reverse: bool=False) -> list[TrailStatusDTO]:
+    if column == TrailStatusColumn.TRAIL_NAME:
+        return sorted(TRAIL_STATUSES, key=lambda ts: ts.trail_name, reverse=reverse)
+    elif column == TrailStatusColumn.WEEKLY_COUNT:
+        return sorted(sorted(TRAIL_STATUSES, key=lambda ts: ts.trail_name), key=lambda ts: ts.weekly_count, reverse=reverse)
+    elif column == TrailStatusColumn.BATTERY_STATUS:
+        return sorted(sorted(TRAIL_STATUSES, key=lambda ts: ts.trail_name), key=lambda ts: ts.battery_status, reverse=reverse)
+    elif column == TrailStatusColumn.LAST_UPDATED:
+        return sorted(sorted(TRAIL_STATUSES, key=lambda ts: ts.trail_name), key=lambda ts: (ts.last_updated is not None, ts.last_updated), reverse=reverse)
+    raise ValueError("Invalid column")
+
+def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, trail_ids: list) -> list[dict[str, str]]:
+    DATA = {}
+    if granularity == Granularity.HOUR:
+        DATA = HOUR_DATA
+    elif granularity == Granularity.DAY:
+        DATA = DAY_DATA
+    elif granularity == Granularity.WEEK:
+        DATA = WEEK_DATA
+    elif granularity == Granularity.MONTH:
+        DATA = MONTH_DATA
+    elif granularity == Granularity.YEAR:
+        DATA = YEAR_DATA
+    else:
+        raise ValueError("Invalid granularity")
+
+    if granularity == Granularity.HOUR:
+        start = start.astimezone(ZoneInfo("America/New_York")).replace(minute=0, second=0, microsecond=0)
+        end = end.astimezone(ZoneInfo("America/New_York")).replace(minute=0, second=0, microsecond=0)
+    else:
+        start = start.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
+        end = end.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    rows = []
+    for trail_id in trail_ids:
+        rows.extend([{
+            "Trail ID": str(trail_id),
+            "Trail Name": TRAILS[trail_id].name,
+            "Start Time": datetime.fromtimestamp(log["start"]).astimezone(ZoneInfo("America/New_York")).strftime(f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}"),
+            f"{granularity.value} Count": str(log["count"]),
+            "Battery %": log["battery"][:-1]
+        } for log in DATA[TRAILS[trail_id]] if start.timestamp() <= log["start"] <= end.timestamp()])
+    rows.sort(key=lambda row: (row["Trail ID"], datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
+
+    return rows

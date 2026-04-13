@@ -6,12 +6,12 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
 
-from ui_config import BASE_URL
+from ui_config import BASE_URL, LOCAL_RUN
 
 DEFAULT_WAIT = 2
 WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
@@ -21,8 +21,9 @@ class SeleniumHelper:
         service = Service(ChromeDriverManager().install())
 
         options = Options()
-        
-        # options.add_argument('--headless')
+
+        if not LOCAL_RUN:
+            options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -107,8 +108,17 @@ class SeleniumHelper:
         try:
             element = driver.find_element(*locator)
             element.click()
+        except ElementClickInterceptedException:
+            print("Threw ElementClickInterceptedException, scrolling to center and trying again")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            element.click()
         except StaleElementReferenceException:
             print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.click()
+        except NoSuchElementException:
+            print("Threw NoSuchElementException, trying again")
             SeleniumHelper.wait(1)
             element = driver.find_element(*locator)
             element.click()
@@ -145,5 +155,3 @@ class SeleniumHelper:
 
     def wait(duration: float):
         time.sleep(duration)
-
-    

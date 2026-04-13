@@ -11,6 +11,7 @@ from dtos.trail_group_dto import TrailGroupDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from dtos.trail_status_dto import TrailStatusDTO
 from enums.granularity import Granularity
+from enums.trail_status_column import TrailStatusColumn
 
 class DashboardPage:
     root = (By.XPATH, "//div[@data-testid='dashboard-root']")
@@ -51,10 +52,10 @@ class DashboardPage:
     # Trail Status View
     table_root = "//div[@data-testid='trail-status-table']"
     table_head = table_root + "//div[contains(@class, 'TableHead')]"
-    trail_name_header = (By.XPATH, table_head + "//div[@data-column-id='1']")
-    weekly_count_header = (By.XPATH, table_head + "//div[@data-column-id='2']")
-    battery_status_header = (By.XPATH, table_head + "//div[@data-column-id='3']")
-    last_updated_header = (By.XPATH, table_head + "//div[@data-column-id='4']")
+    trail_name_header = (By.XPATH, table_head + "//div[@data-column-id='1' and @role='columnheader']")
+    weekly_count_header = (By.XPATH, table_head + "//div[@data-column-id='2' and @role='columnheader']")
+    battery_status_header = (By.XPATH, table_head + "//div[@data-column-id='3' and @role='columnheader']")
+    last_updated_header = (By.XPATH, table_head + "//div[@data-column-id='4' and @role='columnheader']")
     table_body = table_root + "//div[contains(@class, 'TableBody')]"
     trail_name_labels = (By.XPATH, table_body + "//div[@data-column-id='1']")
     weekly_count_labels = (By.XPATH, table_body + "//div[@data-column-id='2']")
@@ -75,8 +76,10 @@ class DashboardPage:
             self._set_date_range(filter.date_start, filter.date_end)
         if filter.granularity != None:
             self._set_granularity(filter.granularity)
-        self._select_trails(filter.trails)
-        self._select_trail_groups(filter.trail_groups)
+        if len(filter.trails):
+            self._select_trails(filter.trails)
+        if len(filter.trail_groups):
+            self._select_trail_groups(filter.trail_groups)
 
     def retrieve_dashboard_filters(self) -> DashboardFilterDTO:
         date_range = SH.retrieve_text_from_element(self.driver, self.date_range_picker)
@@ -218,6 +221,8 @@ class DashboardPage:
             battery_statuses = SH.retrieve_text_from_elements(self.driver, self.battery_status_labels)
             last_updateds = SH.retrieve_text_from_elements(self.driver, self.last_updated_labels)
             for trail_name, weekly_count, battery_status, last_updated in zip(trail_names, weekly_counts, battery_statuses, last_updateds):
+                if battery_status == "N/A":
+                    battery_status = ""
                 if last_updated == "N/A":
                     last_updated = None
                 else:
@@ -238,3 +243,15 @@ class DashboardPage:
 
     def select_rows_per_page(self, rows: int) -> None:
         SH.select_dropdown_option(self.driver, self.rows_per_page_dropdown, str(rows))
+
+    def click_trail_status_column(self, column: TrailStatusColumn):
+        if column == TrailStatusColumn.TRAIL_NAME:
+            SH.click_element(self.driver, self.trail_name_header)
+        elif column == TrailStatusColumn.WEEKLY_COUNT:
+            SH.click_element(self.driver, self.weekly_count_header)
+        elif column == TrailStatusColumn.BATTERY_STATUS:
+            SH.click_element(self.driver, self.battery_status_header)
+        elif column == TrailStatusColumn.LAST_UPDATED:
+            SH.click_element(self.driver, self.last_updated_header)
+        else:
+            raise ValueError("Invalid column")

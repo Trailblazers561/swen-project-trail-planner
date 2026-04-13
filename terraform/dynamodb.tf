@@ -216,11 +216,11 @@ resource "aws_dynamodb_table" "error_table" {
 }
 
 locals {
-  device_sampledata = csvdecode(file("${path.module}/${local.sampledata_directory}/devices.csv"))
-  trail_sampledata = csvdecode(file("${path.module}/${local.sampledata_directory}/trails.csv"))
-  device_trail_sampledata = csvdecode(file("${path.module}/${local.sampledata_directory}/device_trails.csv"))
-  trail_groups_raw = csvdecode(file("${path.module}/${local.sampledata_directory}/trail_groups.csv"))
-  trail_group_sampledata = [
+  device_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/devices.csv"))
+  trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/trails.csv"))
+  device_trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_trails.csv"))
+  trail_groups_raw = csvdecode(file("${path.module}/${local.sample_data_directory}/trail_groups.csv"))
+  trail_group_sample_data = [
     for group_name in distinct([for g in local.trail_groups_raw : g.name]) : {
       name = group_name
       trail_ids = [
@@ -230,16 +230,12 @@ locals {
       ]
     }
   ]
-  device_trail_log_hour_sampledata = local.test_run ? csvdecode(file("${path.module}/${local.sampledata_directory}/hours.csv")) : []
-  device_trail_log_day_sampledata = local.test_run ? csvdecode(file("${path.module}/${local.sampledata_directory}/days.csv")) : []
-  device_trail_log_week_sampledata = local.test_run ? csvdecode(file("${path.module}/${local.sampledata_directory}/weeks.csv")) : []
-  device_trail_log_month_sampledata = local.test_run ? csvdecode(file("${path.module}/${local.sampledata_directory}/months.csv")) : []
-  error_sampledata = csvdecode(file("${path.module}/${local.sampledata_directory}/errors.csv"))
+  error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
 }
 
 # INSERT TEST DATA INTO Device
 resource "aws_dynamodb_table_item" "device_items" {
-  for_each = { for idx, item in local.device_sampledata : idx => item }
+  for_each = { for idx, item in local.device_sample_data : idx => item }
 
   table_name = aws_dynamodb_table.device_table.name
   hash_key = aws_dynamodb_table.device_table.hash_key
@@ -255,7 +251,7 @@ resource "aws_dynamodb_table_item" "device_items" {
 
 # INSERT TEST DATA INTO Trail
 resource "aws_dynamodb_table_item" "trail_items" {
-  for_each = { for idx, item in local.trail_sampledata : idx => item }
+  for_each = { for idx, item in local.trail_sample_data : idx => item }
 
   table_name = aws_dynamodb_table.trail_table.name
   hash_key = aws_dynamodb_table.trail_table.hash_key
@@ -272,7 +268,7 @@ resource "aws_dynamodb_table_item" "trail_items" {
 
 # INSERT TEST DATA INTO DeviceTrail
 resource "aws_dynamodb_table_item" "device_trail_items" {
-  for_each = { for idx, item in local.device_trail_sampledata : idx => item }
+  for_each = { for idx, item in local.device_trail_sample_data : idx => item }
 
   table_name = aws_dynamodb_table.device_trail_table.name
   hash_key = aws_dynamodb_table.device_trail_table.hash_key
@@ -289,7 +285,7 @@ resource "aws_dynamodb_table_item" "device_trail_items" {
 
 # INSERT TEST DATA INTO TrailGroups
 resource "aws_dynamodb_table_item" "trail_group_items" {
-  for_each = { for idx, item in local.trail_group_sampledata : idx => item }
+  for_each = { for idx, item in local.trail_group_sample_data : idx => item }
 
   table_name = aws_dynamodb_table.trail_group_table.name
   hash_key   = aws_dynamodb_table.trail_group_table.hash_key
@@ -300,72 +296,9 @@ resource "aws_dynamodb_table_item" "trail_group_items" {
   })
 }
 
-# INSERT TEST DATA INTO DeviceTrailLogHour
-resource "aws_dynamodb_table_item" "device_trail_log_hour_items" {
-  for_each = { for idx, item in local.device_trail_log_hour_sampledata : idx => item }
-
-  table_name = aws_dynamodb_table.device_trail_log_hour_table.name
-  hash_key   = aws_dynamodb_table.device_trail_log_hour_table.hash_key
-  range_key  = aws_dynamodb_table.device_trail_log_hour_table.range_key
-
-  item = jsonencode({
-    device_trail_id  = { "N" = each.value.device_trail_id }
-    start = { "N" = each.value.start }
-    count = { "N" = each.value.count }
-  })
-}
-
-# INSERT TEST DATA INTO DeviceTrailLogDay
-resource "aws_dynamodb_table_item" "device_trail_log_day_items" {
-  for_each = { for idx, item in local.device_trail_log_day_sampledata : idx => item }
-
-  table_name = aws_dynamodb_table.device_trail_log_day_table.name
-  hash_key   = aws_dynamodb_table.device_trail_log_day_table.hash_key
-  range_key  = aws_dynamodb_table.device_trail_log_day_table.range_key
-
-  item = jsonencode({
-    device_trail_id  = { "N" = each.value.device_trail_id }
-    start = { "N" = each.value.start }
-    count = { "N" = each.value.count }
-    battery = { "N" = each.value.battery }
-  })
-}
-
-# INSERT TEST DATA INTO DeviceTrailLogWeek
-resource "aws_dynamodb_table_item" "device_trail_log_week_items" {
-  for_each = { for idx, item in local.device_trail_log_week_sampledata : idx => item }
-
-  table_name = aws_dynamodb_table.device_trail_log_week_table.name
-  hash_key   = aws_dynamodb_table.device_trail_log_week_table.hash_key
-  range_key  = aws_dynamodb_table.device_trail_log_week_table.range_key
-
-  item = jsonencode({
-    device_trail_id  = { "N" = each.value.device_trail_id }
-    start = { "N" = each.value.start }
-    count = { "N" = each.value.count }
-    battery = { "N" = each.value.battery }
-  })
-}
-
-# INSERT TEST DATA INTO DeviceTrailLogMonth
-resource "aws_dynamodb_table_item" "device_trail_log_month_items" {
-  for_each = { for idx, item in local.device_trail_log_month_sampledata : idx => item }
-
-  table_name = aws_dynamodb_table.device_trail_log_month_table.name
-  hash_key   = aws_dynamodb_table.device_trail_log_month_table.hash_key
-  range_key  = aws_dynamodb_table.device_trail_log_month_table.range_key
-
-  item = jsonencode({
-    device_trail_id  = { "N" = each.value.device_trail_id }
-    start = { "N" = each.value.start }
-    count = { "N" = each.value.count }
-    battery = { "N" = each.value.battery }
-  })
-}
-
 # INSERT TEST DATA INTO Error
 resource "aws_dynamodb_table_item" "error_items" {
-  for_each = { for idx, item in local.error_sampledata : idx => item }
+  for_each = { for idx, item in local.error_sample_data : idx => item }
 
   table_name = aws_dynamodb_table.error_table.name
   hash_key   = aws_dynamodb_table.error_table.hash_key
@@ -376,4 +309,23 @@ resource "aws_dynamodb_table_item" "error_items" {
     time = { "N" = each.value.time }
     error = { "S" = each.value.error }
   })
+}
+
+resource "null_resource" "load_test_data" {
+  count = local.test_run ? 1 : 0
+
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = "python ${path.module}/${local.sample_data_directory}/load_test_data.py --env ${var.deploy_env}"
+  }
+
+  depends_on = [
+    aws_dynamodb_table.device_trail_log_hour_table,
+    aws_dynamodb_table.device_trail_log_day_table,
+    aws_dynamodb_table.device_trail_log_week_table,
+    aws_dynamodb_table.device_trail_log_month_table
+  ]
 }

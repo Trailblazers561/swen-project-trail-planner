@@ -1,27 +1,33 @@
 import pytest
 import pytest_check
+from pathlib import Path
+import time
 
 from datetime import datetime
 
 from selenium_helper import SeleniumHelper as SH
 from test_data import TRAILS, TRAIL_GROUPS, retrieve_graph
 
-from dtos.user_dto import UserDTO
-from enums.user_enum import User
-from enums.granularity import Granularity
-from steps.login.login_step import LoginStep
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.trail_dto import TrailDTO
-from dtos.trail_group_dto import TrailGroupDTO
-from steps.dashboard.retrieve_graph_step import RetrieveGraphStep
+from dtos.user_dto import UserDTO
+from enums.granularity import Granularity
+from enums.user_enum import User
 from steps.dashboard.retrieve_dashboard_options_step import RetrieveDashboardOptionsStep
+from steps.dashboard.retrieve_graph_step import RetrieveGraphStep
 from steps.dashboard.set_dashboard_filters_step import SetDashboardFiltersStep
+from steps.login.login_step import LoginStep
 
-
-from selenium.webdriver.common.by import By
-from selenium_helper import SeleniumHelper as SH
 @pytest.mark.UI
 def dashboard_graph_test():
+    """
+    Tests Everthing About The Dashboard Graph
+     - Date Rage
+     - Granularity
+     - Trails Multiselct
+     - Trail Group Multiselect
+     - Graph
+    """
     driver = SH.get_driver()
 
     try:
@@ -57,7 +63,7 @@ def dashboard_graph_test():
             (DashboardFilterDTO(datetime.fromisoformat("2026-01-01"), datetime.fromisoformat("2026-01-03")), [Granularity.DAY, Granularity.HOUR]),
         ]
         for granularity in granularities:
-            check_granularity(driver, granularity)
+            verify_granularity(driver, granularity)
 
         # Verify Empty Graph
         retrieve_empty_graph_step = RetrieveGraphStep(driver)
@@ -85,15 +91,14 @@ def dashboard_graph_test():
             DashboardFilterDTO(datetime.fromisoformat("2026-01-01"), datetime.fromisoformat("2026-01-03"), Granularity.HOUR, trails=selected_trails),
         ]
         for granularity_filter in granularity_filters:
-            check_granularity_filter(driver, granularity_filter, selected_trails) 
-        
-    except Exception as e:
-        print(str(e))
-        print()
+            verify_granularity_filter(driver, granularity_filter, selected_trails)
+    except:
+        driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_graph_test_error_{int(time.time())}.png")
+        raise
     finally:
         driver.quit()
 
-def check_granularity(driver, granularity: list[DashboardFilterDTO, list[Granularity]]):
+def verify_granularity(driver, granularity: list[DashboardFilterDTO, list[Granularity]]):
     filter = granularity[0]
 
     set_dashboard_filter_step = SetDashboardFiltersStep(driver, filter)
@@ -103,7 +108,7 @@ def check_granularity(driver, granularity: list[DashboardFilterDTO, list[Granula
     retrieve_granularities_step.run()
     pytest_check.equal(granularity[1], retrieve_granularities_step.granularities)
 
-def check_granularity_filter(driver, granularity_filter: DashboardFilterDTO, selected_trails: set[TrailDTO]):
+def verify_granularity_filter(driver, granularity_filter: DashboardFilterDTO, selected_trails: set[TrailDTO]):
     set_dashboard_filter_step = SetDashboardFiltersStep(driver, granularity_filter)
     set_dashboard_filter_step.run()
     SH.wait(3)

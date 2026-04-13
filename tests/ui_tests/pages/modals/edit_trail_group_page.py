@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
+import re
 
 from dtos.trail_dto import TrailDTO
 from dtos.trail_group_dto import TrailGroupDTO
@@ -13,6 +14,7 @@ class EditTrailGroupPage:
     group_name_input = (By.XPATH, "//input[@id='group-name']")
     create_update_group_button = (By.XPATH, "//button[@data-testid='confirm-button']")
     select_trail_checkbox_xpath = "//input[@data-testid='checkbox {}']"
+    close_button = (By.XPATH, "//button[@data-testid='modal-close']")
 
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
@@ -38,3 +40,10 @@ class EditTrailGroupPage:
             trail_locator = (By.XPATH, self.select_trail_checkbox_xpath.format(trail))
             if not SH.retrieve_checkbox_selected(self.driver, trail_locator):
                 SH.click_element(self.driver, trail_locator)
+
+    def retrieve_trail_group_options(self) -> list[TrailGroupDTO]:
+        options = SH.retrieve_dropdown_options(self.driver, self.group_select)[1:] #Skip Select a group
+        return [TrailGroupDTO(re.match(r"^(?P<name>.*?) \((?P<trails>[0-9]+?) trails?\)$", option).group("name")) for option in options]
+
+    def close_modal(self) -> None:
+        SH.click_element(self.driver, self.close_button)

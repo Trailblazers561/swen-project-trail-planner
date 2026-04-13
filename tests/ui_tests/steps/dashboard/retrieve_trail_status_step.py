@@ -2,10 +2,10 @@ from selenium import webdriver
 from pages.dashboard_page import DashboardPage
 from dtos.trail_status_dto import TrailStatusDTO
 
-class RetrueveTrailStatusStep:
+class RetrieveTrailStatusStep:
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
-        self.trail_status: TrailStatusDTO = None
+        self.trail_status: list[TrailStatusDTO] = []
 
     def run(self):
         po = DashboardPage(self.driver)
