@@ -11,6 +11,7 @@ resource "aws_api_gateway_rest_api" "api" {
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
+  count = local.use_domain ? 1 : 0
   domain_name = "${local.api_sub_domain}.${local.domain}"
   regional_certificate_arn = var.acm_certificate_arn
 
@@ -23,9 +24,10 @@ resource "aws_api_gateway_domain_name" "api_domain" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
+  count = local.use_domain ? 1 : 0
   api_id      = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_stage.api_stage.stage_name
-  domain_name = aws_api_gateway_domain_name.api_domain.domain_name
+  domain_name = aws_api_gateway_domain_name.api_domain[0].domain_name
 }
 
 # /trail_data Resource
