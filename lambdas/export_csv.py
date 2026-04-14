@@ -65,13 +65,13 @@ def create_and_fill_csv(event, context):
         trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
         if not start_date: raise ValueError("Missing required field: start_date")
-        start_date = Decimal(datetime.fromisoformat(start_date).replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0).timestamp())
+        start_date = Decimal(datetime.fromisoformat(start_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
 
         if not end_date: raise ValueError("Missing required field: end_date")
         if granularity == "year":
-            end_date = Decimal((datetime.fromisoformat(end_date).replace(tzinfo=ZoneInfo("America/New_York"), month=1,day=1) + timedelta(years=1) - timedelta(days=1)).timestamp())
+            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=1,day=1) + timedelta(years=1) - timedelta(days=1)).timestamp())
         else:
-            end_date = Decimal((datetime.fromisoformat(end_date).replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0) - timedelta(minutes=1)).timestamp())
+            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0) - timedelta(minutes=1)).timestamp())
 
 
         if granularity not in table_time_map:
