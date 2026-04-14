@@ -41,37 +41,37 @@ jobs:
           python -m pip install -r tests/requirements.txt
           python -m pip install --no-compile --no-binary :all: -r lambdas/lambda_authorizer/requirements.txt -t lambdas/layers/auth_reqs/python
 
-      # - name: Setup Terraform Folder
-      #   run: |
-      #     mkdir -p terraform/lambdas
-      #     cp -r lambdas/* terraform/lambdas/
-      #     mkdir -p terraform/swen-project-react-app
-      #     cp -r swen-project-react-app/* terraform/swen-project-react-app/
-      #     mkdir -p terraform/tests
-      #     cp -r tests/* terraform/tests/
-      #     mkdir -p terraform/sample_data
-      #     cp -r sample_data/* terraform/sample_data/
+      - name: Setup Terraform Folder
+        run: |
+          mkdir -p terraform/lambdas
+          cp -r lambdas/* terraform/lambdas/
+          mkdir -p terraform/swen-project-react-app
+          cp -r swen-project-react-app/* terraform/swen-project-react-app/
+          mkdir -p terraform/tests
+          cp -r tests/* terraform/tests/
+          mkdir -p terraform/sample_data
+          cp -r sample_data/* terraform/sample_data/
 
-      # - name: Upload Configuration
-      #   uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
-      #   id: apply-upload
-      #   with:
-      #     workspace: ${{ env.TF_WORKSPACE }}
-      #     directory: ${{ env.CONFIG_DIRECTORY }}
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
+        id: apply-upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
 
-      # - name: Create Apply Run
-      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-      #   id: apply-run
-      #   with:
-      #     workspace: ${{ env.TF_WORKSPACE }}
-      #     configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+      - name: Create Apply Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: apply-run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
 
-      # - name: Apply
-      #   uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-      #   if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
-      #   id: apply
-      #   with:
-      #     run: ${{ steps.apply-run.outputs.run_id }}
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply
+        with:
+          run: ${{ steps.apply-run.outputs.run_id }}
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
@@ -80,19 +80,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # - name: Add React Files To React Bucket
-      #   run: |
-      #     BUCKET_NAME=$(curl -s \
-      #       -H "Authorization: Bearer ${{ secrets.TF_API_ORG_TOKEN }}" \
-      #       -H "Content-Type: application/vnd.api+json" \
-      #       "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
-      #       | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "react_bucket_name") | .attributes.value')
+      - name: Add React Files To React Bucket
+        run: |
+          BUCKET_NAME=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.TF_API_ORG_TOKEN }}" \
+            -H "Content-Type: application/vnd.api+json" \
+            "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
+            | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "react_bucket_name") | .attributes.value')
           
-      #     cd swen-project-react-app
-      #     python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
-      #     npm install
-      #     npm run build
-      #     aws s3 sync ./dist s3://$BUCKET_NAME --delete
+          cd swen-project-react-app
+          python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
+          npm install
+          npm run build
+          aws s3 sync ./dist s3://$BUCKET_NAME --delete
 
       - name: Install Chrome
         run: |
@@ -103,7 +103,8 @@ jobs:
         run: |
           python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
-          pytest -s tests/ui_tests/dashboard_graph_test.py -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
+          pytest -s tests/ui_tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
+          pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -151,7 +152,7 @@ jobs:
             const fs = require('fs');
             const xml2js = require('xml2js');
 
-            const files = ['junit/test-results-ui.xml'];
+            const files = ['junit/test-results-ui.xml', 'junit/test-results-api.xml'];
 
             let total = 0;
             let failed = 0;
