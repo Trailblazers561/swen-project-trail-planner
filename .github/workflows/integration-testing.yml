@@ -103,13 +103,22 @@ jobs:
         run: |
           python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
-          pytest -s tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+          pytest -s tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
+          pytest -s tests/ -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         with:
             name: pytest-results
-            path: junit/test-results.xml
+            path: junit/test-results-*.xml
+        if: ${{ always() }}
+
+      - name: Upload Error Screenshots
+        uses: actions/upload-artifact@v4
+        with:
+            name: error-screenshots
+            path: tests/ui_tests/errors/*.png
+            if-no-files-found: ignore
         if: ${{ always() }}
 
       - name: Install dependencies for GitHub Script
@@ -143,21 +152,38 @@ jobs:
             const fs = require('fs');
             const xml2js = require('xml2js');
 
-            const xmlData = fs.readFileSync('junit/test-results.xml', 'utf-8');
-            const result = await xml2js.parseStringPromise(xmlData);
+            const files = ['junit/test-results-ui.xml', 'junit/test-results-api.xml'];
 
-            const testsuite = result.testsuites.testsuite[0];
+            const total = 0;
+            const failed = 0;
+            const errored = 0;
+            const skipped = 0;
+            const time = 0;
 
-            if (!testsuite || !testsuite.$) {
-              throw new Error("Could not find testsuite");
+            for (const file of files) {
+              const xmlData = fs.readFileSync('junit/test-results.xml', 'utf-8');
+              const result = await xml2js.parseStringPromise(xmlData);
+
+              const testsuite = result.testsuites.testsuite[0];
+
+              if (!testsuite || !testsuite.$) {
+                throw new Error("Could not find testsuite");
+              }
+
+              const total += parseInt(testsuite.$.tests || 0);
+              const failed += parseInt(testsuite.$.failures || 0);
+              const errored += parseInt(testsuite.$.errors || 0);
+              const skipped += parseInt(testsuite.$.skipped || 0);
+              const time += parseFloat(testsuite.$.time || 0);
+
+              // const total = parseInt(testsuite.$.tests || 0);
+              // const failed = parseInt(testsuite.$.failures || 0);
+              // const errored = parseInt(testsuite.$.errors || 0);
+              // const skipped = parseInt(testsuite.$.skipped || 0);
+              // const passed = total - failed - errored - skipped;
+              // const time = parseFloat(testsuite.$.time || 0);
             }
-
-            const total = parseInt(testsuite.$.tests || 0);
-            const failed = parseInt(testsuite.$.failures || 0);
-            const errored = parseInt(testsuite.$.errors || 0);
-            const skipped = parseInt(testsuite.$.skipped || 0);
             const passed = total - failed - errored - skipped;
-            const time = parseFloat(testsuite.$.time || 0)
 
             const output = `#### Integration Testing Output
             \`\`\`
