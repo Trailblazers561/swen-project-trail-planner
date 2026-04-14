@@ -210,7 +210,8 @@ class DashboardPage:
         for line in lines:
             points = set()
             for x, y in zip(line["x"], line["y"]):
-                points.add(PointDTO(datetime.fromisoformat(x).astimezone(ZoneInfo("America/New_York")), y))
+                print("Graph x: ", x)
+                points.add(PointDTO(datetime.fromisoformat(x).replace(tzinfo=ZoneInfo("America/New_York")), y))
             line_set.add(LineDTO(line["name"], points))
         return GraphDTO(title, line_set)
 
