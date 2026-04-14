@@ -39,7 +39,6 @@ def add_edit_trail_test():
         trail_one = TrailDTO("Add Edit Trail One")
         add_trail_one_step = AddTrailStep(driver, trail_one)
         add_trail_one_step.run()
-        SH.wait(1)
 
         # Verify Present In Trails Muliselect
         retrieve_added_trail_one_step = RetrieveDashboardOptionsStep(driver)
@@ -53,7 +52,6 @@ def add_edit_trail_test():
         trail_one.trail_group_name = TRAIL_GROUPS[3].name
         update_trail_one_step = EditTrailStep(driver, trail_one, old_name)
         update_trail_one_step.run()
-        SH.wait(1)
 
         # Verify Updated In Trails Muliselect
         retrieve_updated_trail_one_step = RetrieveDashboardOptionsStep(driver)
@@ -74,7 +72,6 @@ def add_edit_trail_test():
         # Delete Trail
         delete_trail_one_step = EditTrailStep(driver, trail_one, delete=True)
         delete_trail_one_step.run()
-        SH.wait(1)
 
         # Verify Trail No Longer Present
         retrieve_deleted_trail_one_step = RetrieveDashboardOptionsStep(driver)
@@ -92,7 +89,6 @@ def add_edit_trail_test():
         trail_two = TrailDTO("Add Edit Trail Two", trail_group_name=TRAIL_GROUPS[3].name)
         add_trail_two_step = AddTrailStep(driver, trail_two)
         add_trail_two_step.run()
-        SH.wait(1)
 
         # Verify Trail Present (Group Still Selected)
         retrieve_grouped_trail_two_step = RetrieveDashboardOptionsStep(driver)
@@ -103,7 +99,6 @@ def add_edit_trail_test():
         # Delete Trail
         delete_trail_two_step = EditTrailStep(driver, trail_two, delete=True)
         delete_trail_two_step.run()
-        SH.wait(1)
     except:
         driver.save_screenshot(Path(__file__).parent / f"errors/add_edit_trail_test_error_{int(time.time())}.png")
         raise

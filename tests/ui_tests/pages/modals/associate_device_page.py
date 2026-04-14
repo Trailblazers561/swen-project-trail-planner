@@ -50,6 +50,7 @@ class AssociateDevicePage:
         self._click_device(device.device_id)
         self._select_trail(device.current_trail)
         self._click_associate_device()
+        SH.wait_for_element_disappear(self.driver, self.root)
 
     def _click_device(self, device_id: str) -> None:
         SH.click_element(self.driver, (By.XPATH, self.associate_device_button.format(device_id)))

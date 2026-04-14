@@ -13,7 +13,7 @@ import os
 
 from ui_config import BASE_URL, LOCAL_RUN
 
-DEFAULT_WAIT = 2
+DEFAULT_WAIT = 10
 WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
 
 class SeleniumHelper:

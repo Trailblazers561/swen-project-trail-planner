@@ -46,11 +46,13 @@ class EditTrailPage:
         SH.wait_for_element_appear(self.driver, self.confirm_delete_button)
         if confirm:
             SH.click_element(self.driver, self.confirm_delete_button)
+            SH.wait_for_element_disappear(self.driver, self.root)
         else:
             SH.click_element(self.driver, self.cancel_delete_button)
 
     def create_update_trail(self):
         SH.click_element(self.driver, self.create_update_trail_button)
+        SH.wait_for_element_disappear(self.driver, self.root)
 
     def _set_trail_name(self, name: str):
         SH.enter_text_to_element(self.driver, self.trail_name_input, name)
@@ -64,3 +66,4 @@ class EditTrailPage:
 
     def close_modal(self) -> None:
         SH.click_element(self.driver, self.close_button)
+        SH.wait_for_element_disappear(self.driver, self.root)
