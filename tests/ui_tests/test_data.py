@@ -173,7 +173,7 @@ for trail in TRAILS.values():
     status = RECENT_DATA.get(trail, [])
     weekly_count = sum(day["count"] for day in status) if status else 0
     battery_status = status[-1]["battery"]  if status else ""
-    last_updated = datetime.fromtimestamp(status[-1]["start"]) if status else None
+    last_updated = datetime.fromtimestamp(status[-1]["start"]).replace(hour=0) if status else None
 
     TRAIL_STATUSES.append(TrailStatusDTO(trail.name, weekly_count, battery_status, last_updated))
 
@@ -192,8 +192,8 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
     else:
         raise ValueError("Invalid granularity")
 
-    start = start.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
-    end = end.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(minutes=1)
+    start = start.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
+    end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0) + timedelta(minutes=1)
 
     if granularity in {Granularity.HOUR, Granularity.DAY}:
         regular_start_timestamp = int(start.timestamp())
@@ -265,11 +265,11 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
         raise ValueError("Invalid granularity")
 
     if granularity == Granularity.HOUR:
-        start = start.astimezone(ZoneInfo("America/New_York")).replace(minute=0, second=0, microsecond=0)
-        end = end.astimezone(ZoneInfo("America/New_York")).replace(minute=0, second=0, microsecond=0)
+        start = start.replace(tzinfo=ZoneInfo("America/New_York"), minute=0, second=0, microsecond=0)
+        end = end.replace(tzinfo=ZoneInfo("America/New_York"), minute=0, second=0, microsecond=0)
     else:
-        start = start.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
-        end = end.astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
+        start = start.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
+        end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
 
     rows = []
     for trail_id in trail_ids:
@@ -283,3 +283,4 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
     rows.sort(key=lambda row: (int(row["Trail ID"]), datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
 
     return rows
+retrieve_graph(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, [2, 3])

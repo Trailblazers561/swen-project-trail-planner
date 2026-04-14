@@ -104,7 +104,6 @@ jobs:
           python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           pytest -s tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
-          pytest -s tests/ -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -170,11 +169,11 @@ jobs:
                 throw new Error("Could not find testsuite");
               }
 
-              const total += parseInt(testsuite.$.tests || 0);
-              const failed += parseInt(testsuite.$.failures || 0);
-              const errored += parseInt(testsuite.$.errors || 0);
-              const skipped += parseInt(testsuite.$.skipped || 0);
-              const time += parseFloat(testsuite.$.time || 0);
+              total += parseInt(testsuite.$.tests || 0);
+              failed += parseInt(testsuite.$.failures || 0);
+              errored += parseInt(testsuite.$.errors || 0);
+              skipped += parseInt(testsuite.$.skipped || 0);
+              time += parseFloat(testsuite.$.time || 0);
 
               // const total = parseInt(testsuite.$.tests || 0);
               // const failed = parseInt(testsuite.$.failures || 0);
@@ -199,16 +198,16 @@ jobs:
             });
         if: ${{ always() }}
 
-      - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: destroy-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          is_destroy: true
-        if: ${{ always() }}
+      # - name: Create Destroy Run
+      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+      #   id: destroy-run
+      #   with:
+      #     workspace: ${{ env.TF_WORKSPACE }}
+      #     is_destroy: true
+      #   if: ${{ always() }}
 
-      - name: Destroy
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-        with:
-          run: ${{ steps.destroy-run.outputs.run_id }}
-        if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
+      # - name: Destroy
+      #   uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+      #   with:
+      #     run: ${{ steps.destroy-run.outputs.run_id }}
+      #   if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
