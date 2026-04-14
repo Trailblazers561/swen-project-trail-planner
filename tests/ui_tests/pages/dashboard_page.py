@@ -126,9 +126,6 @@ class DashboardPage:
             SH.click_element(self.driver, self.dropdown_clear)
         for trail in trails:
             SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(trail.name)))
-            if SH.retrieve_element_attribute(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(trail.name)), "aria-label") == f"{trail.name}, not selected":
-                print("Failed to Click Trail From Dropdown, Trying Again")
-                SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(trail.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
     def _select_trail_groups(self, trail_groups: list[TrailGroupDTO]) -> None:
@@ -138,9 +135,6 @@ class DashboardPage:
             SH.click_element(self.driver, self.dropdown_clear)
         for group in trail_groups:
             SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(group.name)))
-            if SH.retrieve_element_attribute(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(group.name)), "aria-label") == f"{group.name}, not selected":
-                print("Failed to Click Trail Group From Dropdown, Trying Again")
-                SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(group.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
     def retrieve_granularity_options(self) -> list[Granularity]:
