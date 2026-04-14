@@ -112,7 +112,7 @@ def verify_granularity(driver, granularity: list[DashboardFilterDTO, list[Granul
 def verify_granularity_filter(driver, granularity_filter: DashboardFilterDTO, selected_trails: set[TrailDTO]):
     set_dashboard_filter_step = SetDashboardFiltersStep(driver, granularity_filter)
     set_dashboard_filter_step.run()
-    SH.wait(3)
+    SH.wait(5)
 
     retrieve_graph_step = RetrieveGraphStep(driver)
     retrieve_graph_step.run()
