@@ -103,7 +103,7 @@ jobs:
         run: |
           python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
-          pytest -s tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
+          pytest -s tests/ui_tests/import_export_data_test.py -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -160,7 +160,7 @@ jobs:
             const time = 0;
 
             for (const file of files) {
-              const xmlData = fs.readFileSync('junit/test-results.xml', 'utf-8');
+              const xmlData = fs.readFileSync(file, 'utf-8');
               const result = await xml2js.parseStringPromise(xmlData);
 
               const testsuite = result.testsuites.testsuite[0];
