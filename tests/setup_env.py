@@ -46,7 +46,7 @@ def retrieve_token(env):
 def write_values(env):
     with open(Path(__file__).parent / ".env", "w") as file:
         # file.write(f"CLOUDFRONT_URL=http://{retrieve_cloudfront_url(env)}\n")
-        file.write("CLOUDFRONT_URL=http://d2joobtdyw3u13.cloudfront.net")
+        file.write("CLOUDFRONT_URL=http://d2joobtdyw3u13.cloudfront.net\n")
         file.write(f"API_URL={retrieve_api_url(env)}\n")
         file.write(f"API_TOKEN={retrieve_token(env)}\n")
         file.write(f"API_KEY={env}-trail-planner-key-trail-trail-trail-trail\n")

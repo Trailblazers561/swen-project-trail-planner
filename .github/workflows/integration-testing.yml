@@ -153,11 +153,11 @@ jobs:
 
             const files = ['junit/test-results-ui.xml', 'junit/test-results-api.xml'];
 
-            const total = 0;
-            const failed = 0;
-            const errored = 0;
-            const skipped = 0;
-            const time = 0;
+            let total = 0;
+            let failed = 0;
+            let errored = 0;
+            let skipped = 0;
+            let time = 0;
 
             for (const file of files) {
               const xmlData = fs.readFileSync(file, 'utf-8');
