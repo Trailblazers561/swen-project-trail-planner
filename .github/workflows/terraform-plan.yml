@@ -3,7 +3,7 @@ name: "Terraform Plan"
 on:
   pull_request:
     branches:
-      # - trailblazers-tst
+      - trailblazers-tst
       - trailblazers-uat
       - trailblazers-prod
 
