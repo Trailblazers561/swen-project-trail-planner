@@ -67,4 +67,13 @@ class GraphDTO:
 
         pytest_check.equal(self.title, other.title)
         pytest_check.equal(self.lines, other.lines)
+        if self.lines != other.lines:
+            print("FOUND UNEQUAL LINES: ",self.title)
+            print("SELF LINES:")
+            for line in self.lines:
+                print("LINNEE:", line.trail_name, line.points)
+            print("OTHER LINES:")
+            for line in other.lines:
+                print("LINNEE:", line.trail_name, line.points)
+            print("END OF UNEQUAL")
 
