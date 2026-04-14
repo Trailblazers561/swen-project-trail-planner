@@ -210,18 +210,23 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
 
     lines = {}
     for trail_id in trail_ids:
-        lines[trail_id] = {
+        lines[trail_id] = []
+    for trail_id in trail_ids:
+        lines[trail_id].extend([
             PointDTO(datetime.fromtimestamp(log["start"]).astimezone(ZoneInfo("America/New_York")), log["count"]) for log in DATA[TRAILS[trail_id]]
             if regular_start_timestamp <= log["start"] < regular_end_timestamp
-        }
+        ])
 
     if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_start_timestamp < regular_start_timestamp:
         for trail_id in trail_ids:
-            lines[trail_id].add(PointDTO(start, sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if partial_start_timestamp <= log["start"] < regular_start_timestamp)))
+            lines[trail_id].append(PointDTO(start, sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if partial_start_timestamp <= log["start"] < regular_start_timestamp)))
 
     if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_end_timestamp > regular_end_timestamp:
         for trail_id in trail_ids:
-            lines[trail_id].add(PointDTO(datetime.fromtimestamp(regular_end_timestamp).astimezone(ZoneInfo("America/New_York")), sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if regular_end_timestamp <= log["start"] < partial_end_timestamp)))
+            lines[trail_id].append(PointDTO(datetime.fromtimestamp(regular_end_timestamp).astimezone(ZoneInfo("America/New_York")), sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if regular_end_timestamp <= log["start"] < partial_end_timestamp)))
+
+    for line in lines.values():
+        line.sort(key=lambda x: x.date)
 
     graph_lines = {LineDTO(TRAILS[trail_id].name, points) for trail_id, points in lines.items()}
 

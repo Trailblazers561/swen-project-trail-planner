@@ -203,7 +203,7 @@ class DashboardPage:
         lines = self.driver.execute_script("return document.querySelector('.js-plotly-plot').data")
         line_set = set()
         for line in lines:
-            points = set()
+            points = []
             for hovertemplate in line["hovertemplate"]:
                 count_match = re.search(r"Count:\s*(\d+)", hovertemplate)
                 count = int(count_match.group(1)) if count_match else 0
@@ -211,11 +211,11 @@ class DashboardPage:
                 hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
                 day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
                 if range_match:
-                    points.add(PointDTO(datetime.strptime(range_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(range_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif hour_match:
-                    points.add(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.group('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.group('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif day_match:
-                    points.add(PointDTO(datetime.strptime(day_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(day_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 else:
                     raise ValueError(f"Could Not Match Hovertemplate [{hovertemplate}] To Format For Graph [{title}]")
             line_set.add(LineDTO(line["name"], points))
