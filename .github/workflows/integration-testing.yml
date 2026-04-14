@@ -103,8 +103,13 @@ jobs:
         run: |
           python sample_data/load_test_data.py --env ${{ env.TF_VAR_deploy_env }}
           python tests/setup_env.py --env ${{ env.TF_VAR_deploy_env }}
-          pytest -s tests/ui_tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
-          pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
+
+      - name: Run UI Tests
+        run: pytest -s tests/ui_tests/ -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
+
+      - name: Run API Tests
+        run: pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
+        if: ${{ always() }}
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
