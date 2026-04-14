@@ -56,8 +56,8 @@ def create_and_fill_csv(event, context):
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get("trail_id")
-        start_date = single_params.get("start_date")
-        end_date = single_params.get("end_date")
+        start_date = single_params.get("start_date", "")[:10]
+        end_date = single_params.get("end_date", "")[:10]
         granularity = single_params.get("granularity", "day").lower() # defaulting to day if not specified, prolly unnecessary but makes things easier
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
@@ -65,13 +65,13 @@ def create_and_fill_csv(event, context):
         trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
         if not start_date: raise ValueError("Missing required field: start_date")
-        start_date = Decimal(datetime.fromisoformat(start_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+        start_date = Decimal(datetime.fromisoformat(start_date).replace(tzinfo=ZoneInfo("America/New_York")).timestamp())
 
         if not end_date: raise ValueError("Missing required field: end_date")
         if granularity == "year":
-            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=12,day=31)).timestamp())
+            end_date = Decimal(datetime.fromisoformat(end_date).replace(tzinfo=ZoneInfo("America/New_York"), month=12, day=31).timestamp())
         else:
-            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0) + timedelta(days=1) - timedelta(minutes=1)).timestamp())
+            end_date = Decimal((datetime.fromisoformat(end_date).replace(tzinfo=ZoneInfo("America/New_York")) + timedelta(days=1) - timedelta(minutes=1)).timestamp())
 
         if granularity not in table_time_map:
             raise ValueError(f"Invalid granularity of {granularity}. Make sure it is a valid option: {list(table_time_map.keys())}")

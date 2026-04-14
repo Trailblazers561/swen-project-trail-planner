@@ -342,13 +342,14 @@ const dashboard = () => {
 
         let currentEnd = currentStart;
         let nextStart;
+        const end = new Date(endDate.getTime() + 23 * 60 * 60 * 1000);
 
-        while (currentEnd < endDate) {
+        while (currentEnd < end) {
             const nextGranularityDates = getNextGranularityDates(currentStart, granularity);
-            currentEnd = nextGranularityDates.end
+            currentEnd = nextGranularityDates.end;
             nextStart = nextGranularityDates.start;
-            if (currentEnd > endDate)
-                currentEnd = endDate;
+            if (currentEnd > end)
+                currentEnd = end;
 
             ranges.push({ start: currentStart, end: currentEnd });
             currentStart = nextStart;
@@ -653,14 +654,18 @@ const dashboard = () => {
 
     // Creates the Plotly Layout With Custom Ranges and Shapes
     function getPlotLayout(lines: Line[]): Partial<Layout> {
-
+        let xRangeEnd: string | undefined;
+        if (granularity == Granularity.Hour && selectedDateEnd != null)
+            xRangeEnd = new Date(selectedDateEnd.getTime() + 23 * 60 * 60 * 1000).toISOString();
+        else 
+            xRangeEnd = selectedDateEnd?.toISOString();
     return {   
         margin: { l: 60, r: 30, t: 20, b: 60 },
         plot_bgcolor: "white",
         paper_bgcolor: "white",
 
         xaxis: {
-            range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
+            range: lines.length === 0 ? [selectedDate?.toISOString(), xRangeEnd] : undefined,
             type: "date",
             title: {
                 text: "Date",

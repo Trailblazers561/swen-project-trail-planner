@@ -87,12 +87,12 @@ def dashboard_graph_test():
             DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.MONTH, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.WEEK, trails=selected_trails),
-            # DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.DAY, trails=selected_trails),
-            # DashboardFilterDTO(datetime.fromisoformat("2026-01-01"), datetime.fromisoformat("2026-01-03"), Granularity.HOUR, trails=selected_trails),
+            DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.DAY, trails=selected_trails),
+            DashboardFilterDTO(datetime.fromisoformat("2026-01-01"), datetime.fromisoformat("2026-01-03"), Granularity.HOUR, trails=selected_trails),
         ]
         for granularity_filter in granularity_filters:
             verify_granularity_filter(driver, granularity_filter, selected_trails)
-        pytest_check.fail("Uncomment Other Granularities")
+        pytest_check.fail("Uncomment API Tests")
     except:
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_graph_test_error_{int(time.time())}.png")
         raise

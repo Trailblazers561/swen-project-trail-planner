@@ -93,8 +93,8 @@ def get_trail_data(event, context):
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get('trail_id')
-        start = single_params.get("start")
-        end = single_params.get("end")
+        start = single_params.get("start", "")[:10]
+        end = single_params.get("end", "")[:10]
         granularity = single_params.get("granularity", "day")
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
@@ -114,16 +114,11 @@ def get_trail_data(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
-        end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
+        start_time = datetime.fromisoformat(start).replace(tzinfo=ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end).replace(tzinfo=ZoneInfo("America/New_York"))
 
-        # Round down start_time and round up end_time
-        if granularity == "hour":
-            start_time = start_time.replace(minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-        else:
-            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        # Add a day to end_time (since we subtract 1 from the timestamp this won't add a real day's data)
+        end_time = end_time + timedelta(days=1)
 
         if granularity in ("week", "month"):
             partial_start_timestamp = int(start_time.timestamp())
@@ -227,7 +222,6 @@ def get_trail_data(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
 
 # ========== UPLOAD TRAIL DATA ==========
 def upload_trail_data(event, context):
