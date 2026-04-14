@@ -145,10 +145,10 @@ with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
 for trail, datas in MONTH_DATA.items():
     YEAR_DATA[trail] = []
     current_year = datetime.fromtimestamp(datas[0]["start"]).year
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": False})
-    year_data = {"start": int(datetime(current_year, 1, 1).timestamp()), "count": 0, "battery": "100%", "recorded": True}
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    year_data = {"start": int(datetime(current_year, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": True}
     for data in datas:
         data_year = datetime.fromtimestamp(data["start"]).year
         if current_year == data_year:
@@ -283,4 +283,4 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
     rows.sort(key=lambda row: (int(row["Trail ID"]), datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
 
     return rows
-retrieve_graph(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, [2, 3])
+# retrieve_graph(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, [2, 10])
