@@ -24,6 +24,7 @@ import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import moment from "moment-timezone";
 
 interface Trail {
     id: number;
@@ -342,14 +343,13 @@ const dashboard = () => {
 
         let currentEnd = currentStart;
         let nextStart;
-        const end = new Date(endDate.getTime() + 23 * 60 * 60 * 1000);
 
-        while (currentEnd < end) {
+        while (currentEnd < endDate) {
             const nextGranularityDates = getNextGranularityDates(currentStart, granularity);
             currentEnd = nextGranularityDates.end;
             nextStart = nextGranularityDates.start;
-            if (currentEnd > end)
-                currentEnd = end;
+            if (currentEnd > endDate)
+                currentEnd = endDate;
 
             ranges.push({ start: currentStart, end: currentEnd });
             currentStart = nextStart;
@@ -474,17 +474,28 @@ const dashboard = () => {
         setSelectedDateEnd(endDate);
     };
 
-    const handleDateRangeChange = (DateRange: DateRange | undefined) => {
-        setRange(DateRange)
-        setSelectedDate(DateRange?.from ?? null);
-        setSelectedDateEnd(DateRange?.to ?? null);
-        handleStartDateChange(DateRange?.from ?? null);
-        handleEndDateChange(DateRange?.to ?? null);
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        const timezoneRange: DateRange = {from: undefined, to: undefined};
+        if (range?.from) {
+            const userISO = moment(range.from).tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format("YYYY-MM-DD");
+            const newYorkOffset = moment(range.from).tz("America/New_York").format("Z");
+            timezoneRange.from = new Date(`${userISO}T00:00:00${newYorkOffset}`);
+        }
+        if (range?.to) {
+            const userISO = moment(range.to).tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format("YYYY-MM-DD");
+            const newYorkOffset = moment(range.to).tz("America/New_York").format("Z");
+            timezoneRange.to = new Date(`${userISO}T23:00:00${newYorkOffset}`);
+        }
 
-    if (!DateRange?.from || !DateRange?.to) return
+        setRange(range);
+        setSelectedDate(timezoneRange?.from ?? null);
+        setSelectedDateEnd(timezoneRange?.to ?? null);
+        handleStartDateChange(timezoneRange?.from ?? null);
+        handleEndDateChange(timezoneRange?.to ?? null);
 
-    updateGranularityOptions(DateRange.from, DateRange.to)
+        if (!timezoneRange?.from || !timezoneRange?.to) return;
 
+        updateGranularityOptions(timezoneRange.from, timezoneRange.to);
     }
 
     const handleTrailChange = (selectedTrails: string[]) => {
@@ -654,18 +665,13 @@ const dashboard = () => {
 
     // Creates the Plotly Layout With Custom Ranges and Shapes
     function getPlotLayout(lines: Line[]): Partial<Layout> {
-        let xRangeEnd: string | undefined;
-        if (granularity == Granularity.Hour && selectedDateEnd != null)
-            xRangeEnd = new Date(selectedDateEnd.getTime() + 23 * 60 * 60 * 1000).toISOString();
-        else 
-            xRangeEnd = selectedDateEnd?.toISOString();
     return {   
         margin: { l: 60, r: 30, t: 20, b: 60 },
         plot_bgcolor: "white",
         paper_bgcolor: "white",
 
         xaxis: {
-            range: lines.length === 0 ? [selectedDate?.toISOString(), xRangeEnd] : undefined,
+            range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
             type: "date",
             title: {
                 text: "Date",
@@ -868,11 +874,11 @@ const dashboard = () => {
                                     hovertemplate: line.count.map((count: number, i: number) => {
                                         const s = new Date(line.startDate[i]);
                                         const e = new Date(line.endDate[i]);
-                                        const sString = s.toLocaleDateString("en-US", {month: "short", day: "numeric"});
-                                        const sYear = s.toLocaleDateString("en-US", {year: "numeric"});
-                                        const eString = e.toLocaleDateString("en-US", {month: "short", day: "numeric"});
-                                        const eYear = e.toLocaleDateString("en-US", {year: "numeric"});
-                                        const sHour = s.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
+                                        const sString = moment(s).tz("America/New_York").format("MMM D");
+                                        const sYear = moment(s).tz("America/New_York").format("YYYY");
+                                        const eString = moment(e).tz("America/New_York").format("MMM D");
+                                        const eYear = moment(e).tz("America/New_York").format("YYYY");
+                                        const sHour = moment(s).tz("America/New_York").format("h:mm A");
 
                                         if (line.granularity === Granularity.Hour) {
                                             return `${sString} ${sHour} | Count: ${count}`;
