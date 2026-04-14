@@ -69,10 +69,9 @@ def create_and_fill_csv(event, context):
 
         if not end_date: raise ValueError("Missing required field: end_date")
         if granularity == "year":
-            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=1,day=1) + timedelta(years=1) - timedelta(days=1)).timestamp())
+            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=12,day=31)).timestamp())
         else:
-            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0) - timedelta(minutes=1)).timestamp())
-
+            end_date = Decimal((datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0) + timedelta(days=1) - timedelta(minutes=1)).timestamp())
 
         if granularity not in table_time_map:
             raise ValueError(f"Invalid granularity of {granularity}. Make sure it is a valid option: {list(table_time_map.keys())}")
