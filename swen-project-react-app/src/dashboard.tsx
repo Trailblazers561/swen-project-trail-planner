@@ -451,8 +451,8 @@ const dashboard = () => {
         if (!startDate || !endDate || trails.length === 0)
             return "No trails selected";
 
-        const startStr = startDate.toLocaleDateString();
-        const endStr = endDate.toLocaleDateString();
+        const startStr = moment(startDate).tz("America/New_York").format("M/D/YYYY");
+        const endStr = moment(endDate).tz("America/New_York").format("M/D/YYYY");
         const includesAll = trails.length == trailMetadata.length
 
         if (includesAll) {
