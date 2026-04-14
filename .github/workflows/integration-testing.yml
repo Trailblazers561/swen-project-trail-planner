@@ -198,16 +198,16 @@ jobs:
             });
         if: ${{ always() }}
 
-      # - name: Create Destroy Run
-      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-      #   id: destroy-run
-      #   with:
-      #     workspace: ${{ env.TF_WORKSPACE }}
-      #     is_destroy: true
-      #   if: ${{ always() }}
+      - name: Create Destroy Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: destroy-run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          is_destroy: true
+        if: ${{ always() }}
 
-      # - name: Destroy
-      #   uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-      #   with:
-      #     run: ${{ steps.destroy-run.outputs.run_id }}
-      #   if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
+      - name: Destroy
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        with:
+          run: ${{ steps.destroy-run.outputs.run_id }}
+        if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
