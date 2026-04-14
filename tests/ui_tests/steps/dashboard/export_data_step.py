@@ -28,6 +28,7 @@ class ExportDataStep:
                 print("FOUND DOWNLOAD AT:", os.path.join(root, "trail_data.csv"))
                 found_where = os.path.join(root, "trail_data.csv")
                 self.export_file_path = found_where
+                found = True
         if found:
             with open(found_where) as f:
                 for line in f:
@@ -35,12 +36,12 @@ class ExportDataStep:
         else:
             print("NOT FOUND FILE CALLED trail_data.csv")
 
-        # start_time = time.time()
-        # while True:
-        #     if trail_file_path.exists():
-        #         self.export_file_path = trail_file_path
-        #         break
-        #     if time.time() - start_time > 15:
-        #         break
-        #     time.sleep(.5)
+        start_time = time.time()
+        while True:
+            if trail_file_path.exists():
+                self.export_file_path = trail_file_path
+                break
+            if time.time() - start_time > 15:
+                break
+            time.sleep(.5)
 

@@ -37,12 +37,13 @@ class SeleniumHelper:
         options.add_argument('--aggressive-cache-discard')
 
         prefs = {
-            "download.default_directory": os.path.dirname(__file__) + r"\downloads",
+            "download.default_directory": os.path.abspath(os.path.join(os.path.dirname(__file__), "downloads")),
+            # "download.default_directory": os.path.dirname(__file__) + r"\downloads",
             "download.prompt_for_download": False,
-            "savefile.default_directory": os.path.dirname(__file__) + r"\downloads",
-            "download_restrictions": 0,
-            "safebrowsing.enabled": False,
-            "safebrowsing.disable_download_protection": True
+            # "savefile.default_directory": os.path.dirname(__file__) + r"\downloads",
+            # "download_restrictions": 0,
+            # "safebrowsing.enabled": False,
+            # "safebrowsing.disable_download_protection": True
         }
         options.add_experimental_option("prefs", prefs)
 
