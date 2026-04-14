@@ -92,6 +92,7 @@ def dashboard_graph_test():
         ]
         for granularity_filter in granularity_filters:
             verify_granularity_filter(driver, granularity_filter, selected_trails)
+        pytest_check.fail("Uncomment API Tests and Destroy")
     except:
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_graph_test_error_{int(time.time())}.png")
         raise

@@ -93,8 +93,8 @@ def get_trail_data(event, context):
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get('trail_id')
-        start = single_params.get("start", "")[:10]
-        end = single_params.get("end", "")[:10]
+        start = single_params.get("start")
+        end = single_params.get("end")
         granularity = single_params.get("granularity", "day")
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
@@ -114,11 +114,14 @@ def get_trail_data(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        start_time = datetime.fromisoformat(start).replace(tzinfo=ZoneInfo("America/New_York"))
-        end_time = datetime.fromisoformat(end).replace(tzinfo=ZoneInfo("America/New_York"))
+        start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
 
         # Add a day to end_time (since we subtract 1 from the timestamp this won't add a real day's data)
-        end_time = end_time + timedelta(days=1)
+        if granularity == "hour":
+            end_time = (end_time + timedelta(hours=1)).replace(minute=0, second=0)
+        else:
+            end_time = (end_time + timedelta(days=1)).replace(hour=0, minute=0, second=0)
 
         if granularity in ("week", "month"):
             partial_start_timestamp = int(start_time.timestamp())
