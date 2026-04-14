@@ -222,8 +222,7 @@ const dashboard = () => {
         }
         
         try{
-            const dayEnd = new Date(selectedDateEnd.getTime() + 23 * 60 * 60 * 1000); // Get date object for 11:00 PM instead of 12:00 AM
-            const csv_url = (await exportCSV(trailList, selectedDate, dayEnd, granularity))["json"]["url"];
+            const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd, granularity))["json"]["url"];
             window.open(csv_url, "_self");
             setIsDownloadingStatus("done");
         } catch (error) {
