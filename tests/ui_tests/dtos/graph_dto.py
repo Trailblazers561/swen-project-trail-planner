@@ -22,12 +22,12 @@ class PointDTO:
         return hash((self.date, self.count))
 
 class LineDTO:
-    def __init__(self, trail_name: str, points: set[PointDTO]):
+    def __init__(self, trail_name: str, points: list[PointDTO]):
         self.trail_name = trail_name
         self.points = points
 
     def __str__(self):
-        return f"LineDTO [trail_name={self.trail_name}, len(points)={len(self.points)}]"
+        return f"LineDTO [trail_name={self.trail_name}, len(points)={len(self.points)}], points[0]={[self.points[0]]}, points[-1]={self.points[-1]}"
 
     def __repr__(self):
         return str(self)
