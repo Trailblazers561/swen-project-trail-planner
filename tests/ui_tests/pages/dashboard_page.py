@@ -4,6 +4,7 @@ from selenium_helper import SeleniumHelper as SH
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import re
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
@@ -209,9 +210,20 @@ class DashboardPage:
         line_set = set()
         for line in lines:
             points = set()
-            for x, y in zip(line["x"], line["y"]):
-                print("Graph x: ", x)
-                points.add(PointDTO(datetime.fromisoformat(x).replace(tzinfo=ZoneInfo("America/New_York")), y))
+            for hovertemplate in line["hovertemplate"]:
+                count_match = re.search(r"Count:\s*(\d+)", hovertemplate)
+                count = int(count_match.group(1)) if count_match else 0
+                range_match = re.match(r"^(?P<date>.*?)\s-\s(.*?)\s\|", hovertemplate)
+                hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
+                day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
+                if range_match:
+                    points.add(PointDTO(datetime.strptime(range_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                elif hour_match:
+                    points.add(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.group('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                elif day_match:
+                    points.add(PointDTO(datetime.strptime(day_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                else:
+                    raise ValueError(f"Could Not Match Hovertemplate [{hovertemplate}] To Format For Graph [{title}]")
             line_set.add(LineDTO(line["name"], points))
         return GraphDTO(title, line_set)
 

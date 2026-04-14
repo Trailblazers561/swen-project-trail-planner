@@ -193,20 +193,20 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
         raise ValueError("Invalid granularity")
 
     start = start.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
-    end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0) + timedelta(minutes=1)
+    end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1) - timedelta(minutes=1)
 
     if granularity in {Granularity.HOUR, Granularity.DAY}:
         regular_start_timestamp = int(start.timestamp())
         regular_end_timestamp = int(end.timestamp())
     else:
         partial_start_timestamp = int(start.timestamp())
-        partial_end_timestamp = int(end.timestamp())
+        partial_end_timestamp = int((end).timestamp())
         if granularity == Granularity.WEEK:
             regular_start_timestamp = int((start + timedelta(days=(7 - start.weekday()) % 7)).timestamp())
-            regular_end_timestamp = int((end - timedelta(days=end.weekday(), minutes=1)).timestamp())
+            regular_end_timestamp = int((end - timedelta(days=(end.weekday()+1)) + timedelta(minutes=1)).timestamp())
         if granularity in {Granularity.MONTH, Granularity.YEAR}:
             regular_start_timestamp = int((start if start.day == 1 else (start.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
-            regular_end_timestamp = int((end.replace(day=1) - timedelta(minutes=1)).timestamp())
+            regular_end_timestamp = int((end.replace(day=1, hour=0, minute=0)).timestamp())
 
     lines = {}
     for trail_id in trail_ids:
@@ -215,11 +215,11 @@ def retrieve_graph(start: datetime, end: datetime, granularity: Granularity, tra
             if regular_start_timestamp <= log["start"] < regular_end_timestamp
         }
 
-    if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_start_timestamp <= regular_start_timestamp:
+    if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_start_timestamp < regular_start_timestamp:
         for trail_id in trail_ids:
             lines[trail_id].add(PointDTO(start, sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if partial_start_timestamp <= log["start"] < regular_start_timestamp)))
 
-    if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_end_timestamp >= regular_end_timestamp:
+    if granularity in {Granularity.WEEK, Granularity.MONTH, Granularity.YEAR} and partial_end_timestamp > regular_end_timestamp:
         for trail_id in trail_ids:
             lines[trail_id].add(PointDTO(datetime.fromtimestamp(regular_end_timestamp).astimezone(ZoneInfo("America/New_York")), sum(log["count"] for log in DAY_DATA[TRAILS[trail_id]] if regular_end_timestamp <= log["start"] < partial_end_timestamp)))
 
@@ -264,12 +264,8 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
     else:
         raise ValueError("Invalid granularity")
 
-    if granularity == Granularity.HOUR:
-        start = start.replace(tzinfo=ZoneInfo("America/New_York"), minute=0, second=0, microsecond=0)
-        end = end.replace(tzinfo=ZoneInfo("America/New_York"), minute=0, second=0, microsecond=0)
-    else:
-        start = start.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
-        end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
+    start = start.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0)
+    end = end.replace(tzinfo=ZoneInfo("America/New_York"), hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1) - timedelta(minutes=1)
 
     rows = []
     for trail_id in trail_ids:
@@ -283,4 +279,3 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
     rows.sort(key=lambda row: (int(row["Trail ID"]), datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
 
     return rows
-# retrieve_graph(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, [2, 10])
