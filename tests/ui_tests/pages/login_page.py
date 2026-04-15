@@ -23,7 +23,7 @@ class LoginPage:
         self._enter_password(user.password)
         self._click_sign_in()
         if login_mode == LoginMode.NORMAL:
-            SH.wait_for_element_disappear(self.driver, self.root)
+            SH.wait_for_element_disappear(self.driver, self.root, 30)
         elif login_mode == LoginMode.ALERT:
             SH.wait(.5)
             return self._dismiss_alert()
