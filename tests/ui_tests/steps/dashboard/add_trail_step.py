@@ -5,6 +5,9 @@ from pages.dashboard_page import DashboardPage
 from pages.modals.edit_trail_page import EditTrailPage
 
 class AddTrailStep:
+    """
+    Adds A Trail
+    """
     def __init__(self, driver: webdriver.Chrome, trail: TrailDTO):
         self.driver = driver
         self.trail = trail

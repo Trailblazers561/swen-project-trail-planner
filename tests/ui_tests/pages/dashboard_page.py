@@ -17,6 +17,9 @@ from enums.granularity import Granularity
 from enums.trail_status_column import TrailStatusColumn
 
 class DashboardPage:
+    """
+    Dashboard Page (/dashboard)
+    """
     root = (By.XPATH, "//div[@data-testid='dashboard-root']")
     #Dashboard Headers
     date_range_picker = (By.XPATH, "//button[@id='date-picker-range']")
@@ -80,16 +83,16 @@ class DashboardPage:
             self._set_date_range(filter.date_start, filter.date_end)
         if filter.granularity != None:
             self._set_granularity(filter.granularity)
-        if len(filter.trails):
+        if len(filter.trails) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trails)):
             self._select_trails(filter.trails)
-        if len(filter.trail_groups):
+        if len(filter.trail_groups) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)):
             self._select_trail_groups(filter.trail_groups)
 
     def retrieve_dashboard_filters(self) -> DashboardFilterDTO:
         date_range = SH.retrieve_text_from_element(self.driver, self.date_range_picker)
         dates = date_range.split(" - ")
-        date_start = datetime.strptime(dates[0], "%b %d %Y")
-        date_end = datetime.strptime(dates[1], "%b %d %Y")
+        date_start = datetime.strptime(dates[0], "%b %d, %Y")
+        date_end = datetime.strptime(dates[1], "%b %d, %Y") if len(dates) >= 2 else None
         granularity = Granularity(SH.retrieve_text_from_element(self.driver, self.selected_granularity))
         trails = {TrailDTO(trail_name) for trail_name in SH.retrieve_text_from_elements(self.driver, self.selected_trails)}
         trail_groups = {TrailGroupDTO(group_name) for group_name in SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)}
@@ -235,7 +238,7 @@ class DashboardPage:
             line_set.add(LineDTO(line["name"], points))
         return GraphDTO(title, line_set)
 
-    def retrieve_trail_status(self, max=-1) -> list[TrailStatusDTO]:
+    def retrieve_trail_statuses(self, max=-1) -> list[TrailStatusDTO]:
         self.select_rows_per_page(30)
 
         if SH.retrieve_element_attribute(self.driver, self.first_page_button, "disabled") == None:

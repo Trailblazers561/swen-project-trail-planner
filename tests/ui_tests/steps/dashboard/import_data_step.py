@@ -3,6 +3,9 @@ from selenium import webdriver
 from pages.dashboard_page import DashboardPage
 
 class ImportDataStep:
+    """
+    Imports a CSV File
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
 

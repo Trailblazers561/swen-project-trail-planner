@@ -11,7 +11,7 @@ from dtos.user_dto import UserDTO
 from enums.trail_status_column import TrailStatusColumn
 from enums.user_enum import User
 from steps.dashboard.click_trail_status_header_step import ClickTrailStatusHeaderStep
-from steps.dashboard.retrieve_trail_status_step import RetrieveTrailStatusStep
+from steps.dashboard.retrieve_trail_status_step import RetrieveTrailStatusesStep
 from steps.dashboard.toggle_dashboard_view_step import ToggleDashboardViewStep
 from steps.login.login_step import LoginStep
 
@@ -36,10 +36,10 @@ def dashboard_trail_status_test():
         SH.wait(3)
 
         # Retrieve Default Trail Status Overview and Verify
-        retrieve_default_status_step = RetrieveTrailStatusStep(driver)
-        retrieve_default_status_step.run()
+        retrieve_default_statuses_step = RetrieveTrailStatusesStep(driver)
+        retrieve_default_statuses_step.run()
 
-        compare_trail_status_lists(retrieve_trail_status_overview(), retrieve_default_status_step.trail_status, "Default Trail Status Overview")
+        compare_trail_status_lists(retrieve_trail_status_overview(), retrieve_default_statuses_step.trail_statuses, "Default Trail Status Overview")
 
         # Click Trail Name Header and Verify
         sorted_columns = [
@@ -55,26 +55,23 @@ def dashboard_trail_status_test():
         for sorted_column in sorted_columns:
             verify_trail_header(driver, *sorted_column)
     except:
+        # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_error_{int(time.time())}.png")
         raise
     finally:
         driver.quit()
 
 def verify_trail_header(driver, column: TrailStatusColumn, reverse: bool, label: str):
-    try:
-        # SH.wait(3)
-        # Click Trail Status Header to Sort Column
-        click_trail_status_header_step = ClickTrailStatusHeaderStep(driver, column)
-        click_trail_status_header_step.run()
+    # Click Trail Status Header to Sort Column
+    click_trail_status_header_step = ClickTrailStatusHeaderStep(driver, column)
+    click_trail_status_header_step.run()
 
-        # Retrieve Column
-        retrieve_default_status_step = RetrieveTrailStatusStep(driver)
-        retrieve_default_status_step.run()
+    # Retrieve Column
+    retrieve_trail_statuses_step = RetrieveTrailStatusesStep(driver)
+    retrieve_trail_statuses_step.run()
 
-        # Verify Properly Sorted
-        compare_trail_status_lists(retrieve_trail_status_overview(column, reverse), retrieve_default_status_step.trail_status, label)
-    except:
-        raise
+    # Verify Properly Sorted
+    compare_trail_status_lists(retrieve_trail_status_overview(column, reverse), retrieve_trail_statuses_step.trail_statuses, label)
 
 def compare_trail_status_lists(expected: list[TrailStatusDTO], actual: list[TrailStatusDTO], label: str):
     if len(expected) != len(actual):

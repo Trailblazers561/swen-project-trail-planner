@@ -6,6 +6,9 @@ from dtos.user_dto import UserDTO
 from enums.login_mode import LoginMode
 
 class LoginPage:
+    """
+    Login / Registration Page (/login)
+    """
     root = (By.XPATH, "//div[@id='loginForm']")
     email_input = (By.XPATH, "//input[@type='email']")
     password_input = (By.XPATH, "//input[@type='password']")

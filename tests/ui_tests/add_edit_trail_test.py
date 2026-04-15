@@ -106,6 +106,7 @@ def add_edit_trail_test():
 
         pytest_check.is_false(trail_two in retrieve_deleted_trail_two_step.trails)
     except:
+        # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/add_edit_trail_test_error_{int(time.time())}.png")
         raise
     finally:

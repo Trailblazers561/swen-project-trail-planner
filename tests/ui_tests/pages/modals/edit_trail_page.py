@@ -8,6 +8,9 @@ import re
 from dtos.trail_dto import TrailDTO
 
 class EditTrailPage:
+    """
+    Add / Edit Trail Modal From Dashboard
+    """
     root = (By.XPATH, "//div[@data-testid='edit-trail-modal']")
     # Edit
     trail_select = (By.XPATH, "//select[@id='trail-select']")

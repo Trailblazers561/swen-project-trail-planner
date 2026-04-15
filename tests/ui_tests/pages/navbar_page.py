@@ -5,6 +5,9 @@ from selenium_helper import SeleniumHelper as SH
 from enums.user_action import UserAction
 
 class NavbarPage:
+    """
+    Navbar At The Top Of Every Page
+    """
     root = (By.XPATH, "//nav[@id='navbar']")
     user_role = (By.XPATH, "//div[@id='user-role']")
     user_icon = (By.XPATH, "//button[@id='user-icon-button']")

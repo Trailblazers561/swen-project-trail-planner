@@ -5,6 +5,9 @@ from pages.dashboard_page import DashboardPage
 from pages.modals.associate_device_page import AssociateDevicePage
 
 class RetrieveAssociatedDevicesStep:
+    """
+    Retrievs List of Paired and Unpaired Devices
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.unpaired_devices: list[DeviceDTO] = []
