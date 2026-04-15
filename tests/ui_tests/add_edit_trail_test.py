@@ -59,6 +59,13 @@ def add_edit_trail_test():
 
         pytest_check.is_true(trail_one in retrieve_updated_trail_one_step.trails)
 
+        # If We Don't Find New Trail One Try Deleting The Old Name And End Early
+        if trail_one not in retrieve_updated_trail_one_step.trails:
+            trail_one.name = old_name
+            delete_old_trail_one_step = EditTrailStep(driver, trail_one, delete=True)
+            delete_old_trail_one_step.run()
+            return
+
         # Select Group
         select_trail_one_group_step = SetDashboardFiltersStep(driver, DashboardFilterDTO(trail_groups={TRAIL_GROUPS[3]}))
         select_trail_one_group_step.run()
