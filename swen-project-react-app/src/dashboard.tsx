@@ -306,50 +306,53 @@ const dashboard = () => {
         endDate: Date,
         granularity: Granularity = Granularity.Day
     ): { start: Date; end: Date }[] {
-        let ranges: { start: Date; end: Date }[] = [];
+        const ranges: { start: Date; end: Date }[] = [];
 
-        const getNextGranularityDates = (date: Date, granularity: Granularity): {end: Date, start: Date} => {
-            const nextDate = new Date(date);
+        const startMoment = moment(startDate).tz("America/New_York");
+        const endMoment = moment(endDate).tz("America/New_York");
+
+        const getNextGranularitMoments = (m: moment.Moment): {end: moment.Moment, start: moment.Moment} => {
+            const nextMoment = m.clone();
             switch (granularity) {
                 case Granularity.Hour:
-                    nextDate.setHours(nextDate.getHours() + 1);
+                    nextMoment.add(1, "hour");
                     break;
                 case Granularity.Day:
-                    nextDate.setDate(nextDate.getDate() + 1);
+                    nextMoment.add(1, "day");
                     break;
                 case Granularity.Week:
-                    nextDate.setDate(nextDate.getDate() + 7 - ((nextDate.getDay() - 1) % 7));
+                    nextMoment.add(1, "week").startOf("isoWeek");
                     break;
                 case Granularity.Month:
-                    nextDate.setMonth(nextDate.getMonth() + 1, 1);
+                    nextMoment.add(1, "month").startOf("month");
                     break;
                 case Granularity.Year:
-                    nextDate.setFullYear(nextDate.getFullYear() + 1, 0, 1);
+                    nextMoment.add(1, "year").startOf("year");
                     break;
             }
 
-            const endDate = new Date(nextDate);
+            const endMoment = nextMoment.clone();
             if (granularity === Granularity.Hour)
-                    endDate.setMinutes(endDate.getMinutes() - 1);
-            else
-                endDate.setHours(endDate.getHours() - 1);
+                endMoment.subtract(1, "minute");
+            else 
+            endMoment.subtract(1, "hour");
 
-            return {end: endDate, start: nextDate};
-        }
+            return {start: nextMoment, end: endMoment};
+        };
 
-        let currentStart = new Date(startDate);
+        let currentStart = startMoment.clone();
 
-        let currentEnd = currentStart;
+        let currentEnd: moment.Moment;
         let nextStart;
 
-        while (currentEnd < endDate) {
-            const nextGranularityDates = getNextGranularityDates(currentStart, granularity);
-            currentEnd = nextGranularityDates.end;
-            nextStart = nextGranularityDates.start;
-            if (currentEnd > endDate)
-                currentEnd = endDate;
+        while (currentStart.isSameOrBefore(endMoment)) {
+            const nextGranularityMoments = getNextGranularitMoments(currentStart);
+            currentEnd = nextGranularityMoments.end;
+            nextStart = nextGranularityMoments.start;
+            if (currentEnd.isAfter(endMoment))
+                currentEnd = endMoment.clone();
 
-            ranges.push({ start: currentStart, end: currentEnd });
+            ranges.push({start: currentStart.toDate(), end: currentEnd.toDate()});
             currentStart = nextStart;
         }
 
