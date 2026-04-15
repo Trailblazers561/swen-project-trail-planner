@@ -99,6 +99,12 @@ def add_edit_trail_test():
         # Delete Trail
         delete_trail_two_step = EditTrailStep(driver, trail_two, delete=True)
         delete_trail_two_step.run()
+
+        # Verify Trail No Longer Present
+        retrieve_deleted_trail_two_step = RetrieveDashboardOptionsStep(driver)
+        retrieve_deleted_trail_two_step.run()
+
+        pytest_check.is_false(trail_two in retrieve_deleted_trail_two_step.trails)
     except:
         driver.save_screenshot(Path(__file__).parent / f"errors/add_edit_trail_test_error_{int(time.time())}.png")
         raise

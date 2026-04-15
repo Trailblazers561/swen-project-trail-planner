@@ -68,8 +68,8 @@ def create_and_fill_csv(event, context):
         start_date = Decimal(datetime.fromisoformat(start_date).astimezone(ZoneInfo("America/New_York")).timestamp())
 
         if not end_date: raise ValueError("Missing required field: end_date")
-        elif granularity == "year":
-            end_date = Decimal(datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York"), month=12, day=31).timestamp())
+        if granularity == "year":
+            end_date = Decimal(datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=12, day=31).timestamp())
         else:
             end_date = Decimal(datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).timestamp())
 

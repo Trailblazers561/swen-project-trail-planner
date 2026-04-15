@@ -117,6 +117,8 @@ const dashboard = () => {
     const isFetchingListData = useRef(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
 
+    const [graphUpdating, setGraphUpdating] = useState<boolean>(false);
+    const graphUpdatingRef = useRef(0);
 
     // Load trail metadata and groups from database
     useEffect(() => {
@@ -378,6 +380,9 @@ const dashboard = () => {
             
             if (trailIds.length === 0) return;
 
+            const responseGraphRef = ++graphUpdatingRef.current;
+            setGraphUpdating(true);
+
             const response = await getTrailLogs(
                 trailIds,
                 startDate,
@@ -438,6 +443,9 @@ const dashboard = () => {
 
             setGraphLines(lines);
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
+
+            if (responseGraphRef === graphUpdatingRef.current)
+                setGraphUpdating(false);
         } catch (error) {
             console.error("Error fetching trail data:", error);
         }
@@ -576,8 +584,8 @@ const dashboard = () => {
             (async () => {
                 try {
                     // Get last week's date range
-                    const now = new Date();
-                    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    const today = moment().tz("America/New_York").startOf("day").toDate();
+                    const oneWeekAgo = moment().tz("America/New_York").startOf("day").subtract(7, "days").toDate();
 
                     // Get all trail IDs
                     const trailIds = trailMetadata
@@ -595,7 +603,7 @@ const dashboard = () => {
                     const logsResponse = await getTrailLogs(
                         trailIds,
                         oneWeekAgo,
-                        now,
+                        today,
                         Granularity.Day
                     );
                     const logs = logsResponse.success ? await logsResponse.json : [];
@@ -619,15 +627,7 @@ const dashboard = () => {
                         const information = trailInformation.get(trail.id);
                         const lastUpdateTimestamp = information?.lastUpdatedTimestamp ?? null;
 
-                        let lastUpdated: string | null = null;
-                        if (lastUpdateTimestamp) {
-                            const date = new Date(lastUpdateTimestamp * 1000);
-                            const month = String(date.getMonth() + 1).padStart(2, "0");
-                            const day = String(date.getDate()).padStart(2, "0");
-                            const year = date.getFullYear();
-                            // Format as MM/DD/YYYY
-                            lastUpdated = `${month}/${day}/${year}`;
-                        }
+                        let lastUpdated: string | null = lastUpdateTimestamp ? moment(lastUpdateTimestamp * 1000).tz("America/New_York").format("MM/DD/YYYY") : null;
 
                         return {
                             trail_id: trail.id,
@@ -853,7 +853,7 @@ const dashboard = () => {
                 <div className="w-full pb-8 bg-gray-50">
                     <div className="w-full border-t border-gray-200">
                         {viewMode === "graph" ? (
-                        <div className="w-full h-[65vh] min-h-[400px]" data-testid="outer-dashboard-graph">
+                        <div className="w-full h-[65vh] min-h-[400px]" data-testid="outer-dashboard-graph" data-graph-updating={graphUpdating}>
                             <Plot 
                                 className="w-full h-full"
                                 config={{ displayModeBar: false, responsive: true }}

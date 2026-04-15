@@ -4,7 +4,9 @@ from selenium_helper import SeleniumHelper as SH
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from pathlib import Path
 import re
+import time
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
@@ -49,6 +51,7 @@ class DashboardPage:
     edit_group_options_button = (By.XPATH, "//div[@data-testid='edit-trail-group']")
     # Graph View
     graph_title_label = (By.XPATH, "//div[@data-testid='graph-title']")
+    outer_graph = (By.XPATH, "//div[@data-testid='outer-dashboard-graph']")
     graph = (By.XPATH, "//div[@data-testid='outer-dashboard-graph']/div")
     # Trail Status View
     table_root = "//div[@data-testid='trail-status-table']"
@@ -199,6 +202,17 @@ class DashboardPage:
         SH.click_element(self.driver, self.edit_group_options_button)
 
     def retrieve_graph(self) -> GraphDTO:
+        start_time = time.time()
+        while True:
+            if SH.retrieve_element_attribute(self.driver, self.outer_graph, "data-graph-updating") == "false":
+                break
+            # Timeout and continue if the graph has been updating for a minute. I know this is long, but I'm pretty sure the pipeline is reaaalllllyyyyyyy slow.
+            # The graph taking this long reguarly would be easily caught in UAT so I believe it's fine to wait this long.
+            if time.time() - start_time > 60:
+                self.driver.save_screenshot(Path(__file__).resolve().parents[1] / f"errors/dashboard_retrieve_graph_timeout_{int(time.time())}.png")
+                break
+            time.sleep(.5)
+
         title = SH.retrieve_text_from_element(self.driver, self.graph_title_label)
         lines = self.driver.execute_script("return document.querySelector('.js-plotly-plot').data")
         line_set = set()
