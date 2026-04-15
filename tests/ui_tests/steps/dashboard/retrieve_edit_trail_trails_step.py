@@ -5,6 +5,9 @@ from pages.dashboard_page import DashboardPage
 from pages.modals.edit_trail_page import EditTrailPage
 
 class RetrieveEditTrailTrailsStep:
+    """
+    Retrieves List of Trails That Appears In Edit Trail Modal
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.trails: list[TrailDTO] = []

@@ -13,6 +13,7 @@ from dtos.trail_dto import TrailDTO
 from dtos.user_dto import UserDTO
 from enums.granularity import Granularity
 from enums.user_enum import User
+from steps.dashboard.retrieve_dashboard_filters_step import RetrieveDashboardFiltersStep
 from steps.dashboard.retrieve_dashboard_options_step import RetrieveDashboardOptionsStep
 from steps.dashboard.retrieve_graph_step import RetrieveGraphStep
 from steps.dashboard.set_dashboard_filters_step import SetDashboardFiltersStep
@@ -63,7 +64,7 @@ def dashboard_graph_test():
             (DashboardFilterDTO(datetime.fromisoformat("2026-01-01"), datetime.fromisoformat("2026-01-03")), [Granularity.DAY, Granularity.HOUR]),
         ]
         for granularity in granularities:
-            verify_granularity(driver, granularity)
+            verify_granularity(driver, *granularity)
 
         # Verify Empty Graph
         retrieve_empty_graph_step = RetrieveGraphStep(driver)
@@ -93,25 +94,33 @@ def dashboard_graph_test():
         for granularity_filter in granularity_filters:
             verify_granularity_filter(driver, granularity_filter, selected_trails)
     except:
+        # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_graph_test_error_{int(time.time())}.png")
         raise
     finally:
         driver.quit()
 
-def verify_granularity(driver, granularity: list[DashboardFilterDTO, list[Granularity]]):
-    filter = granularity[0]
-
+def verify_granularity(driver, filter: DashboardFilterDTO, granularity_list: list[Granularity]):
+    # Set Dashboard Filter
     set_dashboard_filter_step = SetDashboardFiltersStep(driver, filter)
     set_dashboard_filter_step.run()
 
+    # Retrieve Populated Granularities and Verify
     retrieve_granularities_step = RetrieveDashboardOptionsStep(driver)
     retrieve_granularities_step.run()
-    pytest_check.equal(granularity[1], retrieve_granularities_step.granularities)
+    pytest_check.equal(granularity_list, retrieve_granularities_step.granularities)
 
 def verify_granularity_filter(driver, granularity_filter: DashboardFilterDTO, selected_trails: set[TrailDTO]):
+    # Set Dashboard Filters
     set_dashboard_filter_step = SetDashboardFiltersStep(driver, granularity_filter)
     set_dashboard_filter_step.run()
 
+    # Verify Filter Match Expected
+    retrieve_dashboard_filters_step = RetrieveDashboardFiltersStep(driver)
+    retrieve_dashboard_filters_step.run()
+    granularity_filter.compare(retrieve_dashboard_filters_step.dashboard_filters)
+
+    # Retrieve Graph and Verify
     retrieve_graph_step = RetrieveGraphStep(driver)
     retrieve_graph_step.run()
 

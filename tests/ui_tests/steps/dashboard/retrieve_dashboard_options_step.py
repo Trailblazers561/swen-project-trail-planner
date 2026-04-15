@@ -6,6 +6,9 @@ from enums.granularity import Granularity
 from pages.dashboard_page import DashboardPage
 
 class RetrieveDashboardOptionsStep:
+    """
+    Retrievs List of Granularities, Trails, and Trail Groups, That Appear On Dashboard Dropdowns
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.granularities: list[Granularity] = []

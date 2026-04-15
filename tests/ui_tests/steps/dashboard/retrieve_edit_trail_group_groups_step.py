@@ -5,6 +5,9 @@ from pages.dashboard_page import DashboardPage
 from pages.modals.edit_trail_group_page import EditTrailGroupPage
 
 class RetrieveEditTrailGroupGroupsStep:
+    """
+    Retrievs List of Trail Groups That Appears In Edit Trail Groups Modal
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.trail_groups: list[TrailGroupDTO] = []

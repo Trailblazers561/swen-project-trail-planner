@@ -5,9 +5,10 @@ import time
 
 from pages.dashboard_page import DashboardPage
 
-import os
-
 class ExportDataStep:
+    """
+    Exports a CSV File
+    """
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.export_file_path: Path = None

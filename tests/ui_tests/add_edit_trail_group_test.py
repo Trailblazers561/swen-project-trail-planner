@@ -121,6 +121,7 @@ def dashboard_graph_test():
         delete_group_two_step = EditTrailGroupStep(driver, group_two, delete=True)
         delete_group_two_step.run()
     except:
+        # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/add_edit_trail_group_test_error_{int(time.time())}.png")
         raise
     finally:

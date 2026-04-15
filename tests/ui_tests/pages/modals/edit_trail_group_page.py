@@ -8,6 +8,9 @@ from dtos.trail_dto import TrailDTO
 from dtos.trail_group_dto import TrailGroupDTO
 
 class EditTrailGroupPage:
+    """
+    Add / Edit Traiil Group Modal From Dashboard
+    """
     root = (By.XPATH, "//div[@data-testid='edit-trail-group-modal']")
     # Edit
     group_select = (By.XPATH, "//select[@id='group-select']")

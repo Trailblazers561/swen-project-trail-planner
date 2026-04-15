@@ -9,6 +9,9 @@ from dtos.device_dto import DeviceDTO
 from dtos.trail_dto import TrailDTO
 
 class AssociateDevicePage:
+    """
+    Associate Device Modal From Dashboard
+    """
     root = (By.XPATH, "//div[@data-testid='associate-device-modal']")
     unpaired_devices = (By.XPATH, "//div[@data-testid='unpaired-device-item']")
     paired_devices = (By.XPATH, "//div[@data-testid='paired-device-item']")

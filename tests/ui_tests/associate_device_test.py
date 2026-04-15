@@ -73,6 +73,7 @@ def associate_device_test():
         pytest_check.equal(expected_unpaired_devices, set(retrieve_associations_unpaired_step.unpaired_devices))
         pytest_check.equal(expected_paired_devices, set(retrieve_associations_unpaired_step.paired_devices))
     except:
+        # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/associate_device_test_error_{int(time.time())}.png")
         raise
     finally:

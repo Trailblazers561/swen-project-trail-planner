@@ -5,6 +5,9 @@ from enums.login_mode import LoginMode
 from pages.login_page import LoginPage
 
 class LoginStep:
+    """
+    Logs Into Application
+    """
     def __init__(self, driver: webdriver.Chrome, user: UserDTO, login_mode: LoginMode = LoginMode.NORMAL):
         self.driver = driver
         self.user = user
