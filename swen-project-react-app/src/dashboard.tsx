@@ -338,10 +338,6 @@ const dashboard = () => {
         }
 
         let currentStart = new Date(startDate);
-        if (granularity === Granularity.Hour)
-            currentStart.setMinutes(0, 0, 0);
-        else
-            currentStart.setHours(0, 0, 0, 0);
 
         let currentEnd = currentStart;
         let nextStart;
