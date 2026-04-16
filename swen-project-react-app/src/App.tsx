@@ -6,6 +6,8 @@ import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
 import React, { useState } from 'react';
 import Test from './Test';
+import { AuthProvider } from './Context';
+import Privileges from './userconfig';
 
 function App() {
 
@@ -15,6 +17,7 @@ function App() {
   };
 
   return (
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route
@@ -29,9 +32,11 @@ function App() {
             element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/login" />}
           />
           <Route path="/test" element={<Test />} />
+          <Route path="/privileges" element={<Privileges />} />
         </Routes>
       </BrowserRouter>
-    );
+    </AuthProvider>
+  );
 }
 
 export default App
