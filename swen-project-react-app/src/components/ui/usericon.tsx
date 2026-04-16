@@ -14,7 +14,7 @@ export function UserIcon() {
   };
     const handleManageUsers = () => {
         sessionStorage.clear();
-        navigate("/userconfig");
+        navigate("/privileges");
   };
 
   return (

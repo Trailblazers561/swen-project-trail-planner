@@ -1,16 +1,19 @@
-import Navbar from "./components/Navbar.tsx";
- 
+import Navbar from "./components/Navbar";
 
-function UserConfig() {
+function Privileges() {
   return (
-    <div>
-        <div className="flex min-h-svh flex-col items-center justify-top margin-0px p-0px">
-        <Navbar />
-        </div>
+    <div className="flex flex-col">
+      <Navbar />
 
-        <div>hello, world!</div>
+      <div className="filter-group w-full bg-[var(--color-button-secondary)]">
+        <div className="font-semibold text-2xl p-2 ml-2 text-left">
+          Privilege Management
+        </div>
+      </div>
+
+      <div>hello, world!</div>
     </div>
-  )
+  );
 }
- 
-export default UserConfig;
+
+export default Privileges;
