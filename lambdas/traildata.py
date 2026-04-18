@@ -12,10 +12,12 @@ from decimal import Decimal
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
+registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE"))
 device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
 device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
 device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
+device_trail_log_month_table = dynamodb.Table(
+    os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
 trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
 device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
@@ -51,6 +53,7 @@ def timestamp_conversion(timestamp, time_increment):
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
+
 
 def get_device_trail_id(device_id, trail_id=None):
     """
@@ -104,7 +107,8 @@ def get_trail_data(event, context):
         if not start: raise ValueError("Missing required field: start")
         if not end: raise ValueError("Missing required field: end")
 
-        print(f"Attempting to retrieve logs for trails [{trail_id_list_decimals}], from [{start}] to [{end}] at granularity of [{granularity}]")
+        print(
+            f"Attempting to retrieve logs for trails [{trail_id_list_decimals}], from [{start}] to [{end}] at granularity of [{granularity}]")
 
         if granularity not in table_time_map:
             logs_time_table = table_time_map["day"]
@@ -132,7 +136,8 @@ def get_trail_data(event, context):
                 query_start_timestamp = int((start_time + timedelta(days=(7 - start_time.weekday()) % 7)).timestamp())
                 query_end_timestamp = int((end_time - timedelta(days=end_time.weekday())).timestamp())
             if granularity == "month":
-                query_start_timestamp = int((start_time if start_time.day == 1 else (start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
+                query_start_timestamp = int((start_time if start_time.day == 1 else (
+                            start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
                 query_end_timestamp = int(end_time.replace(day=1).timestamp())
         else:
             query_start_timestamp = int(start_time.timestamp())
@@ -161,7 +166,8 @@ def get_trail_data(event, context):
         if (query_end_timestamp > query_start_timestamp):
             for device_trail_id in device_trail_ids:
                 rows = logs_time_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_start_timestamp, query_end_timestamp -1)
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(
+                        query_start_timestamp, query_end_timestamp - 1)
                 ).get("Items", [])
                 device_log_rows.extend(rows)
 
@@ -169,7 +175,8 @@ def get_trail_data(event, context):
         if granularity in ("week", "month") and partial_start_timestamp < query_start_timestamp:
             for device_trail_id in device_trail_ids:
                 start_results = device_trail_log_day_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(partial_start_timestamp, query_start_timestamp - 1)
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(
+                        partial_start_timestamp, query_start_timestamp - 1)
                 ).get("Items", [])
 
                 if start_results:
@@ -179,14 +186,17 @@ def get_trail_data(event, context):
                             rows[result["device_trail_id"]]["count"] += result["count"]
                             rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"],
+                                                               "start": result["start"], "count": result["count"],
+                                                               "battery": result["device_trail_id"]}
                     device_log_rows.extend(rows.values())
 
         # Turn the extra ending days into a "partial" result
         if granularity in ("week", "month") and partial_end_timestamp > query_end_timestamp:
             for device_trail_id in device_trail_ids:
                 end_results = device_trail_log_day_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(query_end_timestamp, partial_end_timestamp - 1)
+                    KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(
+                        query_end_timestamp, partial_end_timestamp - 1)
                 ).get("Items", [])
 
                 if end_results:
@@ -196,7 +206,9 @@ def get_trail_data(event, context):
                             rows[result["device_trail_id"]]["count"] += result["count"]
                             rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"],
+                                                               "start": result["start"], "count": result["count"],
+                                                               "battery": result["device_trail_id"]}
                     device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)
@@ -376,6 +388,7 @@ def upload_trail_data(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def register_device(event, context):
     """
     Handle POST requests from devices to /devices/ endpoint
@@ -402,7 +415,8 @@ def register_device(event, context):
         if date_manufactured is None: raise ValueError("Missing required field: date_manufactured")
 
         date_manufactured = Decimal(datetime.fromisoformat(date_manufactured).timestamp())
-        print(f"Attempting to register device with name [{name}], firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
+        print(
+            f"Attempting to register device with name [{name}], firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
 
         id = get_next_device_id()
 
@@ -440,6 +454,7 @@ def register_device(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 # ========== UPLOAD DEVICE DATA ==========
 def upload_device_data(event, context):
     """
@@ -455,7 +470,7 @@ def upload_device_data(event, context):
     """
     try:
         print(event)
-        body = event.get("body","{}")
+        body = event.get("body", "{}")
         if isinstance(body, str):
             body = json.loads(body)
 
@@ -465,11 +480,16 @@ def upload_device_data(event, context):
         name = body.get("name")
         if not name: raise ValueError("Missing required field: name")
 
+        # assume device isn't blocked by our system
+        if is_device_blocked(device_name=name):
+            raise ValueError(f"Device [{name}] is blocked and cannot upload data")
+
         firmware_version = body.get("firmware_version")
         data_points = body.get("data")
         battery = body.get("battery")
 
-        if not firmware_version and not (data_points and battery): raise ValueError("Missing required field: firmware_version or (data_points and battery)")
+        if not firmware_version and not (data_points and battery): raise ValueError(
+            "Missing required field: firmware_version or (data_points and battery)")
 
         device_exists = device_table.query(
             IndexName="name-index",
@@ -477,7 +497,8 @@ def upload_device_data(event, context):
             Limit=1
         )["Items"]
         device_id = device_exists[0]["id"] if device_exists else None
-        if not device_id: raise ValueError(f"Cannot find device with name [{name}], please register if not done already")
+        if not device_id: raise ValueError(
+            f"Cannot find device with name [{name}], please register if not done already")
         messages = []
 
         if firmware_version:
@@ -499,7 +520,8 @@ def upload_device_data(event, context):
             if len(data_points) == 0:
                 raise ValueError("Data array must be a non-empty list")
 
-            print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
+            print(
+                f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
 
             _, trail_id = get_device_trail_id(device_id)
 
@@ -537,6 +559,7 @@ def upload_device_data(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 # ========== METADATA ENDPOINTS ==========
 def get_trail_metadata(event, context):
     try:
@@ -552,14 +575,14 @@ def get_trail_metadata(event, context):
         if trail_id_list_decimals:
             items = []
             # split batch by 100 (that is the cap for keys in a batch)
-            for hundred in (trail_id_list_decimals[i:i+100] for i in range(0, len(trail_id_list_decimals), 100)):
+            for hundred in (trail_id_list_decimals[i:i + 100] for i in range(0, len(trail_id_list_decimals), 100)):
                 response = dynamodb.batch_get_item(
                     RequestItems={
                         trail_table.name: {"Keys": [{"id": id} for id in hundred]}
                     }
                 )["Responses"].get(trail_table.name, [])
                 items.extend(response)
-        else:   
+        else:
             items = trail_table.scan(FilterExpression=Attr("date_retired").not_exists()).get("Items", [])
 
         print(f"Successfully found trail metadata [{items[:3]}]")
@@ -583,6 +606,7 @@ def get_trail_metadata(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def get_device_metadata(event, context):
     try:
         print(event)
@@ -597,7 +621,7 @@ def get_device_metadata(event, context):
         if device_id_list_decimals:
             items = []
             # split batch by 100 (that is the cap for keys in a batch)
-            for hundred in (device_id_list_decimals[i:i+100] for i in range(0, len(device_id_list_decimals), 100)):
+            for hundred in (device_id_list_decimals[i:i + 100] for i in range(0, len(device_id_list_decimals), 100)):
                 response = dynamodb.batch_get_item(
                     RequestItems={
                         device_table.name: {"Keys": [{"id": id} for id in hundred]}
@@ -617,7 +641,9 @@ def get_device_metadata(event, context):
                 ScanIndexForward=False
             ).get("Items", [])
             # Construct a list from the result with all params matching those from desired_device_trail_fields
-            device_trails = [{field: device_trail[field] for field in desired_device_trail_fields if device_trail.get(field)} for device_trail in device_trails_result]
+            device_trails = [
+                {field: device_trail[field] for field in desired_device_trail_fields if device_trail.get(field)} for
+                device_trail in device_trails_result]
             item["trail_history"] = device_trails
             if len(device_trails_result):
                 item["current_trail_id"] = device_trails_result[0]["trail_id"]
@@ -651,6 +677,7 @@ def get_device_metadata(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def get_trail_group_metadata(event, context):
     try:
         print(event)
@@ -662,14 +689,14 @@ def get_trail_group_metadata(event, context):
         if trail_group_list:
             items = []
             # split batch by 100 (that is the cap for keys in a batch)
-            for hundred in (trail_group_list[i:i+100] for i in range(0, len(trail_group_list), 100)):
+            for hundred in (trail_group_list[i:i + 100] for i in range(0, len(trail_group_list), 100)):
                 response = dynamodb.batch_get_item(
                     RequestItems={
                         trail_group_table.name: {"Keys": [{"name": name} for name in hundred]}
                     }
                 )["Responses"].get(trail_group_table.name, [])
                 items.extend(response)
-        else:   
+        else:
             items = trail_group_table.scan().get("Items", [])
 
         print(f"Successfully found trail groups [{items[:3]}]")
@@ -692,6 +719,7 @@ def get_trail_group_metadata(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
+
 
 def create_trail(event, context):
     """
@@ -724,7 +752,8 @@ def create_trail(event, context):
         else:
             date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
 
-        print(f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
+        print(
+            f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
@@ -827,7 +856,8 @@ def update_trail_metadata(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_id"})
             }
 
-        print(f"Attempting to update trail with trail_id [{trail_id}] to trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{trail_notes}] and latitude [{trail_lat}] and longitude [{trail_lon}]")
+        print(
+            f"Attempting to update trail with trail_id [{trail_id}] to trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{trail_notes}] and latitude [{trail_lat}] and longitude [{trail_lon}]")
 
         try:
             trail_id = int(trail_id)
@@ -995,7 +1025,8 @@ def delete_trail(event, context):
         for device_trail_item in device_trail_items:
             if not device_trail_item["date_removed"]:
                 device_trail_table.update_item(
-                    Key={"device_id": device_trail_item["device_id"], "date_installed": device_trail_item["date_installed"]},
+                    Key={"device_id": device_trail_item["device_id"],
+                         "date_installed": device_trail_item["date_installed"]},
                     UpdateExpression="SET date_removed = :date_removed",
                     ExpressionAttributeValues={":date_removed": date}
                 )
@@ -1045,6 +1076,7 @@ def delete_trail(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def delete_trail_group(event, context):
     """
     Deletes a trail group
@@ -1090,6 +1122,7 @@ def delete_trail_group(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def update_device_trail_association(event, context):
     """
     Update device trail association. Updates DeviceTrail to change which trail
@@ -1130,7 +1163,8 @@ def update_device_trail_association(event, context):
         else:
             date_removed = Decimal(datetime.fromisoformat(date_removed).timestamp())
 
-        print(f"Attempting to update device_trail_association with device_id [{device_id}] and trail_id [{trail_id}] and date_installed [{date_installed}] and date_removed [{date_removed}]")
+        print(
+            f"Attempting to update device_trail_association with device_id [{device_id}] and trail_id [{trail_id}] and date_installed [{date_installed}] and date_removed [{date_removed}]")
 
         # Find current device_trail_assocation for device_id
         resp = device_trail_table.query(
@@ -1182,6 +1216,7 @@ def update_device_trail_association(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def get_next_trail_id() -> int:
     print("Retrieving next trail_id")
     # Get all existing trails to find next available ID
@@ -1199,6 +1234,7 @@ def get_next_trail_id() -> int:
         new_trail_id = 1
 
     return new_trail_id
+
 
 def get_next_device_id() -> int:
     print("Retrieving next device_id")
@@ -1218,6 +1254,7 @@ def get_next_device_id() -> int:
 
     return new_device_id
 
+
 def get_next_device_trail_id() -> int:
     print("Retrieving next device_trail_id")
     # Get all existing device_trails to find next available ID
@@ -1236,9 +1273,303 @@ def get_next_device_trail_id() -> int:
 
     return new_device_trail_id
 
+
+def get_next_registration_id() -> int:
+    print("Retrieving next registration_id")
+    # Get all existing registrations to find next available ID
+    try:
+        resp = registration_table.scan()
+        existing_registrations = resp.get("Items", [])
+        if existing_registrations:
+            existing_ids = [int(r.get("registration_id", 0)) for r in existing_registrations]
+            new_registration_id = max(existing_ids, default=0) + 1
+        else:
+            new_registration_id = 1
+    except Exception as e:
+        print(f"Error finding max registration_id, starting with 1. Exception: {e}")
+        # If scan fails, start with ID 1
+        new_registration_id = 1
+
+    return new_registration_id
+
+
 def cors_headers():
     return {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
+
+
+def pre_register_device(event, context):
+    """
+    Creates a device table entry and a registration table entry. Stores device_serial in aws secret manager keyed to
+    device_name. Must be done to establish the proper device existence and secure/validate it before actually performing
+    device registration and trusting data from it.
+    Expects: { "device_name": str, "device_serial": str }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        device_name = body.get("device_name")
+        device_serial = body.get("device_serial")
+
+        if device_name is None:
+            raise ValueError("Missing required field: device_name")
+        if device_serial is None:
+            raise ValueError("Missing required field: device_serial")
+
+        secrets_client = boto3.client("secretsmanager")
+
+        # make sure a device with our given name doesn't already exist. not a 100% guaranteed check as a user
+        # could screw up the name, but this does a reasonably good job at it. if it does we'll pair with that instead.
+        existing = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(device_name),
+            Limit=1
+        ).get("Items", [])
+
+        if existing:
+            # tie into what's already there
+            new_device_id = int(existing[0]["id"])
+
+            # if the secret is different go update that
+            try:
+                secrets_client.update_secret(
+                    SecretId=device_name,
+                    SecretString=json.dumps({"device_name": device_name, "device_ser_no": device_serial})
+                )
+            except secrets_client.exceptions.ResourceNotFoundException:
+                secrets_client.create_secret(
+                    Name=device_name,
+                    SecretString=json.dumps({"device_name": device_name, "device_ser_no": device_serial})
+                )
+        else:
+            # normal operation
+            new_device_id = get_next_device_id()
+
+            device_table.put_item(Item={
+                "id": new_device_id,
+                "name": device_name,
+                "is_blocked": False,
+            })
+
+            secrets_client.create_secret(
+                Name=device_name,
+                SecretString=json.dumps({
+                    "device_name": device_name,
+                    "device_ser_no": device_serial
+                })
+            )
+
+        new_registration_id = get_next_registration_id()
+
+        registration_table.put_item(Item={
+            "registration_id": new_registration_id,
+            "device_id": new_device_id,
+        })
+
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({
+                "message": "Device registered successfully",
+                "device_id": new_device_id,
+                "registration_id": new_registration_id
+            })
+        }
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+def get_registrations(event, context):
+    """
+    Returns registrations joined with device info. I really really do not want to adjust this later, so I added an
+    additionally totally-unnecessary-should-never-be-used param to query a specific reg id.
+
+    Returns data both for the registration table and the device table. I don't know how much ui needs, so chunks of this
+    can be cut out if need be, I'd rather give too much and remove lines than have to add more.
+    Expects optional query param: registration_id (int)
+    """
+    try:
+        print(event)
+        single_params = event.get("queryStringParameters", {}) or {}
+        registration_id = single_params.get("registration_id")
+
+        # fetch registration table info
+        if registration_id is not None:
+            response = registration_table.get_item(Key={"registration_id": int(registration_id)})
+            registered_devices = [response["Item"]] if "Item" in response else []
+        else:
+            registered_devices = registration_table.scan().get("Items", [])
+
+        # join results to device table pieces
+        results = []
+        for device in registered_devices:
+            device_id = int(device.get("device_id", 0))
+            device_resp = device_table.get_item(Key={"id": device_id})
+            device = device_resp.get("Item", {})
+            results.append({**convert_decimals(device), "device": convert_decimals(device)})
+
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps(results)
+        }
+
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+def delete_registration(event, context):
+    """
+    Delete registration entry by ID. Should be used in conjunction with deleting a device. Don't know if we need to do
+    such/idk where it's defined, can update this to include it if need be, but right now this just strikes the
+    registration entry.
+    Expects: { "registration_id": int }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        registration_id = body.get("registration_id")
+
+        if registration_id is None:
+            print("Missing required field: registration_id")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: registration_id"})
+            }
+
+        print(f"Attempting to delete registration entry with registration_id [{registration_id}]")
+
+        registration_table.delete_item(Key={"registration_id": int(registration_id)})
+
+        print("Successfully deleted registration")
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": "Registration deleted successfully"})
+        }
+
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+def set_device_blocked(event, context):
+    """
+    Sets the block status for a device
+    Expects: { "device_id": int, "is_blocked": bool }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        device_id = body.get("device_id")
+        is_blocked = body.get("is_blocked")
+
+        if device_id is None:
+            print("Missing required field: device_id")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: device_id"})
+            }
+
+        if is_blocked is None:
+            print("Missing required field: is_blocked")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: is_blocked"})
+            }
+
+        device_table.update_item(
+            Key={"id": int(device_id)},
+            UpdateExpression="SET is_blocked = :val",
+            ExpressionAttributeValues={":val": is_blocked}
+        )
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": f"Device {device_id} is_blocked set to {is_blocked}"})
+        }
+
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
+def is_device_blocked(device_id=None, device_name=None) -> bool:
+    """
+    Slapped together check for the is blocked value in device. If a device is blocked, we're ignoring any data from it.
+    """
+    if device_id is not None:
+        response = device_table.get_item(Key={"id": int(device_id)})
+        item = response.get("Item")
+    elif device_name is not None:
+        items = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(device_name),
+            Limit=1
+        ).get("Items", [])
+        item = items[0] if items else None
+    else:
+        raise ValueError("Must provide either device_id or device_name")
+
+    if not item:
+        raise ValueError(f"Device not found")
+
+    return bool(item.get("is_blocked", False))
