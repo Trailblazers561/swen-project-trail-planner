@@ -6,8 +6,19 @@ Locking creating the devices behind trail manager or above allows us to take adv
 
 Devices wont be able to properly communicate with the server until they pass this verification and can then set up a mutual tls connection to securely transmit data. The server will reject it. Devices will have to obtain, and maintain(renew in case of experiaton) their own certificates from our own self hosted certificate authority. AWS can do this for us but it's $400+ monthly MINIMUM to even use it, not accounting for usage limits. We don't need to pad bezos' pocket that much. 
 
-The process for the actual registration with verifying both the device and the server is laid out like this in order. I'm assuming mbedTLS for devices. 
+This is the primary link that details the main mTLS process that we are following:
+https://docs.aws.amazon.com/apigateway/latest/developerguide/rest-api-mutual-tls.html
+What's relevant for you is the curl commands for actually sending the certificate. If you want to test with a dummy certificate, .pem files are standardized and you can easily create your own. It'll be a bit(multiple weeks) before we can get you the real certificates to test with though as there are quite a lot of parts we need to build first.  
 
+For implementing everything, I recommend looking into mbedTLS: https://github.com/Mbed-TLS/mbedtls. I believe this is purpose built for our use case, and should have everything we need. Additionally it covers generating the private/public keys, generating the CSR, and the HMAC hashing. There's examples in the readme on how to generate a CSR that you can use.
+
+We're specifically going to use the x519 format for the CSR as well, the only important thing for the CSR is it should have the standard options + device id put into the
+
+Here's a general overview of how hmac works for our api security here: https://www.authgear.com/post/hmac-api-security I believe mbedTLS can do this, just make sure it lines up with the python hmac output result: https://docs.python.org/3/library/hmac.html
+
+I believe mbedTLS should do everything in regards to encryption, certificate verification and the TLS/mTLS handshakes. With that said I am not an embedded dev, I'm familiar with reading and writing c but understanding how to use the library and all the specifics in regards to making it work are most likely up to you all. 
+
+The process for the actual registration with verifying both the device and the server is laid out like this in order. I'm assuming mbedTLS for devices.
 
 **Initial Device Boot and Registration**
 - device has baked into it a unique serial number(private, stored securely), a unique device name(public), and a copy of the root certificate as a .pem file
