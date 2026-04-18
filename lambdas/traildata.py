@@ -12,7 +12,7 @@ from decimal import Decimal
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE"))
+registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_Registration"))
 device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
 device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
 device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
@@ -137,7 +137,7 @@ def get_trail_data(event, context):
                 query_end_timestamp = int((end_time - timedelta(days=end_time.weekday())).timestamp())
             if granularity == "month":
                 query_start_timestamp = int((start_time if start_time.day == 1 else (
-                            start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
+                        start_time.replace(day=28) + timedelta(days=4)).replace(day=1)).timestamp())
                 query_end_timestamp = int(end_time.replace(day=1).timestamp())
         else:
             query_start_timestamp = int(start_time.timestamp())
@@ -1396,6 +1396,7 @@ def pre_register_device(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def get_registrations(event, context):
     """
     Returns registrations joined with device info. I really really do not want to adjust this later, so I added an
@@ -1446,6 +1447,7 @@ def get_registrations(event, context):
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
 
+
 def delete_registration(event, context):
     """
     Delete registration entry by ID. Should be used in conjunction with deleting a device. Don't know if we need to do
@@ -1494,6 +1496,7 @@ def delete_registration(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
+
 
 def set_device_blocked(event, context):
     """
