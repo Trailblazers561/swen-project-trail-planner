@@ -17,7 +17,7 @@ function Navbar() {
             <span>{email || "Guest"}</span>
           </div>
           <div>
-            <div>{role ? Role[role] : "None"}</div>
+            <div>{role ? Role[role] : ""}</div>
           </div>
          </div>
          <UserIcon />
