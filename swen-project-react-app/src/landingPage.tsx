@@ -24,8 +24,8 @@ const LandingPage = () => {
     });
 
     const parkBounds: L.LatLngBoundsExpression = [
-        [42.2, -76.8], 
-        [45.6, -72.0], 
+        [42.2, -75.8], 
+        [45.6, -71.0], 
     ];
 
     const navigate = useNavigate();
@@ -70,29 +70,22 @@ const LandingPage = () => {
 
         <div className="h-screen w-screen relative overflow-hidden">
              <Navbar/>
-                <div className="absolute top-5 right-52 z-[1000]">   
-                    <Button
-                        variant="primary"
-                        onClick={() => navigate("/login")}
-                        >
-                        Login
-                    </Button>
-                </div>
+                <div className="absolute top-5 right-52 z-[1000]"></div>
                 <MapContainer
                     center={[44.02, -73.82]} 
-                    zoom={9}
+                    zoom={8}
                     minZoom={8}
                     maxZoom={15}
                     zoomControl={false}
                     scrollWheelZoom={true}
                     className="h-full w-full"
                     maxBounds={parkBounds}
-                    maxBoundsViscosity={0.9}
+                    maxBoundsViscosity={0.8}
                     >
                         <TileLayer
                         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
                         />
-                        <ZoomControl position="topleft" />
+                        <ZoomControl position="bottomright" />
 
                     {parsedTrails.map((trail) => (
                     <Marker key={trail.id} position={[trail.latitude, trail.longitude]} icon = {createTrailIcon("red")}>
