@@ -10,6 +10,26 @@ resource "aws_api_gateway_rest_api" "api" {
   name = "${var.deploy_env}_trailplanner_api"
 }
 
+resource "aws_api_gateway_domain_name" "api_domain" {
+  count = local.use_domain ? 1 : 0
+  domain_name = "${local.api_sub_domain}.${local.domain}"
+  regional_certificate_arn = var.acm_certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  security_policy = "SecurityPolicy_TLS13_1_2_2021_06"
+  endpoint_access_mode = "STRICT"
+}
+
+resource "aws_api_gateway_base_path_mapping" "api_mapping" {
+  count = local.use_domain ? 1 : 0
+  api_id      = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.api_stage.stage_name
+  domain_name = aws_api_gateway_domain_name.api_domain[0].domain_name
+}
+
 # /trail_data Resource
 resource "aws_api_gateway_resource" "trail_data" {
   path_part   = "trail_data"
@@ -917,7 +937,7 @@ locals {
 resource "local_sensitive_file" "testing_env" {
   count = local.local_run ? 1 : 0
   content = <<EOF
-CLOUDFRONT_URL=http://${aws_cloudfront_distribution.s3_distribution[0].domain_name}
+CLOUDFRONT_URL=http://${aws_cloudfront_distribution.s3_distribution.domain_name}
 API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 API_TOKEN=${local.cognito_token}
 API_KEY=${aws_api_gateway_api_key.api_key.value}
