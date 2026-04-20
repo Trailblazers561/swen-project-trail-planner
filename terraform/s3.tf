@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "bucket" {
-  bucket = local.use_domain ? "${local.sub_domain}}.${local.domain}" : "${var.deploy_env}-${var.bucket_name}-${random_integer.random_suffix.result}"
+  bucket = local.use_domain ? "${local.sub_domain}.${local.domain}" : "${var.deploy_env}-${var.bucket_name}-${random_integer.random_suffix.result}"
 
   tags = {
     Name = "${var.deploy_env}-${var.bucket_name}"
