@@ -69,6 +69,119 @@ resource "aws_api_gateway_integration_response" "trail_data_options_integration_
   ]
 }
 
+# /registration Resource
+resource "aws_api_gateway_resource" "registration" {
+  path_part   = "registration"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /registration
+resource "aws_api_gateway_method" "registration_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.registration.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "registration_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.registration.id
+  http_method = aws_api_gateway_method.registration_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "registration_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.registration.id
+  http_method = aws_api_gateway_method.registration_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "registration_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.registration.id
+  http_method = aws_api_gateway_method.registration_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+
+    depends_on = [
+    aws_api_gateway_integration.registration_options_integration,
+    aws_api_gateway_method_response.registration_options_response
+  ]
+}
+
+# POST /registration -> Lambda: pre_register_device
+resource "aws_api_gateway_method" "registration_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.registration.id
+  http_method   = "POST"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "registration_post_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.registration.id
+  http_method             = aws_api_gateway_method.registration_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.pre_register_device.invoke_arn
+}
+
+# GET /registration -> Lambda: get_registrations
+resource "aws_api_gateway_method" "registration_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.registration.id
+  http_method   = "GET"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "registration_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.registration.id
+  http_method             = aws_api_gateway_method.registration_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_registrations.invoke_arn
+}
+
+# DELETE /registration
+resource "aws_api_gateway_method" "registration_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.registration.id
+  http_method   = "DELETE"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "registration_delete_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.registration.id
+  http_method             = aws_api_gateway_method.registration_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.delete_registration.invoke_arn
+}
+
 # /devices Resource (plural - for device POST requests)
 resource "aws_api_gateway_resource" "devices" {
   path_part   = "devices"
@@ -162,6 +275,83 @@ resource "aws_api_gateway_integration" "devices_post_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.register_device.invoke_arn
+}
+
+# PUT /devices/block
+resource "aws_api_gateway_resource" "block" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_resource.devices.id
+  path_part   = "block"
+}
+
+# CORS (OPTIONS) for /devices/block
+resource "aws_api_gateway_method" "block_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.block.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "block_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.block.id
+  http_method = aws_api_gateway_method.block_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "block_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.block.id
+  http_method = aws_api_gateway_method.block_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "block_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.block.id
+  http_method = aws_api_gateway_method.block_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.block_options_integration,
+    aws_api_gateway_method_response.block_options_response
+  ]
+}
+
+# PUT /devices/block -> Lambda: set_device_blocked
+resource "aws_api_gateway_method" "block_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.block.id
+  http_method   = "PUT"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "block_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.block.id
+  http_method             = aws_api_gateway_method.block_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.set_device_blocked.invoke_arn
 }
 
 # POST /trail_data -> Lambda: upload_trail_data
@@ -797,6 +987,10 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.csv_url_get_integration.uri,
       aws_api_gateway_integration.users_get_integration.uri,
       aws_api_gateway_integration.users_post_integration.uri,
+      aws_api_gateway_integration.registration_get_integration.uri,
+      aws_api_gateway_integration.registration_post_integration.uri,
+      aws_api_gateway_integration.registration_delete_integration.uri,
+
 
       # Authorizer Stuff
       aws_api_gateway_authorizer.lambda_authorizer.id,
@@ -828,6 +1022,12 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.users_options.authorization,
       aws_api_gateway_method.users_get.authorization,
       aws_api_gateway_method.users_post.authorization,
+      aws_api_gateway_method.registration_options.authorization,
+      aws_api_gateway_method.registration_post.authorization,
+      aws_api_gateway_method.registration_get.authorization,
+      aws_api_gateway_method.registration_delete.authorization,
+      aws_api_gateway_method.block_put.authorization,
+      aws_api_gateway_method.block_options.authorization,
 
       # Permissions
       aws_lambda_permission.allow_apigateway_all_functions
@@ -856,6 +1056,10 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.csv_url_get_integration,
     aws_api_gateway_integration.users_get_integration,
     aws_api_gateway_integration.users_post_integration,
+    aws_api_gateway_integration.registration_get_integration,
+    aws_api_gateway_integration.registration_post_integration,
+    aws_api_gateway_integration.registration_delete_integration,
+    aws_api_gateway_integration.block_options_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
     aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
@@ -864,6 +1068,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.csv_options_integration_response,
     aws_api_gateway_integration_response.csv_url_options_integration_response,
     aws_api_gateway_integration_response.users_options_integration_response,
+    aws_api_gateway_integration_response.registration_options_integration_response,
+    aws_api_gateway_integration_response.block_options_integration_response,
   ]
 }
 
