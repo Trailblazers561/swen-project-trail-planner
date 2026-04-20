@@ -36,6 +36,7 @@ jobs:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
       TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
       TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
+      TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -57,6 +58,8 @@ jobs:
           cp -r lambdas/* terraform/lambdas/
           mkdir -p terraform/swen-project-react-app
           cp -r swen-project-react-app/* terraform/swen-project-react-app/
+          mkdir -p terraform/sample_data
+          cp -r sample_data/* terraform/sample_data/
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
