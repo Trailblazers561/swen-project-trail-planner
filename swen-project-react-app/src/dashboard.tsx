@@ -6,7 +6,7 @@ import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout } from "plotly.js";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "./components/ui/select.tsx";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
 import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
@@ -14,16 +14,17 @@ import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/ui/multi-select.tsx";
 import { Button } from "./components/ui/button.tsx";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Role, useAuth } from "@/Context";
 import moment from "moment-timezone";
 
 interface Trail {
@@ -45,6 +46,8 @@ interface Line {
 }
 
 const dashboard = () => {
+
+    const { currentRole } = useAuth();
     const {
         getTrailLogs,
         getDeviceMetadata,
@@ -91,10 +94,10 @@ const dashboard = () => {
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(
         new Date()
     );
-    
-    const [range, setRange] = React.useState<DateRange | undefined>({from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined})
+
+    const [range, setRange] = React.useState<DateRange | undefined>({ from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined })
     const [trails, setTrails] = useState<string[]>([]);
-    
+
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
     const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
@@ -115,7 +118,7 @@ const dashboard = () => {
         null
     );
     const isFetchingListData = useRef(false);
-    const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
+    const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error">("idle");
 
     const [graphUpdating, setGraphUpdating] = useState<boolean>(false);
     const graphUpdatingRef = useRef(0);
@@ -208,9 +211,9 @@ const dashboard = () => {
 
     const handleAssociateDevice = () => {
         setIsAssociateDeviceModalOpen(true);
-    }; 
+    };
 
-    const handleExportData = async() => {
+    const handleExportData = async () => {
         setIsDownloadingStatus("downloading");
 
         const trailList = trails.map(trail_name => trailMap[trail_name]);
@@ -234,7 +237,7 @@ const dashboard = () => {
         } finally {
             setTimeout(() => setIsDownloadingStatus("idle"), 1000);
         }
-     }
+    }
 
 
     const handleTrailUpdated = async () => {
@@ -376,7 +379,7 @@ const dashboard = () => {
                     trailIds.push(trailId);
                 }
             }
-            
+
             if (trailIds.length === 0) return;
 
             const responseGraphRef = ++graphUpdatingRef.current;
@@ -392,18 +395,18 @@ const dashboard = () => {
             const responseJson = await response.json;
 
             let ranges = getDateRanges(startDate, endDate, granularity);
-            let events: Map<number, {start: Date, count: number}[]> = new Map<number, {start: Date, count: number}[]>();
+            let events: Map<number, { start: Date, count: number }[]> = new Map<number, { start: Date, count: number }[]>();
 
             (responseJson as { trail_id: number; start: number, count: number }[]).forEach(
                 (entry) => {
                     if (!events.has(entry.trail_id)) {
                         events.set(entry.trail_id, []);
                     }
-                    events.get(entry.trail_id)!.push({start: new Date(entry.start * 1000), count: entry.count});
+                    events.get(entry.trail_id)!.push({ start: new Date(entry.start * 1000), count: entry.count });
                 }
             );
 
-            var lines: { trail_name: string; startDate: Date[]; endDate: Date[]; count: number[]; granularity: Granularity}[] = [];
+            var lines: { trail_name: string; startDate: Date[]; endDate: Date[]; count: number[]; granularity: Granularity }[] = [];
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
@@ -417,7 +420,7 @@ const dashboard = () => {
                 const trailId = trailMap[trailName];
                 if (trailId === undefined) continue;
 
-                const dateCountArray: {start: Date, count: number}[] = events.get(trailId) ?? [];
+                const dateCountArray: { start: Date, count: number }[] = events.get(trailId) ?? [];
 
                 let dateMap = new Map<Date, Date>();
                 let countMap = new Map<Date, number>();
@@ -437,7 +440,7 @@ const dashboard = () => {
                 const endDates = Array.from(dateMap.values());
                 const counts = Array.from(countMap.values());
 
-                lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity});
+                lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity });
             }
 
             setGraphLines(lines);
@@ -532,10 +535,10 @@ const dashboard = () => {
             const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
             trailGroups.forEach((group) => {
                 if (selectedGroups.includes(group.name)) {
-                    const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({label: name, value: name}));
-                    if (groupOptions.length > 0) 
-                        groups.push({heading: group.name, options: groupOptions});
-                    availableTrails.push(... groupOptions.map(option => option.label))
+                    const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({ label: name, value: name }));
+                    if (groupOptions.length > 0)
+                        groups.push({ heading: group.name, options: groupOptions });
+                    availableTrails.push(...groupOptions.map(option => option.label))
                 }
             })
             setTrailOptions(groups);
@@ -664,49 +667,50 @@ const dashboard = () => {
 
     // Creates the Plotly Layout With Custom Ranges and Shapes
     function getPlotLayout(lines: Line[]): Partial<Layout> {
-    return {   
-        margin: { l: 60, r: 30, t: 20, b: 60 },
-        plot_bgcolor: "white",
-        paper_bgcolor: "white",
 
-        xaxis: {
-            range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
-            type: "date",
-            title: {
-                text: "Date",
-                font: { size: 14, color: "#6b7280" },
+        return {
+            margin: { l: 60, r: 30, t: 20, b: 60 },
+            plot_bgcolor: "white",
+            paper_bgcolor: "white",
+
+            xaxis: {
+                range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
+                type: "date",
+                title: {
+                    text: "Date",
+                    font: { size: 14, color: "#6b7280" },
+                },
+                showgrid: false,
+                zeroline: false,
+                tickfont: { size: 12 },
+                rangemode: "normal"
             },
-            showgrid: false,
-            zeroline: false,
-            tickfont: { size: 12 },
-            rangemode: "normal"
-        },
 
-        yaxis: {
-            range: lines.length === 0 ? [0, 100] : undefined,
-            title: {
-              text: "Hikers",
-              font: { size: 14, color: "#6b7280" },
+            yaxis: {
+                range: lines.length === 0 ? [0, 100] : undefined,
+                title: {
+                    text: "Hikers",
+                    font: { size: 14, color: "#6b7280" },
+                },
+                showgrid: false,
+                zeroline: false,
+                tickfont: { size: 12 },
+                rangemode: "tozero",
             },
-            showgrid: false,
-            zeroline: false,
-            tickfont: { size: 12 },
-            rangemode: "tozero",
-        },
 
-        shapes: generateVerticalBands(lines),
+            shapes: generateVerticalBands(lines),
 
-        legend: {
-        orientation: "h",
-        y: -0.25,
-        x: 0.5,
-        xanchor: "center",
-        },
-    };
+            legend: {
+                orientation: "h",
+                y: -0.25,
+                x: 0.5,
+                xanchor: "center",
+            },
+        };
     }
 
     // Makes graph columns have alternating colors
-    function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> { 
+    function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> {
         const shapes: NonNullable<Layout["shapes"]> = [];
         let dates;
         if (!lines.length || !lines[0].startDate?.length) {
@@ -740,14 +744,33 @@ const dashboard = () => {
     return (
         <div data-testid="dashboard-root">
             <Navbar />
-        <div className="flex flex-col">
-            <div className="filter-container flex w-full justify-between items-end px-6 py-2">
-                <div className="flex gap-8 items-start flex-wrap">
-                    <div className="flex gap-2">
-                        <div className="filter-group flex flex-col">
+            <div className="flex flex-col">
+                <div className="filter-container flex w-full justify-between items-end px-6 py-2">
+                    <div className="flex gap-8 items-start flex-wrap">
+                        <div className="flex gap-2">
+                            <div className="filter-group flex flex-col">
 
-                            <label>Date Range:</label>
-                            <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                                <label>Date Range:</label>
+                                <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                            </div>
+                            <div className="filter-group flex flex-col">
+                                <label>Granularity:</label>
+                                <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
+                                    <SelectTrigger className="w-[150px]">
+                                        <SelectValue placeholder="Select an option" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            {granularityOptions.map((option) => (
+                                                <SelectItem key={option} value={option}>
+                                                    {GranularityText[option]}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="filter-group flex flex-col">
                             <label>Granularity:</label>
@@ -773,44 +796,52 @@ const dashboard = () => {
                         <label>Trails:</label>
                         <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} data-testid="trail-selector"/>
 
-                    </div>
-                    <div className="filter-group flex flex-col">
+                        </div>
+                        <div className="filter-group flex flex-col">
 
                         <label>Trail Groups:</label>
                         <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} data-testid="trail-group-selector" />
 
+                        </div>
+                    </div>
+                    <div className="flex flex-col ml-auto">
+                        <label>Additional Options:</label>
+                        <div className="flex flex-row gap-2">
+                            {(currentRole === null ) && (
+                                <div>Please log in or register to view additional options.</div>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                            )}
+                            {currentRole !== null && (
+                                <Popover open={isDownloadingStatus !== "idle"}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
+                                            Export Data
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        {isDownloadingStatus === "downloading" && (
+                                            <div>
+                                                <Loader2 className="animate-spin" />
+                                                <span>Downloading...</span>
+                                            </div>
+                                        )}
+                                        {isDownloadingStatus === "done" && (
+                                            <div>
+                                                <Check />
+                                                <span>Downloaded</span>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Button variant="secondary" data-testid="import-data">Import Data</Button>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <div className="options-container flex flex-col ml-auto">
-                    <label className="">Additional Options:</label>
-                    <div className="flex flex-row gap-2">
-                        <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
-                        <Popover open={isDownloadingStatus !== "idle"}>
-                            <PopoverTrigger asChild>
-                                <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
-                                    Export Data
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                {isDownloadingStatus === "downloading" && (
-                                    <div>
-                                        <Loader2 className="animate-spin" />
-                                        <span>Downloading...</span>
-                                    </div>
-                                )}
-                                {isDownloadingStatus === "done" && (
-                                    <div>
-                                        <Check/>
-                                        <span>Downloaded</span>
-                                    </div>
-                                )}
-                            </PopoverContent>
-                        </Popover>
-                        <Button variant="secondary" data-testid="import-data">Import Data</Button>
-                    </div>
-                </div>
-            </div>
-        </div>
             <div className="w-full border-t bg-gray-50">
                 <div>
                     <div className="flex p-2.5 justify-between items-center">
@@ -818,34 +849,37 @@ const dashboard = () => {
                             {viewMode === "graph" ? (
                                 <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
                                 {graphTitle}
-                                </div>
-                            ) : (
-                                <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
-                            )}
+                            </div>
+                        ) : (
+                            <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
+                        )}
                         <div className="flex gap-2.5">
-                            <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="primary" data-testid="trail-options">Trail Options</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                            </DropdownMenu>
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="primary" data-testid="trail-options">Trail Options</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -893,10 +927,10 @@ const dashboard = () => {
                         </div>
                         ) : (
                             <div className="pt-4 m-4">
-                                    <TrailStatusTable
-                                        data={trailListData}
-                                        loading={loadingListData}
-                                    />
+                                <TrailStatusTable
+                                    data={trailListData}
+                                    loading={loadingListData}
+                                />
                             </div>
                         )}
                     </div>
@@ -943,8 +977,8 @@ const dashboard = () => {
                 isOpen={isAssociateDeviceModalOpen}
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
-            />  
-    </div>
+            />
+        </div>
     );
 };
 
