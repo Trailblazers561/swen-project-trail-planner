@@ -101,11 +101,11 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-testid="associate-device-modal">
       <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header bg-[var(--color-navbar)]">
           <div className="font-primary text-white font-semibold">Associate Device to Trail</div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
@@ -121,9 +121,10 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                         key={device.id}
                         className={`device-item ${selectedDevice === device.id ? 'selected' : ''}`}
                         onClick={() => setSelectedDevice(device.id)}
+                        data-testid="unpaired-device-item"
                       >
                         <div className="device-info">
-                          <strong>{device.id}</strong>
+                          <strong data-testid="associate-device-id">{device.id}</strong>
                           {device.battery !== undefined && (
                             <span className="battery">Battery: {device.battery}%</span>
                           )}
@@ -145,9 +146,10 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                         key={device.id}
                         className={`device-item ${selectedDevice === device.id ? 'selected' : ''}`}
                         onClick={() => setSelectedDevice(device.id)}
+                        data-testid="paired-device-item"
                       >
                         <div className="device-info">
-                          <strong>{device.id}</strong>
+                          <strong data-testid="associate-device-id">{device.id}</strong>
                           <span className="trail-association">
                             Currently on: {getTrailName(device.current_trail_id)}
                           </span>
@@ -185,7 +187,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <Button variant="primary" disabled={loading || !selectedDevice || !selectedTrail}>
+            <Button variant="primary" disabled={loading || !selectedDevice || !selectedTrail} data-testid="associate-device-button">
               {loading ? 'Associating...' : 'Associate Device'}
             </Button>
           </div>

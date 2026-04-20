@@ -38,7 +38,7 @@ def retrieve_token(env):
         AuthFlow="USER_PASSWORD_AUTH",
         AuthParameters={
             "USERNAME": "admin@gmail.com",
-            "PASSWORD": "password"
+            "PASSWORD": "testPassword123!"
         }
     )
     return response['AuthenticationResult']['AccessToken']
@@ -49,6 +49,7 @@ def write_values(env):
         file.write(f"API_URL={retrieve_api_url(env)}\n")
         file.write(f"API_TOKEN={retrieve_token(env)}\n")
         file.write(f"API_KEY={env}-trail-planner-key-trail-trail-trail-trail\n")
+        file.write(f"LOCAL_RUN={'true' if env == 'local' else 'false'}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
