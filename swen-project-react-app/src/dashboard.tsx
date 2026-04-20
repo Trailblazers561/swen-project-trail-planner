@@ -24,6 +24,7 @@ import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useSearchParams } from "react-router-dom";
 import { Role, useAuth } from "@/Context";
 import moment from "moment-timezone";
 
@@ -253,6 +254,28 @@ const dashboard = () => {
             }
         }, 500);
     };
+
+    const [searchParams] = useSearchParams();
+    const trailId = searchParams.get("trailId");
+
+    useEffect(() => {
+        if (!trailId || trailMetadata.length === 0) return;
+        
+        const id = Number(trailId);
+        if (Number.isNaN(id)) return;
+
+        const trail = trailMetadata.find(t => t.id === id);
+        if (!trail) return;
+            setTrails(prev => {
+            if (prev.length === 1 && prev[0] === trail.name) return prev;
+            return [trail.name];
+        });
+        
+        //auto refresh graph on page load
+        if (selectedDate && selectedDateEnd && granularity) {
+            getResponse(selectedDate, selectedDateEnd, [trail.name], granularity);
+        }
+    }, [trailId, trailMetadata]);
 
     function getDateDifference(startDate: Date, endDate: Date): number {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
