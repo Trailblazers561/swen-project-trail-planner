@@ -842,7 +842,6 @@ const dashboard = () => {
                         </div>
                     </div>
                 </div>
-            </div>
             <div className="w-full border-t bg-gray-50">
                 <div>
                     <div className="flex p-2.5 justify-between items-center">
