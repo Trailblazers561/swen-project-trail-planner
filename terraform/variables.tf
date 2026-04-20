@@ -10,7 +10,6 @@ locals {
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
   sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
-  test_run = var.deploy_env == "test"
 }
 
 // This can be changed later to not be defined here, but for now it's not less secure than before
