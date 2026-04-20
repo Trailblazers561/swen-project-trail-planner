@@ -6,7 +6,7 @@ import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
 import Test from './Test';
 import { AuthProvider } from './Context';
-import Privileges from './userConfig';
+import Privileges from './userconfig';
 
 function App() {
 
