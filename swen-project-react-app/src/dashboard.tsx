@@ -117,7 +117,8 @@ const dashboard = () => {
     );
     const isFetchingListData = useRef(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
-
+    const [importCSVOpen, setimportCSVopen] = useState(false);
+    const [importCSVStatus, setimportCSVStatus] = useState ("");
 
     // Load trail metadata and groups from database
     useEffect(() => {
@@ -237,11 +238,29 @@ const dashboard = () => {
      }
 
     const handleImportData = async () => {
+        console.log("test 1")
+
         const [fileHandle] = await (window as any).showOpenFilePicker();
         const file = await fileHandle.getFile();
         console.log("Selected file:", file);
+        console.log(file.type);
 
-        importCSV(file)
+        console.log("test 2")
+
+        const response = (await importCSV(file)).json
+        
+        console.log(response)
+        const parsedBody = JSON.parse(response.body)
+        // console.log(parsedBody)
+
+        if (parsedBody.importSuccess){
+            setimportCSVStatus("Import successful!")
+        } else {
+            setimportCSVStatus( parsedBody.error || "Import failed.")
+        }
+        // setTimeout(() => setimportCSVopen(true), 8000)
+        setimportCSVopen(true);
+
      };
 
     const handleTrailUpdated = async () => {
@@ -803,7 +822,17 @@ const dashboard = () => {
                                 )}
                             </PopoverContent>
                         </Popover>
-                        <Button variant="secondary" onClick={handleImportData} >Import Data</Button>
+                        <Popover open={importCSVOpen} onOpenChange={setimportCSVopen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="secondary" onClick={handleImportData} disabled={isDownloadingStatus !== "idle"}>
+                                    Import Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                {importCSVOpen === true && <div> {importCSVStatus} </div>}
+                            </PopoverContent>
+                        </Popover>
+                        {/* <Button variant="secondary" onClick={handleImportData} >Import Data</Button> */}
                     </div>
                 </div>
             </div>
