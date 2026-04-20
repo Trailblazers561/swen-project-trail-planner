@@ -1,55 +1,58 @@
 import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
+import { Role, useAuth } from "@/Context";
 
 const Privileges = () => {
-
     const [users, setUsers] = useState<string[]>([]);
 
-    const {
-        getUsers
-    } = TrailData();
+    const { getUsers } = TrailData();
 
-    const loadActiveUserData = async () => {
+    //WIP loading for users, currently is not working (something with authentication not working)
+    const loadUsers = async () => {
         try {
-            const [metadataResponse, usersResponse] = await Promise.all([
-                getUsers,
-            ]);
+            const response = await getUsers();
 
-            if (metadataResponse.success && usersResponse.success) {
-                const metadata = await metadataResponse.json;
-                const usersData = await usersResponse.json;
+            if (response.success) {
+                const data = await response.json;
 
-                //filter any invalid entries?
+                console.log("Users:", data);
 
-                //setTrailMetadata(metadata); probably not needed
-                setUsers(usersData);
+                setUsers(data.users || data);
             }
         } catch (error) {
-            console.error("Error loading trail data:", error);
+            console.error("Error loading users:", error);
         }
     };
 
-    // Load users from database
     useEffect(() => {
-
+        loadUsers();
     }, []);
-
-
 
     return (
         <div className="flex flex-col">
             <Navbar />
 
-            <div className="filter-group w-full bg-[var(--color-button-secondary)]">
-                <div className="font-semibold text-2xl p-2 ml-2 text-left">
-                    Privilege Management
-                </div>
+            <div className="w-full bg-[var(--color-button-secondary)]">
+                <div className="font-semibold text-2xl p-2 ml-2 text-left"> Privilege Management </div>
             </div>
 
-            <div>hello, world!</div>
+            {/* Render users */}
+            <div className="p-4">
+                {users.length === 0 ? (
+                    <div>No users found</div>
+                ) : (
+                    <ul>
+                        {users.map((user, index) => (
+                            <li key={index} className="p-2 border-b">
+                                {user}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
         </div>
     );
-}
+};
 
 export default Privileges;

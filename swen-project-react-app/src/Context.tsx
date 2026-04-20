@@ -1,81 +1,63 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 export enum Role {
-    Guest = 1,
+    User = 1,
     Manager = 2,
     Admin = 3,
     Root = 4
-};
+}
 
 type AuthContextType = {
     email: string;
-    role: Role | null;
-};
-
-const ROLE_MAPPING: Record<string, Role> = {
-    guest: Role.Guest,
-    manager: Role.Manager,
-    admin: Role.Admin,
-    root: Role.Root,
+    roles: Role[];
+    currentRole: Role | null;
 };
 
 const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [role, setRole] = useState<Role | null>(null);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [email, setEmail] = useState<string>("");
+
+    const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
     useEffect(() => {
         const idToken = sessionStorage.getItem("idToken");
 
         if (idToken) {
             try {
-                const payload = JSON.parse(atob(idToken.split('.')[1]));
-                
-                const roles: string[] = payload['cognito:groups'] || [];
+                const payload = JSON.parse(atob(idToken.split(".")[1]));
 
-                //find the correct role based on searching the string returned
-                const matchedRole= roles.find(role =>
-                    role.includes("root") ||
-                    role.includes("admin") ||
-                    role.includes("manager") ||
-                    role.includes("guest")
-                );
-                
-                if (matchedRole) {
-                if (matchedRole.includes("root")) {
-                    setRole(Role.Root);
-                } else if (matchedRole.includes("admin")) {
-                    setRole(Role.Admin);
-                } else if (matchedRole.includes("manager")) {
-                    setRole(Role.Manager);
-                } else if (matchedRole.includes("guest")) {
-                    setRole(Role.Guest);
-                }
-                } else {
-                setRole(null);
-                }
+                const groups: string[] = payload["cognito:groups"] || [];
 
-                setEmail(payload['email'] || "");
+                const parsedRoles: Role[] = [];
 
-            } catch(e) {
+                groups.forEach((group) => {
+                    if (group.includes("root")) parsedRoles.push(Role.Root);
+                    else if (group.includes("admin")) parsedRoles.push(Role.Admin);
+                    else if (group.includes("manager")) parsedRoles.push(Role.Manager);
+                    else if (group.includes("user")) parsedRoles.push(Role.User);
+                });
+
+                setRoles(parsedRoles.length ? parsedRoles : []);
+                setEmail(payload["email"] || "");
+            } catch (e) {
                 console.error("Failed to parse idToken:", e);
             }
         }
-
     }, []);
 
     return (
-        <Context.Provider value={{ email, role}}>  
+        <Context.Provider value={{ email, roles, currentRole }}>
             {children}
         </Context.Provider>
     );
 };
 
 export const useAuth = () => {
-  const context = useContext(Context);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
+    const context = useContext(Context);
+    if (!context) {
+        throw new Error("useAuth must be used within AuthProvider");
+    }
+    return context;
 };
