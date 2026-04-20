@@ -12,7 +12,7 @@ class User(Enum):
         self.password = self.get_password()
 
     def get_password(self):
-        return "password" # can be updated to retrieve secretly when needed
+        return "testPassword123!" # can be updated to retrieve secretly when needed
 
     def __str__(self):
         return self.username
