@@ -913,7 +913,7 @@ EOF
 resource "null_resource" "generate_id_token" {
   count = local.local_run ? 1 : 0
   provisioner "local-exec" {
-    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${var.users["root_admin"].username},PASSWORD=${var.users["root_admin"].password} --output json > token.json"
+    command = "aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id ${aws_cognito_user_pool_client.client.id} --auth-parameters USERNAME=${local.users["root_admin"].username},PASSWORD=${local.users["root_admin"].password} --output json > token.json"
   }
 
   depends_on = [aws_cognito_user_pool_client.client, aws_cognito_user.users]
@@ -941,6 +941,7 @@ CLOUDFRONT_URL=http://${aws_cloudfront_distribution.s3_distribution.domain_name}
 API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 API_TOKEN=${local.cognito_token}
 API_KEY=${aws_api_gateway_api_key.api_key.value}
+LOCAL_RUN=true
 EOF
   filename = "${path.module}/${local.test_directory}/.env"
   depends_on = [

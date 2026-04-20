@@ -57,7 +57,7 @@ resource "aws_cognito_user_group" "default_user_group" {
 
 # Create Predefined Users
 resource "aws_cognito_user" "users" {
-  for_each = var.users
+  for_each = local.users
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
   username = each.value.username
@@ -71,7 +71,7 @@ resource "aws_cognito_user" "users" {
 
 # Assign Predefined Users To Groups
 resource "aws_cognito_user_in_group" "assign_users" {
-  for_each = var.users
+  for_each = local.users
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
   username     = each.value.username
