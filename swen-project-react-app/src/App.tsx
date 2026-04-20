@@ -7,7 +7,7 @@ import LandingPage from "./landingPage";
 import React, { useState } from 'react';
 import Test from './Test';
 import { AuthProvider } from './Context';
-import Privileges from './userconfig';
+import Privileges from './userConfig';
 
 function App() {
 
@@ -29,7 +29,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirm" element={<ConfirmUserPage />} />
           <Route path="/dashboard" 
-            element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/login" />}
+            // element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/login" />} no longer require authentication to enter dashboard
+            element = {<DashBoard />}
           />
           <Route path="/test" element={<Test />} />
           <Route path="/privileges" element={<Privileges />} />
