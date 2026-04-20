@@ -72,8 +72,11 @@ var/
 .cache
 nosetests.xml
 coverage.xml
-test-results.*
-
+test-results*.*
+tests/ui_tests/downloads/*
+!tests/ui_tests/downloads/.gitkeep
+tests/ui_tests/errors/*
+!tests/ui_tests/errors/.gitkeep
 
 # Translations
 *.mo
