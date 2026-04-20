@@ -1,7 +1,6 @@
 import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
-import { Role, useAuth } from "@/Context";
 
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);

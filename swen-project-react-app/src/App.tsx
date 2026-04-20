@@ -4,17 +4,16 @@ import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
-import React, { useState } from 'react';
 import Test from './Test';
 import { AuthProvider } from './Context';
 import Privileges from './userConfig';
 
 function App() {
 
-  const isAuthenticated = () => {
-    const accessToken = sessionStorage.getItem("accessToken");
-    return !!accessToken;
-  };
+  // const isAuthenticated = () => {
+  //   const accessToken = sessionStorage.getItem("accessToken");
+  //   return !!accessToken;
+  // };
 
   return (
     <AuthProvider>
