@@ -49,7 +49,8 @@ const dashboard = () => {
         getDeviceMetadata,
         getTrailMetadata,
         getTrailGroupMetadata,
-        exportCSV
+        exportCSV,
+        importCSV,
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
@@ -235,6 +236,13 @@ const dashboard = () => {
         }
      }
 
+    const handleImportData = async () => {
+        const [fileHandle] = await (window as any).showOpenFilePicker();
+        const file = await fileHandle.getFile();
+        console.log("Selected file:", file);
+
+        importCSV(file)
+     };
 
     const handleTrailUpdated = async () => {
         await loadTrailData();
@@ -795,7 +803,7 @@ const dashboard = () => {
                                 )}
                             </PopoverContent>
                         </Popover>
-                        <Button variant="secondary">Import Data</Button>
+                        <Button variant="secondary" onClick={handleImportData} >Import Data</Button>
                     </div>
                 </div>
             </div>
