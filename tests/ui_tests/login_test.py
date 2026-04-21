@@ -1,16 +1,24 @@
 import pytest
 import pytest_check
+from pathlib import Path
+import time
+
 from selenium_helper import SeleniumHelper as SH
 
 from dtos.user_dto import UserDTO
+from enums.login_mode import LoginMode
+from enums.user_action import UserAction
 from enums.user_enum import User
 from steps.login.login_step import LoginStep
 from steps.other.perform_user_action_step import PerformUserActionStep
-from enums.login_mode import LoginMode
-from enums.user_action import UserAction
 
 @pytest.mark.UI
 def login_test():
+    """
+    Tests Everthing About Logging In
+     - Login With Each User
+     - Login Error Messages
+    """
     driver = SH.get_driver()
 
     try:
@@ -44,26 +52,36 @@ def login_test():
 
         for alert in alerts:
             alert_check(driver, alert)
+    except:
+        # Save Screenshot of When Error Occured
+        driver.save_screenshot(Path(__file__).parent / f"errors/login_test_error_{int(time.time())}.png")
+        raise
     finally:
         driver.quit()
 
 def user_login_logout(driver, user: UserDTO):
     try:
+        # Login as User
         login_step = LoginStep(driver, user, LoginMode.NORMAL)
         login_step.run()
 
+        # TODO: validate navbar displays appropriate role
+
+        # Logout For Next User
         logout_step = PerformUserActionStep(driver, UserAction.LOGOUT)
         logout_step.run()
     except Exception as e:
         pytest_check.fail(f"Error Occured With Login/Logout for User [{user.name}]: {e.msg}")
 
 def validation_check(driver, validation: tuple[UserDTO, str]):
+    # Login (Should Cause a Validation Popup)
     login_step = LoginStep(driver, validation[0], LoginMode.VALIDATION)
     login_step.run()
 
     pytest_check.equal(validation[1], login_step.alert_validation_text)
 
 def alert_check(driver, alert: tuple[UserDTO, str]):
+    # Login (Should Cause an Alert)
     login_step = LoginStep(driver, alert[0], LoginMode.ALERT)
     login_step.run()
 

@@ -13,11 +13,14 @@ class UserDTO:
             self.name = user.name
 
     def __str__(self):
-        return f"UserDTO [emal={self.email}, password={self.password}, name={self.name}]"
+        return f"UserDTO [email={self.email}, password={self.password}, name={self.name}]"
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         if not isinstance(other, UserDTO):
-            return
+            return False
         other: UserDTO = other
         return self.email == other.email and self.password == other.password
 
