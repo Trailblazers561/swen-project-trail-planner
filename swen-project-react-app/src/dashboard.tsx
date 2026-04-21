@@ -805,13 +805,13 @@ const dashboard = () => {
                                 <label>Granularity:</label>
                                 <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
                                     <SelectTrigger className="w-[150px]" data-testid="granularity-select">
-                                        <SelectValue placeholder="Select an option" />
+                                        <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
                                     </SelectTrigger>
 
                                     <SelectContent>
                                         <SelectGroup>
                                             {granularityOptions.map((option) => (
-                                                <SelectItem key={option} value={option}>
+                                                <SelectItem key={option} value={option} data-testid="granularity-option">
                                                     {GranularityText[option]}
                                                 </SelectItem>
                                             ))}
