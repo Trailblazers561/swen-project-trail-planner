@@ -63,6 +63,10 @@ class DashboardPage:
     weekly_count_header = (By.XPATH, table_head + "//div[@data-column-id='2' and @role='columnheader']")
     battery_status_header = (By.XPATH, table_head + "//div[@data-column-id='3' and @role='columnheader']")
     last_updated_header = (By.XPATH, table_head + "//div[@data-column-id='4' and @role='columnheader']")
+    trail_name_arrow = (By.XPATH, trail_name_header[1] + "/span")
+    weekly_count_arrow = (By.XPATH, weekly_count_header[1] + "/span")
+    battery_status_arrow = (By.XPATH, battery_status_header[1] + "/span")
+    last_updated_arrow = (By.XPATH, last_updated_header[1] + "/span")
     table_body = table_root + "//div[contains(@class, 'TableBody')]"
     trail_name_labels = (By.XPATH, table_body + "//div[@data-column-id='1']")
     weekly_count_labels = (By.XPATH, table_body + "//div[@data-column-id='2']")
@@ -207,6 +211,7 @@ class DashboardPage:
     def retrieve_graph(self) -> GraphDTO:
         start_time = time.time()
         while True:
+            time.sleep(.5)
             if SH.retrieve_element_attribute(self.driver, self.outer_graph, "data-graph-updating") == "false":
                 break
             # Timeout and continue if the graph has been updating for a minute. I know this is long, but I'm pretty sure the pipeline is reaaalllllyyyyyyy slow.
@@ -214,7 +219,7 @@ class DashboardPage:
             if time.time() - start_time > 60:
                 self.driver.save_screenshot(Path(__file__).resolve().parents[1] / f"errors/dashboard_retrieve_graph_timeout_{int(time.time())}.png")
                 break
-            time.sleep(.5)
+        time.sleep(.5)
 
         title = SH.retrieve_text_from_element(self.driver, self.graph_title_label)
         lines = self.driver.execute_script("return document.querySelector('.js-plotly-plot').data")
@@ -274,14 +279,48 @@ class DashboardPage:
     def select_rows_per_page(self, rows: int) -> None:
         SH.select_dropdown_option(self.driver, self.rows_per_page_dropdown, str(rows))
 
-    def click_trail_status_column(self, column: TrailStatusColumn):
+    def set_trail_status_column_sort(self, column: TrailStatusColumn, ascending: bool):
         if column == TrailStatusColumn.TRAIL_NAME:
-            SH.click_element(self.driver, self.trail_name_header)
+            header = self.trail_name_header
         elif column == TrailStatusColumn.WEEKLY_COUNT:
-            SH.click_element(self.driver, self.weekly_count_header)
+            header = self.weekly_count_header
         elif column == TrailStatusColumn.BATTERY_STATUS:
-            SH.click_element(self.driver, self.battery_status_header)
+            header = self.battery_status_header
         elif column == TrailStatusColumn.LAST_UPDATED:
-            SH.click_element(self.driver, self.last_updated_header)
+            header = self.last_updated_header
+        else:
+            raise ValueError("Invalid column")
+        if not self._get_column_clicked(column):
+            SH.click_element(self.driver, header)
+        SH.wait(.5)
+        if self._get_column_ascending(column) == ascending:
+            return
+        SH.click_element(self.driver, header)
+        SH.wait(.5)
+        if self._get_column_ascending(column) != ascending:
+            SH.click_element(self.driver, header)
+
+
+    def _get_column_ascending(self, column: TrailStatusColumn) -> bool:
+        if column == TrailStatusColumn.TRAIL_NAME:
+            return SH.retrieve_element_style(self.driver, self.trail_name_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.WEEKLY_COUNT:
+            return SH.retrieve_element_style(self.driver, self.weekly_count_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.BATTERY_STATUS:
+            return SH.retrieve_element_style(self.driver, self.battery_status_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.LAST_UPDATED:
+            return SH.retrieve_element_style(self.driver, self.last_updated_arrow, "transform") == "none"
+        else:
+            raise ValueError("Invalid column")
+
+    def _get_column_clicked(self, column: TrailStatusColumn) -> bool:
+        if column == TrailStatusColumn.TRAIL_NAME:
+            return SH.retrieve_element_style(self.driver, self.trail_name_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.WEEKLY_COUNT:
+            return SH.retrieve_element_style(self.driver, self.weekly_count_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.BATTERY_STATUS:
+            return SH.retrieve_element_style(self.driver, self.battery_status_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.LAST_UPDATED:
+            return SH.retrieve_element_style(self.driver, self.last_updated_arrow, "transform") == "1"
         else:
             raise ValueError("Invalid column")
