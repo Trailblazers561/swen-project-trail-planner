@@ -56,7 +56,7 @@ def get_users(event, context):
             user_formatted["role"] = max([group_names_reversed[group["GroupName"]] for group in groups["Groups"]], key=lambda x: user_groups[x], default="guest")
             users_formatted.append(user_formatted)
 
-        print(f"User information successfully retrieved: {user_formatted[:3]}")
+        print(f"User information successfully retrieved: {users_formatted[:3]}")
         return {
             "statusCode": 200,
             "headers": cors_headers(),

@@ -14,7 +14,7 @@ TRAIL_MANAGER = os.environ.get("TRAIL_MANAGER")
 USER = os.environ.get("USER")
 GUEST = "GUEST"
 
-group_values = {"user": 0, "trail_manager": 1, "admin": 2, "root_admin": 3}
+group_values = {"guest": 0, "user": 1, "trail_manager": 2, "admin": 3, "root_admin": 4}
 groups_simplified = {ROOT_ADMIN: "root_admin", ADMIN: "admin", TRAIL_MANAGER: "trail_manager", USER: "user", GUEST: "guest"}
 
 # Does not handle guest permissions, future sprint task?
@@ -51,14 +51,17 @@ def handler(event, context):
     resource, http_method = parse_method_arn(policy_resource)
 
     token_data = parse_token_data(event)
-    if not token_data["valid"]:
-        return get_deny_policy("invalid-token-data", policy_resource)
 
     try:
-        claims = validate_token(token_data["token"])
-        if not claims:
-            return get_deny_policy("invalid-token", policy_resource)
-        users_groups = claims.get("cognito:groups", [GUEST])
+        # token_data["valid"] means they found a token to validate
+        if token_data["valid"]:
+            claims = validate_token(token_data["token"])
+            if not claims:
+                return get_deny_policy("invalid-token", policy_resource)
+            users_groups = claims.get("cognito:groups", [GUEST])
+        else:
+            claims = {}
+            users_groups = [GUEST]
         context = {"caller_role": max([groups_simplified[group] for group in users_groups], key=lambda x: group_values[x], default="guest")}
 
         allowed_groups = PERMISSIONS.get((resource, http_method), [ROOT_ADMIN])
@@ -85,7 +88,7 @@ def parse_token_data(event):
     # deny request of header isn't made out of two strings, or
     # first string isn't equal to "Bearer" (enforcing following standards,
     # but technically could be anything or could be left out completely)
-    if len(auth_header_list) != 2 or auth_header_list[0] != 'Bearer':
+    if len(auth_header_list) != 2 or auth_header_list[0] != 'Bearer' or not auth_header_list[1]:
         return response
 
     access_token = auth_header_list[1]
