@@ -918,6 +918,8 @@ const dashboard = () => {
                                       </PopoverContent>
                                   </Popover>
                                 )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             <div className="w-full border-t bg-gray-50">
