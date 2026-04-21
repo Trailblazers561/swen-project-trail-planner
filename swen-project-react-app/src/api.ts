@@ -313,7 +313,7 @@ export function TrailData() {
 async function authHeaders() {
   const idToken = sessionStorage.getItem("idToken");
   if (!idToken)
-    return {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`, "Content-Type": "application/json"};
+    return {Authorization: `Bearer `, "Content-Type": "application/json"};
 
   const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
 
