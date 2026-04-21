@@ -233,7 +233,7 @@ const dashboard = () => {
         }
         
         try{
-            const response = await exportCSV(trailList, selectedDate, selectedDateEnd);
+            const response = await exportCSV(trailList, selectedDate, selectedDateEnd, granularity);
             if (!response.success)
                 throw new Error("Failed to export");
 
@@ -804,7 +804,7 @@ const dashboard = () => {
                             <div className="filter-group flex flex-col">
                                 <label>Granularity:</label>
                                 <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
-                                    <SelectTrigger className="w-[150px]">
+                                    <SelectTrigger className="w-[150px]" data-testid="granularity-select">
                                         <SelectValue placeholder="Select an option" />
                                     </SelectTrigger>
 
@@ -819,24 +819,6 @@ const dashboard = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <div className="filter-group flex flex-col">
-                            <label>Granularity:</label>
-                            <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
-                            <SelectTrigger className="w-[150px]" data-testid="granularity-select">
-                                <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                <SelectGroup>
-                                {granularityOptions.map((option) => (
-                                    <SelectItem key={option} value={option} data-testid="granularity-option">
-                                    {GranularityText[option]}
-                                    </SelectItem>
-                                ))}
-                                </SelectGroup>
-                            </SelectContent>
-                            </Select>
                         </div>
                     </div>
                     <div className="filter-group flex flex-col">
