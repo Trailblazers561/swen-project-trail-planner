@@ -147,6 +147,11 @@ class SeleniumHelper:
         element = driver.find_element(*locator)
         return element.get_attribute(attribute)
 
+    def retrieve_element_style(driver: webdriver.Chrome, locator: tuple[str, str], style: str) -> str:
+        print(f"Retrieving element {locator} style {style}")
+        element = driver.find_element(*locator)
+        return element.value_of_css_property(style)
+
     def retrieve_checkbox_selected(driver: webdriver.Chrome, locator: tuple[str, str]) -> bool:
         print(f"Retrieving element {locator} selected")
         element = driver.find_element(*locator)
