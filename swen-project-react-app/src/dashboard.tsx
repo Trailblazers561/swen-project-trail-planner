@@ -255,11 +255,9 @@ const dashboard = () => {
             console.log(file.type);
             console.log("test 2")
 
-            const response = (await importCSV(file)).json
-            
-            console.log(response)
-            const parsedBody = JSON.parse(response.body)
-            if (parsedBody.success) {
+            const response = (await importCSV(file))["json"]
+
+            if (response["importSuccess"]) {
                 setTimeout(() => setIsUploadingStatus("done"), 1000);
             } else {
                 setTimeout(() => setIsUploadingStatus("error"), 1000);
