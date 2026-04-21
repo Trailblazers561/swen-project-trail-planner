@@ -250,12 +250,12 @@ const dashboard = () => {
             const response = await importCSV(file)
 
             if (response.success) {
-                setTimeout(() => setIsUploadingStatus("done"), 1000);
+                setIsUploadingStatus("done");
             } else {
-                setTimeout(() => setIsUploadingStatus("error"), 1000);
+                setIsUploadingStatus("error");
             }
         } catch (error) {
-            setTimeout(() => setIsUploadingStatus("error"), 1000);
+            setIsUploadingStatus("error");
         } finally {
             setTimeout(() => setIsUploadingStatus("idle"), 1000);
         }
@@ -843,6 +843,12 @@ const dashboard = () => {
                                     <div>
                                         <Check/>
                                         <span>Uploaded</span>
+                                    </div>
+                                )}
+                                {isUploadingStatus === "error" && (
+                                    <div>
+                                        <X/>
+                                        <span>Failed to import.</span>
                                     </div>
                                 )}
                             </PopoverContent>
