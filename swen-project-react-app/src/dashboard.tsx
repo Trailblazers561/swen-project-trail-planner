@@ -826,42 +826,42 @@ const dashboard = () => {
                         <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} data-testid="trail-group-selector" />
 
                         </div>
-                    </div>
-                    <div className="flex flex-col ml-auto">
-                        <label>Additional Options:</label>
-                        <div className="flex flex-row gap-2">
-                            {(currentRole === null ) && (
-                                <div>Please log in or register to view additional options.</div>
-                            )}
-                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
-                            )}
-                            {currentRole !== null && (
-                                <Popover open={isDownloadingStatus !== "idle"}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
-                                            Export Data
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        {isDownloadingStatus === "downloading" && (
-                                            <div>
-                                                <Loader2 className="animate-spin" />
-                                                <span>Downloading...</span>
-                                            </div>
-                                        )}
-                                        {isDownloadingStatus === "done" && (
-                                            <div>
-                                                <Check />
-                                                <span>Downloaded</span>
-                                            </div>
-                                        )}
-                                    </PopoverContent>
-                                </Popover>
-                            )}
-                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                <Button variant="secondary" data-testid="import-data">Import Data</Button>
-                            )}
+                        <div className="flex flex-col ml-auto">
+                            <label>Additional Options:</label>
+                            <div className="flex flex-row gap-2">
+                                {(currentRole === null ) && (
+                                    <div>Please log in or register to view additional options.</div>
+                                )}
+                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                    <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                                )}
+                                {currentRole !== null && (
+                                    <Popover open={isDownloadingStatus !== "idle"}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
+                                                Export Data
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            {isDownloadingStatus === "downloading" && (
+                                                <div>
+                                                    <Loader2 className="animate-spin" />
+                                                    <span>Downloading...</span>
+                                                </div>
+                                            )}
+                                            {isDownloadingStatus === "done" && (
+                                                <div>
+                                                    <Check />
+                                                    <span>Downloaded</span>
+                                                </div>
+                                            )}
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                    <Button variant="secondary" data-testid="import-data">Import Data</Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
