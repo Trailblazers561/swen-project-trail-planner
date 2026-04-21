@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Trail {
@@ -227,7 +227,11 @@ const dashboard = () => {
         }
         
         try{
-            const csv_url = (await exportCSV(trailList, selectedDate, selectedDateEnd))["json"]["url"];
+            const response = await exportCSV(trailList, selectedDate, selectedDateEnd);
+            if (!response.success)
+                throw new Error("Failed to export");
+
+            const csv_url = (response)["json"]["url"];
             window.open(csv_url, "_self");
             setIsDownloadingStatus("done");
         } catch (error) {
@@ -825,7 +829,7 @@ const dashboard = () => {
                                 )}
                                 {isDownloadingStatus === "error" && (
                                     <div>
-                                        <Check/>
+                                        <X/>
                                         <span>Failed to download.</span>
                                     </div>
                                 )}
