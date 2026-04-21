@@ -24,6 +24,7 @@ import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { set } from "date-fns";
 
 interface Trail {
     id: number;
@@ -117,8 +118,9 @@ const dashboard = () => {
     );
     const isFetchingListData = useRef(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
-    const [importCSVOpen, setimportCSVopen] = useState(false);
-    const [importCSVStatus, setimportCSVStatus] = useState ("");
+    const [isUploadingStatus, setIsUploadingStatus] = useState<"idle" | "uploading" | "done" | "error"> ("idle");
+
+
 
     // Load trail metadata and groups from database
     useEffect(() => {
@@ -240,27 +242,29 @@ const dashboard = () => {
     const handleImportData = async () => {
         console.log("test 1")
 
-        const [fileHandle] = await (window as any).showOpenFilePicker();
-        const file = await fileHandle.getFile();
-        console.log("Selected file:", file);
-        console.log(file.type);
+        try{
+            setIsUploadingStatus("uploading");
+            const [fileHandle] = await (window as any).showOpenFilePicker();
+            const file = await fileHandle.getFile();
+            console.log("Selected file:", file);
+            console.log(file.type);
+            console.log("test 2")
 
-        console.log("test 2")
-
-        const response = (await importCSV(file)).json
-        
-        console.log(response)
-        const parsedBody = JSON.parse(response.body)
-        // console.log(parsedBody)
-
-        if (parsedBody.importSuccess){
-            setimportCSVStatus("Import successful!")
-        } else {
-            setimportCSVStatus( parsedBody.error || "Import failed.")
+            const response = (await importCSV(file)).json
+            
+            console.log(response)
+            const parsedBody = JSON.parse(response.body)
+            if (parsedBody.success) {
+                setTimeout(() => setIsUploadingStatus("done"), 1000);
+            } else {
+                setTimeout(() => setIsUploadingStatus("error"), 1000);
+            }
+        } catch (error) {
+            console.error("Upload failed:", error);
+            setTimeout(() => setIsUploadingStatus("error"), 1000);
+        } finally {
+            setTimeout(() => setIsUploadingStatus("idle"), 1000);
         }
-        // setTimeout(() => setimportCSVopen(true), 8000)
-        setimportCSVopen(true);
-
      };
 
     const handleTrailUpdated = async () => {
@@ -820,9 +824,15 @@ const dashboard = () => {
                                         <span>Downloaded</span>
                                     </div>
                                 )}
+                                {isDownloadingStatus === "error" && (
+                                    <div>
+                                        <Check/>
+                                        <span>Failed to download.</span>
+                                    </div>
+                                )}
                             </PopoverContent>
                         </Popover>
-                        <Popover open={importCSVOpen} onOpenChange={setimportCSVopen}>
+                        {/* <Popover open={importCSVOpen} onOpenChange={setimportCSVopen}>
                             <PopoverTrigger asChild>
                                 <Button variant="secondary" onClick={handleImportData} disabled={isDownloadingStatus !== "idle"}>
                                     Import Data
@@ -830,6 +840,27 @@ const dashboard = () => {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
                                 {importCSVOpen === true && <div> {importCSVStatus} </div>}
+                            </PopoverContent>
+                        </Popover> */}
+                        <Popover open={isUploadingStatus !== "idle"}>
+                            <PopoverTrigger asChild>
+                                <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
+                                    Import Data
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                {isUploadingStatus === "uploading" && (
+                                    <div>
+                                        <Loader2 className="animate-spin" />
+                                        <span>Uploading...</span>
+                                    </div>
+                                )}
+                                {isUploadingStatus === "done" && (
+                                    <div>
+                                        <Check/>
+                                        <span>Uploaded</span>
+                                    </div>
+                                )}
                             </PopoverContent>
                         </Popover>
                         {/* <Button variant="secondary" onClick={handleImportData} >Import Data</Button> */}
