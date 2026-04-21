@@ -255,7 +255,6 @@ const dashboard = () => {
                 setTimeout(() => setIsUploadingStatus("error"), 1000);
             }
         } catch (error) {
-            console.error("Upload failed:", error);
             setTimeout(() => setIsUploadingStatus("error"), 1000);
         } finally {
             setTimeout(() => setIsUploadingStatus("idle"), 1000);
@@ -827,16 +826,6 @@ const dashboard = () => {
                                 )}
                             </PopoverContent>
                         </Popover>
-                        {/* <Popover open={importCSVOpen} onOpenChange={setimportCSVopen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="secondary" onClick={handleImportData} disabled={isDownloadingStatus !== "idle"}>
-                                    Import Data
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                {importCSVOpen === true && <div> {importCSVStatus} </div>}
-                            </PopoverContent>
-                        </Popover> */}
                         <Popover open={isUploadingStatus !== "idle"}>
                             <PopoverTrigger asChild>
                                 <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
@@ -858,7 +847,6 @@ const dashboard = () => {
                                 )}
                             </PopoverContent>
                         </Popover>
-                        {/* <Button variant="secondary" onClick={handleImportData} >Import Data</Button> */}
                     </div>
                 </div>
             </div>
