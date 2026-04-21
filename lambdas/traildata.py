@@ -28,7 +28,7 @@ def convert_decimals(obj):
     elif isinstance(obj, dict):
         return {k: convert_decimals(v) for k, v in obj.items()}
     elif isinstance(obj, Decimal):
-        return float(obj) if obj % 1 > 0 else int(obj)
+        return float(obj) if float(obj) % 1 > 0 else int(obj)
     else:
         return obj
 
