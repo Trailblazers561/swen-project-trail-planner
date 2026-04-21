@@ -15,6 +15,7 @@
     "@aws-sdk/client-dynamodb": "^3.741.0",
     "@aws-sdk/lib-dynamodb": "^3.741.0",
     "@tailwindcss/vite": "^4.1.18",
+    "browser-fs-access": "^0.38.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

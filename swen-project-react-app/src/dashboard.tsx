@@ -24,6 +24,7 @@ import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { fileOpen } from 'browser-fs-access';
 
 interface Trail {
     id: number;
@@ -247,8 +248,9 @@ const dashboard = () => {
 
         try{
             setIsUploadingStatus("uploading");
-            const [fileHandle] = await (window as any).showOpenFilePicker();
-            const file = await fileHandle.getFile();
+
+            const file = await fileOpen();
+
             console.log("Selected file:", file);
             console.log(file.type);
             console.log("test 2")
