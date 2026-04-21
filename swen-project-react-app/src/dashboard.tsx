@@ -24,7 +24,6 @@ import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { set } from "date-fns";
 
 interface Trail {
     id: number;
