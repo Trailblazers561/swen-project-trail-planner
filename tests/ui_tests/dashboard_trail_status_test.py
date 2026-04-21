@@ -71,6 +71,8 @@ def verify_trail_header(driver, column: TrailStatusColumn, reverse: bool, label:
     retrieve_trail_statuses_step.run()
 
     # Verify Properly Sorted
+    if retrieve_trail_status_overview(column, reverse) != retrieve_trail_statuses_step.trail_statuses:
+        driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_mismatch_{label.lower().replace(' ', '_')}_{int(time.time())}.png")
     compare_trail_status_lists(retrieve_trail_status_overview(column, reverse), retrieve_trail_statuses_step.trail_statuses, label)
 
 def compare_trail_status_lists(expected: list[TrailStatusDTO], actual: list[TrailStatusDTO], label: str):
