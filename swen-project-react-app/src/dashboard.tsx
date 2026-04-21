@@ -244,17 +244,9 @@ const dashboard = () => {
      }
 
     const handleImportData = async () => {
-        console.log("test 1")
-
         try{
             setIsUploadingStatus("uploading");
-
             const file = await fileOpen();
-
-            console.log("Selected file:", file);
-            console.log(file.type);
-            console.log("test 2")
-
             const response = await importCSV(file)
 
             if (response.success) {
