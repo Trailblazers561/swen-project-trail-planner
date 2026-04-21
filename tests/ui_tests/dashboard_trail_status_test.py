@@ -54,6 +54,7 @@ def dashboard_trail_status_test():
         ]
         for sorted_column in sorted_columns:
             verify_trail_header(driver, *sorted_column)
+            SH.wait(1)
     except:
         # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_error_{int(time.time())}.png")
