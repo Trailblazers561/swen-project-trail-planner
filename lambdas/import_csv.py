@@ -120,7 +120,9 @@ def parse_csv_and_export_data(event, context):
     """
     print(event)
     try:
-        body = json.loads(event.get("body") or "{}")
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
 
         csv_file_path = body.get("csv_file_path")  # s3 bucket file path to csv file
         print(f"csv file path: {csv_file_path}")

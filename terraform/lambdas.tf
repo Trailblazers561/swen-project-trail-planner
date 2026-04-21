@@ -445,6 +445,7 @@ resource "aws_lambda_function" "import_csv" {
       DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
       DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
       DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      DEVICE_TRAIL_TABLE                             = aws_dynamodb_table.device_trail_table.name
       TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }

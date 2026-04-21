@@ -241,8 +241,8 @@ export function TrailData() {
     
         await fetch(uploadUrl, {
           method: "PUT",
-          body: csvFile
-        })
+          body: await csvFile.arrayBuffer(),
+        });
     
         return await request(`${API_URL}/csv`, {
           method: "POST",
