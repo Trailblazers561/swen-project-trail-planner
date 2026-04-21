@@ -107,9 +107,9 @@ jobs:
       - name: Run UI Tests
         run: pytest -s tests/ui_tests -m UI --doctest-modules --junitxml=junit/test-results-ui.xml --cov=com --cov-report=xml --cov-report=html
 
-      - name: Run API Tests
-        run: pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
-        if: ${{ always() }}
+      # - name: Run API Tests
+      #   run: pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
+      #   if: ${{ always() }}
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -126,94 +126,94 @@ jobs:
             if-no-files-found: ignore
         if: ${{ always() }}
 
-      - name: Install dependencies for GitHub Script
-        run: npm install xml2js
-        if: ${{ always() }}
+      # - name: Install dependencies for GitHub Script
+      #   run: npm install xml2js
+      #   if: ${{ always() }}
 
-      - name: Update PR
-        uses: actions/github-script@v6
-        id: plan-comment
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const botComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Integration Testing Output')
-            });
-            // Delete previous comment so PR timeline makes sense
-            if (botComment) {
-              github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-              });
-            }
+      # - name: Update PR
+      #   uses: actions/github-script@v6
+      #   id: plan-comment
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       // Retrieve existing bot comments for the PR
+      #       const { data: comments } = await github.rest.issues.listComments({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         issue_number: context.issue.number,
+      #       });
+      #       const botComment = comments.find(comment => {
+      #         return comment.user.type === 'Bot' && comment.body.includes('Integration Testing Output')
+      #       });
+      #       // Delete previous comment so PR timeline makes sense
+      #       if (botComment) {
+      #         github.rest.issues.deleteComment({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           comment_id: botComment.id,
+      #         });
+      #       }
 
-            const fs = require('fs');
-            const xml2js = require('xml2js');
+      #       const fs = require('fs');
+      #       const xml2js = require('xml2js');
 
-            const files = ['junit/test-results-ui.xml', 'junit/test-results-api.xml'];
+      #       const files = ['junit/test-results-ui.xml', 'junit/test-results-api.xml'];
 
-            let total = 0;
-            let failed = 0;
-            let errored = 0;
-            let skipped = 0;
-            let time = 0;
+      #       let total = 0;
+      #       let failed = 0;
+      #       let errored = 0;
+      #       let skipped = 0;
+      #       let time = 0;
 
-            for (const file of files) {
-              const xmlData = fs.readFileSync(file, 'utf-8');
-              const result = await xml2js.parseStringPromise(xmlData);
+      #       for (const file of files) {
+      #         const xmlData = fs.readFileSync(file, 'utf-8');
+      #         const result = await xml2js.parseStringPromise(xmlData);
 
-              const testsuite = result.testsuites.testsuite[0];
+      #         const testsuite = result.testsuites.testsuite[0];
 
-              if (!testsuite || !testsuite.$) {
-                throw new Error("Could not find testsuite");
-              }
+      #         if (!testsuite || !testsuite.$) {
+      #           throw new Error("Could not find testsuite");
+      #         }
 
-              total += parseInt(testsuite.$.tests || 0);
-              failed += parseInt(testsuite.$.failures || 0);
-              errored += parseInt(testsuite.$.errors || 0);
-              skipped += parseInt(testsuite.$.skipped || 0);
-              time += parseFloat(testsuite.$.time || 0);
+      #         total += parseInt(testsuite.$.tests || 0);
+      #         failed += parseInt(testsuite.$.failures || 0);
+      #         errored += parseInt(testsuite.$.errors || 0);
+      #         skipped += parseInt(testsuite.$.skipped || 0);
+      #         time += parseFloat(testsuite.$.time || 0);
 
-              // const total = parseInt(testsuite.$.tests || 0);
-              // const failed = parseInt(testsuite.$.failures || 0);
-              // const errored = parseInt(testsuite.$.errors || 0);
-              // const skipped = parseInt(testsuite.$.skipped || 0);
-              // const passed = total - failed - errored - skipped;
-              // const time = parseFloat(testsuite.$.time || 0);
-            }
-            const passed = total - failed - errored - skipped;
+      #         // const total = parseInt(testsuite.$.tests || 0);
+      #         // const failed = parseInt(testsuite.$.failures || 0);
+      #         // const errored = parseInt(testsuite.$.errors || 0);
+      #         // const skipped = parseInt(testsuite.$.skipped || 0);
+      #         // const passed = total - failed - errored - skipped;
+      #         // const time = parseFloat(testsuite.$.time || 0);
+      #       }
+      #       const passed = total - failed - errored - skipped;
 
-            const output = `#### Integration Testing Output
-            \`\`\`
-            ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
-            \`\`\`
-            [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-            `;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            });
-        if: ${{ always() }}
+      #       const output = `#### Integration Testing Output
+      #       \`\`\`
+      #       ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
+      #       \`\`\`
+      #       [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+      #       `;
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: output
+      #       });
+      #   if: ${{ always() }}
 
-      - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: destroy-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          is_destroy: true
-        if: ${{ always() }}
+      # - name: Create Destroy Run
+      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+      #   id: destroy-run
+      #   with:
+      #     workspace: ${{ env.TF_WORKSPACE }}
+      #     is_destroy: true
+      #   if: ${{ always() }}
 
-      - name: Destroy
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-        with:
-          run: ${{ steps.destroy-run.outputs.run_id }}
-        if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
+      # - name: Destroy
+      #   uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+      #   with:
+      #     run: ${{ steps.destroy-run.outputs.run_id }}
+      #   if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}

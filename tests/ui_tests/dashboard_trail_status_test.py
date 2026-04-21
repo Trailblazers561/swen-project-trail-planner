@@ -54,7 +54,6 @@ def dashboard_trail_status_test():
         ]
         for sorted_column in sorted_columns:
             verify_trail_header(driver, *sorted_column)
-            SH.wait(1)
     except:
         # Save Screenshot of When Error Occured
         driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_error_{int(time.time())}.png")
@@ -63,17 +62,19 @@ def dashboard_trail_status_test():
         driver.quit()
 
 def verify_trail_header(driver, column: TrailStatusColumn, reverse: bool, label: str):
+    driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_before_sort_{label.lower().replace(' ', '_')}_{int(time.time())}.png")
     # Click Trail Status Header to Sort Column
     click_trail_status_header_step = ClickTrailStatusHeaderStep(driver, column)
     click_trail_status_header_step.run()
+    driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_after_sort_{label.lower().replace(' ', '_')}_{int(time.time())}.png")
 
     # Retrieve Column
     retrieve_trail_statuses_step = RetrieveTrailStatusesStep(driver)
     retrieve_trail_statuses_step.run()
 
     # Verify Properly Sorted
-    if retrieve_trail_status_overview(column, reverse) != retrieve_trail_statuses_step.trail_statuses:
-        driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_mismatch_{label.lower().replace(' ', '_')}_{int(time.time())}.png")
+    # if retrieve_trail_status_overview(column, reverse) != retrieve_trail_statuses_step.trail_statuses:
+    #     driver.save_screenshot(Path(__file__).parent / f"errors/dashboard_trail_status_test_mismatch_{label.lower().replace(' ', '_')}_{int(time.time())}.png")
     compare_trail_status_lists(retrieve_trail_status_overview(column, reverse), retrieve_trail_statuses_step.trail_statuses, label)
 
 def compare_trail_status_lists(expected: list[TrailStatusDTO], actual: list[TrailStatusDTO], label: str):
