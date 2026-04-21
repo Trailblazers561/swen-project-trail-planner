@@ -63,6 +63,7 @@ export function TrailData() {
     const trailIdQueries: string[] = []
     trailIdList.forEach(id => {trailIdQueries.push(`trail_id=${id}`)})
     const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
+    if (granularity == Granularity.Year) granularity = Granularity.Month;
 
     const url = `${API_URL}/trail_data?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
     return await request(url, {
@@ -240,8 +241,8 @@ export function TrailData() {
     
         await fetch(uploadUrl, {
           method: "PUT",
-          body: csvFile
-        })
+          body: await csvFile.arrayBuffer(),
+        });
     
         return await request(`${API_URL}/csv`, {
           method: "POST",

@@ -5,6 +5,9 @@ from selenium_helper import SeleniumHelper as SH
 from enums.user_action import UserAction
 
 class NavbarPage:
+    """
+    Navbar At The Top Of Every Page
+    """
     root = (By.XPATH, "//nav[@id='navbar']")
     user_role = (By.XPATH, "//div[@id='user-role']")
     user_icon = (By.XPATH, "//button[@id='user-icon-button']")
@@ -17,6 +20,6 @@ class NavbarPage:
     def get_user_role(self) -> str:
         return SH.retrieve_text_from_element(self.driver, self.user_role)
 
-    def perform_user_action(self, user_action: UserAction):
+    def perform_user_action(self, user_action: UserAction) -> None:
         SH.click_element(self.driver, self.user_icon)
         SH.click_element(self.driver, (By.XPATH, self.user_action_xpath.format(user_action.value)))

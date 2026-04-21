@@ -338,6 +338,7 @@ resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda_every_day" {
+    count = local.test_run ? 0 : 1
     rule = aws_cloudwatch_event_rule.trigger_simulate_data.name
     target_id = "${var.deploy_env}_simulate_data_event"
     arn = aws_lambda_function.simulate_data.arn
@@ -373,6 +374,7 @@ action "aws_lambda_invoke" "invoke_simulate_data" {
 }
 
 resource "terraform_data" "invoke_simulate_data" {
+  count = local.test_run ? 0 : 1
   # Change this value to trigger lambda on next apply
   input = "simulate-data-again"
 
@@ -443,6 +445,7 @@ resource "aws_lambda_function" "import_csv" {
       DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
       DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
       DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      DEVICE_TRAIL_TABLE                             = aws_dynamodb_table.device_trail_table.name
       TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
     }
   }
