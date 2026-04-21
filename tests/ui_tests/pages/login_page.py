@@ -6,6 +6,9 @@ from dtos.user_dto import UserDTO
 from enums.login_mode import LoginMode
 
 class LoginPage:
+    """
+    Login / Registration Page (/login)
+    """
     root = (By.XPATH, "//div[@id='loginForm']")
     email_input = (By.XPATH, "//input[@type='email']")
     password_input = (By.XPATH, "//input[@type='password']")
@@ -20,7 +23,7 @@ class LoginPage:
         self._enter_password(user.password)
         self._click_sign_in()
         if login_mode == LoginMode.NORMAL:
-            SH.wait_for_element_disappear(self.driver, self.root)
+            SH.wait_for_element_disappear(self.driver, self.root, 30)
         elif login_mode == LoginMode.ALERT:
             SH.wait(.5)
             return self._dismiss_alert()

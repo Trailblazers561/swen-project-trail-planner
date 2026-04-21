@@ -1047,6 +1047,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 								{!hideSelectAll && !searchValue && (
 									<CommandGroup>
 										<CommandItem
+											data-testid="multi-select-all"
 											key="all"
 											onSelect={toggleAll}
 											role="option"
@@ -1089,6 +1090,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 												);
 												return (
 													<CommandItem
+														data-testid="multi-select-option"
 														key={option.value}
 														onSelect={() => toggleOption(option.value)}
 														role="option"
@@ -1130,6 +1132,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 											const isSelected = selectedValues.includes(option.value);
 											return (
 												<CommandItem
+													data-testid="multi-select-option"
 													key={option.value}
 													onSelect={() => toggleOption(option.value)}
 													role="option"
@@ -1171,6 +1174,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 										{selectedValues.length > 0 && (
 											<>
 												<CommandItem
+													data-testid="multi-select-clear"
 													onSelect={handleClear}
 													className="flex-1 justify-center cursor-pointer">
 													Clear
@@ -1182,6 +1186,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 											</>
 										)}
 										<CommandItem
+											data-testid="multi-select-close"
 											onSelect={() => setIsPopoverOpen(false)}
 											className="flex-1 justify-center cursor-pointer max-w-full">
 											Close

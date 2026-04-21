@@ -216,11 +216,11 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} data-testid="edit-trail-group-modal">
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className="modal-header bg-[var(--color-navbar)]">
           <div className="font-primary text-white font-semibold">{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
@@ -311,6 +311,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                             flexShrink: 0,
                             verticalAlign: 'middle'
                           }}
+                          data-testid={"checkbox " + trail.name}
                         />
                         <span style={{ fontSize: '0.9em', color: '#666' }}>
                           {isChecked ? 'In group' : 'Not in group'}
@@ -325,7 +326,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <Button variant="primary" disabled={loading}>
+            <Button variant="primary" disabled={loading} data-testid="confirm-button">
               {loading ? 'Saving...' : (isCreateMode ? 'Create Group' : 'Update Group')}
             </Button>
           </div>

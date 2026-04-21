@@ -28,7 +28,7 @@ def convert_decimals(obj):
     elif isinstance(obj, dict):
         return {k: convert_decimals(v) for k, v in obj.items()}
     elif isinstance(obj, Decimal):
-        return float(obj) if obj % 1 > 0 else int(obj)
+        return float(obj) if float(obj) % 1 > 0 else int(obj)
     else:
         return obj
 
@@ -117,13 +117,11 @@ def get_trail_data(event, context):
         start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
         end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
 
-        # Round down start_time and round up end_time
+        # Add a day to end_time (since we subtract 1 from the timestamp this won't add a real day's data)
         if granularity == "hour":
-            start_time = start_time.replace(minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            end_time = (end_time + timedelta(hours=1)).replace(minute=0, second=0)
         else:
-            start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_time = end_time.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            end_time = (end_time + timedelta(days=1)).replace(hour=0, minute=0, second=0)
 
         if granularity in ("week", "month"):
             partial_start_timestamp = int(start_time.timestamp())
@@ -227,7 +225,6 @@ def get_trail_data(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
 
 # ========== UPLOAD TRAIL DATA ==========
 def upload_trail_data(event, context):

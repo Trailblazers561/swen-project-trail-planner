@@ -5,44 +5,32 @@ variable "deploy_env" {
 
 locals {
   local_run = var.deploy_env == "local"
+  test_run = var.deploy_env == "test"
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
+  sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
 }
 
 // This can be changed later to not be defined here, but for now it's not less secure than before
-variable "users" {
-  type = map(object({
-    username = string
-    password = string
-    email = string
-  }))
-  default = {
-    root_admin = { username = "root_admin@gmail.com",    password = "password", email = "root_admin@gmail.com" }
-    admin = { username = "admin@gmail.com",    password = "password", email = "admin@gmail.com" }
-    trail_manager = { username = "trail_manager@gmail.com", password = "password", email = "trail_manager@gmail.com" }
-    user = { username = "user@gmail.com",   password = "password",  email = "user@gmail.com" }
+locals {
+  password = local.test_run ? "testPassword123!" : "REDACTED" # Sometimes google tells you your password has been found, this avoids that issue when testing
+  users = {
+    root_admin = { username = "root_admin@gmail.com",    password = local.password, email = "root_admin@gmail.com" }
+    admin = { username = "admin@gmail.com",    password = local.password, email = "admin@gmail.com" }
+    trail_manager = { username = "trail_manager@gmail.com", password = local.password, email = "trail_manager@gmail.com" }
+    user = { username = "user@gmail.com",   password = local.password,  email = "user@gmail.com" }
   }
 }
 
-#root domain
-variable "domain" {
-  type    = string
-  default = "example.com"
+locals {
+  use_domain = !local.local_run && !local.test_run
+  domain = "adirondackwilderness.org"
+  sub_domain = "trailblazers-${var.deploy_env}"
+  api_sub_domain = "trailblazers-api-${var.deploy_env}"
 }
 
-#sub domain
-variable "sub" {
-  type    = string
-  default = "adiron"
-}
-
-variable "has_domain" {
-  type    = bool
-  default = false
-}
-
-#If has domain is true this needs to have a value
+// Will get populated from github actions and stored in the repo, not populated in a local run
 variable "acm_certificate_arn" {
   type        = string
   default     = "arn:"
@@ -54,12 +42,6 @@ variable "bucket_name" {
   default = "trailplanner-bucket"
 }
 
-variable "bucket_acl" {
-  type        = string
-  default     = "private"
-  description = "Bucket ACL (Access Control Listing)"
-}
-
 # Set to false to disable auth
 variable "authorization_enabled" {
   type = bool
@@ -69,12 +51,6 @@ variable "authorization_enabled" {
 locals {
   gateway_method_authorization = var.authorization_enabled ? "CUSTOM" : "NONE"
   gateway_authorizer_type = var.authorization_enabled ? "TOKEN" : "NONE"
-}
-
-# ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
-variable "has_cdn" {
-  type    = bool
-  default = true
 }
 
 resource "random_integer" "random_suffix" {

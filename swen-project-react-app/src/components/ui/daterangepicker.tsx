@@ -68,7 +68,7 @@ export function DatePickerWithRange({ value, onChange }: DatePickerWithRangeProp
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0" align="start" data-testid="calandar-popup">
           <Calendar
             mode="range"
             defaultMonth={date?.from}
