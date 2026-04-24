@@ -227,8 +227,8 @@ class DashboardPage:
         for line in lines:
             points = []
             for hovertemplate in line["hovertemplate"]:
-                count_match = re.search(r"Count:\s*(\d+)", hovertemplate)
-                count = int(count_match.group(1)) if count_match else 0
+                count_match = re.search(r"Count:\s*(?P<count>\d+)", hovertemplate)
+                count = int(count_match.group("count")) if count_match else -1
                 range_match = re.match(r"^(?P<date>.*?)\s-\s(.*?)\s\|", hovertemplate)
                 hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
                 day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
