@@ -5,10 +5,10 @@ import os
 
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID")
 
-ROOT_ADMIN = os.environ.get("ROOT_ADMIN", "local_trailplanner_root_admin")
-ADMIN = os.environ.get("ADMIN", "local_trailplanner_admin")
-TRAIL_MANAGER = os.environ.get("TRAIL_MANAGER", "local_trailplanner_trail_manager")
-USER = os.environ.get("USER", "local_trailplanner_user")
+ROOT_ADMIN = os.environ.get("ROOT_ADMIN", "root_admin")
+ADMIN = os.environ.get("ADMIN", "admin")
+TRAIL_MANAGER = os.environ.get("TRAIL_MANAGER", "trail_manager")
+USER = os.environ.get("USER", "user")
 
 cognito = boto3.client('cognito-idp')
 
