@@ -310,6 +310,7 @@ export function TrailData() {
   };
 }
 
+let refreshing: Promise<any | undefined>  | null = null;
 async function authHeaders() {
   const idToken = sessionStorage.getItem("idToken");
   if (!idToken)
@@ -319,7 +320,12 @@ async function authHeaders() {
 
   // If token is expired refresh it
   if (expiration < Date.now()) {
-    await refreshTokens();
+    // If we haven't started a refresh then start a refresh
+    if (!refreshing)
+        refreshing = refreshTokens().finally(() => {refreshing = null;});
+
+    // Wait for refresh to finish
+    await refreshing;
   }
 
   return {
