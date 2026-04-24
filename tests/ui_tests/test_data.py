@@ -145,9 +145,9 @@ with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
 for trail, datas in MONTH_DATA.items():
     YEAR_DATA[trail] = []
     current_year = datetime.fromtimestamp(datas[0]["start"]).year
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
-    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-3, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": -1, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-2, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": -1, "battery": "100%", "recorded": False})
+    YEAR_DATA[trail].append({"start": int(datetime(current_year-1, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": -1, "battery": "100%", "recorded": False})
     year_data = {"start": int(datetime(current_year, 1, 1, tzinfo=ZoneInfo("America/New_York")).timestamp()), "count": 0, "battery": "100%", "recorded": True}
     for data in datas:
         data_year = datetime.fromtimestamp(data["start"]).year

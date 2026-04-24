@@ -114,7 +114,6 @@ const TrailDataTable: React.FC<Props> = ({ data, loading }) => {
         data={data}
         progressPending={loading}
         pagination = {true}
-        highlightOnHover
         striped
         responsive
         customStyles={customStyles}

@@ -41,9 +41,10 @@ interface TrailGroup {
 
 interface Line {
     trail_name: string;
-    startDate: Date[];
-    endDate: Date[];
-    count: number[];
+    startDates: Date[];
+    endDates: Date[];
+    counts: number[];
+    noDatas: boolean[];
     granularity: Granularity;
 }
 
@@ -454,7 +455,7 @@ const dashboard = () => {
                 }
             );
 
-            var lines: { trail_name: string; startDate: Date[]; endDate: Date[]; count: number[]; granularity: Granularity }[] = [];
+            var lines: { trail_name: string; startDates: Date[]; endDates: Date[]; counts: number[]; noDatas: boolean[]; granularity: Granularity }[] = [];
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
@@ -472,6 +473,7 @@ const dashboard = () => {
 
                 let dateMap = new Map<Date, Date>();
                 let countMap = new Map<Date, number>();
+                let noDataMap = new Map<Date, boolean>();
 
                 for (let range of ranges) {
                     const eventsInRange = dateCountArray.filter(
@@ -482,13 +484,15 @@ const dashboard = () => {
 
                     dateMap.set(range.start, range.end);
                     countMap.set(range.start, totalCount);
+                    noDataMap.set(range.start, eventsInRange.length === 0);
                 }
 
                 const startDates = Array.from(dateMap.keys());
                 const endDates = Array.from(dateMap.values());
                 const counts = Array.from(countMap.values());
+                const noDatas = Array.from(noDataMap.values());
 
-                lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity });
+                lines.push({ trail_name: trailName, startDates: startDates, endDates: endDates, counts: counts, noDatas: noDatas, granularity: granularity });
             }
 
             if (responseGraphRef !== graphUpdatingRef.current)
@@ -762,12 +766,12 @@ const dashboard = () => {
     function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> {
         const shapes: NonNullable<Layout["shapes"]> = [];
         let dates;
-        if (!lines.length || !lines[0].startDate?.length) {
+        if (!lines.length || !lines[0].startDates?.length) {
             if (!selectedDate || !selectedDateEnd)
                 return shapes;
             dates = getDateRanges(selectedDate, selectedDateEnd, granularity).map(d => d.start.toISOString())
         } else {
-            dates = lines[0].startDate.map(d => d.toISOString());
+            dates = lines[0].startDates.map(d => d.toISOString());
         }
 
         for (let i = 0; i < dates.length - 1; i++) {
@@ -956,8 +960,8 @@ const dashboard = () => {
                                 useResizeHandler={true}
                                 style={{ width: "100%", height: "100%" }}
                                 data={graphLines.map((line) => ({
-                                    x: line.startDate.map(d => d.toISOString()),
-                                    y: line.count,
+                                    x: line.startDates.map(d => d.toISOString()),
+                                    y: line.counts,
                                     type: "scatter",
                                     mode: "lines+markers",
                                     name: line.trail_name,
@@ -967,22 +971,26 @@ const dashboard = () => {
                                     marker: {
                                         size: 6,
                                     },
-                                    hovertemplate: line.count.map((count: number, i: number) => {
-                                        const s = new Date(line.startDate[i]);
-                                        const e = new Date(line.endDate[i]);
+                                    hovertemplate: line.counts.map((count: number, i: number) => {
+                                        const s = new Date(line.startDates[i]);
+                                        const e = new Date(line.endDates[i]);
                                         const sString = moment(s).tz("America/New_York").format("MMM D");
                                         const sYear = moment(s).tz("America/New_York").format("YYYY");
                                         const eString = moment(e).tz("America/New_York").format("MMM D");
                                         const eYear = moment(e).tz("America/New_York").format("YYYY");
                                         const sHour = moment(s).tz("America/New_York").format("h:mm A");
 
+                                        let dateString: string;
+                                        let countString: string;
                                         if (line.granularity === Granularity.Hour) {
-                                            return `${sString} ${sHour} | Count: ${count}`;
+                                            dateString = `${sString} ${sHour}`;
                                         } else if (line.granularity === Granularity.Day) {
-                                            return `${sString}, ${sYear} | Count: ${count}`;
+                                            dateString = `${sString}, ${sYear}`;
                                         } else {
-                                            return `${sString}, ${sYear} - ${eString}, ${eYear} | Count: ${count}`;
+                                            dateString = `${sString}, ${sYear} - ${eString}, ${eYear}`;
                                         }
+                                        countString = line.noDatas[i] ? "No Data" : `Count: ${count}`
+                                        return `${dateString} | ${countString}`
                                       }),
                                 }))}
                                 layout={getPlotLayout(graphLines)}
