@@ -28,28 +28,28 @@ resource "aws_cognito_user_pool_client" "client" {
 }
 
 resource "aws_cognito_user_group" "root_admin_group" {
-  name = "${var.deploy_env}_trailplanner_root_admin"
+  name = "root_admin"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Root Admin group, managed by Terraform"
   precedence   = 0
 }
 
 resource "aws_cognito_user_group" "admin_group" {
-  name         = "${var.deploy_env}_trailplanner_admin"
+  name         = "admin"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Admin group, managed by Terraform"
   precedence   = 2
 }
 
 resource "aws_cognito_user_group" "trail_manager_group" {
-  name         = "${var.deploy_env}_trailplanner_trail_manager"
+  name         = "trail_manager"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Trail Manager group, managed by Terraform"
   precedence   = 4
 }
 
 resource "aws_cognito_user_group" "default_user_group" {
-  name         = "${var.deploy_env}_trailplanner_user"
+  name         = "user"
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Default User group, managed by Terraform"
   precedence   = 6
@@ -69,13 +69,20 @@ resource "aws_cognito_user" "users" {
   }
 }
 
+locals {
+  users_in_groups = {
+    for pair in flatten([for _, user in local.users : [for group in user.groups : {username = user.username, group = group}]]) :
+    "${pair.username}|${pair.group}" => pair
+  }
+}
+
 # Assign Predefined Users To Groups
 resource "aws_cognito_user_in_group" "assign_users" {
-  for_each = local.users
+  for_each = local.users_in_groups
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
   username     = each.value.username
-  group_name   = "${var.deploy_env}_trailplanner_${each.key}"
+  group_name   = "${each.value.group}"
 
   depends_on = [aws_cognito_user.users]
 }

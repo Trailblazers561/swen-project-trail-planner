@@ -33,10 +33,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const parsedRoles: Role[] = [];
 
                 groups.forEach((group) => {
-                    if (group.includes("root")) parsedRoles.push(Role.Root);
-                    else if (group.includes("admin")) parsedRoles.push(Role.Admin);
-                    else if (group.includes("manager")) parsedRoles.push(Role.Manager);
-                    else if (group.includes("user")) parsedRoles.push(Role.User);
+                    if (group === "root_admin") parsedRoles.push(Role.Root);
+                    else if (group === "admin") parsedRoles.push(Role.Admin);
+                    else if (group === "trail_manager") parsedRoles.push(Role.Manager);
+                    else if (group === "user") parsedRoles.push(Role.User);
                 });
 
                 setRoles(parsedRoles.length ? parsedRoles : []);
