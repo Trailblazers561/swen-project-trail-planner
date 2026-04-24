@@ -491,11 +491,11 @@ const dashboard = () => {
                 lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity });
             }
 
+            if (responseGraphRef !== graphUpdatingRef.current)
+                return;
             setGraphLines(lines);
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
-
-            if (responseGraphRef === graphUpdatingRef.current)
-                setGraphUpdating(false);
+            setGraphUpdating(false);
         } catch (error) {
             console.error("Error fetching trail data:", error);
         }
@@ -560,6 +560,7 @@ const dashboard = () => {
         setTrails(selectedTrails);
 
         if (selectedTrails.length === 0) {
+            ++graphUpdatingRef.current;
             setGraphLines([]);
             setGraphTitle("No Trails Selected");
             return;
