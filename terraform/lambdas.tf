@@ -558,3 +558,26 @@ resource "aws_lambda_function" "change_user_group" {
     }
   }
 }
+
+// Confirm User Lambda To Put User In "User" User Group After Verification 
+data "archive_file" "confirm_user_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/confirm_user.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/confirm_user.zip"
+}
+
+resource "aws_lambda_function" "confirm_user" {
+  function_name = "${var.deploy_env}_trailplanner_confirm_user"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "confirm_user.confirm_user"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/confirm_user.zip"
+  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+}
+
+resource "aws_lambda_permission" "allow_cognito" {
+  statement_id  = "AllowExecutionFromCognito"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.user_sign_up.function_name
+  principal     = "cognito-idp.amazonaws.com"
+}

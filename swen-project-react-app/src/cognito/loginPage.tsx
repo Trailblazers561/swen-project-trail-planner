@@ -1,26 +1,49 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signIn } from "./authService";
+import { signIn, signUp } from "./authService";
 import React from "react";
 import {Button} from "@/components/ui/button";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [signUpDisplayName, setSignUpDisplayName] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const navigate = useNavigate();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const session = await signIn(email, password);
+      const session = await signIn(signInEmail, signInPassword);
       console.log("Sign in successful", session);
 
       if (session && typeof session.AccessToken !== "undefined") {
         sessionStorage.setItem("accessToken", session.AccessToken);
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       } else {
         console.error("SignIn session or AccessToken is undefined.");
       }
+    } catch (error) {
+      alert(`Sign in failed: ${error}`);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (signUpPassword !== signUpConfirmPassword)
+        throw new Error("Entered Passwords Do Not Match");
+      if (signUpPassword.length < 6)
+        throw new Error("Password must be a minimum of 6 characters");
+      const session = await signUp(signUpEmail, signUpPassword, signUpDisplayName);
+      console.log("Sign in successful", session);
+      setSignUpDisplayName("");
+      setSignUpEmail("");
+      setSignUpPassword("");
+      setSignUpConfirmPassword("");
+      alert("Sign Up Successful!!! Please verify your email then sign in. (This will be replaced later with better UI)");
     } catch (error) {
       alert(`Sign in failed: ${error}`);
     }
@@ -51,17 +74,17 @@ const LoginPage = () => {
             <form onSubmit={handleSignIn} className="space-y-4">
               <input
                 type="email"
-                placeholder="Username or Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                value={signInEmail}
+                onChange={(e) => setSignInEmail(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 required
               />
               <input
                 type="password"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={signInPassword}
+                onChange={(e) => setSignInPassword(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 required
               />
@@ -78,26 +101,38 @@ const LoginPage = () => {
             <h2 className="text-2xl font-semibold mb-2">Get Started</h2>
             <p className="text-gray-500 mb-6">Register an account</p>
 
-            <form className="space-y-4">
+            <form onSubmit={handleSignUp} className="space-y-4">
               <input
                 type="text"
-                placeholder="Username"
+                placeholder="Display Name"
+                value={signUpDisplayName}
+                onChange={(e) => setSignUpDisplayName(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
               />
               <input
                 type="email"
                 placeholder="Email"
+                value={signUpEmail}
+                onChange={(e) => setSignUpEmail(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
               />
               <input
                 type="password"
                 placeholder="Password"
+                value={signUpPassword}
+                onChange={(e) => setSignUpPassword(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
               />
               <input
                 type="password"
                 placeholder="Confirm Password"
+                value={signUpConfirmPassword}
+                onChange={(e) => setSignUpConfirmPassword(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                required
               />
 
               <Button className="w-full" variant="primary">

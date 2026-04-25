@@ -12,6 +12,19 @@ resource "aws_cognito_user_pool" "user_pool" {
     require_numbers   = false
     require_symbols   = false
   }
+
+  lambda_config {
+    post_confirmation  = aws_lambda_function.user_sign_up.arn
+  }
+
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_LINK"
+  }
+}
+
+resource "aws_cognito_user_pool_domain" "user_pool_domain" {
+  domain       = "${var.deploy_env}-trailplanner-user-confirmation"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
 resource "aws_cognito_user_pool_client" "client" {
