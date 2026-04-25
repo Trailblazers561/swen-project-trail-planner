@@ -105,11 +105,11 @@ resource "aws_api_gateway_rest_api" "public_api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "${var.deploy_env}_trailplanner_api"
+      title   = "${var.deploy_env}_trailplanner_public_api"
       version = "1.0"
     }
   })
-  name = "${var.deploy_env}_trailplanner_api"
+  name = "${var.deploy_env}_trailplanner_public_api"
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
@@ -135,18 +135,18 @@ resource "aws_api_gateway_base_path_mapping" "api_mapping" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.public_api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.public_api.id
-  stage_name    = "${var.deploy_env}_trailplanner_api_stage"
+  stage_name    = "${var.deploy_env}_trailplanner_public_api_stage"
 }
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.deploy_env} Device API Key"
+  name = "${var.deploy_env} TrailPlanner Device API Key"
   value = "${var.deploy_env}-trail-planner-key-trail-trail-trail-trail"
 }
 
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "device_usage_plan" {
-  name = "${var.deploy_env} Device API Usage Plan"
+  name = "${var.deploy_env} TrailPlanner Device API Usage Plan"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.public_api.id
@@ -356,7 +356,7 @@ resource "aws_api_gateway_integration_response" "public_api_options_integration_
 
 # Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
-  name = "${var.deploy_env}_LambdaAuthorizer"
+  name = "${var.deploy_env}_trailplanner_lambda_authorizer"
   rest_api_id = aws_api_gateway_rest_api.public_api.id
   authorizer_uri = aws_lambda_function.lambda_authorizer.invoke_arn
   type = local.gateway_authorizer_type

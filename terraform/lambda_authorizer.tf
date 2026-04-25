@@ -40,7 +40,7 @@ data "archive_file" "authorizer_layer" {
 }
 
 resource "aws_lambda_layer_version" "authorizer_layer" {
-  layer_name          = "${var.deploy_env}-authorizer-layer"
+  layer_name          = "${var.deploy_env}-trailplanner-authorizer-layer"
   filename            = data.archive_file.authorizer_layer.output_path
   source_code_hash    = data.archive_file.authorizer_layer.output_base64sha256
   compatible_runtimes = ["python3.12"]
@@ -54,7 +54,7 @@ data "archive_file" "lambda_authorizer_zip" {
 
 # Lambda Authorizer Role
 resource "aws_iam_role" "lambda_authorizer_role" {
-  name               = "${var.deploy_env}_lambda_authorizer_role"
+  name               = "${var.deploy_env}_trailplanner_lambda_authorizer_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 

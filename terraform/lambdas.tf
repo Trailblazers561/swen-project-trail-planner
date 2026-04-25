@@ -6,7 +6,7 @@ data "archive_file" "simulate_data_zip" {
 }
 
 resource "aws_lambda_function" "simulate_data" {
-  function_name = "${var.deploy_env}_simulate_traildata"
+  function_name = "${var.deploy_env}_trailplanner_simulate_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "simulate_data.simulate_data"
   runtime       = "python3.12"
@@ -28,14 +28,14 @@ resource "aws_lambda_function" "simulate_data" {
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
-    name = "${var.deploy_env}_trigger_simulate_data"
+    name = "${var.deploy_env}_trailplanner_trigger_simulate_data"
     schedule_expression = "cron(0 3 * * ? *)" # This runs at 10:00pm / 11:00pm EST
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda_every_day" {
     count = local.test_run ? 0 : 1
     rule = aws_cloudwatch_event_rule.trigger_simulate_data.name
-    target_id = "${var.deploy_env}_simulate_data_event"
+    target_id = "${var.deploy_env}_trailplanner_simulate_data_event"
     arn = aws_lambda_function.simulate_data.arn
 }
 
@@ -119,7 +119,7 @@ resource "aws_cloudwatch_event_rule" "csv_bucket_daily_cleanup" {
 
 resource "aws_cloudwatch_event_target" "trigger_cleanup" {
   rule      = aws_cloudwatch_event_rule.csv_bucket_daily_cleanup.name
-  target_id = "${var.deploy_env}_cleanup_event"
+  target_id = "${var.deploy_env}_trailplanner_cleanup_event"
   arn       = aws_lambda_function.cleanup_lambda.arn
 }
 
