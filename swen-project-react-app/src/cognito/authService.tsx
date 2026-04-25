@@ -5,7 +5,8 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
- GetTokensFromRefreshTokenCommand
+ GetTokensFromRefreshTokenCommand,
+ AuthFlowType
 } from "@aws-sdk/client-cognito-identity-provider";
 
 // Get Cognito configuration from environment variables
@@ -26,7 +27,7 @@ export const cognitoClient = new CognitoIdentityProviderClient({
 
 export const signIn = async (username: string, password: string) => {
   const params = {
-    AuthFlow: "USER_PASSWORD_AUTH",
+    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
     ClientId: cognitoConfig.clientId,
     AuthParameters: {
       USERNAME: username,
@@ -54,7 +55,7 @@ export const signIn = async (username: string, password: string) => {
   }
 };
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (email: string, password: string, displayName: string) => {
   const params = {
     ClientId: cognitoConfig.clientId,
     Username: email,
@@ -63,6 +64,10 @@ export const signUp = async (email: string, password: string) => {
       {
         Name: "email",
         Value: email,
+      },
+      {
+        Name: "preferred_username",
+        Value: displayName,
       },
     ],
   };
@@ -97,7 +102,7 @@ export const confirmSignUp = async (username: string, code: string) => {
 export const refreshTokens = async () => {
   const params = {
     ClientId: cognitoConfig.clientId,
-    RefreshToken: sessionStorage.getItem("refreshToken")
+    RefreshToken: sessionStorage.getItem("refreshToken") ?? undefined
   };
   try {
     const command = new GetTokensFromRefreshTokenCommand(params);
