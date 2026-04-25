@@ -1,48 +1,16 @@
-import os
-import json
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-import boto3
-from boto3.dynamodb.conditions import Key
 import csv
-from pathlib import Path
 import hashlib
+import json
+from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
+from zoneinfo import ZoneInfo
 
-dynamodb = boto3.resource('dynamodb')
-s3_client = boto3.client('s3')
+from boto3.dynamodb.conditions import Key
 
-# Table references
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
-trail_group_table = dynamodb.Table(os.environ.get("TRAIL_GROUP_TABLE", "local_TrailGroup"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
-
-table_time_map = {
-    "hour":  device_trail_log_hour_table,
-    "day":   device_trail_log_day_table,
-    "week":  device_trail_log_week_table,
-    "month": device_trail_log_month_table,
-    "year": device_trail_log_month_table
-}
+from helper_functions import csv_bucket, dynamodb, device_trail_log_day_table, s3_client, table_time_map, trail_table, device_trail_table, convert_decimals, cors_headers
 
 fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly", "year": "Yearly"}
-
-def convert_decimals(obj):
-    if isinstance(obj, list):
-        return [convert_decimals(i) for i in obj]
-    elif isinstance(obj, dict):
-        return {k: convert_decimals(v) for k, v in obj.items()}
-    elif isinstance(obj, Decimal):
-        return float(obj) if obj % 1 > 0 else int(obj)
-    else:
-        return obj
-
 
 def create_and_fill_csv(event, context):
     print(event)
@@ -190,10 +158,10 @@ def create_and_fill_csv(event, context):
         h = hashlib.sha3_512()
         h.update(json.dumps(trail_log_rows, sort_keys=True).encode('utf-8'))
         fullFilePath = h.hexdigest() + "/trail_data.csv"
-        s3_client.upload_file(key, s3_bucket, fullFilePath)
+        s3_client.upload_file(key, csv_bucket, fullFilePath)
 
         url = s3_client.generate_presigned_url('get_object',
-                                               Params={'Bucket': s3_bucket,
+                                               Params={'Bucket': csv_bucket,
                                                        'Key': fullFilePath},
                                                ExpiresIn=3600)
         print(f"Success: returning csv url [{url}]")
@@ -217,10 +185,3 @@ def create_and_fill_csv(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
-def cors_headers():
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization"
-    }

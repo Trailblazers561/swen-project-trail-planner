@@ -14,7 +14,7 @@ resource "aws_cognito_user_pool" "user_pool" {
   }
 
   lambda_config {
-    post_confirmation  = aws_lambda_function.user_sign_up.arn
+    post_confirmation  = aws_lambda_function.confirm_user.arn
   }
 
   verification_message_template {

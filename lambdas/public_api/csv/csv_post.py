@@ -1,37 +1,13 @@
-import hashlib
-import os
-import json
 import csv
+import hashlib
+import json
 import re
 from collections import defaultdict
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-
-import boto3
 from decimal import Decimal
 
-from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
-dynamodb = boto3.resource('dynamodb')
-s3_client = boto3.client('s3')
-
-# Table references
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
-
-
-def cors_headers():
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization"
-    }
-
+from helper_functions import csv_bucket, device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, s3_client, cors_headers, get_device_trail_id, timestamp_conversion
 
 # Path in bucket for our uploaded hashes file
 file_hash_repository_path = "import-hashes/"
@@ -48,7 +24,7 @@ def is_duplicate_hash(fileHash):
     try:
         paginator = s3_client.get_paginator("list_objects_v2")
 
-        pages = paginator.paginate(Bucket=s3_bucket, Prefix=file_hash_repository_path)
+        pages = paginator.paginate(Bucket=csv_bucket, Prefix=file_hash_repository_path)
 
         hashes = []
         for page in pages:
@@ -71,44 +47,7 @@ def append_new_hash(fileHash):
     """
     print(f"Appending file hash to hash list- {fileHash}")
     filePath = file_hash_repository_path + fileHash + ".json"
-    s3_client.put_object(Bucket=s3_bucket, Key=filePath)
-
-
-def timestamp_conversion(timestamp, time_increment):
-    """
-    Convert timestamp back to start of day/week/month as need be for higher grade time tables
-    :param timestamp: unix timestamp of current time
-    :param time_increment: string of day/week/month to convert it to
-    :return: timestamp of the start of that period, none if invalid time increment
-    """
-    dt_timestamp = datetime.fromtimestamp(timestamp, tz=ZoneInfo("America/New_York"))
-    if time_increment == "hour":
-        return int(dt_timestamp.replace(minute=0, second=0, microsecond=0).timestamp())
-    elif time_increment == "day":
-        return int(dt_timestamp.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-    elif time_increment == "week":
-        monday = dt_timestamp - timedelta(days=dt_timestamp.weekday())
-        return int(monday.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-    elif time_increment == "month":
-        return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
-    return None
-
-
-def get_device_trail_id(device_id):
-    """
-    given the device id get the devicetrail id that we need for the time entries
-    :param device_id: device id
-    :return: devicetrail id
-    """
-    items = device_trail_table.query(
-        KeyConditionExpression=Key("device_id").eq(device_id),
-        ScanIndexForward=False,
-        Limit=1
-    ).get("Items", [])
-    if not items:
-        raise ValueError(f"No device trail association with tdevice id {device_id} found")
-    return int(items[0]["id"])  # just return the id, dont need all that
-
+    s3_client.put_object(Bucket=csv_bucket, Key=filePath)
 
 def parse_csv_and_export_data(event, context):
     """
@@ -135,7 +74,7 @@ def parse_csv_and_export_data(event, context):
             raise ValueError(f"Invalid csv_file_path: {csv_file_path}")
         print("path is in the correct file path format")
 
-        csv_file_data = s3_client.get_object(Bucket=s3_bucket, Key=csv_file_path)
+        csv_file_data = s3_client.get_object(Bucket=csv_bucket, Key=csv_file_path)
 
         file_size_limit = 5 * 1024 * 1024  # 5 megabytes, terminate if file is too big
         if csv_file_data["ContentLength"] > file_size_limit:
@@ -260,7 +199,7 @@ def parse_csv_and_export_data(event, context):
 
         append_new_hash(csv_hash)
 
-        s3_client.delete_object(Bucket=s3_bucket, Key=csv_file_path)
+        s3_client.delete_object(Bucket=csv_bucket, Key=csv_file_path)
 
         return {
             "statusCode": 200,

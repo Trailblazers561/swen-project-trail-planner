@@ -310,23 +310,3 @@ resource "aws_dynamodb_table_item" "error_items" {
     error = { "S" = each.value.error }
   })
 }
-
-resource "null_resource" "load_test_data" {
-  # Yes this isn't possible for regular scenario, but when testing locally it is helpful
-  count = local.test_run && local.local_run ? 1 : 0 
-
-  triggers = {
-    always_run = timestamp()
-  }
-
-  provisioner "local-exec" {
-    command = "python ${path.module}/${local.sample_data_directory}/load_test_data.py --env ${var.deploy_env}"
-  }
-
-  depends_on = [
-    aws_dynamodb_table.device_trail_log_hour_table,
-    aws_dynamodb_table.device_trail_log_day_table,
-    aws_dynamodb_table.device_trail_log_week_table,
-    aws_dynamodb_table.device_trail_log_month_table
-  ]
-}
