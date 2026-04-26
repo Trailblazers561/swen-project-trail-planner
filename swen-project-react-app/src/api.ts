@@ -1,6 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { UserRole, Granularity } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
+import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
 
 export function TrailData() {
   /**
@@ -234,7 +235,7 @@ export function TrailData() {
    */
       async function importCSV(csvFile: File) {
 
-        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv/csv-url`, {
+        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv-url`, {
           method: "GET",
           headers: await authHeaders(),
         }))["json"];
@@ -312,14 +313,11 @@ export function TrailData() {
 
 let refreshing: Promise<any | undefined>  | null = null;
 async function authHeaders() {
-  const idToken = sessionStorage.getItem("idToken");
-  if (!idToken)
+  if (!isAuthenticated())
     return {Authorization: `Bearer `, "Content-Type": "application/json"};
 
-  const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
-
   // If token is expired refresh it
-  if (expiration < Date.now()) {
+  if (isTokenExpired()) {
     // If we haven't started a refresh then start a refresh
     if (!refreshing)
         refreshing = refreshTokens().finally(() => {refreshing = null;});
@@ -329,7 +327,7 @@ async function authHeaders() {
   }
 
   return {
-    Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
+    Authorization: `Bearer ${getToken()}`,
     "Content-Type": "application/json",
   };
 }

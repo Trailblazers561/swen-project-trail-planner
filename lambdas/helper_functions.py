@@ -62,7 +62,7 @@ def timestamp_conversion(timestamp, time_increment):
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
 
-def get_next_trail_id(trail_table) -> int:
+def get_next_trail_id() -> int:
     print("Retrieving next trail_id")
     # Get all existing trails to find next available ID
     try:
@@ -80,7 +80,7 @@ def get_next_trail_id(trail_table) -> int:
 
     return new_trail_id
 
-def get_next_device_id(device_table) -> int:
+def get_next_device_id() -> int:
     print("Retrieving next device_id")
     # Get all existing devices to find next available ID
     try:
@@ -98,7 +98,7 @@ def get_next_device_id(device_table) -> int:
 
     return new_device_id
 
-def get_next_device_trail_id(device_trail_table) -> int:
+def get_next_device_trail_id() -> int:
     print("Retrieving next device_trail_id")
     # Get all existing device_trails to find next available ID
     try:
@@ -116,7 +116,7 @@ def get_next_device_trail_id(device_trail_table) -> int:
 
     return new_device_trail_id
 
-def get_device_trail_id(device_trail_table, device_id, trail_id=None):
+def get_device_trail_id(device_id, trail_id=None):
     """
     given the device id get the devicetrail id that we need for the time entries
     :param device_id: device id

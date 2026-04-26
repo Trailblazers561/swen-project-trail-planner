@@ -8,6 +8,7 @@ import {
  GetTokensFromRefreshTokenCommand,
  AuthFlowType
 } from "@aws-sdk/client-cognito-identity-provider";
+import { setTokens } from "@/Context";
 
 // Get Cognito configuration from environment variables
 const cognitoConfig = {
@@ -37,18 +38,7 @@ export const signIn = async (username: string, password: string) => {
   try {
     const command = new InitiateAuthCommand(params);
     const { AuthenticationResult } = await cognitoClient.send(command);
-    if (AuthenticationResult) {
-      sessionStorage.setItem("idToken", AuthenticationResult.IdToken || "");
-      sessionStorage.setItem(
-        "accessToken",
-        AuthenticationResult.AccessToken || "",
-      );
-      sessionStorage.setItem(
-        "refreshToken",
-        AuthenticationResult.RefreshToken || "",
-      );
-      return AuthenticationResult;
-    }
+    return AuthenticationResult;
   } catch (error) {
     console.error("Error signing in: ", error);
     throw error;
@@ -102,20 +92,16 @@ export const confirmSignUp = async (username: string, code: string) => {
 export const refreshTokens = async () => {
   const params = {
     ClientId: cognitoConfig.clientId,
-    RefreshToken: sessionStorage.getItem("refreshToken") ?? undefined
+    RefreshToken: localStorage.getItem("refreshToken") ?? undefined
   };
   try {
     const command = new GetTokensFromRefreshTokenCommand(params);
     const { AuthenticationResult } = await cognitoClient.send(command);
     if (AuthenticationResult) {
-      sessionStorage.setItem("idToken", AuthenticationResult.IdToken || "");
-      sessionStorage.setItem(
-        "accessToken",
+      setTokens(
+        AuthenticationResult.IdToken || "",
         AuthenticationResult.AccessToken || "",
-      );
-      sessionStorage.setItem(
-        "refreshToken",
-        AuthenticationResult.RefreshToken || "",
+        AuthenticationResult.RefreshToken || ""
       );
       return AuthenticationResult;
     }

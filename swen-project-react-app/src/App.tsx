@@ -11,10 +11,6 @@ import { Role, useAuth } from "@/Context";
 
 function App() {
     const { currentRole } = useAuth();
-    // const isAuthenticated = () => {
-    //   const accessToken = sessionStorage.getItem("accessToken");
-    //   return !!accessToken;
-    // };
 
     return (
         <AuthProvider>

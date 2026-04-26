@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { signIn, signUp } from "./authService";
 import React from "react";
 import {Button} from "@/components/ui/button";
+import { useAuth } from "@/Context";
 
 const LoginPage = () => {
   const [signInEmail, setSignInEmail] = useState("");
@@ -13,14 +14,20 @@ const LoginPage = () => {
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const navigate = useNavigate();
 
+  const { setAuth } = useAuth();
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const session = await signIn(signInEmail, signInPassword);
+      setAuth(
+        session?.IdToken || "",
+        session?.AccessToken || "",
+        session?.RefreshToken || ""
+      );
       console.log("Sign in successful", session);
 
       if (session && typeof session.AccessToken !== "undefined") {
-        sessionStorage.setItem("accessToken", session.AccessToken);
         navigate("/dashboard");
       } else {
         console.error("SignIn session or AccessToken is undefined.");
