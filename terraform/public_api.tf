@@ -98,6 +98,12 @@ locals {
       )
     }
   ]...)
+  public_api_methods_per_endpoint = {
+    for endpoint, methods in local.public_api_endpoints :
+    endpoint => [
+      for method, _ in methods : method
+    ]
+  }
 }
 
 # API Gateway (REST API)
@@ -317,7 +323,7 @@ resource "aws_api_gateway_integration" "public_api_options_integrations" {
   }
 }
 
-resource "aws_api_gateway_method_response" "public_api_options_responses" {
+resource "aws_api_gateway_method_response" "public_api_options_method_responses" {
   for_each = local.public_api_endpoints
 
   rest_api_id = aws_api_gateway_rest_api.public_api.id
@@ -343,14 +349,14 @@ resource "aws_api_gateway_integration_response" "public_api_options_integration_
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'${join(",", concat(local.public_api_methods_per_endpoint[each.key], ["OPTIONS"]))}'"
     "method.response.header.Access-Control-Allow-Origin"       = "'*'"
     "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
   }
 
   depends_on = [
     aws_api_gateway_integration.public_api_options_integrations,
-    aws_api_gateway_method_response.public_api_options_responses
+    aws_api_gateway_method_response.public_api_options_method_responses
   ]
 }
 
@@ -369,14 +375,16 @@ resource "aws_api_gateway_deployment" "public_api_deployment" {
 
   triggers = {
     redeployment = sha1(jsonencode(concat(
-      # Regular Integrations
-      [ for i in aws_api_gateway_integration.public_api_integrations : i.uri ],
       # Regular Methods
       [ for m in aws_api_gateway_method.public_api_methods : m.authorization ],
-      # Options Integrations
-      [ for i in aws_api_gateway_integration.public_api_options_integrations : i.uri ],
+      # Regular Integrations
+      [ for i in aws_api_gateway_integration.public_api_integrations : i.uri ],
       # Options Methods
       [ for m in aws_api_gateway_method.public_api_options_methods : m.authorization ],
+      # Options Integrations
+      [ for i in aws_api_gateway_integration.public_api_options_integrations : i.uri ],
+      # Options Integration Responses
+      [ for r in aws_api_gateway_integration_response.public_api_options_integration_responses : r.response_parameters ],
       # Authorizer Stuff / Permissions
       [
         aws_api_gateway_authorizer.lambda_authorizer.id,

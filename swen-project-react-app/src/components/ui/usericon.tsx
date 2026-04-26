@@ -4,17 +4,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuGro
 import { useNavigate } from "react-router-dom";
 import { Role, useAuth } from "@/Context";
 
-
-
 export function UserIcon() {
-    const { currentRole } = useAuth();
+    const { currentRole, clearAuth } = useAuth();
     const navigate = useNavigate();
     const handleLogout = () => {
-        sessionStorage.clear();
+        clearAuth();
         navigate("/login");
     };
     const handleManageUsers = () => {
-        sessionStorage.clear();
         navigate("/privileges");
     };
 

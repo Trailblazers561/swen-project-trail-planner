@@ -11,6 +11,8 @@ type AuthContextType = {
     email: string;
     roles: Role[];
     currentRole: Role | null;
+    clearAuth: () => void;
+    setAuth: (idToken: string, accessToken: string, refreshToken: string) => void;
 };
 
 const Context = createContext<AuthContextType | null>(null);
@@ -21,8 +23,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
-    useEffect(() => {
-        const idToken = sessionStorage.getItem("idToken");
+    const refreshAuth = () => {
+        const idToken = localStorage.getItem("idToken");
 
         if (idToken) {
             try {
@@ -45,10 +47,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.error("Failed to parse idToken:", e);
             }
         }
+        else {
+            setRoles([]);
+            setEmail("");
+        }
+    };
+
+    useEffect(() => {
+        refreshAuth();
     }, []);
 
+    const clearAuth = () => {
+        localStorage.clear();
+        refreshAuth();
+    };
+
+    const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
+        setTokens(idToken, accessToken, refreshToken)
+        refreshAuth();
+    }
+
     return (
-        <Context.Provider value={{ email, roles, currentRole }}>
+        <Context.Provider value={{ email, roles, currentRole, clearAuth, setAuth }}>
             {children}
         </Context.Provider>
     );
@@ -61,3 +81,27 @@ export const useAuth = () => {
     }
     return context;
 };
+
+export function isAuthenticated() {
+    return !!localStorage.getItem("idToken");
+}
+
+export function isTokenExpired() {
+    const idToken = localStorage.getItem("idToken");
+    if (!idToken)
+        return false;
+
+    const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
+
+    return expiration >= Date.now();
+}
+
+export function setTokens(idToken: string, accessToken: string, refreshToken: string) {
+    localStorage.setItem("idToken", idToken);
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+}
+
+export function getToken() {
+    return localStorage.getItem("accessToken") ?? "";
+}

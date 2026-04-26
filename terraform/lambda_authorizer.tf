@@ -20,6 +20,15 @@ resource "aws_lambda_function" "lambda_authorizer" {
   }
 }
 
+resource "aws_lambda_permission" "allow_apigateway_invoke_authorizer" {
+  statement_id  = "AllowExecutionFromAPIGateway-LambdaAuthorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_authorizer.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.public_api.execution_arn}/*/*"
+}
+
 resource "null_resource" "authorizer_pip_install" {
   count = local.local_run ? 1 : 0
 
