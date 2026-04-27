@@ -16,10 +16,10 @@ locals {
 locals {
   password = local.test_run ? "testPassword123!" : "REDACTED" # Sometimes google tells you your password has been found, this avoids that issue when testing
   users = {
-    root_admin = { username = "root_admin@gmail.com",    password = local.password, email = "root_admin@gmail.com", groups=["root_admin", "admin", "trail_manager", "user"] }
-    admin = { username = "admin@gmail.com",    password = local.password, email = "admin@gmail.com", groups=["admin", "trail_manager", "user"] }
-    trail_manager = { username = "trail_manager@gmail.com", password = local.password, email = "trail_manager@gmail.com", groups=["trail_manager", "user"] }
-    user = { username = "user@gmail.com",   password = local.password,  email = "user@gmail.com", groups=["user"] }
+    root_admin = { display_name = "default_root", password = local.password, email = "root_admin@gmail.com", groups=["root_admin", "admin", "trail_manager", "user"] }
+    admin = { display_name = "default_admin", password = local.password, email = "admin@gmail.com", groups=["admin", "trail_manager", "user"] }
+    trail_manager = { display_name = "default_manager", password = local.password, email = "trail_manager@gmail.com", groups=["trail_manager", "user"] }
+    user = { display_name = "default_user", password = local.password, email = "user@gmail.com", groups=["user"] }
   }
 }
 
