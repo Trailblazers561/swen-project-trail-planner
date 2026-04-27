@@ -8,7 +8,7 @@ from helper_functions import trail_table, trail_group_table, cors_headers, get_n
 def create_trail(event, context):
     """
     Create a new trail. Auto-generates trail_id as next available ID.
-    Expects: { "trail_name": str, "trail_group": str (optional), "notes": str (optional), "latitude": int (optional), "longitude": int (optional) }
+    Expects: { "name": str, "area": str (optional), "notes": str (optional), "latitude": int (optional), "longitude": int (optional) }
     Returns: { "trail_id": int, "message": str }
     """
     try:
@@ -17,18 +17,18 @@ def create_trail(event, context):
         if isinstance(body, str):
             body = json.loads(body)
 
-        trail_name = body.get("trail_name")
-        trail_group = body.get("trail_group")
+        name = body.get("name")
+        area = body.get("area")
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
         date_activated = body.get("date_activated")
 
-        if not trail_name:
+        if not name:
             return {
                 "statusCode": 400,
                 "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: trail_name"})
+                "body": json.dumps({"error": "Missing required field: name"})
             }
 
         if date_activated is None:
@@ -36,14 +36,14 @@ def create_trail(event, context):
         else:
             date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
 
-        print(f"Attempting to create trail with trail_name [{trail_name}], trail_group [{trail_group}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
+        print(f"Attempting to create trail with name [{name}], area [{area}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
         # Create trail metadata
         item = {
             "id": new_trail_id,
-            "name": str(trail_name),
+            "name": str(name),
             "date_activated": date_activated
         }
 
@@ -70,17 +70,17 @@ def create_trail(event, context):
             groups = resp.get("Items", [])
 
             # Add to specified trail group if provided
-            if trail_group:
+            if area:
                 group_found = False
                 for group in groups:
-                    if group.get("name") == trail_group:
+                    if group.get("name") == area:
                         trail_ids = group.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if new_trail_id not in trail_ids:
                             trail_ids.append(new_trail_id)
                         trail_group_table.put_item(Item={
-                            "name": trail_group,
+                            "name": area,
                             "trail_ids": trail_ids
                         })
                         group_found = True
@@ -88,7 +88,7 @@ def create_trail(event, context):
 
                 if not group_found:
                     trail_group_table.put_item(Item={
-                        "name": trail_group,
+                        "name": area,
                         "trail_ids": [new_trail_id]
                     })
         except Exception as e:

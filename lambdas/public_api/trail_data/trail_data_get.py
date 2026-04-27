@@ -14,18 +14,18 @@ def get_trail_data(event, context):
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get('trail_id')
-        start = single_params.get("start")
-        end = single_params.get("end")
+        start_time = single_params.get("start_time")
+        end_time = single_params.get("end_time")
         granularity = single_params.get("granularity", "day")
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
         if not all(id.isdigit() for id in trail_id_list): raise ValueError("Invalid trail_id_list format")
         trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
-        if not start: raise ValueError("Missing required field: start")
-        if not end: raise ValueError("Missing required field: end")
+        if not start_time: raise ValueError("Missing required field: start_time")
+        if not end_time: raise ValueError("Missing required field: end_time")
 
-        print(f"Attempting to retrieve logs for trails [{trail_id_list_decimals}], from [{start}] to [{end}] at granularity of [{granularity}]")
+        print(f"Attempting to retrieve logs for trails [{trail_id_list_decimals}], from [{start_time}] to [{end_time}] at granularity of [{granularity}]")
 
         if granularity not in table_time_map:
             logs_time_table = table_time_map["day"]
@@ -35,8 +35,8 @@ def get_trail_data(event, context):
         device_trail_ids = []
         device_trail_cache = {}
 
-        start_time = datetime.fromisoformat(start).astimezone(ZoneInfo("America/New_York"))
-        end_time = datetime.fromisoformat(end).astimezone(ZoneInfo("America/New_York"))
+        start_time = datetime.fromisoformat(start_time).astimezone(ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end_time).astimezone(ZoneInfo("America/New_York"))
 
         # Add a day to end_time (since we subtract 1 from the timestamp this won't add a real day's data)
         if granularity == "hour":

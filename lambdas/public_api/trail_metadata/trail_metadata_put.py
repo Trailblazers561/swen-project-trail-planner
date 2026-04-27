@@ -6,7 +6,7 @@ from helper_functions import trail_table, trail_group_table, cors_headers
 def update_trail_metadata(event, context):
     """
     Update trail metadata (trail name, trail group).
-    Expects: { "trail_id": int, "trail_name": str, "trail_group": str, "trail_notes": str, "trail_latitude": float, "trail_longitude": float }
+    Expects: { "trail_id": int, "name": str, "area": str, "notes": str, "latitude": float, "longitude": float }
     """
     try:
         print(event)
@@ -15,11 +15,11 @@ def update_trail_metadata(event, context):
             body = json.loads(body)
 
         trail_id = body.get("trail_id")
-        trail_name = body.get("trail_name")
-        trail_group = body.get("trail_group")
-        trail_notes = body.get("trail_notes")
-        trail_lat = body.get("trail_latitude")
-        trail_lon = body.get("trail_longitude")
+        name = body.get("name")
+        area = body.get("area")
+        notes = body.get("notes")
+        latitude = body.get("latitude")
+        longitude = body.get("longitude")
 
         if trail_id is None:
             return {
@@ -28,7 +28,7 @@ def update_trail_metadata(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_id"})
             }
 
-        print(f"Attempting to update trail with trail_id [{trail_id}] to trail_name [{trail_name}] and trail_group [{trail_group}] and notes [{trail_notes}] and latitude [{trail_lat}] and longitude [{trail_lon}]")
+        print(f"Attempting to update trail with trail_id [{trail_id}] to name [{name}] and area [{area}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
 
         try:
             trail_id = int(trail_id)
@@ -41,14 +41,14 @@ def update_trail_metadata(event, context):
 
         # Update trail metadata
         item = {"id": trail_id}
-        if trail_name is not None:
-            item["name"] = str(trail_name)
-        if trail_notes is not None:
-            item["notes"] = str(trail_notes)
-        if trail_lat is not None:
-            item["latitude"] = Decimal(str(trail_lat))
-        if trail_lon is not None:
-            item["longitude"] = Decimal(str(trail_lon))
+        if name is not None:
+            item["name"] = str(name)
+        if notes is not None:
+            item["notes"] = str(notes)
+        if latitude is not None:
+            item["latitude"] = Decimal(str(latitude))
+        if longitude is not None:
+            item["longitude"] = Decimal(str(longitude))
 
         try:
             trail_table.put_item(Item=item)
@@ -60,8 +60,8 @@ def update_trail_metadata(event, context):
                 "body": json.dumps({"error": f"Failed to update trail metadata: {str(e)}"})
             }
 
-        # Update trail groups if trail_group is provided (and not empty string)
-        if trail_group is not None and trail_group != "":
+        # Update trail groups if area is provided (and not empty string)
+        if area is not None and area != "":
             try:
                 # Get current trail groups
                 resp = trail_group_table.scan()
@@ -70,7 +70,7 @@ def update_trail_metadata(event, context):
                 # First, remove trail_id from all other groups
                 for group in groups:
                     group_name = group.get("name")
-                    if group_name != trail_group:
+                    if group_name != area:
                         trail_ids = group.get("trail_ids", [])
                         if isinstance(trail_ids, list) and trail_id in trail_ids:
                             trail_ids = [tid for tid in trail_ids if tid != trail_id]
@@ -82,14 +82,14 @@ def update_trail_metadata(event, context):
                 # Find the target group and add trail_id to it
                 group_found = False
                 for group in groups:
-                    if group.get("name") == trail_group:
+                    if group.get("name") == area:
                         trail_ids = group.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if trail_id not in trail_ids:
                             trail_ids.append(trail_id)
                         trail_group_table.put_item(Item={
-                            "name": trail_group,
+                            "name": area,
                             "trail_ids": trail_ids
                         })
                         group_found = True
@@ -98,7 +98,7 @@ def update_trail_metadata(event, context):
                     # If group doesn't exist, create it
                     if not group_found:
                         trail_group_table.put_item(Item={
-                            "name": trail_group,
+                            "name": area,
                             "trail_ids": [trail_id]
                         })
             except Exception as e:
@@ -106,7 +106,7 @@ def update_trail_metadata(event, context):
                 # Continue even if trail group update fails
                 pass
         else:
-            # If trail_group is None (empty string), remove it from all groups
+            # If area is None (empty string), remove it from all groups
             # This handles the case when removing a trail from a specific group
             try:
                 resp = trail_group_table.scan()

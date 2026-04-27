@@ -48,6 +48,14 @@ interface Line {
     granularity: Granularity;
 }
 
+interface TrailListItem {
+    trail_id: number;
+    trail_name: string;
+    weeklyCount: number;
+    batteryStatus: number | null;
+    lastUpdated: string | null;
+}
+
 const dashboard = () => {
 
     const { currentRole } = useAuth();
@@ -108,19 +116,10 @@ const dashboard = () => {
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
-    const [trailListData, setTrailListData] = useState<
-        Array<{
-            trail_id: number;
-            trail_name: string;
-            weeklyCount: number;
-            batteryStatus: number | null;
-            lastUpdated: string | null;
-        }>
-    >([]);
+    const [allListData, setAllListData] = useState<Array<TrailListItem>>([]);
+    const [trailListData, setTrailListData] = useState<Array<TrailListItem>>([]);
     const [loadingListData, setLoadingListData] = useState(false);
-    const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(
-        null
-    );
+    const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(null);
     const isFetchingListData = useRef(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
     const [isUploadingStatus, setIsUploadingStatus] = useState<"idle" | "uploading" | "done" | "error"> ("idle");
@@ -628,7 +627,6 @@ const dashboard = () => {
     // Compute list data from cached data and trail metadata
     useEffect(() => {
         if (
-            viewMode === "list" &&
             trailMetadata.length > 0 &&
             deviceMetadataCache !== null &&
             !isFetchingListData.current
@@ -676,7 +674,7 @@ const dashboard = () => {
                         trailInformation.set(trailId, currentInformation);
                     });
 
-                    const listData = trails
+                    const allListData = trails
                     .filter((t) => t && t.name && t.id && t.id !== 0)
                     .map((trail) => {
                         const information = trailInformation.get(trail.id);
@@ -694,7 +692,7 @@ const dashboard = () => {
                     })
                     .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
 
-                    setTrailListData(listData);
+                    setAllListData(allListData);
                     setLoadingListData(false);
                     isFetchingListData.current = false;
                 } catch (error) {
@@ -705,7 +703,22 @@ const dashboard = () => {
                 }
             })();
         }
-    }, [viewMode, trailMetadata, deviceMetadataCache]);
+    }, [trailMetadata, deviceMetadataCache]);
+
+    // Update displayed list data to match trails variable
+    useEffect(() => {
+        if (
+            viewMode === "list" &&
+            allListData.length > 0 &&
+            !isFetchingListData.current
+        ) {
+            if (trails.length == 0)
+                setTrailListData(allListData);
+            else
+                setTrailListData(allListData.filter((item) => trails.includes(item.trail_name)));
+
+        }
+    }, [viewMode, trails, allListData]);
 
     // Reset fetch flag when switching away from list view
     useEffect(() => {

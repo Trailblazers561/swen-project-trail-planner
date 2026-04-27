@@ -33,7 +33,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { getTrailGroupMetadata, updateTrailMetadata, createTrail, deleteTrail } = TrailData();
+  const { getTrailGroupMetadata, updateTrailMetadata, createTrail, retireTrail } = TrailData();
 
   useEffect(() => {
     if (isOpen) {
@@ -169,7 +169,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
     setError(null);
 
     try {
-      const response = await deleteTrail(selectedTrailId);
+      const response = await retireTrail(selectedTrailId);
 
       if (response.success) {
         setSuccess('Trail deleted successfully!');
