@@ -14,7 +14,7 @@ def retire_trail(event, context):
     - Trail from all trail groups
     - Updates devices_trail date removed to given date
     - Updates trail date retired to given date
-    Expects: { "trail_id": int, date: str (ISO Date, optional) }
+    Expects: { "trail_id": int, date_retired: str (ISO Date, optional) }
     """
     try:
         print(event)
@@ -23,7 +23,7 @@ def retire_trail(event, context):
             body = json.loads(body)
 
         trail_id = body.get("trail_id")
-        date = body.get("date")
+        date_retired = body.get("date_retired")
 
         if trail_id is None:
             print("Missing required field: trial_id")
@@ -43,12 +43,12 @@ def retire_trail(event, context):
                 "body": json.dumps({"error": "Invalid trail_id format"})
             }
 
-        if date is None:
-            date = int(time.time())
+        if date_retired is None:
+            date_retired = int(time.time())
         else:
-            date = Decimal(datetime.fromisoformat(date).timestamp())
+            date_retired = Decimal(datetime.fromisoformat(date_retired).timestamp())
 
-        print(f"Attempting to retire trail with trail_id [{trail_id}] with date [{date}]")
+        print(f"Attempting to retire trail with trail_id [{trail_id}] with date [{date_retired}]")
 
         # get all relevant devicetrail ids for this trail
         response = device_trail_table.query(
@@ -62,7 +62,7 @@ def retire_trail(event, context):
                 device_trail_table.update_item(
                     Key={"device_id": device_trail_item["device_id"], "date_installed": device_trail_item["date_installed"]},
                     UpdateExpression="SET date_removed = :date_removed",
-                    ExpressionAttributeValues={":date_removed": date}
+                    ExpressionAttributeValues={":date_removed": date_retired}
                 )
 
         # Remove trail from all trail groups
@@ -86,7 +86,7 @@ def retire_trail(event, context):
             trail_table.update_item(
                 Key={"id": trail_id},
                 UpdateExpression="SET date_retired = :date_retired",
-                ExpressionAttributeValues={":date_retired": date}
+                ExpressionAttributeValues={":date_retired": date_retired}
             )
         except Exception as e:
             print(e)

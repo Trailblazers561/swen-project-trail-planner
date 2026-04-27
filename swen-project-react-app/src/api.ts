@@ -66,7 +66,7 @@ export function TrailData() {
     const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
     if (granularity == Granularity.Year) granularity = Granularity.Month;
 
-    const url = `${API_URL}/trail_data?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
+    const url = `${API_URL}/trail_data?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: await authHeaders(),
@@ -85,8 +85,8 @@ export function TrailData() {
       headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
-        trail_name: trailName,
-        trail_group: trailGroup,
+        name: trailName,
+        area: trailGroup,
       }),
     });
   }
@@ -129,7 +129,7 @@ export function TrailData() {
       trail_name: trailName
     }
     if (trailGroup)
-      payload.trail_group = trailGroup;
+      payload.area = trailGroup;
     if (notes)
       payload.notes = notes;
     if (latitude)
@@ -147,9 +147,9 @@ export function TrailData() {
 
   /**
    * Retires a trail and all associated data
-   * @param trailId - The ID of the trail to delete
+   * @param trailId - The ID of the trail to retire
    */
-  async function deleteTrail(trailId: number) {
+  async function retireTrail(trailId: number) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "DELETE",
       headers: await authHeaders(),
@@ -217,8 +217,8 @@ export function TrailData() {
   async function exportCSV(trailIdList: number[], startDate: Date, endDate: Date, granularity?: Granularity) {
     const queries: string[] = []
     trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
-    queries.push(`start_date=${startDate.toISOString()}`)
-    queries.push(`end_date=${endDate.toISOString()}`)
+    queries.push(`start_time=${startDate.toISOString()}`)
+    queries.push(`end_time=${endDate.toISOString()}`)
     if (granularity)
       queries.push(`granularity=${granularity}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
@@ -300,7 +300,7 @@ export function TrailData() {
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
-    deleteTrail,
+    retireTrail,
     createTrailGroup,
     updateTrailGroup,
     deleteTrailGroup,

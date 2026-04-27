@@ -17,35 +17,35 @@ def create_and_fill_csv(event, context):
     """
     Creates a csv file from the given parameters and returns link to the file in a bucket.
     Dates in iso format, all payload parameters are optional
-    Expects: { "trail_id_list":  list[int], "start_date": str, "end_date": str, "granularity": str (optional)}
+    Expects: { "trail_id_list":  list[int], "start_time": str, "end_time": str, "granularity": str (optional)}
     """
     try:
         single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get("trail_id")
-        start_date = single_params.get("start_date")
-        end_date = single_params.get("end_date")
+        start_time = single_params.get("start_time")
+        end_time = single_params.get("end_time")
         granularity = single_params.get("granularity", "day").lower() # defaulting to day if not specified, prolly unnecessary but makes things easier
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
         if not all(id.isdigit() for id in trail_id_list): raise ValueError("Invalid trail_id_list format")
         trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
-        if not start_date: raise ValueError("Missing required field: start_date")
-        start_date = Decimal(datetime.fromisoformat(start_date).astimezone(ZoneInfo("America/New_York")).timestamp())
+        if not start_time: raise ValueError("Missing required field: start_time")
+        start_time = Decimal(datetime.fromisoformat(start_time).astimezone(ZoneInfo("America/New_York")).timestamp())
 
-        if not end_date: raise ValueError("Missing required field: end_date")
+        if not end_time: raise ValueError("Missing required field: end_time")
         if granularity == "year":
-            end_date = Decimal(datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).replace(month=12, day=31).timestamp())
+            end_time = Decimal(datetime.fromisoformat(end_time).astimezone(ZoneInfo("America/New_York")).replace(month=12, day=31).timestamp())
         else:
-            end_date = Decimal(datetime.fromisoformat(end_date).astimezone(ZoneInfo("America/New_York")).timestamp())
+            end_time = Decimal(datetime.fromisoformat(end_time).astimezone(ZoneInfo("America/New_York")).timestamp())
 
         if granularity not in table_time_map:
             raise ValueError(f"Invalid granularity of {granularity}. Make sure it is a valid option: {list(table_time_map.keys())}")
         log_table = table_time_map[granularity]
 
-        print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_date}] to [{end_date}] at granularity of [{granularity}]")
+        print(f"Attempting to export csv for trails [{trail_id_list_decimals}], from [{start_time}] to [{end_time}] at granularity of [{granularity}]")
 
         # take trail ids, get relevant device trail ids
         device_trail_ids = []
@@ -86,7 +86,7 @@ def create_and_fill_csv(event, context):
         trail_log_rows = []
         for device_trail_id in device_trail_ids:
             rows = log_table.query(KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) &
-                                   Key("start").between(start_date, end_date)).get("Items", [])
+                                   Key("start").between(start_time, end_time)).get("Items", [])
             if granularity == "year" and rows:
                 year_rows = []
                 last_year = int(datetime.fromtimestamp(int(rows[0]["start"])).astimezone(ZoneInfo("America/New_York")).replace(month=1).timestamp())
@@ -140,15 +140,15 @@ def create_and_fill_csv(event, context):
             if row.get("start"):
                 start_datetime = datetime.fromtimestamp(row["start"]).astimezone(ZoneInfo("America/New_York"))
                 if granularity == "hour":
-                    start_date = start_datetime.strftime("%Y/%m/%d %I:%M %p")
+                    start_time = start_datetime.strftime("%Y/%m/%d %I:%M %p")
                 else:
-                    start_date = start_datetime.strftime("%Y/%m/%d")
+                    start_time = start_datetime.strftime("%Y/%m/%d")
             else:
-                start_date = ""
+                start_time = ""
             entry = [
                 row.get("trail_id", ""),
                 trail_id_to_name[row.get("trail_id", 0) or 0],
-                start_date,
+                start_time,
                 row.get("count", 0) or 0,
                 row.get("battery", "") or ""
             ]

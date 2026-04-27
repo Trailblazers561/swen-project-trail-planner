@@ -282,8 +282,8 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "trail_name": "sample_name",
-  "trail_group": "sample_group",
+  "name": "sample_name",
+  "area": "sample_group",
   "notes": "sample_notes",
   "latitude": 43.0847,
   "longitude": 77.6715,
@@ -292,10 +292,10 @@ Content-Type: application/json
 ```
 
 **Required Fields:**
-- `trail_name` (string): Name of the trail to create. Can be updated later.
+- `name` (string): Name of the trail to create. Can be updated later.
 
 **Optional Fields:**
-- `trail_group` (string): Name of the trail group to put the new trail in. Can be updated later.
+- `area` (string): Name of the trail group to put the new trail in. Can be updated later.
 - `notes` (string): Notes associated with the given trail. Can be updated later.
 - `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
 - `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
@@ -327,11 +327,11 @@ Content-Type: application/json
 ```json
 {
   "trail_id": 1,
-  "trail_name": "sample_name",
-  "trail_group": "sample_group",
-  "trail_notes": "sample_notes",
-  "trail_latitude": 43.0847,
-  "trail_longitude": 77.6715
+  "name": "sample_name",
+  "area": "sample_area",
+  "notes": "sample_notes",
+  "latitude": 43.0847,
+  "longitude": 77.6715
 }
 ```
 
@@ -339,11 +339,11 @@ Content-Type: application/json
 - `trail_id` (int): Id for the trail to update.
 
 **Optional Fields:**
-- `field` (string): Name of the trail.
-- `trail_group` (string): Name of the trail group to put the trail in.
+- `name` (string): Name of the trail.
+- `area` (string): Name of the trail group to put the trail in.
 - `notes` (string): Notes associated with the given trail.
-- `trail_latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed.
-- `trail_longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed.
+- `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed.
+- `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed.
 
 **Success Response (200 OK):**
 ```json
@@ -370,7 +370,7 @@ Content-Type: application/json
 ```json
 {
   "trail_id": 1,
-  "date": "2026-12-31"
+  "date_retired": "2026-12-31"
 }
 ```
 
@@ -378,7 +378,7 @@ Content-Type: application/json
 - `trail_id` (int): Id of the trail to retire.
 
 **Optional Fields:**
-- `date` (string): ISO format date for when to set the date_retired of the trail. Defaults to time of request.
+- `date_retired` (string): ISO format date for when to set the date_retired of the trail. Defaults to time of request.
 
 **Success Response (200 OK):**
 ```json
@@ -465,8 +465,8 @@ Content-Type: application/json
 
 **Query Parameters:**
 - `trail_id` ("int"): Specific trail id to retrieve logs of, can be specified multiple times eg. (?trail_id=1&trail_id=2).
-- `start` (string): ISO format string for the earliest date to retrieve logs from.
-- `end` (string): ISO format string for the latest date to retrieve logs from.
+- `start_time` (string): ISO format string for the earliest date to retrieve logs from.
+- `end_time` (string): ISO format string for the latest date to retrieve logs from.
 - `granularity` (optional, string): Granularity of the logs to retrieve, defaults to _day_. Valid options are _hour_, _day_, _week_, and _month_.
 
 **Success Response (200 OK):**
@@ -541,8 +541,8 @@ Content-Type: application/json
 
 **Query Parameters:**
 - `trail_id` ("int"): Specific trail id to retrieve logs of, can be specified multiple times eg. (?trail_id=1&trail_id=2).
-- `start_date` (string): ISO format string for the earliest date to retrieve logs from.
-- `end_date` (string): ISO format string for the latest date to retrieve logs from.
+- `start_time` (string): ISO format string for the earliest date to retrieve logs from.
+- `end_time` (string): ISO format string for the latest date to retrieve logs from.
 - `granularity` (optional, string): Granularity of the logs to retrieve, defaults to _day_. Valid options are _hour_, _day_, _week_, and _month_.
 
 **Success Response (200 OK):**
@@ -587,7 +587,7 @@ Content-Type: application/json
 
 Retrieves a link that can be used to upload a csv file to. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `GET /csv/csv-url`
+**Endpoint:** `GET /csv-url`
 
 **Authentication:** Cognito JWT Access Token (required)
 
