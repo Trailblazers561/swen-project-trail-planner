@@ -73,19 +73,20 @@ resource "aws_cognito_user" "users" {
   for_each = local.users
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username = each.value.username
+  username = each.value.email
   password = each.value.password
 
   attributes = {
     email = each.value.email
     email_verified = true
+    preferred_username  = each.value.display_name
   }
 }
 
 locals {
   users_in_groups = {
-    for pair in flatten([for _, user in local.users : [for group in user.groups : {username = user.username, group = group}]]) :
-    "${pair.username}|${pair.group}" => pair
+    for email_group in flatten([for _, user in local.users : [for group in user.groups : {email = user.email, group = group}]]) :
+    "${email_group.email}|${email_group.group}" => email_group
   }
 }
 
@@ -94,7 +95,7 @@ resource "aws_cognito_user_in_group" "assign_users" {
   for_each = local.users_in_groups
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username     = each.value.username
+  username     = each.value.email
   group_name   = "${each.value.group}"
 
   depends_on = [aws_cognito_user.users]
