@@ -2,6 +2,13 @@ import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 
+interface User {
+    user_id: string
+    username: string
+    email: string
+    role: string
+}
+
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
 
@@ -13,11 +20,11 @@ const Privileges = () => {
             const response = await getUsers();
 
             if (response.success) {
-                const data = await response.json;
+                const data: User[] = await response.json;
 
                 console.log("Users:", data);
 
-                setUsers(data.users || data);
+                setUsers(data.map((user) => user.username));
             }
         } catch (error) {
             console.error("Error loading users:", error);
