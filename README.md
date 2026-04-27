@@ -132,15 +132,15 @@ See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed 
 - **Cognito User Pool**: User authentication
 - **Lambda Authorizer**: API authorization
 - **DynamoDB Tables**:
-  - `<env>_Device`: Devices and all device information
-  - `<env>_Trail`: Trails and all trail information
-  - `<env>_DeviceTrail`: Linking between devices and trails and all link information
-  - `<env>_TrailGroup`: Trail groups and trails within them
-  - `<env>_DeviceTrailLogHour`: Device trail logs for hourly granularity
-  - `<env>_DeviceTrailLogDay`: Device trail logs for daily granularity
-  - `<env>_DeviceTrailLogWeek`: Device trail logs for weekly granularity
-  - `<env>_DeviceTrailLogMonth`: Device trail logs for monthly granularity
-  - `<env>_Error`: Errors that have happened with the error, device, and time
+  - `<env>_device_table`: Devices and all device information
+  - `<env>_trail_table`: Trails and all trail information
+  - `<env>_device_trail_table`: Linking between devices and trails and all link information
+  - `<env>_area_table`: Areas and trails within them
+  - `<env>_device_trail_log_hour_table`: Device trail logs for hourly granularity
+  - `<env>_device_trail_log_day_table`: Device trail logs for daily granularity
+  - `<env>_device_trail_log_week_table`: Device trail logs for weekly granularity
+  - `<env>_device_trail_log_month_table`: Device trail logs for monthly granularity
+  - `<env>_error_table`: Errors that have happened with the error, device, and time
 
 ## Additional Commands
 

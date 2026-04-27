@@ -2,21 +2,21 @@ import pytest_check
 
 from dtos.trail_dto import TrailDTO
 
-class TrailGroupDTO:
+class AreaDTO:
     def __init__(self, name: str, trails: set[TrailDTO]=set()):
         self.name = name
         self.trails = trails
 
     def __str__(self):
-        return f"TrailGroupDTO [name={self.name}, trail_id={self.trails}]"
+        return f"AreaDTO [name={self.name}, trail_id={self.trails}]"
 
     def __repr__(self):
         return str(self)
 
     def __eq__(self, other):
-        if not isinstance(other, TrailGroupDTO):
+        if not isinstance(other, AreaDTO):
             return False
-        other: TrailGroupDTO = other
+        other: AreaDTO = other
 
         return self.name == other.name
 
@@ -24,9 +24,9 @@ class TrailGroupDTO:
         return hash(self.name)
 
     def compare(self, other):
-        if not pytest_check.is_instance(other, TrailGroupDTO):
+        if not pytest_check.is_instance(other, AreaDTO):
             return
-        other: TrailGroupDTO = other
+        other: AreaDTO = other
 
         pytest_check.equal(self.name, other.name)
         pytest_check.equal(self.trails, other.trails)

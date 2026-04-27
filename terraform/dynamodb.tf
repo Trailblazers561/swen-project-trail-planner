@@ -86,9 +86,9 @@ resource "aws_dynamodb_table" "device_trail_table" {
   */
 }
 
-# TABLE 4: TrailGroup
-resource "aws_dynamodb_table" "trail_group_table" {
-  name           = "${var.deploy_env}_trailplanner_trail_group_table"
+# TABLE 4: Area
+resource "aws_dynamodb_table" "area_table" {
+  name           = "${var.deploy_env}_trailplanner_area_table"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "name"
 
@@ -219,14 +219,14 @@ locals {
   device_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/devices.csv"))
   trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/trails.csv"))
   device_trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_trails.csv"))
-  trail_groups_raw = csvdecode(file("${path.module}/${local.sample_data_directory}/trail_groups.csv"))
-  trail_group_sample_data = [
-    for group_name in distinct([for g in local.trail_groups_raw : g.name]) : {
-      name = group_name
+  areas_raw = csvdecode(file("${path.module}/${local.sample_data_directory}/areas.csv"))
+  area_sample_data = [
+    for area_name in distinct([for a in local.areas_raw : a.name]) : {
+      name = area_name
       trail_ids = [
-        for g in local.trail_groups_raw :
-        g.trail_id
-        if g.name == group_name
+        for a in local.areas_raw :
+        a.trail_id
+        if a.name == area_name
       ]
     }
   ]
@@ -283,12 +283,12 @@ resource "aws_dynamodb_table_item" "device_trail_items" {
   })
 }
 
-# INSERT TEST DATA INTO TrailGroups
-resource "aws_dynamodb_table_item" "trail_group_items" {
-  for_each = { for idx, item in local.trail_group_sample_data : idx => item }
+# INSERT TEST DATA INTO Areas
+resource "aws_dynamodb_table_item" "area_items" {
+  for_each = { for idx, item in local.area_sample_data : idx => item }
 
-  table_name = aws_dynamodb_table.trail_group_table.name
-  hash_key   = aws_dynamodb_table.trail_group_table.hash_key
+  table_name = aws_dynamodb_table.area_table.name
+  hash_key   = aws_dynamodb_table.area_table.hash_key
 
   item = jsonencode({
     name = { "S" = each.value.name }

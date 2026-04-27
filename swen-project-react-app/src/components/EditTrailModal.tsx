@@ -9,7 +9,7 @@ interface Trail {
   name: string;
 }
 
-interface TrailGroup {
+interface Area {
   name: string;
   trail_ids: number[];
 }
@@ -26,23 +26,23 @@ interface EditTrailModalProps {
 const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail: propTrail, onUpdate, availableTrails = [], isCreateMode = false }) => {
   const [selectedTrailId, setSelectedTrailId] = useState<number>(0);
   const [trailName, setTrailName] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
+  const [selectedArea, setSelectedArea] = useState<string>('');
+  const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { getTrailGroupMetadata, updateTrailMetadata, createTrail, retireTrail } = TrailData();
+  const { getAreaMetadata, updateTrailMetadata, createTrail, retireTrail } = TrailData();
 
   useEffect(() => {
     if (isOpen) {
-      loadTrailGroups();
+      loadAreas();
       if (isCreateMode) {
         // Create mode - reset everything
         setSelectedTrailId(0);
         setTrailName('');
-        setSelectedGroup('');
+        setSelectedArea('');
       } else if (propTrail) {
         // Edit mode with specific trail
         setSelectedTrailId(propTrail.id);
@@ -60,36 +60,36 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
       const selectedTrail = availableTrails.find(t => t.id === selectedTrailId);
       if (selectedTrail) {
         setTrailName(selectedTrail.name);
-        // Find which group this trail belongs to
-        const trailGroup = trailGroups.find((g: TrailGroup) =>
-          g.trail_ids && g.trail_ids.includes(selectedTrailId)
+        // Find which area this trail belongs to
+        const area = areas.find((a: Area) =>
+          a.trail_ids && a.trail_ids.includes(selectedTrailId)
         );
-        if (trailGroup) {
-          setSelectedGroup(trailGroup.name);
+        if (area) {
+          setSelectedArea(area.name);
         } else {
-          setSelectedGroup('');
+          setSelectedArea('');
         }
       }
     }
-  }, [selectedTrailId, availableTrails, trailGroups]);
+  }, [selectedTrailId, availableTrails, areas]);
 
-  const loadTrailGroups = async () => {
+  const loadAreas = async () => {
     try {
-      const response = await getTrailGroupMetadata();
+      const response = await getAreaMetadata();
       if (response.success) {
-        const groups = await response.json;
-        setTrailGroups(groups);
+        const areas = await response.json;
+        setAreas(areas);
 
-        // Find which group trail belongs to
-        const trailGroup = groups.find((g: TrailGroup) =>
-          g.trail_ids && g.trail_ids.includes(propTrail?.id || 0)
+        // Find which area trail belongs to
+        const area = areas.find((a: Area) =>
+          a.trail_ids && a.trail_ids.includes(propTrail?.id || 0)
         );
-        if (trailGroup) {
-          setSelectedGroup(trailGroup.name);
+        if (area) {
+          setSelectedArea(area.name);
         }
       }
     } catch (err) {
-      console.error('Error loading trail groups:', err);
+      console.error('Error loading areas:', err);
     }
   };
 
@@ -109,7 +109,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         // Create new trail
         const response = await createTrail(
           trailName.trim(),
-          selectedGroup || undefined
+          selectedArea || undefined
         );
 
         if (response.success) {
@@ -120,7 +120,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
             setSuccess(null);
             setSelectedTrailId(0);
             setTrailName('');
-            setSelectedGroup('');
+            setSelectedArea('');
           }, 1500);
         } else {
           const errorData = await response.json;
@@ -136,7 +136,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         const response = await updateTrailMetadata(
           selectedTrailId,
           trailName.trim() || undefined,
-          selectedGroup || undefined
+          selectedArea || undefined
         );
 
         if (response.success) {
@@ -234,9 +234,9 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="trail-group">Trail Group (optional):</label>
+                  <label htmlFor="area">Area (optional):</label>
 
-                  {/* TODO: Implement new dropdown menu for trail groups once data model is updated */}
+                  {/* TODO: Implement new dropdown menu for areas once data model is updated */}
                   {/* <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="primary">Trail Options</Button>
@@ -249,14 +249,14 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                         </DropdownMenuContent>
                         </DropdownMenu> */}
                   <select
-                    id="trail-group"
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    id="area"
+                    value={selectedArea}
+                    onChange={(e) => setSelectedArea(e.target.value)}
                   >
-                    <option value="">Select a group (optional)</option>
-                    {trailGroups.map((group) => (
-                      <option key={group.name} value={group.name}>
-                        {group.name}
+                    <option value="">Select an area (optional)</option>
+                    {areas.map((area) => (
+                      <option key={area.name} value={area.name}>
+                        {area.name}
                       </option>
                     ))}
                   </select>
@@ -307,7 +307,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 <ul style={{ marginLeft: '20px', marginBottom: '15px', color: '#333' }}>
                   <li>The trail from the database</li>
                   <li>All trail device logs associated with this trail</li>
-                  <li>The trail from all trail groups</li>
+                  <li>The trail from all areas</li>
                   <li>Devices associated with this trail will be reset to trail_id 0</li>
                 </ul>
                 <p style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '16px' }}>

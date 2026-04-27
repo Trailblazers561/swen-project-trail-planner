@@ -1,12 +1,12 @@
 import json
 from decimal import Decimal
 
-from helper_functions import trail_table, trail_group_table, cors_headers
+from helper_functions import area_table, trail_table, cors_headers
 
 def update_trail_metadata(event, context):
     """
-    Update trail metadata (trail name, trail group).
-    Expects: { "trail_id": int, "name": str, "area": str, "notes": str, "latitude": float, "longitude": float }
+    Update trail metadata (trail name, area).
+    Expects: { "trail_id": int, "name": str, "area_name": str, "notes": str, "latitude": float, "longitude": float }
     """
     try:
         print(event)
@@ -16,7 +16,7 @@ def update_trail_metadata(event, context):
 
         trail_id = body.get("trail_id")
         name = body.get("name")
-        area = body.get("area")
+        area_name = body.get("area_name")
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
@@ -28,7 +28,7 @@ def update_trail_metadata(event, context):
                 "body": json.dumps({"error": "Missing required field: trail_id"})
             }
 
-        print(f"Attempting to update trail with trail_id [{trail_id}] to name [{name}] and area [{area}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
+        print(f"Attempting to update trail with trail_id [{trail_id}] to name [{name}] and area_name [{area_name}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
 
         try:
             trail_id = int(trail_id)
@@ -60,72 +60,72 @@ def update_trail_metadata(event, context):
                 "body": json.dumps({"error": f"Failed to update trail metadata: {str(e)}"})
             }
 
-        # Update trail groups if area is provided (and not empty string)
-        if area is not None and area != "":
+        # Update areas if area is provided (and not empty string)
+        if area_name is not None and area_name != "":
             try:
-                # Get current trail groups
-                resp = trail_group_table.scan()
-                groups = resp.get("Items", [])
+                # Get current areas
+                resp = area_table.scan()
+                areas = resp.get("Items", [])
 
-                # First, remove trail_id from all other groups
-                for group in groups:
-                    group_name = group.get("name")
-                    if group_name != area:
-                        trail_ids = group.get("trail_ids", [])
+                # First, remove trail_id from all other areas
+                for area in areas:
+                    other_area_name = area.get("name")
+                    if area_name != other_area_name:
+                        trail_ids = area.get("trail_ids", [])
                         if isinstance(trail_ids, list) and trail_id in trail_ids:
                             trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                            trail_group_table.put_item(Item={
-                                "name": group_name,
+                            area_table.put_item(Item={
+                                "name": other_area_name,
                                 "trail_ids": trail_ids
                             })
 
-                # Find the target group and add trail_id to it
-                group_found = False
-                for group in groups:
-                    if group.get("name") == area:
-                        trail_ids = group.get("trail_ids", [])
+                # Find the target area and add trail_id to it
+                area_found = False
+                for area in areas:
+                    if area.get("name") == area:
+                        trail_ids = area.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if trail_id not in trail_ids:
                             trail_ids.append(trail_id)
-                        trail_group_table.put_item(Item={
-                            "name": area,
+                        area_table.put_item(Item={
+                            "name": area_name,
                             "trail_ids": trail_ids
                         })
-                        group_found = True
+                        area_found = True
                         break
 
-                    # If group doesn't exist, create it
-                    if not group_found:
-                        trail_group_table.put_item(Item={
-                            "name": area,
+                    # If area doesn't exist, create it
+                    if not area_found:
+                        area_table.put_item(Item={
+                            "name": area_name,
                             "trail_ids": [trail_id]
                         })
             except Exception as e:
-                print(f"Failed updating trail group with exception: {e}")
-                # Continue even if trail group update fails
+                print(f"Failed updating area with exception: {e}")
+                # Continue even if area update fails
                 pass
         else:
-            # If area is None (empty string), remove it from all groups
-            # This handles the case when removing a trail from a specific group
+            # If area is None (empty string), remove it from all areas
+            # This handles the case when removing a trail from a specific area
             try:
-                resp = trail_group_table.scan()
-                groups = resp.get("Items", [])
+                resp = area_table.scan()
+                areas = resp.get("Items", [])
 
-                # Remove from all groups
-                for group in groups:
-                    group_name = group.get("name")
-                    trail_ids = group.get("trail_ids", [])
+                # Remove from all areas
+                for area in areas:
+                    other_area_name = area.get("name")
+                    trail_ids = area.get("trail_ids", [])
                     if isinstance(trail_ids, list) and trail_id in trail_ids:
                         trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                        trail_group_table.put_item(Item={
-                            "name": group_name,
+                        area_table.put_item(Item={
+                            "name": other_area_name,
                             "trail_ids": trail_ids
                         })
 
             except Exception as e:
-                print(f"Failed updating trail group with exception: {e}")
-                # Continue even if trail group update fails
+                print(f"Failed removing trail areas with exception: {e}")
+                # Continue even if area update fails
                 pass
 
         print("Successfully updated trail metadata")

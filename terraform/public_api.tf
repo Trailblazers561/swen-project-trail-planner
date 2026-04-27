@@ -1,5 +1,15 @@
 locals {
   public_api_endpoints = {
+    areas = {
+      GET = {
+        file = "areas/areas_get.py"
+        handler = "areas_get.get_areas"
+      }
+      DELETE = {
+        file = "areas/areas_delete.py"
+        handler = "areas_delete.delete_area"
+      }
+    }
     csv = {
       GET = {
         file = "csv/csv_get.py"
@@ -47,16 +57,6 @@ locals {
       POST = {
         file = "trail_data/trail_data_post.py"
         handler = "trail_data_post.upload_trail_data"
-      }
-    }
-    trail_groups = {
-      GET = {
-        file = "trail_groups/trail_groups_get.py"
-        handler = "trail_groups_get.get_trail_group_metadata"
-      }
-      DELETE = {
-        file = "trail_groups/trail_groups_delete.py"
-        handler = "trail_groups_delete.delete_trail_group"
       }
     }
     trail_metadata = {
@@ -248,7 +248,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
       TRAIL_TABLE = aws_dynamodb_table.trail_table.name
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE = aws_dynamodb_table.trail_group_table.name
+      AREA_TABLE = aws_dynamodb_table.area_table.name
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
     }

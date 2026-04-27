@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from dtos.trail_dto import TrailDTO
-from dtos.trail_group_dto import TrailGroupDTO
+from dtos.area_dto import AreaDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from enums.granularity import Granularity
 from enums.trail_status_column import TrailStatusColumn
@@ -12,7 +12,7 @@ from dtos.device_dto import DeviceDTO
 
 TRAILS: dict[int, TrailDTO] = {}
 DEVICES: dict[int, DeviceDTO] = {}
-TRAIL_GROUPS: list[TrailGroupDTO] = []
+AREAS: list[AreaDTO] = []
 DEVICE_TRAIL_TRAILS: dict[int, TrailDTO] = {}
 DEVICE_TRAIL_DEVICES: dict[int, DeviceDTO] = {}
 DEVICE_TO_TRAIL: dict[int, TrailDTO] = {}
@@ -55,30 +55,30 @@ with open(Path(__file__).parent / "../../sample_data/test_trails.csv") as f:
         )
         TRAILS[trail.id] = trail
 
-with open(Path(__file__).parent / "../../sample_data/trail_groups.csv") as f:
-    groups = {}
+with open(Path(__file__).parent / "../../sample_data/areas.csv") as f:
+    areas = {}
     reader = csv.DictReader(f)
     for row in reader:
         trail_id = int(row["trail_id"])
-        group_name = row["name"]
-        TRAILS[trail_id].trail_group_name = group_name
-        if groups.get(group_name):
-            groups[group_name].trails.add(TRAILS[trail_id])
+        area_name = row["name"]
+        TRAILS[trail_id].area_name = area_name
+        if areas.get(area_name):
+            areas[area_name].trails.add(TRAILS[trail_id])
         else:
-            groups[group_name] = TrailGroupDTO(group_name, {TRAILS[trail_id]})
-    TRAIL_GROUPS = list(groups.values())
-with open(Path(__file__).parent / "../../sample_data/test_trail_groups.csv") as f:
-    groups = {}
+            areas[area_name] = AreaDTO(area_name, {TRAILS[trail_id]})
+    AREAS = list(areas.values())
+with open(Path(__file__).parent / "../../sample_data/test_areas.csv") as f:
+    areas = {}
     reader = csv.DictReader(f)
     for row in reader:
         trail_id = int(row["trail_id"])
-        group_name = row["name"]
-        TRAILS[trail_id].trail_group_name = group_name
-        if groups.get(group_name):
-            groups[group_name].trails.add(TRAILS[trail_id])
+        area_name = row["name"]
+        TRAILS[trail_id].area_name = area_name
+        if areas.get(area_name):
+            areas[area_name].trails.add(TRAILS[trail_id])
         else:
-            groups[group_name] = TrailGroupDTO(group_name, {TRAILS[trail_id]})
-    TRAIL_GROUPS.extend(groups.values())
+            areas[area_name] = AreaDTO(area_name, {TRAILS[trail_id]})
+    AREAS.extend(areas.values())
 
 with open(Path(__file__).parent / "../../sample_data/devices.csv") as f:
     reader = csv.DictReader(f)

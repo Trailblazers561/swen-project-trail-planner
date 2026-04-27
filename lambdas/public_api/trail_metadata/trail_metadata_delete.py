@@ -5,13 +5,13 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import trail_table, device_trail_table, trail_group_table, cors_headers
+from helper_functions import area_table, trail_table, device_trail_table, cors_headers
 
 def retire_trail(event, context):
     """
     Retires a trail and all associated data.
     Deletes:
-    - Trail from all trail groups
+    - Trail from all areas
     - Updates devices_trail date removed to given date
     - Updates trail date retired to given date
     Expects: { "trail_id": int, date_retired: str (ISO Date, optional) }
@@ -65,22 +65,22 @@ def retire_trail(event, context):
                     ExpressionAttributeValues={":date_removed": date_retired}
                 )
 
-        # Remove trail from all trail groups
+        # Remove trail from all areas
         try:
-            resp = trail_group_table.scan()
-            groups = resp.get("Items", [])
+            resp = area_table.scan()
+            areas = resp.get("Items", [])
 
-            for group in groups:
-                trail_ids = group.get("trail_ids", [])
+            for area in areas:
+                trail_ids = area.get("trail_ids", [])
                 if isinstance(trail_ids, list) and trail_id in trail_ids:
                     trail_ids = [tid for tid in trail_ids if tid != trail_id]
-                    trail_group_table.put_item(Item={
-                        "name": group.get("name"),
+                    area_table.put_item(Item={
+                        "name": area.get("name"),
                         "trail_ids": trail_ids
                     })
         except Exception as e:
             # Log error but continue
-            print(f"Error removing trail from groups: {str(e)}")
+            print(f"Error removing trail from areas: {str(e)}")
 
         try:
             trail_table.update_item(

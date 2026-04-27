@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 from selenium_helper import SeleniumHelper as SH
-from test_data import TRAILS, TRAIL_GROUPS, retrieve_graph
+from test_data import TRAILS, AREAS, retrieve_graph
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.trail_dto import TrailDTO
@@ -26,7 +26,7 @@ def dashboard_graph_test():
      - Date Rage
      - Granularity
      - Trails Multiselct
-     - Trail Group Multiselect
+     - Area Multiselect
      - Graph
     """
     driver = SH.get_driver()
@@ -39,12 +39,12 @@ def dashboard_graph_test():
         # Wait for API Calls To Be Made
         SH.wait(3)
 
-        # Verify All Trails and Trail Groups Present
+        # Verify All Trails and Areas Present
         retrieve_all_trails_step = RetrieveDashboardOptionsStep(driver)
         retrieve_all_trails_step.run()
 
         pytest_check.equal(set(TRAILS.values()), set(retrieve_all_trails_step.trails))
-        pytest_check.equal({group.name for group in TRAIL_GROUPS}, set(group.name for group in retrieve_all_trails_step.trail_groups))
+        pytest_check.equal({area.name for area in AREAS}, set(area.name for area in retrieve_all_trails_step.areas))
 
         # Verify Correct Granularity Options Appear With Date Ranges
         granularities = [
@@ -73,17 +73,17 @@ def dashboard_graph_test():
         empty_graph = retrieve_graph(datetime(2026, 1, 1), datetime(2026, 1, 2), Granularity.DAY, [])
         pytest_check.equal(empty_graph, retrieve_empty_graph_step.graph)
 
-        # Select First Two Trail Groups and Verify Trails Appear
-        group_filter = DashboardFilterDTO(trail_groups={TRAIL_GROUPS[0], TRAIL_GROUPS[1]})
-        set_group_filter_step = SetDashboardFiltersStep(driver, group_filter)
-        set_group_filter_step.run()
+        # Select First Two Areas and Verify Trails Appear
+        area_filter = DashboardFilterDTO(areas={AREAS[0], AREAS[1]})
+        set_area_filter_step = SetDashboardFiltersStep(driver, area_filter)
+        set_area_filter_step.run()
 
-        retrieve_group_trails_step = RetrieveDashboardOptionsStep(driver)
-        retrieve_group_trails_step.run()
-        pytest_check.equal({trail.name for trail in TRAIL_GROUPS[0].trails.union(TRAIL_GROUPS[1].trails)}, {trail.name for trail in retrieve_group_trails_step.trails})
+        retrieve_area_trails_step = RetrieveDashboardOptionsStep(driver)
+        retrieve_area_trails_step.run()
+        pytest_check.equal({trail.name for trail in AREAS[0].trails.union(AREAS[1].trails)}, {trail.name for trail in retrieve_area_trails_step.trails})
 
         # Test Graph Data For Each Granularity
-        selected_trails = {next(iter(TRAIL_GROUPS[0].trails)), next(iter(TRAIL_GROUPS[1].trails))}
+        selected_trails = {next(iter(AREAS[0].trails)), next(iter(AREAS[1].trails))}
         granularity_filters = [
             DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.MONTH, trails=selected_trails),

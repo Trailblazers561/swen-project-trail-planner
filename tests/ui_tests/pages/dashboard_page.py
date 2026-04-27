@@ -11,7 +11,7 @@ import time
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from dtos.trail_dto import TrailDTO
-from dtos.trail_group_dto import TrailGroupDTO
+from dtos.area_dto import AreaDTO
 from dtos.trail_status_dto import TrailStatusDTO
 from enums.granularity import Granularity
 from enums.trail_status_column import TrailStatusColumn
@@ -34,8 +34,8 @@ class DashboardPage:
     granularity_dropdown_option_xpath = "//div[@data-testid='granularity-option']/span[text()='{}']"
     trails_dropdown = (By.XPATH, "//button[@data-testid='trail-selector']")
     selected_trails = (By.XPATH, trails_dropdown[1] + "//span[@data-slot='badge']")
-    trail_groups_dropdown = (By.XPATH, "//button[@data-testid='trail-group-selector']")
-    selected_trail_groups = (By.XPATH, trail_groups_dropdown[1] + "//span[@data-slot='badge']")
+    areas_dropdown = (By.XPATH, "//button[@data-testid='area-selector']")
+    selected_areas = (By.XPATH, areas_dropdown[1] + "//span[@data-slot='badge']")
     multi_select_dropdown_option_xpath = "//div[@data-value='{}']"
     multi_select_dropdown_option = (By.XPATH, "//div[@data-testid='multi-select-option']")
     dropdown_clear = (By.XPATH, "//div[@data-testid='multi-select-clear']")
@@ -49,9 +49,9 @@ class DashboardPage:
     trail_options_button = (By.XPATH, "//button[@data-testid='trail-options']")
     add_trail_options_button = (By.XPATH, "//div[@data-testid='add-trail']")
     edit_trail_options_button = (By.XPATH, "//div[@data-testid='edit-trail']")
-    trail_group_options_button = (By.XPATH, "//button[@data-testid='trail-group-options']")
-    add_group_options_button = (By.XPATH, "//div[@data-testid='add-trail-group']")
-    edit_group_options_button = (By.XPATH, "//div[@data-testid='edit-trail-group']")
+    area_options_button = (By.XPATH, "//button[@data-testid='area-options']")
+    add_area_options_button = (By.XPATH, "//div[@data-testid='add-area']")
+    edit_area_options_button = (By.XPATH, "//div[@data-testid='edit-area']")
     # Graph View
     graph_title_label = (By.XPATH, "//div[@data-testid='graph-title']")
     outer_graph = (By.XPATH, "//div[@data-testid='outer-dashboard-graph']")
@@ -89,8 +89,8 @@ class DashboardPage:
             self._set_granularity(filter.granularity)
         if len(filter.trails) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trails)):
             self._select_trails(filter.trails)
-        if len(filter.trail_groups) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)):
-            self._select_trail_groups(filter.trail_groups)
+        if len(filter.areas) or len(SH.retrieve_text_from_elements(self.driver, self.selected_areas)):
+            self._select_areas(filter.areas)
 
     def retrieve_dashboard_filters(self) -> DashboardFilterDTO:
         date_range = SH.retrieve_text_from_element(self.driver, self.date_range_picker)
@@ -99,8 +99,8 @@ class DashboardPage:
         date_end = datetime.strptime(dates[1], "%b %d, %Y") if len(dates) >= 2 else None
         granularity = Granularity(SH.retrieve_text_from_element(self.driver, self.selected_granularity))
         trails = {TrailDTO(trail_name) for trail_name in SH.retrieve_text_from_elements(self.driver, self.selected_trails)}
-        trail_groups = {TrailGroupDTO(group_name) for group_name in SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)}
-        return DashboardFilterDTO(date_start, date_end, granularity, trails, trail_groups)
+        areas = {AreaDTO(area_name) for area_name in SH.retrieve_text_from_elements(self.driver, self.selected_areas)}
+        return DashboardFilterDTO(date_start, date_end, granularity, trails, areas)
 
     def _set_date_range(self, start: datetime, end: datetime) -> None:
         SH.click_element(self.driver, self.date_range_picker)
@@ -138,13 +138,13 @@ class DashboardPage:
             SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(trail.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
-    def _select_trail_groups(self, trail_groups: list[TrailGroupDTO]) -> None:
-        SH.click_element(self.driver, self.trail_groups_dropdown)
+    def _select_areas(self, areas: list[AreaDTO]) -> None:
+        SH.click_element(self.driver, self.areas_dropdown)
         SH.wait(.2)
         if SH.is_element_visible(self.driver, self.dropdown_clear):
             SH.click_element(self.driver, self.dropdown_clear)
-        for group in trail_groups:
-            SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(group.name)))
+        for area in areas:
+            SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(area.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
     def retrieve_granularity_options(self) -> list[Granularity]:
@@ -168,15 +168,15 @@ class DashboardPage:
         SH.click_element(self.driver, self.trails_dropdown)
         return trails
 
-    def retrieve_trail_group_options(self) -> list[TrailGroupDTO]:
-        SH.click_element(self.driver, self.trail_groups_dropdown)
+    def retrieve_area_options(self) -> list[AreaDTO]:
+        SH.click_element(self.driver, self.areas_dropdown)
         SH.wait(.2)
-        groups = []
+        areas = []
         options = SH.retrieve_text_from_elements(self.driver, self.multi_select_dropdown_option)
         for option in options:
-            groups.append(TrailGroupDTO(option))
-        SH.click_element(self.driver, self.trail_groups_dropdown)
-        return groups
+            areas.append(AreaDTO(option))
+        SH.click_element(self.driver, self.areas_dropdown)
+        return areas
 
     def click_associate_device(self) -> None:
         SH.click_element(self.driver, self.associate_device_button)
@@ -200,13 +200,13 @@ class DashboardPage:
         SH.click_element(self.driver, self.trail_options_button)
         SH.click_element(self.driver, self.edit_trail_options_button)
 
-    def click_add_trail_group(self) -> None:
-        SH.click_element(self.driver, self.trail_group_options_button)
-        SH.click_element(self.driver, self.add_group_options_button)
+    def click_add_area(self) -> None:
+        SH.click_element(self.driver, self.area_options_button)
+        SH.click_element(self.driver, self.add_area_options_button)
 
-    def click_edit_trail_group(self) -> None:
-        SH.click_element(self.driver, self.trail_group_options_button)
-        SH.click_element(self.driver, self.edit_group_options_button)
+    def click_edit_area(self) -> None:
+        SH.click_element(self.driver, self.area_options_button)
+        SH.click_element(self.driver, self.edit_area_options_button)
 
     def retrieve_graph(self) -> GraphDTO:
         start_time = time.time()
@@ -228,16 +228,16 @@ class DashboardPage:
             points = []
             for hovertemplate in line["hovertemplate"]:
                 count_match = re.search(r"Count:\s*(?P<count>\d+)", hovertemplate)
-                count = int(count_match.group("count")) if count_match else -1
+                count = int(count_match.area("count")) if count_match else -1
                 range_match = re.match(r"^(?P<date>.*?)\s-\s(.*?)\s\|", hovertemplate)
                 hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
                 day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
                 if range_match:
-                    points.append(PointDTO(datetime.strptime(range_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(range_match.area("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif hour_match:
-                    points.append(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.group('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.area('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif day_match:
-                    points.append(PointDTO(datetime.strptime(day_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(day_match.area("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 else:
                     raise ValueError(f"Could Not Match Hovertemplate [{hovertemplate}] To Format For Graph [{title}]")
             line_set.add(LineDTO(line["name"], points))

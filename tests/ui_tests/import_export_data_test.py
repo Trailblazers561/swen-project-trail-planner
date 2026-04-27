@@ -7,7 +7,7 @@ from datetime import datetime
 import csv
 
 from selenium_helper import SeleniumHelper as SH
-from test_data import TRAIL_GROUPS, retrieve_csv_list
+from test_data import AREAS, retrieve_csv_list
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.user_dto import UserDTO
@@ -35,7 +35,7 @@ def import_export_data_test():
         SH.wait(3)
 
         # Verify Export For Each Granularity
-        selected_trails = {next(iter(TRAIL_GROUPS[0].trails)), next(iter(TRAIL_GROUPS[1].trails))}
+        selected_trails = {next(iter(AREAS[0].trails)), next(iter(AREAS[1].trails))}
         granularity_filters = [
             DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.MONTH, trails=selected_trails),
