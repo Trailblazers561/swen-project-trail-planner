@@ -21,16 +21,16 @@ export function TrailData() {
   }
 
   /**
-   * Get trail groups
-   * @param trailGroupList - Optional list of trail group names of trail groups to retrieve
+   * Get areas
+   * @param areaList - Optional list of area names of areas to retrieve
    */
-  async function getTrailGroupMetadata(trailGroupList?: string[]) {
+  async function getAreaMetadata(areaList?: string[]) {
     const queries: string[] = []
-    if (trailGroupList)
-      trailGroupList.forEach(trailGroup => {queries.push(`trail_group=${encodeURIComponent(trailGroup)}`)})
+    if (areaList)
+      areaList.forEach(area => {queries.push(`area=${encodeURIComponent(area)}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
-    return await request(`${API_URL}/trail_groups${queryString}`, {
+    return await request(`${API_URL}/areas${queryString}`, {
       method: "GET",
       headers: await authHeaders(),
     });
@@ -74,19 +74,19 @@ export function TrailData() {
   }
 
   /**
-   * Update trail metadata (name and/or trail group)
+   * Update trail metadata (name and/or area)
    * @param trailId - The ID of the trail to update
    * @param trailName - new name for the trail
-   * @param trailGroup - Optional trail group name to assign the trail to
+   * @param area - Optional area name to assign the trail to
    */
-  async function updateTrailMetadata(trailId: number, trailName?: string, trailGroup?: string) {
+  async function updateTrailMetadata(trailId: number, trailName?: string, area?: string) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
         name: trailName,
-        area: trailGroup,
+        area_name: area,
       }),
     });
   }
@@ -118,18 +118,18 @@ export function TrailData() {
   /**
    * Create a new trail
    * @param trailName - The name of the trail to create
-   * @param trailGroup - Optional trail group name to assign the trail to
+   * @param area - Optional area name to assign the trail to
    * @param notes - Optional notes for the created trail
    * @param latitude - Optional latitude of the trail head
    * @param longitude - Optional longitude of the trail head
    * @param dateActivated - Optional date trail was activated, defaults to current time if not specified
    */
-  async function createTrail(trailName: string, trailGroup?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
+  async function createTrail(trailName: string, area?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
     const payload: Record<string, any> = {
       trail_name: trailName
     }
-    if (trailGroup)
-      payload.area = trailGroup;
+    if (area)
+      payload.area_name = area;
     if (notes)
       payload.notes = notes;
     if (latitude)
@@ -160,49 +160,49 @@ export function TrailData() {
   }
 
   /**
-   * Create a new trail group (NOT Implemented)
-   * @param groupName - The name of the trail group to create
-   * @param trailIds - Optional array of trail IDs to include in the group
+   * Create a new area (NOT Implemented)
+   * @param areaName - The name of the area to create
+   * @param trailIds - Optional array of trail IDs to include in the area
    */
-  async function createTrailGroup(groupName: string, trailIds: number[] = []) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function createArea(areaName: string, trailIds: number[] = []) {
+    return await request(`${API_URL}/areas`, {
       method: "POST",
       headers: await authHeaders(),
       body: JSON.stringify({
-        group_name: groupName,
+        area_name: areaName,
         trail_ids: trailIds,
       }),
     });
   }
 
   /**
-   * Update a trail group (rename or change trail IDs) (NOT Implemented)
-   * @param oldGroupName - The current name of the trail group
-   * @param newGroupName - Optional new name for the trail group
-   * @param trailIds - Optional array of trail IDs to update in the group
+   * Update a area (rename or change trail IDs) (NOT Implemented)
+   * @param oldAreaName - The current name of the area
+   * @param newAreaName - Optional new name for the area
+   * @param trailIds - Optional array of trail IDs to update in the area
    */
-  async function updateTrailGroup(oldGroupName: string, newGroupName?: string, trailIds?: number[]) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function updateArea(oldAreaName: string, newAreaName?: string, trailIds?: number[]) {
+    return await request(`${API_URL}/areas`, {
       method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
-        old_group_name: oldGroupName,
-        new_group_name: newGroupName,
+        original_area_name: oldAreaName,
+        new_area_name: newAreaName,
         trail_ids: trailIds,
       }),
     });
   }
 
   /**
-   * Delete a trail group
-   * @param groupName - The name of the trail group to delete
+   * Delete a area
+   * @param areaName - The name of the area to delete
    */
-  async function deleteTrailGroup(groupName: string) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function deleteArea(areaName: string) {
+    return await request(`${API_URL}/areas`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
-        group_name: groupName,
+        area_name: areaName,
       }),
     });
   }
@@ -294,16 +294,16 @@ export function TrailData() {
 
   return {
     getTrailMetadata,
-    getTrailGroupMetadata,
+    getAreaMetadata,
     getDeviceMetadata,
     getTrailLogs,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
     retireTrail,
-    createTrailGroup,
-    updateTrailGroup,
-    deleteTrailGroup,
+    createArea,
+    updateArea,
+    deleteArea,
     exportCSV,
     importCSV,
     getUsers,

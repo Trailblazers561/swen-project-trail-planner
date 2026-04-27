@@ -3,12 +3,12 @@ import time
 from datetime import datetime
 from decimal import Decimal
 
-from helper_functions import trail_table, trail_group_table, cors_headers, get_next_trail_id
+from helper_functions import area_table, trail_table, cors_headers, get_next_trail_id
 
 def create_trail(event, context):
     """
     Create a new trail. Auto-generates trail_id as next available ID.
-    Expects: { "name": str, "area": str (optional), "notes": str (optional), "latitude": int (optional), "longitude": int (optional) }
+    Expects: { "name": str, "area_name": str (optional), "notes": str (optional), "latitude": int (optional), "longitude": int (optional) }
     Returns: { "trail_id": int, "message": str }
     """
     try:
@@ -18,7 +18,7 @@ def create_trail(event, context):
             body = json.loads(body)
 
         name = body.get("name")
-        area = body.get("area")
+        area_name = body.get("area_name")
         notes = body.get("notes")
         latitude = body.get("latitude")
         longitude = body.get("longitude")
@@ -36,7 +36,7 @@ def create_trail(event, context):
         else:
             date_activated = Decimal(datetime.fromisoformat(date_activated).timestamp())
 
-        print(f"Attempting to create trail with name [{name}], area [{area}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
+        print(f"Attempting to create trail with name [{name}], area_name [{area_name}], notes [{notes}], latitude [{latitude}], longitude [{longitude}], date_activated [{date_activated}] ")
 
         new_trail_id = get_next_trail_id()
 
@@ -64,36 +64,36 @@ def create_trail(event, context):
                 "body": json.dumps({"error": f"Failed to create trail: {str(e)}"})
             }
 
-        # Then add to specified group if provided
+        # Then add to specified area if provided
         try:
-            resp = trail_group_table.scan()
-            groups = resp.get("Items", [])
+            resp = area_table.scan()
+            areas = resp.get("Items", [])
 
-            # Add to specified trail group if provided
-            if area:
-                group_found = False
-                for group in groups:
-                    if group.get("name") == area:
-                        trail_ids = group.get("trail_ids", [])
+            # Add to specified area if provided
+            if area_name:
+                area_found = False
+                for area in areas:
+                    if area.get("name") == area:
+                        trail_ids = area.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
                         if new_trail_id not in trail_ids:
                             trail_ids.append(new_trail_id)
-                        trail_group_table.put_item(Item={
-                            "name": area,
+                        area_table.put_item(Item={
+                            "name": area_name,
                             "trail_ids": trail_ids
                         })
-                        group_found = True
+                        area_found = True
                         break
 
-                if not group_found:
-                    trail_group_table.put_item(Item={
-                        "name": area,
+                if not area_found:
+                    area_table.put_item(Item={
+                        "name": area_name,
                         "trail_ids": [new_trail_id]
                     })
         except Exception as e:
-            print(f"Trail group updated failed with exception: {e}")
-            # Continue even if trail group update fails
+            print(f"Area updated failed with exception: {e}")
+            # Continue even if area update fails
             pass
 
         print(f"Successfully added trail with trail_id [{new_trail_id}]")

@@ -2,11 +2,11 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import trail_group_table, cors_headers
+from helper_functions import area_table, cors_headers
 
-def delete_trail_group(event, context):
+def delete_area(event, context):
     """
-    Deletes a trail group
+    Deletes an area
     Expects: { "name": string }
     """
     try:
@@ -15,24 +15,24 @@ def delete_trail_group(event, context):
         if isinstance(body, str):
             body = json.loads(body)
 
-        name = body.get("group_name")
+        name = body.get("area_name")
 
-        if name is None: raise ValueError("Missing required field: group_name")
+        if name is None: raise ValueError("Missing required field: area_name")
 
-        print(f"Attempting to delete trail group with name [{name}")
-        trail_group_exists = trail_group_table.query(
+        print(f"Attempting to delete area with name [{name}")
+        area_exists = area_table.query(
             KeyConditionExpression=Key("name").eq(name),
             Limit=1
         )["Items"]
-        if not trail_group_exists: raise ValueError(f"Cannot find trail_group with name [{name}]")
+        if not area_exists: raise ValueError(f"Cannot find area with name [{name}]")
 
-        trail_group_table.delete_item(Key={"name": name})
+        area_table.delete_item(Key={"name": name})
 
-        print("Successfully deleted trail group")
+        print("Successfully deleted area")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
-            "body": json.dumps({"message": "Trail group deleted successfully"})
+            "body": json.dumps({"message": "Area deleted successfully"})
         }
     except ValueError as e:
         print(e)

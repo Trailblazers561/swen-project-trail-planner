@@ -22,7 +22,7 @@ resource "aws_lambda_function" "simulate_data" {
       TRAIL_TABLE = aws_dynamodb_table.trail_table.name
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      AREA_TABLE    = aws_dynamodb_table.area_table.name
     }
   }
 }

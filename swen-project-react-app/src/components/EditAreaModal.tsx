@@ -8,30 +8,30 @@ interface Trail {
   name: string;
 }
 
-interface TrailGroup {
+interface Area {
   name: string;
   trail_ids: number[];
 }
 
-interface EditTrailGroupModalProps {
+interface EditAreaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
   availableTrails: Trail[];
-  trailGroups: TrailGroup[];
+  areas: Area[];
   isCreateMode?: boolean;
 }
 
-const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
+const EditAreaModal: React.FC<EditAreaModalProps> = ({
   isOpen,
   onClose,
   onUpdate,
   availableTrails = [],
-  trailGroups = [],
+  areas = [],
   isCreateMode = false
 }) => {
-  const [selectedGroupName, setSelectedGroupName] = useState<string>('');
-  const [newGroupName, setNewGroupName] = useState<string>('');
+  const [selectedAreaName, setSelectedAreaName] = useState<string>('');
+  const [newAreaName, setNewAreaName] = useState<string>('');
   const [selectedTrailIds, setSelectedTrailIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +40,8 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedGroupName('');
-      setNewGroupName('');
+      setSelectedAreaName('');
+      setNewAreaName('');
       setSelectedTrailIds([]);
       setError(null);
       setSuccess(null);
@@ -49,21 +49,21 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   }, [isOpen, isCreateMode]);
 
   useEffect(() => {
-    if (selectedGroupName && !isCreateMode) {
-      const group = trailGroups.find(g => g.name === selectedGroupName);
-      if (group) {
-        setNewGroupName(group.name);
-        setSelectedTrailIds([...group.trail_ids]);
+    if (selectedAreaName && !isCreateMode) {
+      const area = areas.find(a => a.name === selectedAreaName);
+      if (area) {
+        setNewAreaName(area.name);
+        setSelectedTrailIds([...area.trail_ids]);
       }
     }
-  }, [selectedGroupName, trailGroups, isCreateMode]);
+  }, [selectedAreaName, areas, isCreateMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isCreateMode) {
-      if (!newGroupName || newGroupName.trim() === '') {
-        setError('Group name is required');
+      if (!newAreaName || newAreaName.trim() === '') {
+        setError('Area name is required');
         return;
       }
       if (selectedTrailIds.length === 0) {
@@ -71,12 +71,12 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         return;
       }
     } else {
-      if (!selectedGroupName) {
-        setError('Please select a group to edit');
+      if (!selectedAreaName) {
+        setError('Please select an area to edit');
         return;
       }
-      if (!newGroupName || newGroupName.trim() === '') {
-        setError('Group name is required');
+      if (!newAreaName || newAreaName.trim() === '') {
+        setError('Area name is required');
         return;
       }
     }
@@ -85,9 +85,9 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
     setError(null);
 
     try {
-      const groupNameToUse = newGroupName.trim();
-      const oldGroupName = isCreateMode ? undefined : selectedGroupName;
-      const isRenaming = oldGroupName && oldGroupName !== groupNameToUse;
+      const areaNameToUse = newAreaName.trim();
+      const oldAreaName = isCreateMode ? undefined : selectedAreaName;
+      const isRenaming = oldAreaName && oldAreaName !== areaNameToUse;
 
       // Create a map of trail_id to trail_name for preserving names
       const trailIdToName = new Map<number, string>();
@@ -97,71 +97,71 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         }
       });
 
-      if (isRenaming && oldGroupName) {
-        // When renaming, we need to update the group entry itself
+      if (isRenaming && oldAreaName) {
+        // When renaming, we need to update the area entry itself
 
-        const oldGroup = trailGroups.find(g => g.name === oldGroupName);
-        if (oldGroup) {
-          const oldGroupTrailIds = oldGroup.trail_ids || [];
+        const oldArea = areas.find(a => a.name === oldAreaName);
+        if (oldArea) {
+          const oldAreaTrailIds = oldArea.trail_ids || [];
 
-          // Step 1: Move ALL trails from old group to new group name first
-          // This ensures the old group becomes empty and the new group is created
-          const allTrailsToMove = oldGroupTrailIds.map(trailId => {
+          // Step 1: Move ALL trails from old area to new area name first
+          // This ensures the old area becomes empty and the new area is created
+          const allTrailsToMove = oldAreaTrailIds.map(trailId => {
             const trailName = trailIdToName.get(trailId);
             if (trailName) {
-              return updateTrailMetadata(trailId, trailName, groupNameToUse);
+              return updateTrailMetadata(trailId, trailName, areaNameToUse);
             }
             return Promise.resolve();
           });
 
           await Promise.all(allTrailsToMove);
 
-          // Step 2: Now handle the selection - remove trails that shouldn't be in the group
-          const trailsToRemoveFromNewGroup = oldGroupTrailIds.filter(id => !selectedTrailIds.includes(id));
-          for (const trailId of trailsToRemoveFromNewGroup) {
+          // Step 2: Now handle the selection - remove trails that shouldn't be in the area
+          const trailsToRemoveFromNewArea = oldAreaTrailIds.filter(id => !selectedTrailIds.includes(id));
+          for (const trailId of trailsToRemoveFromNewArea) {
             const trailName = trailIdToName.get(trailId);
             if (trailName) {
-              // Remove from the new group (set to empty)
+              // Remove from the new area (set to empty)
               await updateTrailMetadata(trailId, trailName, '');
             }
           }
 
-          // Step 3: Add any new trails that weren't in the old group
-          const trailsToAdd = selectedTrailIds.filter(id => !oldGroupTrailIds.includes(id));
+          // Step 3: Add any new trails that weren't in the old area
+          const trailsToAdd = selectedTrailIds.filter(id => !oldAreaTrailIds.includes(id));
 
-          // First remove them from any other groups
-          const allOtherGroupTrailIds = new Set<number>();
-          trailGroups.forEach(group => {
-            if (group.name && group.name !== oldGroupName) {
-              group.trail_ids.forEach(id => allOtherGroupTrailIds.add(id));
+          // First remove them from any other areas
+          const allOtherAreaTrailIds = new Set<number>();
+          areas.forEach(area => {
+            if (area.name && area.name !== oldAreaName) {
+              area.trail_ids.forEach(id => allOtherAreaTrailIds.add(id));
             }
           });
 
           for (const trailId of trailsToAdd) {
             const trailName = trailIdToName.get(trailId);
             if (trailName) {
-              if (allOtherGroupTrailIds.has(trailId)) {
-                // Remove from current group first
+              if (allOtherAreaTrailIds.has(trailId)) {
+                // Remove from current area first
                 await updateTrailMetadata(trailId, trailName, '');
               }
-              // Then add to new group
-              await updateTrailMetadata(trailId, trailName, groupNameToUse);
+              // Then add to new area
+              await updateTrailMetadata(trailId, trailName, areaNameToUse);
             }
           }
         }
       } else {
         // Not renaming - normal create or edit without name change
-        // Step 1: Remove selected trails from ALL existing groups
-        const allGroupTrailIds = new Set<number>();
-        trailGroups.forEach(group => {
-          if (group.name) {
-            group.trail_ids.forEach(id => allGroupTrailIds.add(id));
+        // Step 1: Remove selected trails from ALL existing areas
+        const allAreaTrailIds = new Set<number>();
+        areas.forEach(area => {
+          if (area.name) {
+            area.trail_ids.forEach(id => allAreaTrailIds.add(id));
           }
         });
 
-        // Remove all selected trails from their current groups
+        // Remove all selected trails from their current areas
         for (const trailId of selectedTrailIds) {
-          if (allGroupTrailIds.has(trailId)) {
+          if (allAreaTrailIds.has(trailId)) {
             const trailName = trailIdToName.get(trailId);
             if (trailName) {
               await updateTrailMetadata(trailId, trailName, '');
@@ -169,11 +169,11 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
           }
         }
 
-        // Step 2: Add selected trails to the new/updated group
+        // Step 2: Add selected trails to the new/updated areas
         const updatePromises = selectedTrailIds.map(trailId => {
           const trailName = trailIdToName.get(trailId);
           if (trailName) {
-            return updateTrailMetadata(trailId, trailName, groupNameToUse);
+            return updateTrailMetadata(trailId, trailName, areaNameToUse);
           }
           return Promise.resolve();
         });
@@ -181,14 +181,14 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         await Promise.all(updatePromises);
       }
 
-      setSuccess(isCreateMode ? 'Group created successfully!' : 'Group updated successfully!');
+      setSuccess(isCreateMode ? 'Area created successfully!' : 'Area updated successfully!');
       setTimeout(() => {
         onUpdate();
         onClose();
         setSuccess(null);
       }, 1500);
     } catch (err) {
-      setError(isCreateMode ? 'An error occurred while creating the group' : 'An error occurred while updating the group');
+      setError(isCreateMode ? 'An error occurred while creating the area' : 'An error occurred while updating the area');
       console.error(err);
     } finally {
       setLoading(false);
@@ -203,55 +203,55 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
     );
   };
 
-  // Filter out empty groups
-  const availableGroups = trailGroups.filter(g =>
-    g &&
-    g.name &&
-    g.trail_ids &&
-    Array.isArray(g.trail_ids) &&
-    g.trail_ids.length > 0
+  // Filter out empty areas
+  const availableAreas = areas.filter(a =>
+    a &&
+    a.name &&
+    a.trail_ids &&
+    Array.isArray(a.trail_ids) &&
+    a.trail_ids.length > 0
   );
   const validTrails = availableTrails.filter(t => t && t.name && t.name.trim().length > 0);
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} data-testid="edit-trail-group-modal">
+    <div className="modal-overlay" onClick={onClose} data-testid="edit-area-modal">
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className="modal-header bg-[var(--color-navbar)]">
-          <div className="font-primary text-white font-semibold">{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</div>
+          <div className="font-primary text-white font-semibold">{isCreateMode ? 'Create New Area' : 'Edit Area'}</div>
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {!isCreateMode && (
               <div className="form-group">
-                <label htmlFor="group-select">Select Group:</label>
+                <label htmlFor="area-select">Select Area:</label>
                 <select
-                  id="group-select"
-                  value={selectedGroupName}
-                  onChange={(e) => setSelectedGroupName(e.target.value)}
+                  id="area-select"
+                  value={selectedAreaName}
+                  onChange={(e) => setSelectedAreaName(e.target.value)}
                   required
                 >
-                  <option value="">Select a group</option>
-                  {availableGroups.map((group) => (
-                    <option key={group.name} value={group.name}>
-                      {group.name} ({group.trail_ids.length} trails)
+                  <option value="">Select an area</option>
+                  {availableAreas.map((area) => (
+                    <option key={area.name} value={area.name}>
+                      {area.name} ({area.trail_ids.length} trails)
                     </option>
                   ))}
                 </select>
               </div>
             )}
             <div className="form-group">
-              <label htmlFor="group-name">Group Name: <span style={{ color: 'red' }}>*</span></label>
+              <label htmlFor="area-name">Area Name: <span style={{ color: 'red' }}>*</span></label>
               <input
-                id="group-name"
+                id="area-name"
                 type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
+                value={newAreaName}
+                onChange={(e) => setNewAreaName(e.target.value)}
                 required
-                placeholder="Enter group name"
-                disabled={!isCreateMode && !selectedGroupName}
+                placeholder="Enter area name"
+                disabled={!isCreateMode && !selectedAreaName}
               />
             </div>
             <div className="form-group">
@@ -287,7 +287,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          cursor: (!isCreateMode && !selectedGroupName) ? 'not-allowed' : 'pointer',
+                          cursor: (!isCreateMode && !selectedAreaName) ? 'not-allowed' : 'pointer',
                           margin: 0,
                           userSelect: 'none'
                         }}
@@ -297,15 +297,15 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                           checked={isChecked}
                           onChange={(e) => {
                             e.stopPropagation();
-                            if (isCreateMode || selectedGroupName) {
+                            if (isCreateMode || selectedAreaName) {
                               handleTrailToggle(trail.id);
                             }
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          disabled={!isCreateMode && !selectedGroupName}
+                          disabled={!isCreateMode && !selectedAreaName}
                           style={{
                             marginRight: '8px',
-                            cursor: (!isCreateMode && !selectedGroupName) ? 'not-allowed' : 'pointer',
+                            cursor: (!isCreateMode && !selectedAreaName) ? 'not-allowed' : 'pointer',
                             width: '18px',
                             height: '18px',
                             flexShrink: 0,
@@ -314,7 +314,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                           data-testid={"checkbox " + trail.name}
                         />
                         <span style={{ fontSize: '0.9em', color: '#666' }}>
-                          {isChecked ? 'In group' : 'Not in group'}
+                          {isChecked ? 'In area' : 'Not in area'}
                         </span>
                       </label>
                     </div>
@@ -327,7 +327,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
           </div>
           <div className="modal-footer">
             <Button variant="primary" disabled={loading} data-testid="confirm-button">
-              {loading ? 'Saving...' : (isCreateMode ? 'Create Group' : 'Update Group')}
+              {loading ? 'Saving...' : (isCreateMode ? 'Create Area' : 'Update Area')}
             </Button>
           </div>
         </form>
@@ -336,4 +336,4 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   );
 };
 
-export default EditTrailGroupModal;
+export default EditAreaModal;

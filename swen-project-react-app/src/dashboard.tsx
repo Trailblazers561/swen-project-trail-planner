@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import EditTrailModal from "./components/EditTrailModal";
-import EditTrailGroupModal from "./components/EditTrailGroupModal";
+import EditAreaModal from "./components/EditAreaModal.tsx";
 import AssociateDeviceModal from "./components/AssociateDeviceModal";
 import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
@@ -34,7 +34,7 @@ interface Trail {
     name: string;
 }
 
-interface TrailGroup {
+interface Area {
     name: string;
     trail_ids: number[];
 }
@@ -63,14 +63,14 @@ const dashboard = () => {
         getTrailLogs,
         getDeviceMetadata,
         getTrailMetadata,
-        getTrailGroupMetadata,
+        getAreaMetadata,
         exportCSV,
         importCSV,
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
-    const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
-    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+    const [areas, setAreas] = useState<Area[]>([]);
+    const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
@@ -87,8 +87,8 @@ const dashboard = () => {
         useState<Trail | null>(null);
     const [isEditTrailModalOpen, setIsEditTrailModalOpen] = useState(false);
     const [isAddTrailModalOpen, setIsAddTrailModalOpen] = useState(false);
-    const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
-    const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
+    const [isEditAreaModalOpen, setIsEditAreaModalOpen] = useState(false);
+    const [isAddAreaModalOpen, setIsAddAreaModalOpen] = useState(false);
     const [isAssociateDeviceModalOpen, setIsAssociateDeviceModalOpen] =
         useState(false);
 
@@ -128,7 +128,7 @@ const dashboard = () => {
     const [graphUpdating, setGraphUpdating] = useState<boolean>(false);
     const graphUpdatingRef = useRef(0);
 
-    // Load trail metadata and groups from database
+    // Load trail metadata and areas from database
     useEffect(() => {
         loadTrailData();
     }, []);
@@ -161,14 +161,14 @@ const dashboard = () => {
 
     const loadTrailData = async () => {
         try {
-            const [metadataResponse, groupsResponse] = await Promise.all([
+            const [metadataResponse, areasResponse] = await Promise.all([
                 getTrailMetadata(),
-                getTrailGroupMetadata(),
+                getAreaMetadata(),
             ]);
 
-            if (metadataResponse.success && groupsResponse.success) {
+            if (metadataResponse.success && areasResponse.success) {
                 const metadata = await metadataResponse.json;
-                const groups = await groupsResponse.json;
+                const areas = await areasResponse.json;
 
                 // Filter out any invalid entries
                 const validMetadata = (metadata || []).filter(
@@ -178,19 +178,19 @@ const dashboard = () => {
                         t.name &&
                         t.name.trim().length > 0
                 );
-                // Filter out invalid groups and empty groups (groups with no trails)
-                const validGroups = (groups || []).filter(
-                    (g: TrailGroup) =>
-                        g &&
-                        g.name &&
-                        g.name.trim().length > 0 &&
-                        g.trail_ids &&
-                        Array.isArray(g.trail_ids) &&
-                        g.trail_ids.length > 0
+                // Filter out invalid areas and empty areas (areas with no trails)
+                const validAreas = (areas || []).filter(
+                    (a: Area) =>
+                        a &&
+                        a.name &&
+                        a.name.trim().length > 0 &&
+                        a.trail_ids &&
+                        Array.isArray(a.trail_ids) &&
+                        a.trail_ids.length > 0
                 );
 
                 setTrailMetadata(validMetadata);
-                setTrailGroups(validGroups);
+                setAreas(validAreas);
             }
         } catch (error) {
             console.error("Error loading trail data:", error);
@@ -206,12 +206,12 @@ const dashboard = () => {
         setIsAddTrailModalOpen(true);
     };
 
-    const handleEditGroup = () => {
-        setIsEditGroupModalOpen(true);
+    const handleEditArea = () => {
+        setIsEditAreaModalOpen(true);
     };
 
-    const handleAddGroup = () => {
-        setIsAddGroupModalOpen(true);
+    const handleAddArea = () => {
+        setIsAddAreaModalOpen(true);
     };
 
     const handleAssociateDevice = () => {
@@ -344,7 +344,7 @@ const dashboard = () => {
 
     useEffect(() => {
         updateTrailsOptions();
-    }, [trailMetadata, selectedGroups])
+    }, [trailMetadata, selectedAreas])
 
     useEffect(() => {
         if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
@@ -573,7 +573,7 @@ const dashboard = () => {
     const trailSelectRef = useRef<MultiSelectRef>(null);
     const updateTrailsOptions = () => {
         const availableTrails: string[] = [];
-        if (selectedGroups.length === 0) {
+        if (selectedAreas.length === 0) {
             const options: MultiSelectOption[] = [];
             trailMetadata.forEach((trail) => {
                 if (trail && trail.name && trail.name.trim().length > 0) {
@@ -585,12 +585,12 @@ const dashboard = () => {
         } else {
             const groups: MultiSelectGroup[] = [];
             const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
-            trailGroups.forEach((group) => {
-                if (selectedGroups.includes(group.name)) {
-                    const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({ label: name, value: name }));
-                    if (groupOptions.length > 0)
-                        groups.push({ heading: group.name, options: groupOptions });
-                    availableTrails.push(...groupOptions.map(option => option.label))
+            areas.forEach((area) => {
+                if (selectedAreas.includes(area.name)) {
+                    const areaOptions = area.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({ label: name, value: name }));
+                    if (areaOptions.length > 0)
+                        groups.push({ heading: area.name, options: areaOptions });
+                    availableTrails.push(...areaOptions.map(option => option.label))
                 }
             })
             setTrailOptions(groups);
@@ -599,12 +599,12 @@ const dashboard = () => {
         trailSelectRef.current?.setSelectedValues(trailValues)
     };
 
-    const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
+    const fillAreasMultiselect = (): MultiSelectOption[] => {
         const options: MultiSelectOption[] = [];
 
-        trailGroups.forEach((group) => {
-            if (group && group.name && group.name.trim().length > 0) {
-                options.push({ value: group.name, label: group.name });
+        areas.forEach((area) => {
+            if (area && area.name && area.name.trim().length > 0) {
+                options.push({ value: area.name, label: area.name });
             }
         });
 
@@ -847,8 +847,8 @@ const dashboard = () => {
                         </div>
                         <div className="filter-group flex flex-col">
 
-                        <label>Trail Groups:</label>
-                        <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} data-testid="trail-group-selector" />
+                        <label>Areas:</label>
+                        <MultiSelect options={fillAreasMultiselect()} onValueChange={setSelectedAreas} value={selectedAreas} data-testid="area-selector" />
 
                         </div>
                         <div className="flex flex-col ml-auto">
@@ -950,12 +950,12 @@ const dashboard = () => {
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
+                                        <Button variant="primary" data-testid="area-options">Area Options</Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
                                         <DropdownMenuGroup>
-                                            <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleAddArea} data-testid="add-area">Add Area</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleEditArea} data-testid="edit-area">Edit Area</DropdownMenuItem>
                                         </DropdownMenuGroup>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1041,20 +1041,20 @@ const dashboard = () => {
                 availableTrails={trailMetadata}
                 isCreateMode={true}
             />
-            <EditTrailGroupModal
-                isOpen={isEditGroupModalOpen}
-                onClose={() => setIsEditGroupModalOpen(false)}
+            <EditAreaModal
+                isOpen={isEditAreaModalOpen}
+                onClose={() => setIsEditAreaModalOpen(false)}
                 onUpdate={handleTrailUpdated}
                 availableTrails={trailMetadata}
-                trailGroups={trailGroups}
+                areas={areas}
                 isCreateMode={false}
             />
-            <EditTrailGroupModal
-                isOpen={isAddGroupModalOpen}
-                onClose={() => setIsAddGroupModalOpen(false)}
+            <EditAreaModal
+                isOpen={isAddAreaModalOpen}
+                onClose={() => setIsAddAreaModalOpen(false)}
                 onUpdate={handleTrailUpdated}
                 availableTrails={trailMetadata}
-                trailGroups={trailGroups}
+                areas={areas}
                 isCreateMode={true}
             />
             <AssociateDeviceModal

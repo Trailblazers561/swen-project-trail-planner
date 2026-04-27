@@ -283,7 +283,7 @@ Content-Type: application/json
 ```json
 {
   "name": "sample_name",
-  "area": "sample_group",
+  "area_name": "sample_area",
   "notes": "sample_notes",
   "latitude": 43.0847,
   "longitude": 77.6715,
@@ -295,7 +295,7 @@ Content-Type: application/json
 - `name` (string): Name of the trail to create. Can be updated later.
 
 **Optional Fields:**
-- `area` (string): Name of the trail group to put the new trail in. Can be updated later.
+- `area_name` (string): Name of the area to put the new trail in. Can be updated later.
 - `notes` (string): Notes associated with the given trail. Can be updated later.
 - `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
 - `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
@@ -328,7 +328,7 @@ Content-Type: application/json
 {
   "trail_id": 1,
   "name": "sample_name",
-  "area": "sample_area",
+  "area_name": "sample_area",
   "notes": "sample_notes",
   "latitude": 43.0847,
   "longitude": 77.6715
@@ -340,7 +340,7 @@ Content-Type: application/json
 
 **Optional Fields:**
 - `name` (string): Name of the trail.
-- `area` (string): Name of the trail group to put the trail in.
+- `area_name` (string): Name of the area to put the trail in.
 - `notes` (string): Notes associated with the given trail.
 - `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed.
 - `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed.
@@ -388,11 +388,11 @@ Content-Type: application/json
 ```
 
 
-### Get Trail Group Metadata
+### Get Area Metadata
 
-Retrieves metadata for the trail groups. This endpoint is designed for cloud-to-cloud communication.
+Retrieves metadata for the areas. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `GET /trail_groups`
+**Endpoint:** `GET /areas`
 
 **Authentication:** Cognito JWT Access Token (required)
 
@@ -403,7 +403,7 @@ Content-Type: application/json
 ```
 
 **Query Parameters:**
-- `trail_group` (optional, "int"): Specific trail group name to retrieve metadata from, can be specified multiple times eg. (?trail_group=Adirondack%20Park&trail_group=High%20Peaks%20Wilderness).
+- `area` (optional, "str"): Specific area name to retrieve metadata from, can be specified multiple times eg. (?area=Adirondack%20Park&area=High%20Peaks%20Wilderness).
 
 **Success Response (200 OK):**
 ```json
@@ -417,11 +417,11 @@ Content-Type: application/json
 }
 ```
 
-### Delete Trail Group
+### Delete Area
 
-Deletes the specified trail group. This endpoint is designed for cloud-to-cloud communication.
+Deletes the specified area. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `DELETE /trail_groups`
+**Endpoint:** `DELETE /areas`
 
 **Authentication:** Cognito JWT Access Token (required)
 
@@ -439,12 +439,12 @@ Content-Type: application/json
 ```
 
 **Required Fields:**
-- `name` (string): Name of the trail group to delete.
+- `name` (string): Name of the area to delete.
 
 **Success Response (200 OK):**
 ```json
 {
-  "message": "Trail group deleted successfully"
+  "message": "Area deleted successfully"
 }
 ```
 

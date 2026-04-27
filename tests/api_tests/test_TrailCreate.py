@@ -36,19 +36,19 @@ def test_create_trail_success():
     assert created_trail["id"] == data["trail_id"]
 
 @pytest.mark.API
-def test_create_trail_with_group():
+def test_create_trail_with_area():
     """
-    Test POST /trail_metadata to create a trail with a group.
+    Test POST /trail_metadata to create a trail with a area.
     """
     url = f"{BASE_URL}/trail_metadata"
     headers = get_cognito_headers()
     
-    trail_name = f"Test Trail Group {int(time.time())}"
-    group_name = "Test Group"
+    trail_name = f"Test Area Trail {int(time.time())}"
+    area_name = "Test Area"
     
     payload = {
         "trail_name": trail_name,
-        "trail_group": group_name
+        "area": area_name
     }
     
     response = requests.post(url, json=payload, headers=headers)
@@ -57,14 +57,14 @@ def test_create_trail_with_group():
     data = response.json()
     assert "trail_id" in data
     
-    # Verify the trail was added to the group
-    groups_url = f"{BASE_URL}/trail_groups"
-    groups_response = requests.get(groups_url, headers=headers)
-    assert groups_response.status_code == 200
-    groups = groups_response.json()
-    test_group = next((g for g in groups if g.get("name") == group_name), None)
-    assert test_group is not None
-    assert data["trail_id"] in test_group.get("trail_ids", [])
+    # Verify the trail was added to the area
+    areas_url = f"{BASE_URL}/areas"
+    areas_response = requests.get(areas_url, headers=headers)
+    assert areas_response.status_code == 200
+    areas = areas_response.json()
+    test_area = next((a for a in areas if a.get("name") == area_name), None)
+    assert test_area is not None
+    assert data["trail_id"] in test_area.get("trail_ids", [])
 
 @pytest.mark.API
 def test_create_trail_missing_name():
