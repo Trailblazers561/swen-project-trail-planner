@@ -7,7 +7,7 @@ def get_areas(event, context):
         print(event)
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
-        area_list = multi_params.get("area")
+        area_list = multi_params.get("name")
 
         print(f"Retrieving areas for area_list [{area_list}]")
         if area_list:

@@ -27,7 +27,7 @@ export function TrailData() {
   async function getAreaMetadata(areaList?: string[]) {
     const queries: string[] = []
     if (areaList)
-      areaList.forEach(area => {queries.push(`area=${encodeURIComponent(area)}`)})
+      areaList.forEach(area => {queries.push(`name=${encodeURIComponent(area)}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/areas${queryString}`, {
@@ -169,7 +169,7 @@ export function TrailData() {
       method: "POST",
       headers: await authHeaders(),
       body: JSON.stringify({
-        area_name: areaName,
+        name: areaName,
         trail_ids: trailIds,
       }),
     });
@@ -177,17 +177,17 @@ export function TrailData() {
 
   /**
    * Update a area (rename or change trail IDs) (NOT Implemented)
-   * @param oldAreaName - The current name of the area
-   * @param newAreaName - Optional new name for the area
+   * @param oldName - The current name of the area
+   * @param newName - Optional new name for the area
    * @param trailIds - Optional array of trail IDs to update in the area
    */
-  async function updateArea(oldAreaName: string, newAreaName?: string, trailIds?: number[]) {
+  async function updateArea(oldName: string, newName?: string, trailIds?: number[]) {
     return await request(`${API_URL}/areas`, {
       method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
-        original_area_name: oldAreaName,
-        new_area_name: newAreaName,
+        original_name: oldName,
+        new_name: newName,
         trail_ids: trailIds,
       }),
     });
