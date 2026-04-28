@@ -5,6 +5,14 @@ locals {
         file = "areas/areas_get.py"
         handler = "areas_get.get_areas"
       }
+      POST = {
+        file = "areas/areas_post.py"
+        handler = "areas_post.create_area"
+      }
+      PUT = {
+        file = "areas/areas_put.py"
+        handler = "areas_put.update_area"
+      }
       DELETE = {
         file = "areas/areas_delete.py"
         handler = "areas_delete.delete_area"

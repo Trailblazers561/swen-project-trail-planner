@@ -15,9 +15,9 @@ def delete_area(event, context):
         if isinstance(body, str):
             body = json.loads(body)
 
-        name = body.get("area_name")
+        name = body.get("name")
 
-        if name is None: raise ValueError("Missing required field: area_name")
+        if name is None: raise ValueError("Missing required field: name")
 
         print(f"Attempting to delete area with name [{name}")
         area_exists = area_table.query(
