@@ -33,10 +33,19 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
   const [selectedAreaName, setSelectedAreaName] = useState<string>('');
   const [newAreaName, setNewAreaName] = useState<string>('');
   const [selectedTrailIds, setSelectedTrailIds] = useState<number[]>([]);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { updateTrailMetadata } = TrailData();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { createArea, updateArea, deleteArea  } = TrailData();
+  const trailIdToArea: Record<number, string> = {};
+
+  areas.forEach(area => {
+    area.trail_ids.forEach(id => {
+      trailIdToArea[id] = area.name;
+    });
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -89,96 +98,15 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
       const oldAreaName = isCreateMode ? undefined : selectedAreaName;
       const isRenaming = oldAreaName && oldAreaName !== areaNameToUse;
 
-      // Create a map of trail_id to trail_name for preserving names
-      const trailIdToName = new Map<number, string>();
-      availableTrails.forEach(trail => {
-        if (trail && trail.name) {
-          trailIdToName.set(trail.id, trail.name);
-        }
-      });
-
-      if (isRenaming && oldAreaName) {
-        // When renaming, we need to update the area entry itself
-
-        const oldArea = areas.find(a => a.name === oldAreaName);
-        if (oldArea) {
-          const oldAreaTrailIds = oldArea.trail_ids || [];
-
-          // Step 1: Move ALL trails from old area to new area name first
-          // This ensures the old area becomes empty and the new area is created
-          const allTrailsToMove = oldAreaTrailIds.map(trailId => {
-            const trailName = trailIdToName.get(trailId);
-            if (trailName) {
-              return updateTrailMetadata(trailId, trailName, areaNameToUse);
-            }
-            return Promise.resolve();
-          });
-
-          await Promise.all(allTrailsToMove);
-
-          // Step 2: Now handle the selection - remove trails that shouldn't be in the area
-          const trailsToRemoveFromNewArea = oldAreaTrailIds.filter(id => !selectedTrailIds.includes(id));
-          for (const trailId of trailsToRemoveFromNewArea) {
-            const trailName = trailIdToName.get(trailId);
-            if (trailName) {
-              // Remove from the new area (set to empty)
-              await updateTrailMetadata(trailId, trailName, '');
-            }
-          }
-
-          // Step 3: Add any new trails that weren't in the old area
-          const trailsToAdd = selectedTrailIds.filter(id => !oldAreaTrailIds.includes(id));
-
-          // First remove them from any other areas
-          const allOtherAreaTrailIds = new Set<number>();
-          areas.forEach(area => {
-            if (area.name && area.name !== oldAreaName) {
-              area.trail_ids.forEach(id => allOtherAreaTrailIds.add(id));
-            }
-          });
-
-          for (const trailId of trailsToAdd) {
-            const trailName = trailIdToName.get(trailId);
-            if (trailName) {
-              if (allOtherAreaTrailIds.has(trailId)) {
-                // Remove from current area first
-                await updateTrailMetadata(trailId, trailName, '');
-              }
-              // Then add to new area
-              await updateTrailMetadata(trailId, trailName, areaNameToUse);
-            }
-          }
-        }
+      if (isCreateMode) {
+        createArea(areaNameToUse, selectedTrailIds);
       } else {
-        // Not renaming - normal create or edit without name change
-        // Step 1: Remove selected trails from ALL existing areas
-        const allAreaTrailIds = new Set<number>();
-        areas.forEach(area => {
-          if (area.name) {
-            area.trail_ids.forEach(id => allAreaTrailIds.add(id));
-          }
-        });
-
-        // Remove all selected trails from their current areas
-        for (const trailId of selectedTrailIds) {
-          if (allAreaTrailIds.has(trailId)) {
-            const trailName = trailIdToName.get(trailId);
-            if (trailName) {
-              await updateTrailMetadata(trailId, trailName, '');
-            }
-          }
+        if (isRenaming && oldAreaName) {
+          updateArea(oldAreaName, areaNameToUse, selectedTrailIds);
         }
-
-        // Step 2: Add selected trails to the new/updated areas
-        const updatePromises = selectedTrailIds.map(trailId => {
-          const trailName = trailIdToName.get(trailId);
-          if (trailName) {
-            return updateTrailMetadata(trailId, trailName, areaNameToUse);
-          }
-          return Promise.resolve();
-        });
-
-        await Promise.all(updatePromises);
+        else {
+          updateArea(areaNameToUse, undefined, selectedTrailIds);
+        }
       }
 
       setSuccess(isCreateMode ? 'Area created successfully!' : 'Area updated successfully!');
@@ -203,13 +131,42 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
     );
   };
 
-  // Filter out empty areas
+  const handleDelete = async () => {
+    if (!selectedAreaName) {
+      setError('Please select an area');
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const response = await deleteArea(selectedAreaName);
+
+      if (response.success) {
+        setSuccess('Area deleted successfully!');
+        setTimeout(() => {
+          onUpdate();
+          onClose();
+          setShowDeleteConfirm(false);
+          setSuccess(null);
+        }, 1500);
+      } else {
+        const errorData = await response.json;
+        setError(errorData.error || 'Failed to delete area');
+      }
+    } catch (err) {
+      setError('An error occurred while deleting the area');
+      console.error(err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Filter out invalid areas
   const availableAreas = areas.filter(a =>
     a &&
-    a.name &&
-    a.trail_ids &&
-    Array.isArray(a.trail_ids) &&
-    a.trail_ids.length > 0
+    a.name
   );
   const validTrails = availableTrails.filter(t => t && t.name && t.name.trim().length > 0);
 
@@ -236,7 +193,7 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
                   <option value="">Select an area</option>
                   {availableAreas.map((area) => (
                     <option key={area.name} value={area.name}>
-                      {area.name} ({area.trail_ids.length} trails)
+                      {area.name} ({area.trail_ids.length} {area.trail_ids.length === 1 ? "trail" : "trails"})
                     </option>
                   ))}
                 </select>
@@ -252,6 +209,7 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
                 required
                 placeholder="Enter area name"
                 disabled={!isCreateMode && !selectedAreaName}
+                autoComplete="off"
               />
             </div>
             <div className="form-group">
@@ -317,6 +275,9 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
                           {isChecked ? 'In area' : 'Not in area'}
                         </span>
                       </label>
+                        <span style={{ fontSize: '0.9em', color: '#444'}}>
+                            Currently in: {trailIdToArea[trail.id] ?? "No Area"}
+                          </span>
                     </div>
                   );
                 })}
@@ -326,11 +287,68 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <Button variant="primary" disabled={loading} data-testid="confirm-button">
-              {loading ? 'Saving...' : (isCreateMode ? 'Create Area' : 'Update Area')}
-            </Button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <div>
+                {!isCreateMode && selectedAreaName !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={loading || deleting}
+                    className="delete-button"
+                    data-testid="delete-button"
+                  >
+                    Delete Area
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Button variant="primary" disabled={loading} data-testid="confirm-button">
+                  {loading ? 'Saving...' : (isCreateMode ? 'Create Area' : 'Update Area')}
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
+        {showDeleteConfirm && (
+          <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
+            <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Confirm Delete</h2>
+                <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <p style={{ marginBottom: '15px', color: '#333' }}>
+                  <strong style={{ color: '#dc3545' }}>Warning:</strong> This action cannot be undone.
+                </p>
+                <p style={{ marginBottom: '15px', color: '#333' }}>
+                  Deleting this area will permanently remove:
+                </p>
+                <ul style={{ marginLeft: '20px', marginBottom: '15px', color: '#333' }}>
+                  <li>The area from the database</li>
+                </ul>
+                <p style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '16px' }}>
+                  Are you sure you want to delete "{selectedAreaName}"?
+                </p>
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+              </div>
+              <div className="modal-footer">
+                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="delete-button"
+                  data-testid="confirm-delete"
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete Area'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

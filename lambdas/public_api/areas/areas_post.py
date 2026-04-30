@@ -20,8 +20,7 @@ def create_area(event, context):
 
         if name is None: raise ValueError("Missing required field: name")
         if trail_ids is None: trail_ids = []
-        if not all(id.isdigit() for id in trail_ids): raise ValueError("Invalid trail_ids format")
-        trail_ids = [int(id) for id in trail_ids]
+        if trail_ids and not all(isinstance(id, int)  for id in trail_ids): raise ValueError("Invalid trail_ids format")
 
         print(f"Attempting to create area with name [{name}]")
         area_exists = area_table.query(

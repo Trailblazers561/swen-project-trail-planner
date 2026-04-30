@@ -79,15 +79,23 @@ export function TrailData() {
    * @param trailName - new name for the trail
    * @param area - Optional area name to assign the trail to
    */
-  async function updateTrailMetadata(trailId: number, trailName?: string, area?: string) {
+  async function updateTrailMetadata(trailId: number, trailName?: string, area?: string, notes?: string, latitude?: number, longitude?: number) {
+    const payload: Record<string, any> = {trail_id: trailId};
+    if (trailName)
+      payload.name = trailName;
+    if (area)
+      payload.area_name = area;
+    if (notes)
+      payload.notes = notes;
+    if (latitude)
+      payload.latitude = latitude;
+    if (longitude)
+      payload.longitude = longitude;
+
     return await request(`${API_URL}/trail_metadata`, {
       method: "PUT",
       headers: await authHeaders(),
-      body: JSON.stringify({
-        trail_id: trailId,
-        name: trailName,
-        area_name: area,
-      }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -160,7 +168,7 @@ export function TrailData() {
   }
 
   /**
-   * Create a new area (NOT Implemented)
+   * Create a new area
    * @param areaName - The name of the area to create
    * @param trailIds - Optional array of trail IDs to include in the area
    */
@@ -176,7 +184,7 @@ export function TrailData() {
   }
 
   /**
-   * Update a area (rename or change trail IDs) (NOT Implemented)
+   * Update a area (rename or change trail IDs)
    * @param oldName - The current name of the area
    * @param newName - Optional new name for the area
    * @param trailIds - Optional array of trail IDs to update in the area
@@ -202,7 +210,7 @@ export function TrailData() {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
-        area_name: areaName,
+        name: areaName,
       }),
     });
   }
