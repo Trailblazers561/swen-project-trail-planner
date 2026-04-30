@@ -32,6 +32,9 @@ import moment from "moment-timezone";
 interface Trail {
     id: number;
     name: string;
+    notes: string;
+    latitude: number;
+    longitude: number;
 }
 
 interface Area {
@@ -113,6 +116,7 @@ const dashboard = () => {
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
     const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
+    const [areaOptions, setAreaOptions] = useState<MultiSelectOption[]>([])
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
@@ -178,15 +182,14 @@ const dashboard = () => {
                         t.name &&
                         t.name.trim().length > 0
                 );
-                // Filter out invalid areas and empty areas (areas with no trails)
+                // Filter out invalid areas
                 const validAreas = (areas || []).filter(
                     (a: Area) =>
                         a &&
                         a.name &&
                         a.name.trim().length > 0 &&
                         a.trail_ids &&
-                        Array.isArray(a.trail_ids) &&
-                        a.trail_ids.length > 0
+                        Array.isArray(a.trail_ids)
                 );
 
                 setTrailMetadata(validMetadata);
@@ -345,6 +348,13 @@ const dashboard = () => {
     useEffect(() => {
         updateTrailsOptions();
     }, [trailMetadata, selectedAreas])
+
+    useEffect(() => {
+        const areaNames = areas.map((area) => area.name);
+        const areaValues = areaSelectRef.current?.getSelectedValues().filter(value => areaNames.includes(value)) ?? [];
+        areaSelectRef.current?.setSelectedValues(areaValues)
+        setAreaOptions(fillAreasMultiselect())
+    }, [areas])
 
     useEffect(() => {
         if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
@@ -570,6 +580,24 @@ const dashboard = () => {
         }
     };
 
+    const handleAreaChange = (newSelectedAreas: string[]) => {
+        const newAreas = newSelectedAreas.filter(area => !selectedAreas.includes(area));
+        const trailValues = trailSelectRef.current?.getSelectedValues() ?? []
+        const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
+        areas.forEach((area) => {
+            if (newAreas.includes(area.name)) {
+                area.trail_ids.forEach((id) => {
+                    const trailName = trailIdMap.get(id);
+                    if (trailName)
+                        trailValues.push(trailName)
+                })
+            }
+        })
+        setTrailOptions(trailValues.map((trail) => ({value: trail, label: trail})));
+        trailSelectRef.current?.setSelectedValues(trailValues);
+        setSelectedAreas(newSelectedAreas);
+    }
+
     const trailSelectRef = useRef<MultiSelectRef>(null);
     const updateTrailsOptions = () => {
         const availableTrails: string[] = [];
@@ -595,15 +623,17 @@ const dashboard = () => {
             })
             setTrailOptions(groups);
         }
-        const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? []
+
+        const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? [];
         trailSelectRef.current?.setSelectedValues(trailValues)
     };
 
+    const areaSelectRef = useRef<MultiSelectRef>(null);
     const fillAreasMultiselect = (): MultiSelectOption[] => {
         const options: MultiSelectOption[] = [];
 
         areas.forEach((area) => {
-            if (area && area.name && area.name.trim().length > 0) {
+            if (area && area.name && area.name.trim().length > 0 && area.trail_ids && Array.isArray(area.trail_ids) && area.trail_ids.length > 0) {
                 options.push({ value: area.name, label: area.name });
             }
         });
@@ -815,7 +845,6 @@ const dashboard = () => {
                     <div className="flex gap-8 items-start flex-wrap">
                         <div className="flex gap-2">
                             <div className="filter-group flex flex-col">
-
                                 <label>Date Range:</label>
                                 <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
                             </div>
@@ -840,88 +869,84 @@ const dashboard = () => {
                         </div>
                     </div>
                     <div className="filter-group flex flex-col">
-
+                        <label>Areas:</label>
+                        <MultiSelect ref={areaSelectRef} options={areaOptions} onValueChange={handleAreaChange} value={selectedAreas} data-testid="area-selector" />
+                    </div>
+                    <div className="filter-group flex flex-col">
                         <label>Trails:</label>
                         <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} data-testid="trail-selector"/>
-
-                        </div>
-                        <div className="filter-group flex flex-col">
-
-                        <label>Areas:</label>
-                        <MultiSelect options={fillAreasMultiselect()} onValueChange={setSelectedAreas} value={selectedAreas} data-testid="area-selector" />
-
-                        </div>
-                        <div className="flex flex-col ml-auto">
-                            <label>Additional Options:</label>
-                            <div className="flex flex-row gap-2">
-                                {(currentRole === null ) && (
-                                    <div>Please log in or register to view additional options.</div>
-                                )}
-                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                    <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
-                                )}
-                                {currentRole !== null && (
-                                    <Popover open={isDownloadingStatus !== "idle"}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
-                                                Export Data
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            {isDownloadingStatus === "downloading" && (
-                                                <div>
-                                                    <Loader2 className="animate-spin" />
-                                                    <span>Downloading...</span>
-                                                </div>
-                                            )}
-                                            {isDownloadingStatus === "done" && (
-                                                <div>
-                                                    <Check />
-                                                    <span>Downloaded</span>
-                                                </div>
-                                            )}
-                                            {isDownloadingStatus === "error" && (
-                                                <div>
-                                                    <X/>
-                                                    <span>Failed to download.</span>
-                                                </div>
-                                            )}
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                  <Popover open={isUploadingStatus !== "idle"}>
-                                      <PopoverTrigger asChild>
-                                          <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
-                                              Import Data
-                                          </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                          {isUploadingStatus === "uploading" && (
-                                              <div>
-                                                  <Loader2 className="animate-spin" />
-                                                  <span>Uploading...</span>
-                                              </div>
-                                          )}
-                                          {isUploadingStatus === "done" && (
-                                              <div>
-                                                  <Check/>
-                                                  <span>Uploaded</span>
-                                              </div>
-                                          )}
-                                          {isUploadingStatus === "error" && (
-                                              <div>
-                                                  <X/>
-                                                  <span>Failed to import.</span>
-                                              </div>
-                                          )}
-                                      </PopoverContent>
-                                  </Popover>
-                                )}
-                            </div>
+                    </div>
+                    <div className="flex flex-col ml-auto">
+                        <label>Additional Options:</label>
+                        <div className="flex flex-row gap-2">
+                            {(currentRole === null ) && (
+                                <div>Please log in or register to view additional options.</div>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                            )}
+                            {currentRole !== null && (
+                                <Popover open={isDownloadingStatus !== "idle"}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
+                                            Export Data
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        {isDownloadingStatus === "downloading" && (
+                                            <div>
+                                                <Loader2 className="animate-spin" />
+                                                <span>Downloading...</span>
+                                            </div>
+                                        )}
+                                        {isDownloadingStatus === "done" && (
+                                            <div>
+                                                <Check />
+                                                <span>Downloaded</span>
+                                            </div>
+                                        )}
+                                        {isDownloadingStatus === "error" && (
+                                            <div>
+                                                <X/>
+                                                <span>Failed to download.</span>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Popover open={isUploadingStatus !== "idle"}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
+                                            Import Data
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        {isUploadingStatus === "uploading" && (
+                                            <div>
+                                                <Loader2 className="animate-spin" />
+                                                <span>Uploading...</span>
+                                            </div>
+                                        )}
+                                        {isUploadingStatus === "done" && (
+                                            <div>
+                                                <Check/>
+                                                <span>Uploaded</span>
+                                            </div>
+                                        )}
+                                        {isUploadingStatus === "error" && (
+                                            <div>
+                                                <X/>
+                                                <span>Failed to import.</span>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            )}
                         </div>
                     </div>
                 </div>
+            </div>
             <div className="w-full border-t bg-gray-50">
                 <div>
                     <div className="flex p-2.5 justify-between items-center">

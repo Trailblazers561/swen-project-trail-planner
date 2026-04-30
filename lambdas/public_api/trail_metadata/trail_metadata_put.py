@@ -21,37 +21,40 @@ def update_trail_metadata(event, context):
         latitude = body.get("latitude")
         longitude = body.get("longitude")
 
-        if trail_id is None:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: trail_id"})
-            }
+        if trail_id is None: raise ValueError("Missing required field: trail_id")
+        if not isinstance(trail_id, int): raise ValueError("Invalid trail_id format")
+        if name and not isinstance(name, str): raise ValueError("Invalid name format")
+        if area_name and not isinstance(area_name, str): raise ValueError("Invalid area_name format")
+        if notes and not isinstance(notes, str): raise ValueError("Invalid notes format")
+        if latitude and not isinstance(latitude, (float, int, Decimal)): raise ValueError("Invalid latitude format")
+        if longitude and not isinstance(longitude, (float, int, Decimal)): raise ValueError("Invalid longitude format")
 
         print(f"Attempting to update trail with trail_id [{trail_id}] to name [{name}] and area_name [{area_name}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
 
-        try:
-            trail_id = int(trail_id)
-        except (ValueError, TypeError):
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Invalid trail_id format"})
-            }
-
         # Update trail metadata
-        item = {"id": trail_id}
+        expressions = []
         if name is not None:
-            item["name"] = str(name)
+            expressions.append(" #name = :name")
         if notes is not None:
-            item["notes"] = str(notes)
+            expressions.append(" notes = :notes")
         if latitude is not None:
-            item["latitude"] = Decimal(str(latitude))
+            expressions.append(" latitude = :latitude")
         if longitude is not None:
-            item["longitude"] = Decimal(str(longitude))
+            expressions.append(" longitude = :longitude")
 
         try:
-            trail_table.put_item(Item=item)
+            if expressions:
+                trail_table.update_item(
+                    Key={"id": trail_id},
+                    UpdateExpression=f"SET {', '.join(expressions)}",
+                    ExpressionAttributeNames={"#name": "name"},
+                    ExpressionAttributeValues={
+                        ":name": name,
+                        ":notes": notes,
+                        ":latitude": Decimal(str(latitude)) if latitude else 0,
+                        ":longitude": Decimal(str(longitude)) if longitude else 0,
+                    }
+                )
         except Exception as e:
             print(e)
             return {
@@ -133,6 +136,13 @@ def update_trail_metadata(event, context):
             "statusCode": 200,
             "headers": cors_headers(),
             "body": json.dumps({"message": "Trail metadata updated successfully"})
+        }
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
         }
     except Exception as e:
         print(e)

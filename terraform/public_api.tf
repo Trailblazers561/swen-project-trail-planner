@@ -203,7 +203,6 @@ resource "null_resource" "helper_layer_setup" {
 
   triggers = {
     shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/helper_functions.py")
-    timestamp = timestamp()
   }
 
   provisioner "local-exec" {

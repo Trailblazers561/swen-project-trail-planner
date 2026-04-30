@@ -7,6 +7,9 @@ import { Button } from './ui/button';
 interface Trail {
   id: number;
   name: string;
+  notes: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface Area {
@@ -26,6 +29,9 @@ interface EditTrailModalProps {
 const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail: propTrail, onUpdate, availableTrails = [], isCreateMode = false }) => {
   const [selectedTrailId, setSelectedTrailId] = useState<number>(0);
   const [trailName, setTrailName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [latitude, setLatitude] = useState(0);
+  const [longitude, setLongitude] = useState(0);
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,15 +48,24 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         // Create mode - reset everything
         setSelectedTrailId(0);
         setTrailName('');
+        setNotes('');
+        setLatitude(0);
+        setLongitude(0);
         setSelectedArea('');
       } else if (propTrail) {
         // Edit mode with specific trail
         setSelectedTrailId(propTrail.id);
         setTrailName(propTrail.name);
+        setNotes('');
+        setLatitude(0);
+        setLongitude(0);
       } else {
         // Edit mode - allow selection
         setSelectedTrailId(0);
         setTrailName('');
+        setNotes('');
+        setLatitude(0);
+        setLongitude(0);
       }
     }
   }, [isOpen, propTrail, isCreateMode]);
@@ -60,6 +75,9 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
       const selectedTrail = availableTrails.find(t => t.id === selectedTrailId);
       if (selectedTrail) {
         setTrailName(selectedTrail.name);
+        setNotes(selectedTrail.notes);
+        setLatitude(selectedTrail.latitude);
+        setLongitude(selectedTrail.longitude);
         // Find which area this trail belongs to
         const area = areas.find((a: Area) =>
           a.trail_ids && a.trail_ids.includes(selectedTrailId)
@@ -109,7 +127,10 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         // Create new trail
         const response = await createTrail(
           trailName.trim(),
-          selectedArea || undefined
+          selectedArea || undefined,
+          notes?.trim() || undefined,
+          latitude,
+          longitude,
         );
 
         if (response.success) {
@@ -120,6 +141,9 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
             setSuccess(null);
             setSelectedTrailId(0);
             setTrailName('');
+            setNotes('');
+            setLatitude(0);
+            setLongitude(0);
             setSelectedArea('');
           }, 1500);
         } else {
@@ -136,7 +160,10 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         const response = await updateTrailMetadata(
           selectedTrailId,
           trailName.trim() || undefined,
-          selectedArea || undefined
+          selectedArea || undefined,
+          notes?.trim() || undefined,
+          latitude,
+          longitude,
         );
 
         if (response.success) {
@@ -172,7 +199,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
       const response = await retireTrail(selectedTrailId);
 
       if (response.success) {
-        setSuccess('Trail deleted successfully!');
+        setSuccess('Trail retired successfully!');
         setTimeout(() => {
           onUpdate();
           onClose();
@@ -181,10 +208,10 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         }, 1500);
       } else {
         const errorData = await response.json;
-        setError(errorData.error || 'Failed to delete trail');
+        setError(errorData.error || 'Failed to retire trail');
       }
     } catch (err) {
-      setError('An error occurred while deleting the trail');
+      setError('An error occurred while retiring the trail');
       console.error(err);
     } finally {
       setDeleting(false);
@@ -231,7 +258,53 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     onChange={(e) => setTrailName(e.target.value)}
                     required
                     placeholder="Enter trail name"
+                    autoComplete="off"
                   />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="notes">Notes (optional): {isCreateMode}</label>
+                  <textarea
+                    id="notes"
+                    rows={3}
+                    maxLength={150}
+                    style={{resize: "none"}}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Enter notes"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="form-group" style={{ display: "flex", gap: "16px" }}>
+                  <div  style={{ flex: 1 }}>
+                    <label htmlFor="latitude">Latitude{isCreateMode && <span style={{ color: 'red' }}>*</span>}</label>
+                    <input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      value={latitude}
+                      onChange={(e) => setLatitude(Number(e.target.value))}
+                      min={-90}
+                      max={90}
+                      required
+                      placeholder="Enter latitude"
+                      autoComplete="off"
+                    />
+                    </div>
+                    <div  style={{ flex: 1 }}>
+                    <label htmlFor="longitude">Longitude{isCreateMode && <span style={{ color: 'red' }}>*</span>}</label>
+                    <input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      value={longitude}
+                      onChange={(e) => setLongitude(Number(e.target.value))}
+                      min={-180}
+                      max={180}
+                      required
+                      placeholder="Enter longitude"
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label htmlFor="area">Area (optional):</label>
@@ -277,7 +350,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     className="delete-button"
                     data-testid="delete-button"
                   >
-                    Delete Trail
+                    Retire Trail
                   </button>
                 )}
               </div>
@@ -294,7 +367,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
           <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
             <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Confirm Delete</h2>
+                <h2>Confirm Retire</h2>
                 <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>×</button>
               </div>
               <div className="modal-body">
@@ -302,16 +375,16 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                   <strong style={{ color: '#dc3545' }}>Warning:</strong> This action cannot be undone.
                 </p>
                 <p style={{ marginBottom: '15px', color: '#333' }}>
-                  Deleting this trail will permanently remove:
+                  Retiring this trail will permanently remove:
                 </p>
                 <ul style={{ marginLeft: '20px', marginBottom: '15px', color: '#333' }}>
-                  <li>The trail from the database</li>
-                  <li>All trail device logs associated with this trail</li>
+                  <li>The trail from regular trail metadata retrieval</li>
+                  <li>The ability to upload logs to the trail</li>
                   <li>The trail from all areas</li>
-                  <li>Devices associated with this trail will be reset to trail_id 0</li>
+                  <li>Devices associated with this trail will be unassociated</li>
                 </ul>
                 <p style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '16px' }}>
-                  Are you sure you want to delete "{trailName}"?
+                  Are you sure you want to retire "{trailName}"?
                 </p>
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
@@ -327,7 +400,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                   className="delete-button"
                   data-testid="confirm-delete"
                 >
-                  {deleting ? 'Deleting...' : 'Yes, Delete Trail'}
+                  {deleting ? 'Deleting...' : 'Yes, Retire Trail'}
                 </button>
               </div>
             </div>
