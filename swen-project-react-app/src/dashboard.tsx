@@ -111,7 +111,9 @@ const dashboard = () => {
     );
 
     const [range, setRange] = React.useState<DateRange | undefined>({ from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined })
-    const [trails, setTrails] = useState<string[]>([]);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const trailName = searchParams.get("trailName");
+    const [trails, setTrails] = useState<string[]>(trailName ? [trailName] : []);
 
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
@@ -141,21 +143,20 @@ const dashboard = () => {
     useEffect(() => {
         if (
             trailMetadata.length > 0 &&
-            trails.length === 0 &&
+            (trails.length === 0 || trails.length === 1) &&
             selectedDate &&
             selectedDateEnd &&
             !hasDefaulted
         ) {
-            const defaultTrails: string[] = [];
-            setTrails(defaultTrails);
             setHasDefaulted(true);
+            // setSearchParams(""); // TODO: Clear search params or no?
             // Trigger graph load after a small delay to ensure state is set
             setTimeout(() => {
                 if (granularity) {
                     getResponse(
                         selectedDate,
                         selectedDateEnd,
-                        defaultTrails,
+                        trails,
                         granularity
                     );
                 }
@@ -283,27 +284,6 @@ const dashboard = () => {
         }, 500);
     };
 
-    const [searchParams] = useSearchParams();
-    const trailId = searchParams.get("trailId");
-
-    useEffect(() => {
-        if (!trailId || trailMetadata.length === 0) return;
-        
-        const id = Number(trailId);
-        if (Number.isNaN(id)) return;
-
-        const trail = trailMetadata.find(t => t.id === id);
-        if (!trail) return;
-            setTrails(prev => {
-            if (prev.length === 1 && prev[0] === trail.name) return prev;
-            return [trail.name];
-        });
-        
-        //auto refresh graph on page load
-        if (selectedDate && selectedDateEnd && granularity) {
-            getResponse(selectedDate, selectedDateEnd, [trail.name], granularity);
-        }
-    }, [trailId, trailMetadata]);
 
     function getDateDifference(startDate: Date, endDate: Date): number {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -582,20 +562,24 @@ const dashboard = () => {
 
     const handleAreaChange = (newSelectedAreas: string[]) => {
         const newAreas = newSelectedAreas.filter(area => !selectedAreas.includes(area));
-        const trailValues = trailSelectRef.current?.getSelectedValues() ?? []
+        const trailValues = trails;
         const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
         areas.forEach((area) => {
             if (newAreas.includes(area.name)) {
                 area.trail_ids.forEach((id) => {
                     const trailName = trailIdMap.get(id);
-                    if (trailName)
+                    if (trailName && !trailValues.includes(trailName))
                         trailValues.push(trailName)
                 })
             }
         })
-        setTrailOptions(trailValues.map((trail) => ({value: trail, label: trail})));
+        if (trailMetadata.length !== 0)
+            setTrailOptions(trailMetadata.map((trail) => ({value: trail.name, label: trail.name})));
+        else
+            setTrailOptions(trailValues.map((trail) => ({value: trail, label: trail})));
         trailSelectRef.current?.setSelectedValues(trailValues);
-        setSelectedAreas(newSelectedAreas);
+        if (selectedAreas.length !== 0 || newSelectedAreas.length !== 0)
+            setSelectedAreas(newSelectedAreas);
     }
 
     const trailSelectRef = useRef<MultiSelectRef>(null);
@@ -625,7 +609,7 @@ const dashboard = () => {
         }
 
         const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? [];
-        trailSelectRef.current?.setSelectedValues(trailValues)
+        trailSelectRef.current?.setSelectedValues(trailValues);
     };
 
     const areaSelectRef = useRef<MultiSelectRef>(null);
