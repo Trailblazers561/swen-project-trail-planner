@@ -1,6 +1,6 @@
 locals {
-  s3_origin_id = local.use_domain ? "${local.sub_domain}.${local.domain}" : "trailplannerS3Origin"
-  full_domain  = local.use_domain ? "${local.sub_domain}.${local.domain}" : ""
+  s3_origin_id = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "trailplannerS3Origin"
+  full_domain  = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : ""
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {

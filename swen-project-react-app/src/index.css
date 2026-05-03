@@ -93,6 +93,8 @@
 
   --yellow-green-hover: #CEC848;
 
+  --dark-yellow-green: #a39e38;
+
   --font-primary: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
@@ -208,6 +210,7 @@ button:focus-visible {
   --color-sidebar-ring: var(--sidebar-ring);
   --color-yellow-green: var(--yellow-green);
   --color-yellow-green-hover: var(--yellow-green-hover);
+  --color-dark-yellow-green: var(--dark-yellow-green);
   --color-button: var(--yellow-green);
   --color-button-hover: var(--yellow-green-hover);
   --color-button-secondary: #C0D3D1;

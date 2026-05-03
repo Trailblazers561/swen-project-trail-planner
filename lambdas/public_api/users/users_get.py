@@ -31,7 +31,7 @@ def get_users(event, context):
                 break
 
         users_formatted = []
-        attribute_names = {"sub": "user_id", "email": "email", "given_name": "first_name", "family_name": "last_name", "preferred_username": "username"}
+        attribute_names = {"sub": "user_id", "email": "email", "given_name": "first_name", "family_name": "last_name"}
         for user in users:
             user_formatted = {"username": user["Username"]}
             for attribute in user["Attributes"]:

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "react_bucket" {
-  bucket = local.use_domain ? "${local.sub_domain}.${local.domain}" : "${var.deploy_env}-trailplanner-react-bucket-${random_integer.random_suffix.result}"
+  bucket = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "${var.deploy_env}-trailplanner-react-bucket-${random_integer.random_suffix.result}"
 
   tags = {
     Name = "${var.deploy_env}-trailplanner-react-bucket"
