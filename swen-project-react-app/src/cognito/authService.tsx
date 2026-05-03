@@ -45,20 +45,16 @@ export const signIn = async (username: string, password: string) => {
   }
 };
 
-export const signUp = async (email: string, password: string, displayName: string) => {
+export const signUp = async (username: string, email: string, password: string) => {
   const params = {
     ClientId: cognitoConfig.clientId,
-    Username: email,
+    Username: username,
     Password: password,
     UserAttributes: [
       {
         Name: "email",
         Value: email,
-      },
-      {
-        Name: "preferred_username",
-        Value: displayName,
-      },
+      }
     ],
   };
   try {

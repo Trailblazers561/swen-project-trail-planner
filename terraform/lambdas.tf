@@ -131,25 +131,42 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   source_arn    = aws_cloudwatch_event_rule.csv_bucket_daily_cleanup.arn
 }
 
-# Confirm User Lambda To Put User In "User" User Group After Verification 
-data "archive_file" "confirm_user_lambda_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/confirm_user.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/confirm_user.zip"
+
+locals {
+  cognito_config_lambdas = {
+    pre_sign_up = "remove_unverified_user"
+    post_confirmation = "confirm_user"
+    custom_message = "custom_message"
+  }
 }
 
-resource "aws_lambda_function" "confirm_user" {
-  function_name = "${var.deploy_env}_trailplanner_confirm_user"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "confirm_user.confirm_user"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/confirm_user.zip"
-  code_sha256 = data.archive_file.confirm_user_lambda_zip.output_base64sha256
+// Create Each Cognito Config Lambda Zip File
+data "archive_file" "cognito_config_lambda_zips" {
+  for_each = local.cognito_config_lambdas
+
+  type = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/cognito_config/${each.key}.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/${each.key}.zip"
 }
 
-resource "aws_lambda_permission" "allow_cognito" {
+// Create Each Cognito Config Lambda
+resource "aws_lambda_function" "cognito_config_lambdas" {
+  for_each = local.cognito_config_lambdas
+
+  function_name = "${var.deploy_env}_trailplanner_${each.key}"
+  role = aws_iam_role.lambda_iam_role.arn
+  handler = "${each.key}.${each.value}"
+  runtime = "python3.12"
+  filename = data.archive_file.cognito_config_lambda_zips[each.key].output_path
+  source_code_hash = data.archive_file.cognito_config_lambda_zips[each.key].output_base64sha256
+}
+
+// Allow Lambdas To Be Invoked By Cognito
+resource "aws_lambda_permission" "allow_cognito_cognito_config_lambdas" {
+  for_each = aws_lambda_function.cognito_config_lambdas
+  
   statement_id  = "AllowExecutionFromCognito"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.confirm_user.function_name
+  function_name = each.value.function_name
   principal     = "cognito-idp.amazonaws.com"
 }

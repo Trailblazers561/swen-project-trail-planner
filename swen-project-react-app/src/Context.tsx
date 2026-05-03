@@ -8,7 +8,7 @@ export enum Role {
 }
 
 type AuthContextType = {
-    email: string;
+    username: string;
     roles: Role[];
     currentRole: Role | null;
     clearAuth: () => void;
@@ -19,7 +19,7 @@ const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [roles, setRoles] = useState<Role[]>([]);
-    const [email, setEmail] = useState<string>("");
+    const [username, setUsername] = useState<string>("");
 
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
@@ -42,14 +42,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 });
 
                 setRoles(parsedRoles.length ? parsedRoles : []);
-                setEmail(payload["email"] || "");
+                setUsername(payload["cognito:username"] || "");
             } catch (e) {
                 console.error("Failed to parse idToken:", e);
             }
         }
         else {
             setRoles([]);
-            setEmail("");
+            setUsername("");
         }
     };
 
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <Context.Provider value={{ email, roles, currentRole, clearAuth, setAuth }}>
+        <Context.Provider value={{ username, roles, currentRole, clearAuth, setAuth }}>
             {children}
         </Context.Provider>
     );
@@ -93,7 +93,7 @@ export function isTokenExpired() {
 
     const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
 
-    return expiration >= Date.now();
+    return expiration <= Date.now();
 }
 
 export function setTokens(idToken: string, accessToken: string, refreshToken: string) {

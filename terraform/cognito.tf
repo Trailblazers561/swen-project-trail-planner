@@ -2,7 +2,7 @@ resource "aws_cognito_user_pool" "user_pool" {
   name                = "${var.deploy_env}_trailplanner_user_pool"
   deletion_protection = "INACTIVE"
 
-  username_attributes      = ["email"]
+  alias_attributes = ["email"]
   auto_verified_attributes = ["email"]
 
   password_policy {
@@ -14,11 +14,15 @@ resource "aws_cognito_user_pool" "user_pool" {
   }
 
   lambda_config {
-    post_confirmation  = aws_lambda_function.confirm_user.arn
+    pre_sign_up = aws_lambda_function.cognito_config_lambdas["pre_sign_up"].arn
+    post_confirmation = aws_lambda_function.cognito_config_lambdas["post_confirmation"].arn
+    custom_message = aws_lambda_function.cognito_config_lambdas["custom_message"].arn
   }
 
-  verification_message_template {
-    default_email_option = "CONFIRM_WITH_LINK"
+  email_configuration {
+    email_sending_account = "DEVELOPER"
+    from_email_address = local.verification_email
+    source_arn = var.ses_identity_arn
   }
 }
 
@@ -34,9 +38,10 @@ resource "aws_cognito_user_pool_client" "client" {
   generate_secret              = false
   explicit_auth_flows          = ["ADMIN_NO_SRP_AUTH", "USER_PASSWORD_AUTH"]
   supported_identity_providers = ["COGNITO"]
+
   refresh_token_rotation {
     feature = "ENABLED"
-    retry_grace_period_seconds = 0
+    retry_grace_period_seconds = 10
   }
 }
 
@@ -73,20 +78,19 @@ resource "aws_cognito_user" "users" {
   for_each = local.users
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username = each.value.email
+  username = each.key
   password = each.value.password
 
   attributes = {
     email = each.value.email
     email_verified = true
-    preferred_username  = each.value.display_name
   }
 }
 
 locals {
   users_in_groups = {
-    for email_group in flatten([for _, user in local.users : [for group in user.groups : {email = user.email, group = group}]]) :
-    "${email_group.email}|${email_group.group}" => email_group
+    for username_group in flatten([for username, user in local.users : [for group in user.groups : {username = username, group = group}]]) :
+    "${username_group.username}|${username_group.group}" => username_group
   }
 }
 
@@ -95,8 +99,8 @@ resource "aws_cognito_user_in_group" "assign_users" {
   for_each = local.users_in_groups
 
   user_pool_id = aws_cognito_user_pool.user_pool.id
-  username     = each.value.email
-  group_name   = "${each.value.group}"
+  username     = each.value.username
+  group_name   = each.value.group
 
   depends_on = [aws_cognito_user.users]
 }
