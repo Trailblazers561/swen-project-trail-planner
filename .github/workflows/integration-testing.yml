@@ -17,6 +17,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   TF_VAR_deploy_env: '"test"'
   CONFIG_DIRECTORY: "./terraform"
+  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
 
 jobs:
   terraform:
