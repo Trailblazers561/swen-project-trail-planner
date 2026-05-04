@@ -1,10 +1,16 @@
-import boto3
-from botocore.exceptions import ProfileNotFound
 import argparse
+import os
 from pathlib import Path
 
+import boto3
+from botocore.exceptions import ProfileNotFound
+
 try:
-    session = boto3.Session(profile_name="dev-role")
+    omit_dev_role = os.getenv("OMIT_DEV_ROLE", "false") == "true"
+    if omit_dev_role:
+        session = boto3
+    else:
+        session = boto3.Session(profile_name="dev-role")
 except ProfileNotFound: 
     session = boto3
     print("dev-role NOT FOUND: THIS IS AN ISSUE FOR A LOCAL RUN")
