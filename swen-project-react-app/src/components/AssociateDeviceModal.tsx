@@ -4,7 +4,7 @@ import './Modal.css';
 import { Button } from './ui/button';
 
 interface Device {
-  id: string;
+  id: number;
   current_trail_id: number;
   battery?: number;
 }
@@ -23,7 +23,7 @@ interface AssociateDeviceModalProps {
 const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onClose, onUpdate }) => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [trails, setTrails] = useState<Trail[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('');
+  const [selectedDevice, setSelectedDevice] = useState<number>(0);
   const [selectedTrail, setSelectedTrail] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +35,16 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
       loadData();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedDevice) {
+      const device = devices.find(d => d.id === selectedDevice);
+      if (device?.current_trail_id)
+        setSelectedTrail(device?.current_trail_id);
+      else
+        setSelectedTrail(0);
+    }
+  }, [selectedDevice])
 
   const loadData = async () => {
     try {
@@ -57,8 +67,17 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDevice || !selectedTrail) {
-      setError('Please select both a device and a trail');
+    if (!selectedDevice) {
+      setError("Please select a device");
+      return;
+    }
+
+    const device = devices.find(d => d.id === selectedDevice);
+    if (device?.current_trail_id === selectedTrail) {
+      if (selectedTrail)
+        setError("Device is already associated with this trail");
+      else
+        setError("Device is already not associated with a trail");
       return;
     }
 
@@ -73,7 +92,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
         setTimeout(() => {
           onUpdate();
           onClose();
-          setSelectedDevice('');
+          setSelectedDevice(0);
           setSelectedTrail(0);
           setSuccess(null);
         }, 1500);
@@ -92,8 +111,8 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   if (!isOpen) return null;
 
   // Separate devices into unpaired (trail_id = 0) and paired
-  const unpairedDevices = devices.filter(d => d.current_trail_id === 0);
-  const pairedDevices = devices.filter(d => d.current_trail_id !== 0);
+  const unpairedDevices = devices.filter(d => !d.current_trail_id);
+  const pairedDevices = devices.filter(d => !!d.current_trail_id && d.current_trail_id !== 0);
 
   const getTrailName = (trailId: number) => {
     const trail = trails.find(t => t.id === trailId);
@@ -173,7 +192,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
                   onChange={(e) => setSelectedTrail(Number(e.target.value))}
                   required
                 >
-                  <option value={0}>Select a trail</option>
+                  <option value={0}>No Trail</option>
                   {trails.map((trail) => (
                     <option key={trail.id} value={trail.id}>
                       {trail.name} (ID: {trail.id})
@@ -187,7 +206,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <Button variant="primary" disabled={loading || !selectedDevice || !selectedTrail} data-testid="associate-device-button">
+            <Button variant="primary" disabled={loading || !selectedDevice} data-testid="associate-device-button">
               {loading ? 'Associating...' : 'Associate Device'}
             </Button>
           </div>

@@ -106,7 +106,7 @@ export function TrailData() {
    * @param dateInstalled - Optional: Date the device was installed on the new trail
    * @param dateRemoved - Optional: Date the device was removed from the old trail
    */
-  async function updateDeviceTrailAssociation(deviceId: string, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
+  async function updateDeviceTrailAssociation(deviceId: number, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
     const payload: Record<string, any> = {
       device_id: deviceId,
       trail_id: trailId,
@@ -134,7 +134,7 @@ export function TrailData() {
    */
   async function createTrail(trailName: string, area?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
     const payload: Record<string, any> = {
-      trail_name: trailName
+      name: trailName
     }
     if (area)
       payload.area_name = area;

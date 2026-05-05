@@ -10,7 +10,7 @@ from helper_functions import device_trail_table, cors_headers, get_next_device_t
 def update_device_trail_association(event, context):
     """
     Update device trail association. Updates DeviceTrail to change which trail
-    a device is associated with. Future data from this device will use the new trail_id.
+    a device is associated with. Future data from this device will use the new trail_id. Unpairs device if trail_id=0
     Expects: { "device_id": str, "trail_id": int }
     Optional: { "date_installed": str (ISO date), "date_removed": str (ISO date)}
     """
@@ -55,18 +55,36 @@ def update_device_trail_association(event, context):
         )
         items = resp.get("Items", [])
 
-        old_device_trail = next((item for item in items if item.get("date_removed") is None), None)
+        old_device_trail_by_device = next((item for item in items if item.get("date_removed") is None), None)
         # If there is an existing device_trail with a different trail_id then consider it removed
-        if old_device_trail and old_device_trail["trail_id"] != trail_id:
-            print(f"Setting old device_trail_association [{old_device_trail['id']}] to removed ")
+        if old_device_trail_by_device and old_device_trail_by_device["trail_id"] != trail_id:
+            print(f"Setting old device_trail_association [{old_device_trail_by_device['id']}] to removed ")
             device_trail_table.update_item(
-                Key={"device_id": device_id, "date_installed": old_device_trail["date_installed"]},
+                Key={"device_id": device_id, "date_installed": old_device_trail_by_device["date_installed"]},
                 UpdateExpression="SET date_removed = :date_removed",
                 ExpressionAttributeValues={":date_removed": date_removed}
             )
 
+        if trail_id:
+            # Find current device_trail_assocation for trail_id
+            resp = device_trail_table.query(
+                IndexName="trail-index",
+                KeyConditionExpression=Key("trail_id").eq(trail_id)
+            )
+            items = resp.get("Items", [])
+
+            old_device_trail_by_trail = next((item for item in items if item.get("date_removed") is None), None)
+            # If there is an existing device_trail with a different device_id then consider it removed
+            if old_device_trail_by_trail and old_device_trail_by_trail["device_id"] != device_id:
+                print(f"Setting old device_trail_association [{old_device_trail_by_trail['id']}] to removed ")
+                device_trail_table.update_item(
+                    Key={"device_id": old_device_trail_by_trail["device_id"], "date_installed": old_device_trail_by_trail["date_installed"]},
+                    UpdateExpression="SET date_removed = :date_removed",
+                    ExpressionAttributeValues={":date_removed": date_removed}
+                )
+
         # If we don't have a current device_trail with this device/trail combo then create a new one
-        if not old_device_trail or old_device_trail["trail_id"] != trail_id:
+        if (not old_device_trail_by_device or old_device_trail_by_device["trail_id"] != trail_id) and trail_id:
             next_device_trail_id = get_next_device_trail_id()
             print(f"Creating new device_trail log with id [{next_device_trail_id}]")
             device_trail_table.put_item(
