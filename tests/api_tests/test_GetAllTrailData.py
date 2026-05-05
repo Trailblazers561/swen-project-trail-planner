@@ -12,8 +12,8 @@ def test_get_all_trail_data():
     headers = get_cognito_headers()
     params = {
         "trail_id": [1,2,3,4,5,6,7,8,9,10],
-        "start": "2026-01-01",
-        "end": "2026-12-31"
+        "start_time": "2026-01-01",
+        "end_time": "2026-12-31"
     }
     
     response = requests.get(url, headers=headers, params=params)

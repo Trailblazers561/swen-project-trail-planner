@@ -15,7 +15,7 @@ def test_create_trail_success():
     trail_name = f"Test Trail {int(time.time())}"
     
     payload = {
-        "trail_name": trail_name
+        "name": trail_name
     }
     
     response = requests.post(url, json=payload, headers=headers)
@@ -47,8 +47,8 @@ def test_create_trail_with_area():
     area_name = "Test Area"
     
     payload = {
-        "trail_name": trail_name,
-        "area": area_name
+        "name": trail_name,
+        "area_name": area_name
     }
     
     response = requests.post(url, json=payload, headers=headers)
@@ -89,7 +89,7 @@ def test_create_trail_empty_name():
     headers = get_cognito_headers()
     
     payload = {
-        "trail_name": ""
+        "name": ""
     }
     
     response = requests.post(url, json=payload, headers=headers)
@@ -104,7 +104,7 @@ def test_create_trail_unauthorized():
     url = f"{BASE_URL}/trail_metadata"
     
     payload = {
-        "trail_name": "Unauthorized Trail"
+        "name": "Unauthorized Trail"
     }
     
     response = requests.post(url, json=payload)

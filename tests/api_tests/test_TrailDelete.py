@@ -22,7 +22,7 @@ def test_delete_trail_success():
     
     # Create the trail metadata
     create_payload = {
-        "trail_name": test_trail_name
+        "name": test_trail_name
     }
     
     create_response = requests.post(url, json=create_payload, headers=headers)
@@ -147,7 +147,7 @@ def test_delete_trail_removes_from_areas():
     # Add trail to area first
     update_payload = {
         "trail_id": trail_id,
-        "area": area_name
+        "area_name": area_name
     }
     update_response = requests.put(url, json=update_payload, headers=headers)
     assert update_response.status_code == 200
@@ -165,7 +165,7 @@ def test_delete_trail_removes_from_areas():
     
     # Delete the trail
     delete_payload = {
-        "trail_id": trail_id
+        "id": trail_id
     }
     delete_response = requests.delete(url, json=delete_payload, headers=headers)
     
