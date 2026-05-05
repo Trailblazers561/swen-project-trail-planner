@@ -216,8 +216,7 @@ def log_week(device_trail_id: int, start: int, count: int, battery: int):
         ExpressionAttributeValues={
             ":count": count,
             ":battery": battery
-        },
-        ReturnValues="ALL_NEW"
+        }
     )
 
 def log_month(device_trail_id: int, start: int, count: int, battery: int):
@@ -235,8 +234,7 @@ def log_month(device_trail_id: int, start: int, count: int, battery: int):
         ExpressionAttributeValues={
             ":count": count,
             ":battery": battery
-        },
-        ReturnValues="ALL_NEW"
+        }
     )
 
 forecast_multipliers = (("thunder", 0.3), ("snow", 0.4), ("rain", 0.6), ("showers", 0.6), ("cloud", 1.0), ("sun", 1.3), ("clear", 1.3))

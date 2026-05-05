@@ -243,7 +243,7 @@ export function TrailData() {
    */
       async function importCSV(csvFile: File) {
 
-        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv-url`, {
+        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv_url`, {
           method: "GET",
           headers: await authHeaders(),
         }))["json"];

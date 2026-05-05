@@ -131,7 +131,7 @@ def parse_csv_and_export_data(event, context):
         for (device_id, hour_ts), data in row_data.items():
             hour_ts = timestamp_conversion(hour_ts, "hour")
             if device_id not in device_trail_id_cache:
-                device_trail_id_cache[device_id] = get_device_trail_id(device_id)
+                device_trail_id_cache[device_id] = get_device_trail_id(device_id)[0]
             device_trail_id = device_trail_id_cache[device_id]
 
             current_day = (device_trail_id, timestamp_conversion(hour_ts, "day"))
@@ -155,46 +155,76 @@ def parse_csv_and_export_data(event, context):
                 monthly_logs[current_month]["latest_timestamp"] = hour_ts
 
         # Send data to hour table
-        with device_trail_log_hour_table.batch_writer() as batch:
-            for (device_id, hour_ts), data in row_data.items():
-                batch.put_item(Item={
-                    "device_trail_id": device_trail_id_cache[device_id],
-                    "start": hour_ts,
-                    "count": data["count"],
-                })
+        for (device_id, hour_ts), data in row_data.items():
+            device_trail_log_hour_table.update_item(
+                Key={
+                    "device_trail_id": device_trail_id,
+                    "start": hour_ts
+                },
+                UpdateExpression="ADD #count :count",
+                ExpressionAttributeNames={"#count": "count"},
+                ExpressionAttributeValues={":count": data["count"]}
+            )
         print(f"writing {len(row_data)} to hour database")
 
         # Send data to day table
-        with device_trail_log_day_table.batch_writer() as batch:
-            for (device_trail_id, day_ts), data in daily_logs.items():
-                batch.put_item(Item={
+        for (device_trail_id, day_ts), data in daily_logs.items():
+            expression = "ADD #count :count"
+            attribute_names = {"#count": "count"}
+            attribute_values = {":count": data["count"]}
+            if data["battery"] is not None:
+                expression += " SET #battery = :battery"
+                attribute_names["#battery"] = "battery"
+                attribute_values[":battery"] = data["battery"]
+            device_trail_log_day_table.update_item(
+                Key={
                     "device_trail_id": device_trail_id,
-                    "start": day_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
-                })
+                    "start": day_ts
+                },
+                UpdateExpression=expression,
+                ExpressionAttributeNames=attribute_names,
+                ExpressionAttributeValues=attribute_values
+            )
         print(f"writing {len(daily_logs)} to day database")
 
         # Send data to week table
-        with device_trail_log_week_table.batch_writer() as batch:
-            for (device_trail_id, week_ts), data in weekly_logs.items():
-                batch.put_item(Item={
+        for (device_trail_id, week_ts), data in weekly_logs.items():
+            expression = "ADD #count :count"
+            attribute_names = {"#count": "count"}
+            attribute_values = {":count": data["count"]}
+            if data["battery"] is not None:
+                expression += " SET #battery = :battery"
+                attribute_names["#battery"] = "battery"
+                attribute_values[":battery"] = data["battery"]
+            device_trail_log_week_table.update_item(
+                Key={
                     "device_trail_id": device_trail_id,
-                    "start": week_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
-                })
+                    "start": week_ts
+                },
+                UpdateExpression=expression,
+                ExpressionAttributeNames=attribute_names,
+                ExpressionAttributeValues=attribute_values
+            )
         print(f"writing {len(weekly_logs)} to week database")
 
         # Send data to month table
-        with device_trail_log_month_table.batch_writer() as batch:
-            for (device_trail_id, month_ts), data in monthly_logs.items():
-                batch.put_item(Item={
+        for (device_trail_id, month_ts), data in monthly_logs.items():
+            expression = "ADD #count :count"
+            attribute_names = {"#count": "count"}
+            attribute_values = {":count": data["count"]}
+            if data["battery"] is not None:
+                expression += " SET #battery = :battery"
+                attribute_names["#battery"] = "battery"
+                attribute_values[":battery"] = data["battery"]
+            device_trail_log_month_table.update_item(
+                Key={
                     "device_trail_id": device_trail_id,
-                    "start": month_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
-                })
+                    "start": month_ts
+                },
+                UpdateExpression=expression,
+                ExpressionAttributeNames=attribute_names,
+                ExpressionAttributeValues=attribute_values
+            )
         print(f"writing {len(monthly_logs)} to month database")
 
         append_new_hash(csv_hash)
