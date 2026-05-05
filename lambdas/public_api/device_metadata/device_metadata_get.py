@@ -41,7 +41,8 @@ def get_device_metadata(event, context):
             device_trails = [{field: device_trail[field] for field in desired_device_trail_fields if device_trail.get(field)} for device_trail in device_trails_result]
             item["trail_history"] = device_trails
             if len(device_trails_result):
-                item["current_trail_id"] = device_trails_result[0]["trail_id"]
+                if not device_trails_result[0].get("date_removed"):
+                    item["current_trail_id"] = device_trails_result[0]["trail_id"]
                 day_result = device_trail_log_day_table.query(
                     KeyConditionExpression=Key("device_trail_id").eq(device_trails_result[0]["id"]),
                     ScanIndexForward=False,
