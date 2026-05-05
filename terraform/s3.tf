@@ -68,3 +68,14 @@ resource "aws_s3_bucket" "csv_bucket" {
 
   force_destroy = true
 }
+
+resource "aws_s3_bucket_cors_configuration" "example" {
+  bucket = aws_s3_bucket.csv_bucket.id
+
+  cors_rule {
+    allowed_origins = ["*"]
+    allowed_methods = ["GET", "HEAD", "PUT", "POST", "DELETE"]
+    allowed_headers = ["*"]
+    expose_headers = ["ETag"]
+  }
+}

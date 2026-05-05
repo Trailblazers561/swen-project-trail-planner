@@ -21,7 +21,7 @@ groups_simplified = {ROOT_ADMIN: "root_admin", ADMIN: "admin", TRAIL_MANAGER: "t
 PERMISSIONS = {
     ("/csv", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER],
     ("/csv", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
-    ("/csv-url", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/csv_url", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/device_metadata", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
