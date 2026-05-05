@@ -28,7 +28,7 @@ def test_update_trail_metadata_success():
     new_name = f"{original_name}_updated_{int(time.time())}"
     payload = {
         "trail_id": trail_id,
-        "trail_name": new_name
+        "name": new_name
     }
     
     response = requests.put(url, json=payload, headers=headers)
@@ -52,7 +52,7 @@ def test_update_trail_metadata_success():
     # Cleanup: restore original name
     restore_payload = {
         "trail_id": trail_id,
-        "trail_name": original_name
+        "name": original_name
     }
     requests.put(url, json=restore_payload, headers=headers)
 
@@ -87,7 +87,7 @@ def test_update_trail_metadata_with_area():
     # Update trail with area
     payload = {
         "trail_id": trail_id,
-        "area": area_name
+        "area_name": area_name
     }
     
     response = requests.put(url, json=payload, headers=headers)
@@ -117,7 +117,7 @@ def test_update_trail_metadata_missing_trail_id():
     headers = get_cognito_headers()
     
     payload = {
-        "trail_name": "Test Trail"
+        "name": "Test Trail"
     }
     
     response = requests.put(url, json=payload, headers=headers)
@@ -141,7 +141,7 @@ def test_update_trail_metadata_invalid_trail_id():
     
     payload = {
         "trail_id": "not-a-number",
-        "trail_name": "Test Trail"
+        "name": "Test Trail"
     }
     
     response = requests.put(url, json=payload, headers=headers)
@@ -167,7 +167,7 @@ def test_update_trail_metadata_unauthorized():
     
     payload = {
         "trail_id": 1,
-        "trail_name": "Test Trail"
+        "name": "Test Trail"
     }
     
     response = requests.put(url, json=payload, headers=headers)

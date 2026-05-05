@@ -32,28 +32,30 @@ def update_trail_metadata(event, context):
         print(f"Attempting to update trail with trail_id [{trail_id}] to name [{name}] and area_name [{area_name}] and notes [{notes}] and latitude [{latitude}] and longitude [{longitude}]")
 
         # Update trail metadata
-        expressions = []
+        update_expressions = []
+        expression_names = {}
+        expression_values = {}
         if name is not None:
-            expressions.append(" #name = :name")
+            update_expressions.append(" #name = :name")
+            expression_names["#name"] = "name"
+            expression_values[":name"] = name
         if notes is not None:
-            expressions.append(" notes = :notes")
+            update_expressions.append(" notes = :notes")
+            expression_values[":notes"] = notes
         if latitude is not None:
-            expressions.append(" latitude = :latitude")
+            update_expressions.append(" latitude = :latitude")
+            expression_values[":latitude"] = Decimal(str(latitude)) if latitude else 0
         if longitude is not None:
-            expressions.append(" longitude = :longitude")
+            update_expressions.append(" longitude = :longitude")
+            expression_values[":longitude"] = Decimal(str(longitude)) if longitude else 0
 
         try:
-            if expressions:
+            if update_expressions:
                 trail_table.update_item(
                     Key={"id": trail_id},
-                    UpdateExpression=f"SET {', '.join(expressions)}",
-                    ExpressionAttributeNames={"#name": "name"},
-                    ExpressionAttributeValues={
-                        ":name": name,
-                        ":notes": notes,
-                        ":latitude": Decimal(str(latitude)) if latitude else 0,
-                        ":longitude": Decimal(str(longitude)) if longitude else 0,
-                    }
+                    UpdateExpression=f"SET {', '.join(update_expressions)}",
+                    ExpressionAttributeNames=expression_names,
+                    ExpressionAttributeValues=expression_values
                 )
         except Exception as e:
             print(e)
