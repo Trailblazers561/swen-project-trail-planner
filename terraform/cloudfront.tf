@@ -120,7 +120,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cloudfront_default_certificate = local.use_domain ? false : true
   }
 
-  depends_on = [aws_s3_bucket.react_bucket, null_resource.deploy_react_app]
+  depends_on = [aws_s3_bucket.react_bucket]
 }
 
 #Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
