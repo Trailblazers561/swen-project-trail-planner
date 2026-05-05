@@ -28,7 +28,7 @@ locals {
   domain = "adirondackwilderness.org"
   cloudfront_sub_domain = "trailblazers-${var.deploy_env}"
   api_sub_domain = "trailblazers-api-${var.deploy_env}"
-  verification_email = local.local_run ? var.local_user_email : "no-reply-${var.deploy_env}@trailplanner-auth.${local.domain}"
+  verification_email = local.local_run ? var.local_user_email : "Trailplanner@trailplanner-auth.${local.domain}"
 }
 
 // Will get populated from github actions and stored in the repo, not populated in a local run
