@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { signIn, signUp, confirmSignUp } from "./authService";
+import { signIn, signUp, confirmSignUp, resendConfirmationCode, forgotPassword, confirmForgotPassword } from "./authService";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "@/Context";
 import {
   UserNotConfirmedException,
@@ -11,7 +11,9 @@ import {
   NotAuthorizedException,
   UsernameExistsException,
   UserLambdaValidationException,
-  CodeMismatchException
+  CodeMismatchException,
+  ExpiredCodeException,
+  InvalidParameterException,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 enum LoginMode {
@@ -19,6 +21,7 @@ enum LoginMode {
   SIGN_UP,
   CONFIRM_ACCOUNT,
   FORGOT_PASSWORD,
+  RESET_PASSWORD,
   RESEND_CODE
 }
 
@@ -32,6 +35,7 @@ enum LoginError {
   PASSWORD_MISMATCH, // Entered passwords don't match
   PASSWORD_SHORT, // Entered password too short
   CODE_MISMATCH, // The code is wrong
+  EXPIRED_CODE, // The code is expired
 }
 
 const LoginPage = () => {
@@ -53,6 +57,8 @@ const LoginPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
   const [resentCode, setResentCode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [destinationEmail, setDestinationEmail] = useState("your email");
   const { setAuth } = useAuth();
 
   useEffect(() => {
@@ -65,7 +71,9 @@ const LoginPage = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const session = await signIn(username, password);
+      setLoading(false);
       setAuth(
         session?.IdToken || "",
         session?.AccessToken || "",
@@ -79,6 +87,7 @@ const LoginPage = () => {
         console.error("SignIn session or AccessToken is undefined.");
       }
     } catch (error) {
+      setLoading(false);
       if (error instanceof UserNotFoundException) {
         setLoginError(LoginError.USER_NOT_FOUND);
       } else if (error instanceof NotAuthorizedException) {
@@ -103,10 +112,13 @@ const LoginPage = () => {
         setLoginError(LoginError.PASSWORD_SHORT);
         return;
       }
+      setLoading(true);
       const session = await signUp(username, email, password);
+      setLoading(false);
       console.log("Sign up successful", session);
       setLoginMode(LoginMode.CONFIRM_ACCOUNT);
     } catch (error) {
+      setLoading(false);
       if (error instanceof UsernameExistsException) {
         setLoginError(LoginError.USERNAME_EXISTS);
       } else if (error instanceof UserLambdaValidationException) {
@@ -121,36 +133,134 @@ const LoginPage = () => {
   const handleConfirmAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const session = await confirmSignUp(username, code);
+      setLoading(false);
       console.log("Confirmation successful", session);
       setLoginMode(LoginMode.SIGN_IN);
     } catch (error) {
+      setLoading(false);
       if (error instanceof CodeMismatchException) {
         setLoginError(LoginError.CODE_MISMATCH);
+      } else if (error instanceof ExpiredCodeException) {
+        setLoginError(LoginError.EXPIRED_CODE)
       } else {
         setLoginError(LoginError.UNKNOWN_ERROR);
-        alert(`Sign up failed: ${error}`);
+        alert(`Confirm account failed: ${error}`);
+      }
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const session = await forgotPassword(username);
+      setLoading(false);
+      console.log("Forgot password code send successful", session);
+      setDestinationEmail(session.CodeDeliveryDetails?.Destination ?? "your email")
+      setPassword("");
+      setLoginMode(LoginMode.RESET_PASSWORD);
+    } catch (error) {
+      setLoading(false);
+      if (error instanceof UserNotFoundException) {
+        setLoginError(LoginError.USER_NOT_FOUND);
+      } else if (error instanceof UserNotConfirmedException) {
+        setLoginError(LoginError.USER_NOT_CONFIRMED);
+      } else if (error instanceof InvalidParameterException) {
+        setLoginError(LoginError.USER_NOT_CONFIRMED); // Intentially not Invalid Parameter
+      } else {
+        setLoginError(LoginError.UNKNOWN_ERROR);
+        alert(`Forgot password failed: ${error}`);
       }
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("This feature is not yet implemented, sorry for the inconvenience")
+    try {
+      if (password !== confirmPassword) {
+        setLoginError(LoginError.PASSWORD_MISMATCH);
+        return;
+      }
+      if (password.length < 6) {
+        setLoginError(LoginError.PASSWORD_SHORT);
+        return;
+      }
+      setLoading(true);
+      const session = await confirmForgotPassword(username, code, password);
+      setLoading(false);
+      console.log("Resend successful", session);
+      setLoginMode(LoginMode.SIGN_IN);
+    } catch (error) {
+      setLoading(false);
+      if (error instanceof CodeMismatchException) {
+        setLoginError(LoginError.CODE_MISMATCH);
+      } else {
+        setLoginError(LoginError.UNKNOWN_ERROR);
+        alert(`Reset password failed: ${error}`);
+      }
+    }
   };
 
   const handleResendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("This feature is not yet implemented, sorry for the inconvenience")
+    try {
+      setLoading(true);
+      const session = await resendConfirmationCode(username);
+      setLoading(false);
+      console.log("Resend successful", session);
+      setLoginMode(LoginMode.CONFIRM_ACCOUNT);
+    } catch (error) {
+      setLoading(false);
+      if (error instanceof UserNotFoundException) {
+        setLoginError(LoginError.USER_NOT_FOUND);
+      } else {
+        setLoginError(LoginError.UNKNOWN_ERROR);
+        alert(`Resend code failed: ${error}`);
+      }
+    }
   };
 
-  const resendCode = async () => {
-    // TODO: actually use the resend code command
-    await signUp(username, email, password);
+  const resendVerificationCode = async () => {
+    try {
+      const session = await resendConfirmationCode(username);
+      console.log("Resend successful", session);
+    } catch (error) {
+      if (error instanceof CodeMismatchException) {
+        setLoginError(LoginError.CODE_MISMATCH);
+      } else {
+        setLoginError(LoginError.UNKNOWN_ERROR);
+        alert(`Resend verification code failed: ${error}`);
+      }
+    }
+  }
+  const resendPasswordCode = async () => {
+    try {
+      const session = await forgotPassword(username);
+      console.log("Resend password code send successful", session);
+      setDestinationEmail(session.CodeDeliveryDetails?.Destination ?? "your email")
+      setLoginMode(LoginMode.RESET_PASSWORD);
+    } catch (error) {
+      setLoading(false);
+      if (error instanceof UserNotFoundException) {
+        setLoginError(LoginError.USER_NOT_FOUND);
+      } else if (error instanceof UserNotConfirmedException) {
+        setLoginError(LoginError.USER_NOT_CONFIRMED);
+      } else if (error instanceof InvalidParameterException) {
+        setLoginError(LoginError.USER_NOT_CONFIRMED); // Intentially not Invalid Parameter
+      } else {
+        setLoginError(LoginError.UNKNOWN_ERROR);
+        alert(`Resend password code failed: ${error}`);
+      }
+    }
   }
   useEffect(() => {
     if (resentCode)
-      resendCode();
+      if (loginMode === LoginMode.CONFIRM_ACCOUNT)
+        resendVerificationCode();
+      else if (loginMode == LoginMode.RESET_PASSWORD)
+        resendPasswordCode();
   }, [resentCode]);
 
   return (
@@ -168,6 +278,8 @@ const LoginPage = () => {
         />
       </div>
 
+      {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
+      {loading && (<div className="fixed right-0 top-0 h-screen w-5/16  bg-black/40 z-499"></div>)}
       <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
         <div className="flex w-full max-w-4xl items-start" id="loginForm">
           {loginMode == LoginMode.SIGN_IN && (
@@ -377,6 +489,10 @@ const LoginPage = () => {
                         <p className="text-sm text-red-700">
                           Provided code is incorrect
                         </p>
+                      ) : loginError === LoginError.EXPIRED_CODE ? (
+                        <p className="text-sm text-red-700">
+                          Provided code is expired, please request a new one
+                        </p>
                       ) : (
                         <p className="text-sm text-red-700">
                           An error has occured
@@ -433,9 +549,9 @@ const LoginPage = () => {
           {loginMode == LoginMode.FORGOT_PASSWORD && (
             <div className="flex-1 px-10 pt-6 h-124">
               <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
-              <p className="text-gray-500 mb-6">Enter the email associated with your account</p>
+              <p className="text-gray-500 mb-6">Enter the username or email associated with your account</p>
 
-              <form onSubmit={handleResetPassword} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="space-y-4">
                 {loginError !== null && (
                   <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
                     <div className="mt-0.5">
@@ -443,10 +559,9 @@ const LoginPage = () => {
                     </div>
                     <div className="text-left">
                       <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {/* Update this to whatever errors actually get thrown for forgot password auth */}
                       {loginError === LoginError.USER_NOT_FOUND ? (
                         <p className="text-sm text-red-700">
-                          No account was found with the specified email
+                          No account was found with the specified username or email
                         </p>
                       ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
                         <>
@@ -455,7 +570,10 @@ const LoginPage = () => {
                           </p>
                           <button
                             type="button"
-                            onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
+                            onClick={() => {
+                              setUsername("");
+                              setLoginMode(LoginMode.RESEND_CODE);
+                            }}
                             className="text-sm hover:underline cursor-pointer"
                           >
                             Resend code?
@@ -470,10 +588,10 @@ const LoginPage = () => {
                   </div>
                 )}
                 <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  placeholder="Username or Email"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   required
                 />
@@ -492,10 +610,114 @@ const LoginPage = () => {
               </form>
             </div>
           )}
+          {loginMode == LoginMode.RESET_PASSWORD && (
+            <div className="flex-1 px-10 pt-6 h-124">
+              <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
+              <p className="text-gray-500 mb-6">To reset your password, we've sent a code to {destinationEmail}</p>
+
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                {loginError !== null && (
+                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                    <div className="mt-0.5">
+                      <CircleAlert size={30} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                      {loginError === LoginError.CODE_MISMATCH ? (
+                        <p className="text-sm text-red-700">
+                          Provided code is incorrect
+                        </p>
+                      ) : loginError === LoginError.PASSWORD_MISMATCH ? (
+                        <p className="text-sm text-red-700">
+                          Entered passwords do not match
+                        </p>
+                      ) : loginError === LoginError.PASSWORD_SHORT ? (
+                        <p className="text-sm text-red-700">
+                          Password must be a minimum of six characters
+                        </p>
+                      ) : (
+                        <p className="text-sm text-red-700">
+                          An error has occured
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    required
+                  />
+                  <div className="flex justify-between text-sm mt-0.5">
+                    <div className="flex items-center gap-1 text-green-700">
+                      {resentCode && (
+                        <>
+                          <CircleCheck size={15} />
+                          <h3 className="">
+                            A new code has been sent</h3>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-right text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setResentCode(true)}
+                        className="text-dark-yellow-green hover:underline cursor-pointer"
+                      >
+                        Resend code
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    required
+                  />
+                  <span
+                    onMouseLeave={() => setShowPassword(false)}
+                    onMouseDown={() => setShowPassword(true)}
+                    onMouseUp={() => setShowPassword(false)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </span>
+                </div>
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  required
+                />
+                <Button type="submit" variant="primary" className="w-full">
+                  Reset Password
+                </Button>
+                <div className="text-left ">
+                  <button
+                    type="button"
+                    onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                  >
+                    {<Undo2 size={18} />}Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
           {loginMode == LoginMode.RESEND_CODE && (
             <div className="flex-1 px-10 pt-6 h-124">
               <h2 className="text-2xl font-semibold mb-2">Resend Code</h2>
-              <p className="text-gray-500 mb-6">Enter the email associated with your account</p>
+              <p className="text-gray-500 mb-6">Enter the username associated with your account</p>
               <form onSubmit={handleResendCode} className="space-y-4">
                 {loginError !== null && (
                   <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
@@ -507,7 +729,7 @@ const LoginPage = () => {
                       {/* Update this to whatever errors actually get thrown for resend code auth */}
                       {loginError === LoginError.USER_NOT_FOUND ? (
                         <p className="text-sm text-red-700">
-                          No account was found with the specified email
+                          No account was found with the specified username
                         </p>
                       ) : (
                         <p className="text-sm text-red-700">
@@ -518,8 +740,8 @@ const LoginPage = () => {
                   </div>
                 )}
                 <input
-                  type="email"
-                  placeholder="Email"
+                  type="text"
+                  placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"

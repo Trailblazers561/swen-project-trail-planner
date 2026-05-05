@@ -5,8 +5,11 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
- GetTokensFromRefreshTokenCommand,
- AuthFlowType
+  ResendConfirmationCodeCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
+  GetTokensFromRefreshTokenCommand,
+  AuthFlowType
 } from "@aws-sdk/client-cognito-identity-provider";
 import { setTokens } from "@/Context";
 
@@ -84,6 +87,56 @@ export const confirmSignUp = async (username: string, code: string) => {
     throw error;
   }
 };
+
+export const resendConfirmationCode = async (username: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+  };
+  try {
+    const command = new ResendConfirmationCodeCommand(params);
+    await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return true;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
+
+export const forgotPassword = async (username: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+  };
+  try {
+    const command = new ForgotPasswordCommand(params);
+    const response = await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return response;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
+
+export const confirmForgotPassword = async (username: string, code: string, password: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+    ConfirmationCode: code,
+    Password: password
+  };
+  try {
+    const command = new ConfirmForgotPasswordCommand(params);
+    await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return true;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
 
 export const refreshTokens = async () => {
   const params = {

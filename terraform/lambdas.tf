@@ -12,7 +12,7 @@ resource "aws_lambda_function" "simulate_data" {
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/simulate_data.zip"
   code_sha256 = data.archive_file.simulate_data_zip.output_base64sha256
-  timeout = 30
+  timeout = 300
   environment {
     variables = {
       DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
@@ -159,6 +159,12 @@ resource "aws_lambda_function" "cognito_config_lambdas" {
   runtime = "python3.12"
   filename = data.archive_file.cognito_config_lambda_zips[each.key].output_path
   source_code_hash = data.archive_file.cognito_config_lambda_zips[each.key].output_base64sha256
+
+  environment {
+    variables = {
+      LOGO_URL = "https://${local.use_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution.domain_name}/AWA-logo.png"
+    }
+  }
 }
 
 // Allow Lambdas To Be Invoked By Cognito

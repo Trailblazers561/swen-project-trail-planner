@@ -33,6 +33,8 @@ def get_users(event, context):
         users_formatted = []
         attribute_names = {"sub": "user_id", "email": "email", "given_name": "first_name", "family_name": "last_name"}
         for user in users:
+            if user["UserStatus"] != "CONFIRMED":
+                continue
             user_formatted = {"username": user["Username"]}
             for attribute in user["Attributes"]:
                 if attribute["Name"] in attribute_names.keys():

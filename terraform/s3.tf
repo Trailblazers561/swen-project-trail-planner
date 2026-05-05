@@ -51,11 +51,12 @@ EOF
 
 resource "null_resource" "deploy_react_app" {
   count = local.local_run ? 1 : 0
+
   provisioner "local-exec" {
-    command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.react_bucket.bucket} --delete"
+    command = "cd ${local.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.react_bucket.bucket} --delete && aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.s3_distribution.id} --paths /*"
   }
 
-  depends_on = [aws_s3_bucket.react_bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env]
+  depends_on = [aws_s3_bucket.react_bucket, local_sensitive_file.user_pool_config, local_sensitive_file.frontend_env, aws_cloudfront_distribution.s3_distribution]
 }
 
 resource "aws_s3_bucket" "csv_bucket" {

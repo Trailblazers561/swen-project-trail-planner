@@ -2,7 +2,6 @@ import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
-import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
 import Test from './Test';
 import { AuthProvider } from './Context';
@@ -23,7 +22,6 @@ function App() {
                     />
                     <Route path="/home" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/confirm" element={<ConfirmUserPage />} />
                     <Route path="/dashboard" element={<DashBoard />} />
                     <Route path="/test" element={<Test />} />
                     <Route path="/privileges" 

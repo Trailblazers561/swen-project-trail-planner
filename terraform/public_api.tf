@@ -89,6 +89,7 @@ locals {
       GET = {
         file = "users/users_get.py"
         handler = "users_get.get_users"
+        timeout = 10
       }
       POST = {
         file = "users/users_post.py"
