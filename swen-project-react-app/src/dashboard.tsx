@@ -92,6 +92,7 @@ const dashboard = () => {
         null
     );
     const [dataFetchError, setDataFetchError] = useState<string | null>(null);
+    const [loadingChart, setLoadingChart] = useState(false);
     const isFetchingListData = useRef(false);
 
     // Load trail metadata and groups from database
@@ -301,6 +302,7 @@ const dashboard = () => {
         if (!startDate || !endDate || !granularity || trails.length === 0) return;
 
         setDataFetchError(null);
+        setLoadingChart(true);
         try {
             let trailIds: number[] = [];
             let includesAllTrails = trails.includes("All Trails");
@@ -382,6 +384,8 @@ const dashboard = () => {
         } catch (error) {
             console.error("Error fetching trail data:", error);
             setDataFetchError("Failed to load trail data. Check your connection and try again.");
+        } finally {
+            setLoadingChart(false);
         }
     }
 
@@ -648,7 +652,27 @@ const dashboard = () => {
                     </div>
                 </div>
                 {viewMode === "graph" ? (
-                    <>
+                    <div style={{ position: "relative" }}>
+                        {loadingChart && (
+                            <div style={{
+                                position: "absolute",
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(255,255,255,0.6)",
+                                zIndex: 10,
+                            }}>
+                                <div style={{
+                                    width: 48,
+                                    height: 48,
+                                    border: "5px solid #e0e0e0",
+                                    borderTopColor: "#007bff",
+                                    borderRadius: "50%",
+                                    animation: "spin 0.8s linear infinite",
+                                }} />
+                            </div>
+                        )}
                         <Plot
                             className="graph"
                             config={{ displayModeBar: false }}
@@ -757,7 +781,7 @@ const dashboard = () => {
                                 />
                             </div>
                         </div>
-                    </>
+                    </div>
                 ) : (
                     <div style={{ padding: "20px" }}>
                         <h2
