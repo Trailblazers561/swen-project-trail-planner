@@ -58,6 +58,8 @@ variable "has_cdn" {
 variable "device_api_key" {
   type      = string
   sensitive = true
+  default   = null
+  description = "API key value for the device endpoint. Null = AWS auto-generates (use for staging)."
 }
 
 variable "env" {

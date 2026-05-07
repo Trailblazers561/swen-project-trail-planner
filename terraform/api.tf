@@ -547,13 +547,17 @@ EOF
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name  = "Device API Key"
+  name  = "${local.name_prefix}Device API Key"
   value = var.device_api_key
+
+  lifecycle {
+    ignore_changes = [value]
+  }
 }
 
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "device_usage_plan" {
-  name = "Device API Usage Plan"
+  name = "${local.name_prefix}Device API Usage Plan"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.api.id
@@ -585,7 +589,12 @@ resource "aws_api_gateway_usage_plan_key" "device_usage_plan_key" {
   ]
 }
 
-# Output
+# Outputs
 output "api_gateway_url" {
   value = aws_api_gateway_stage.api_stage.invoke_url
+}
+
+output "device_api_key" {
+  value     = aws_api_gateway_api_key.api_key.value
+  sensitive = true
 }
