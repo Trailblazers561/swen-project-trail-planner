@@ -35,13 +35,35 @@ def get_trail_data(event, context):
     if trails:
         trail_ids = [int(t.strip()) for t in trails.split(',')]
         for tid in trail_ids:
-            resp = logs_table.query(
-                KeyConditionExpression=Key("trail_id").eq(tid)
-            )
-            items.extend(resp.get("Items", []))
+            key_expr = Key("trail_id").eq(tid)
+            if start and end:
+                key_expr = key_expr & Key("timestamp").between(int(start), int(end))
+            elif start:
+                key_expr = key_expr & Key("timestamp").gte(int(start))
+            elif end:
+                key_expr = key_expr & Key("timestamp").lte(int(end))
+
+            last_key = None
+            while True:
+                kwargs = {"KeyConditionExpression": key_expr}
+                if last_key:
+                    kwargs["ExclusiveStartKey"] = last_key
+                resp = logs_table.query(**kwargs)
+                items.extend(resp.get("Items", []))
+                last_key = resp.get("LastEvaluatedKey")
+                if not last_key:
+                    break
     else:
-        resp = logs_table.scan()
-        items = resp.get("Items", [])
+        last_key = None
+        while True:
+            kwargs = {}
+            if last_key:
+                kwargs["ExclusiveStartKey"] = last_key
+            resp = logs_table.scan(**kwargs)
+            items.extend(resp.get("Items", []))
+            last_key = resp.get("LastEvaluatedKey")
+            if not last_key:
+                break
 
     return {
         "statusCode": 200,
@@ -383,28 +405,40 @@ def update_device_metadata(device_id, trail_id, battery=None):
 
 
 # ========== METADATA ENDPOINTS ==========
+def _scan_all(table):
+    """Scan an entire table, following pagination."""
+    items = []
+    last_key = None
+    while True:
+        kwargs = {}
+        if last_key:
+            kwargs["ExclusiveStartKey"] = last_key
+        resp = table.scan(**kwargs)
+        items.extend(resp.get("Items", []))
+        last_key = resp.get("LastEvaluatedKey")
+        if not last_key:
+            break
+    return items
+
 def get_trail_metadata(event, context):
-    resp = trail_metadata_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
-        "body": json.dumps(convert_decimals(resp.get("Items", [])))
+        "body": json.dumps(convert_decimals(_scan_all(trail_metadata_table)))
     }
 
 def get_device_metadata(event, context):
-    resp = device_metadata_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
-        "body": json.dumps(convert_decimals(resp.get("Items", [])))
+        "body": json.dumps(convert_decimals(_scan_all(device_metadata_table)))
     }
 
 def get_trail_groups(event, context):
-    resp = trail_groups_table.scan()
     return {
         "statusCode": 200,
         "headers": cors_headers(),
-        "body": json.dumps(convert_decimals(resp.get("Items", [])))
+        "body": json.dumps(convert_decimals(_scan_all(trail_groups_table)))
     }
 
 def create_trail(event, context):
@@ -727,24 +761,22 @@ def delete_trail(event, context):
         
         # Delete all trail device logs for this trail
         try:
-            # Query all logs for this trail
-            response = logs_table.query(
-                KeyConditionExpression=Key("trail_id").eq(trail_id)
-            )
-            items = response.get("Items", [])
-            
-            # Delete all items in batches
-            if items:
-                with logs_table.batch_writer() as batch:
-                    for item in items:
-                        batch.delete_item(
-                            Key={
-                                "trail_id": item["trail_id"],
-                                "timestamp": item["timestamp"]
-                            }
-                        )
+            last_key = None
+            with logs_table.batch_writer() as batch:
+                while True:
+                    kwargs = {"KeyConditionExpression": Key("trail_id").eq(trail_id)}
+                    if last_key:
+                        kwargs["ExclusiveStartKey"] = last_key
+                    response = logs_table.query(**kwargs)
+                    for item in response.get("Items", []):
+                        batch.delete_item(Key={
+                            "trail_id": item["trail_id"],
+                            "timestamp": item["timestamp"]
+                        })
+                    last_key = response.get("LastEvaluatedKey")
+                    if not last_key:
+                        break
         except Exception as e:
-            # Log error but continue
             print(f"Error deleting trail logs: {str(e)}")
         
         # Remove trail from all trail groups
