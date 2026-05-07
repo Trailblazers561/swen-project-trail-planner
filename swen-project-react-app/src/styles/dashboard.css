@@ -1,4 +1,8 @@
 
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .filter-container {
     display: flex;
     gap: 15px;
