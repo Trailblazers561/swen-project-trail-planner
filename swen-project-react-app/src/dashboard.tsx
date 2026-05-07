@@ -67,7 +67,7 @@ const dashboard = () => {
 
     // Auto-select 01/01/2025 as start date
     const [selectedDate, setSelectedDate] = useState<Date | null>(
-        new Date("2025-01-01")
+        new Date(new Date().getFullYear(), 0, 1)
     );
     const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(
         new Date()
