@@ -204,6 +204,11 @@ type RequestResult = { json: any; success: boolean };
 async function request(url: string, options?: RequestInit): Promise<RequestResult> {
   try {
     const response = await fetch(url, options);
+    if (response.status === 401) {
+      sessionStorage.clear();
+      window.location.href = "/login";
+      return { json: {}, success: false };
+    }
     const data = await response.json();
     return { json: data, success: response.ok };
   } catch (e) {
