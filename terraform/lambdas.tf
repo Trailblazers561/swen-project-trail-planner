@@ -9,8 +9,9 @@ resource "aws_lambda_function" "get_trail_data" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_data"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -29,8 +30,9 @@ resource "aws_lambda_function" "upload_trail_data" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.upload_trail_data"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -49,8 +51,9 @@ resource "aws_lambda_function" "upload_device_data" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.upload_device_data"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -69,8 +72,9 @@ resource "aws_lambda_function" "update_trail_metadata" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.update_trail_metadata"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -89,8 +93,9 @@ resource "aws_lambda_function" "update_device_trail_association" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.update_device_trail_association"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -109,8 +114,9 @@ resource "aws_lambda_function" "get_trail_metadata" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_metadata"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -129,8 +135,9 @@ resource "aws_lambda_function" "get_device_metadata" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_device_metadata"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -149,8 +156,9 @@ resource "aws_lambda_function" "get_trail_groups" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.get_trail_groups"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -169,8 +177,9 @@ resource "aws_lambda_function" "delete_trail" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.delete_trail"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
@@ -189,8 +198,9 @@ resource "aws_lambda_function" "create_trail" {
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "traildata.create_trail"
   runtime       = "python3.12"
-  filename      = "${path.module}/../lambdas/zips/traildata.zip"
-  timeout       = 30
+  filename         = "${path.module}/../lambdas/zips/traildata.zip"
+  source_code_hash = data.archive_file.traildata_zip.output_base64sha256
+  timeout          = 30
 
   environment {
     variables = {
