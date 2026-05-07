@@ -1,6 +1,6 @@
 # TABLE 1: TrailDeviceLogs
 resource "aws_dynamodb_table" "trail_device_logs" {
-  name         = "TrailDeviceLogs"
+  name         = "${local.name_prefix}TrailDeviceLogs"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "trail_id"
   range_key    = "timestamp"
@@ -35,7 +35,7 @@ resource "aws_dynamodb_table" "trail_device_logs" {
 
 # TABLE 2: DeviceMetadata
 resource "aws_dynamodb_table" "device_metadata" {
-  name           = "DeviceMetadata"
+  name           = "${local.name_prefix}DeviceMetadata"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "device_id"
 
@@ -52,7 +52,7 @@ resource "aws_dynamodb_table" "device_metadata" {
 
 # TABLE 3: TrailMetadata
 resource "aws_dynamodb_table" "trail_metadata" {
-  name           = "TrailMetadata"
+  name           = "${local.name_prefix}TrailMetadata"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "trail_id"
 
@@ -80,7 +80,7 @@ resource "aws_dynamodb_table" "trail_metadata" {
 
 # TABLE 4: TrailGroups
 resource "aws_dynamodb_table" "trail_groups" {
-  name           = "TrailGroups"
+  name           = "${local.name_prefix}TrailGroups"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "group_name"
 

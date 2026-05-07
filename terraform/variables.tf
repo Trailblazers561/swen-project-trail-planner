@@ -60,6 +60,16 @@ variable "device_api_key" {
   sensitive = true
 }
 
+variable "env" {
+  type        = string
+  default     = ""
+  description = "Environment prefix for resource names (e.g. 'tst'). Empty string = no prefix (prod)."
+}
+
+locals {
+  name_prefix = var.env != "" ? "${var.env}-" : ""
+}
+
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
