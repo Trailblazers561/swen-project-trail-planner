@@ -91,6 +91,7 @@ const dashboard = () => {
     const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(
         null
     );
+    const [dataFetchError, setDataFetchError] = useState<string | null>(null);
     const isFetchingListData = useRef(false);
 
     // Load trail metadata and groups from database
@@ -299,6 +300,7 @@ const dashboard = () => {
     ) {
         if (!startDate || !endDate || !granularity || trails.length === 0) return;
 
+        setDataFetchError(null);
         try {
             let trailIds: number[] = [];
             let includesAllTrails = trails.includes("All Trails");
@@ -379,6 +381,7 @@ const dashboard = () => {
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
         } catch (error) {
             console.error("Error fetching trail data:", error);
+            setDataFetchError("Failed to load trail data. Check your connection and try again.");
         }
     }
 
@@ -692,6 +695,18 @@ const dashboard = () => {
                                 },
                             }}
                         />
+                        {dataFetchError && (
+                            <div style={{
+                                color: "#721c24",
+                                background: "#f8d7da",
+                                border: "1px solid #f5c6cb",
+                                borderRadius: "4px",
+                                padding: "8px 16px",
+                                margin: "0 16px 8px",
+                            }}>
+                                {dataFetchError}
+                            </div>
+                        )}
                         <div className="filter-container">
                             <div className="filter-group">
                                 <label>Start Date:</label>
