@@ -10,6 +10,7 @@ resource "aws_lambda_function" "get_trail_data" {
   handler       = "traildata.get_trail_data"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -29,6 +30,7 @@ resource "aws_lambda_function" "upload_trail_data" {
   handler       = "traildata.upload_trail_data"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -48,6 +50,7 @@ resource "aws_lambda_function" "upload_device_data" {
   handler       = "traildata.upload_device_data"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -67,6 +70,7 @@ resource "aws_lambda_function" "update_trail_metadata" {
   handler       = "traildata.update_trail_metadata"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -86,6 +90,7 @@ resource "aws_lambda_function" "update_device_trail_association" {
   handler       = "traildata.update_device_trail_association"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -105,6 +110,7 @@ resource "aws_lambda_function" "get_trail_metadata" {
   handler       = "traildata.get_trail_metadata"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -124,6 +130,7 @@ resource "aws_lambda_function" "get_device_metadata" {
   handler       = "traildata.get_device_metadata"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -143,6 +150,7 @@ resource "aws_lambda_function" "get_trail_groups" {
   handler       = "traildata.get_trail_groups"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -162,6 +170,7 @@ resource "aws_lambda_function" "delete_trail" {
   handler       = "traildata.delete_trail"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {
@@ -181,6 +190,7 @@ resource "aws_lambda_function" "create_trail" {
   handler       = "traildata.create_trail"
   runtime       = "python3.12"
   filename      = "${path.module}/../lambdas/zips/traildata.zip"
+  timeout       = 30
 
   environment {
     variables = {

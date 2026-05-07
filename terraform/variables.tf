@@ -55,6 +55,11 @@ variable "has_cdn" {
   default = false
 }
 
+variable "device_api_key" {
+  type      = string
+  sensitive = true
+}
+
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999

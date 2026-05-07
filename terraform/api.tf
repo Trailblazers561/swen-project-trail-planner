@@ -547,8 +547,8 @@ EOF
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "Device API Key"
-  value = "MSD-24572-TRAIL-PLANNER-KEY"
+  name  = "Device API Key"
+  value = var.device_api_key
 }
 
 # API Gateway Usage Plan
