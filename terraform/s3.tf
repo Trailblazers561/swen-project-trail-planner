@@ -82,6 +82,13 @@ EOF
 }
 
 resource "null_resource" "deploy_react_app" {
+  triggers = {
+    src_hash = sha256(join("", [
+      for f in sort(fileset("${path.module}/${var.react_app_directory}/src", "**")) :
+      filemd5("${path.module}/${var.react_app_directory}/src/${f}")
+    ]))
+  }
+
   provisioner "local-exec" {
     command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }

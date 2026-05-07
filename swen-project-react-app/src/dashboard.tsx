@@ -229,7 +229,7 @@ const dashboard = () => {
         }
 
         setGranularityOptions(options);
-        setGranularity(options[0]);
+        setGranularity(options.includes("Weekly") ? "Weekly" : options[0]);
     }
 
     useEffect(() => {
