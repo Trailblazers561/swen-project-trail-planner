@@ -21,6 +21,13 @@ resource "aws_cognito_user_pool_client" "client" {
   generate_secret              = false
   explicit_auth_flows          = ["ADMIN_NO_SRP_AUTH", "USER_PASSWORD_AUTH"]
   supported_identity_providers = ["COGNITO"]
+
+  access_token_validity = 8
+  id_token_validity     = 8
+  token_validity_units {
+    access_token = "hours"
+    id_token     = "hours"
+  }
 }
 
 resource "aws_cognito_user" "admin" {
