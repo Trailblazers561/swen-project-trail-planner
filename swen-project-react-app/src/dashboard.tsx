@@ -93,6 +93,7 @@ const dashboard = () => {
     );
     const [dataFetchError, setDataFetchError] = useState<string | null>(null);
     const [loadingChart, setLoadingChart] = useState(false);
+    const [aggregate, setAggregate] = useState(false);
     const isFetchingListData = useRef(false);
 
     // Load trail metadata and groups from database
@@ -676,24 +677,36 @@ const dashboard = () => {
                         <Plot
                             className="graph"
                             config={{ displayModeBar: false }}
-                            data={graphLines.map((line, index) => ({
-                                x: line.x,
-                                y: line.y,
-                                type: "scatter",
-                                mode: "lines+markers",
-                                name: line.name,
-                                marker: {
-                                    color: [
-                                        "red",
-                                        "blue",
-                                        "green",
-                                        "orange",
-                                        "goldenrod",
-                                        "limegreen",
-                                        "papayawhip",
-                                    ][index % 7],
-                                },
-                            }))}
+                            data={aggregate && graphLines.length > 0
+                                ? [{
+                                    x: graphLines[0].x,
+                                    y: graphLines[0].y.map((_, i) =>
+                                        graphLines.reduce((sum, line) => sum + (line.y[i] ?? 0), 0)
+                                    ),
+                                    type: "scatter" as const,
+                                    mode: "lines+markers" as const,
+                                    name: "Combined",
+                                    marker: { color: "blue" },
+                                }]
+                                : graphLines.map((line, index) => ({
+                                    x: line.x,
+                                    y: line.y,
+                                    type: "scatter" as const,
+                                    mode: "lines+markers" as const,
+                                    name: line.name,
+                                    marker: {
+                                        color: [
+                                            "red",
+                                            "blue",
+                                            "green",
+                                            "orange",
+                                            "goldenrod",
+                                            "limegreen",
+                                            "papayawhip",
+                                        ][index % 7],
+                                    },
+                                }))
+                            }
                             layout={{
                                 title: {
                                     text: graphTitle,
@@ -768,6 +781,17 @@ const dashboard = () => {
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="filter-group">
+                                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={aggregate}
+                                        onChange={(e) => setAggregate(e.target.checked)}
+                                        style={{ width: 16, height: 16, cursor: "pointer" }}
+                                    />
+                                    Aggregate
+                                </label>
                             </div>
                             <div className="filter-group">
                                 <label>Trail:</label>
