@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { signIn } from "./authService";
 import React from "react";
 
@@ -7,6 +7,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "session_expired";
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -31,6 +33,19 @@ const LoginPage = () => {
   return (
     <div className="loginForm">
       <img className="logo" alt="Logo" src="AWA-logo.png" />
+      {sessionExpired && (
+        <div style={{
+          background: "#fff3cd",
+          border: "1px solid #ffc107",
+          borderRadius: "4px",
+          padding: "8px 12px",
+          marginBottom: "12px",
+          color: "#856404",
+          fontSize: "14px",
+        }}>
+          Your session has expired. Please sign in again.
+        </div>
+      )}
       <h4>Sign in to your account</h4>
       <form onSubmit={handleSignIn}>
         <div>
