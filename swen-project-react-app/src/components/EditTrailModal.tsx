@@ -192,7 +192,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{isCreateMode ? 'Create New Trail' : 'Edit Trail Information'}</h2>

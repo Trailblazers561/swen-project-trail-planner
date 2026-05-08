@@ -100,7 +100,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content modal-content-large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Associate Device to Trail</h2>

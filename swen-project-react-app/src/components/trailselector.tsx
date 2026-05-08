@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Select from "react-select";
 
 interface Trail {
@@ -32,6 +32,7 @@ const TrailSelector = ({
 }: TrailSelectorProps) => {
     const [selectedWilderness, setSelectedWilderness] = useState<string>("All Areas");
     const [selectedTrails, setSelectedTrails] = useState<Array<{ value: string; label: string }>>([]);
+    const isInitialMount = useRef(true);
 
     // Build wilderness options from trail groups (exclude empty groups)
     const wildernessOptions = useMemo(() => {
@@ -83,6 +84,23 @@ const TrailSelector = ({
                 label: trail
             }));
     }, [trailData, selectedWilderness]);
+
+    // Re-sync selection when group composition changes (e.g. a trail is added/removed from the group)
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        if (selectedWilderness === "All Areas") return;
+        const trailsForWilderness = trailData[selectedWilderness] || [];
+        if (trailsForWilderness.length === 0) return;
+        const autoSelectedTrails = trailsForWilderness.map(trail => ({
+            value: trail,
+            label: trail,
+        }));
+        setSelectedTrails(autoSelectedTrails);
+        onChange(autoSelectedTrails.map(o => o.value));
+    }, [trailData]);
 
     // Update selected trails when metadata changes - preserve selections if trails still exist
     useEffect(() => {
