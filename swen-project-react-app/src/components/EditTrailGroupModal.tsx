@@ -216,7 +216,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className="modal-header">
           <h2>{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</h2>

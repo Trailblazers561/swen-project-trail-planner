@@ -95,6 +95,7 @@ const dashboard = () => {
     const [loadingChart, setLoadingChart] = useState(false);
     const [aggregate, setAggregate] = useState(false);
     const [selectedGroupName, setSelectedGroupName] = useState<string | null>("All Areas");
+    const [pendingRefresh, setPendingRefresh] = useState(false);
     const isFetchingListData = useRef(false);
 
     // Load trail metadata and groups from database
@@ -127,6 +128,28 @@ const dashboard = () => {
             }, 100);
         }
     }, [trailMetadata, selectedDate, selectedDateEnd, granularity, hasDefaulted]);
+
+    // Refresh graph after a trail/group update — runs after render so trailMetadata is fresh.
+    // Derives trail list from fresh group data when a group is active, bypassing stale trails state.
+    useEffect(() => {
+        if (!pendingRefresh) return;
+        if (!selectedDate || !selectedDateEnd || !granularity) return;
+        let currentTrails: string[];
+        if (selectedGroupName && selectedGroupName !== "All Areas") {
+            const group = trailGroups.find(g => g.group_name === selectedGroupName);
+            if (group) {
+                currentTrails = group.trail_ids
+                    .map(id => trailMetadata.find(t => t.trail_id === id)?.trail_name)
+                    .filter((name): name is string => !!name);
+            } else {
+                currentTrails = trails.length > 0 ? trails : ["All Trails"];
+            }
+        } else {
+            currentTrails = trails.length > 0 ? trails : ["All Trails"];
+        }
+        getResponse(selectedDate, selectedDateEnd, currentTrails, granularity);
+        setPendingRefresh(false);
+    }, [pendingRefresh, trailMetadata]);
 
     const loadTrailData = async () => {
         try {
@@ -193,16 +216,7 @@ const dashboard = () => {
 
     const handleTrailUpdated = async () => {
         await loadTrailData();
-        // Refresh graph - wait for state to update
-        setTimeout(() => {
-            const currentTrails = trails.length > 0 ? trails : ["All Trails"];
-            if (selectedDate && selectedDateEnd && granularity) {
-                if (trails.length === 0) {
-                    setTrails(currentTrails);
-                }
-                getResponse(selectedDate, selectedDateEnd, currentTrails, granularity);
-            }
-        }, 500);
+        setPendingRefresh(true);
     };
 
     function getDateDifference(startDate: Date, endDate: Date): number {
@@ -334,7 +348,17 @@ const dashboard = () => {
                 trailIds
             );
 
-            const responseJson = await response.json;
+            if (!response.success) {
+                setDataFetchError("Failed to load trail data. Check your connection and try again.");
+                return;
+            }
+
+            const responseJson = response.json;
+
+            if (!Array.isArray(responseJson)) {
+                setDataFetchError("Failed to load trail data. Check your connection and try again.");
+                return;
+            }
 
             let ranges = getDateRanges(startDate, endDate, granularity);
             let events: Map<number, Date[]> = new Map<number, Date[]>();
