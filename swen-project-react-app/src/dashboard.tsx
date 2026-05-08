@@ -159,9 +159,13 @@ const dashboard = () => {
 
                 setTrailMetadata(validMetadata);
                 setTrailGroups(validGroups);
+            } else {
+                // 401 triggers a redirect in api.ts; any other failure shows an error
+                setDataFetchError("Failed to load trail list. Please refresh the page.");
             }
         } catch (error) {
             console.error("Error loading trail data:", error);
+            setDataFetchError("Failed to load trail list. Please refresh the page.");
         }
     };
 

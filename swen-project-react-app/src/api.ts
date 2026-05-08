@@ -204,9 +204,9 @@ type RequestResult = { json: any; success: boolean };
 async function request(url: string, options?: RequestInit): Promise<RequestResult> {
   try {
     const response = await fetch(url, options);
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
       sessionStorage.clear();
-      window.location.href = "/login";
+      window.location.href = "/login?reason=session_expired";
       return { json: {}, success: false };
     }
     const data = await response.json();
