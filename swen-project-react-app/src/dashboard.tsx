@@ -94,6 +94,7 @@ const dashboard = () => {
     const [dataFetchError, setDataFetchError] = useState<string | null>(null);
     const [loadingChart, setLoadingChart] = useState(false);
     const [aggregate, setAggregate] = useState(false);
+    const [selectedGroupName, setSelectedGroupName] = useState<string | null>("All Areas");
     const isFetchingListData = useRef(false);
 
     // Load trail metadata and groups from database
@@ -385,7 +386,7 @@ const dashboard = () => {
                 }
             }
             setGraphLines(lines);
-            setGraphTitle(formatGraphTitle(startDate, endDate, trails));
+            setGraphTitle(formatGraphTitle(startDate, endDate, trails, selectedGroupName));
         } catch (error) {
             console.error("Error fetching trail data:", error);
             setDataFetchError("Failed to load trail data. Check your connection and try again.");
@@ -397,13 +398,19 @@ const dashboard = () => {
     function formatGraphTitle(
         startDate: Date | null,
         endDate: Date | null,
-        trails: string[]
+        trails: string[],
+        groupName: string | null
     ): string {
         if (!startDate || !endDate || trails.length === 0)
             return "No trails selected";
 
         const startStr = startDate.toLocaleDateString();
         const endStr = endDate.toLocaleDateString();
+
+        if (groupName) {
+            return `${groupName} from ${startStr} to ${endStr}`;
+        }
+
         const includesAll = trails.includes("All Trails");
 
         if (includesAll && trails.length === 1) {
@@ -801,6 +808,7 @@ const dashboard = () => {
                                 <label>Trail:</label>
                                 <TrailSelector
                                     onChange={handleTrailChange}
+                                    onGroupChange={setSelectedGroupName}
                                     clearTrails={() => setTrails([])}
                                     clearGraph={() => setGraphLines([])}
                                     clearName={() => setGraphTitle("No Trails Selected")}

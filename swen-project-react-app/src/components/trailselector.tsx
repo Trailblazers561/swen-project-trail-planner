@@ -13,6 +13,7 @@ interface TrailGroup {
 
 interface TrailSelectorProps {
     onChange: (trails: string[]) => void;
+    onGroupChange?: (groupName: string | null) => void;
     clearTrails: () => void;
     clearGraph: () => void;
     clearName: () => void;
@@ -22,6 +23,7 @@ interface TrailSelectorProps {
 
 const TrailSelector = ({
     onChange,
+    onGroupChange,
     clearGraph,
     clearName,
     clearTrails,
@@ -152,12 +154,14 @@ const TrailSelector = ({
 
         setSelectedTrails(autoSelectedTrails);
         onChange(autoSelectedTrails.map(option => option.value));
+        onGroupChange?.(newWilderness);
     };
 
     const handleTrailChange = (selectedOptions: readonly { value: string; label: string }[]) => {
         const options = selectedOptions as Array<{ value: string; label: string }>;
         setSelectedTrails(options);
         onChange(options.map(option => option.value));
+        onGroupChange?.(null); // manual trail selection — no group active
     };
 
     return (
