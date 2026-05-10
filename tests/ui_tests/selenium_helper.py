@@ -14,7 +14,7 @@ import os
 from ui_config import BASE_URL, LOCAL_RUN
 
 DEFAULT_WAIT = 10
-WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
+WEBSITE_ROOT = (By.XPATH, "//div[@id='root']")
 
 class SeleniumHelper:
     def get_driver() -> webdriver.Chrome:
@@ -43,7 +43,7 @@ class SeleniumHelper:
         options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(BASE_URL+"/login")
+        driver.get(BASE_URL)
         SeleniumHelper.wait_for_element_appear(driver, WEBSITE_ROOT, 30)
         return driver
 

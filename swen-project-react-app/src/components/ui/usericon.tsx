@@ -31,7 +31,7 @@ export function UserIcon() {
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} data-testid="logout">
+                        <DropdownMenuItem onClick={handleLogout} data-testid="login-logout">
                             {(currentRole === null) ? (
                                 <div className="font-bold rounded-md px-2 py-1 flex items-center gap-2">
                                     Login/Register
