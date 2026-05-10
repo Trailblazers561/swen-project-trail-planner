@@ -16,9 +16,9 @@ def retrieve_api_url(env):
     gateways = api_gateway.get_rest_apis(limit=20)
     api_id = ""
     for gateway in gateways["items"]:
-        if gateway["name"] == f"{env}_trailplanner_api":
+        if gateway["name"] == f"{env}_trailplanner_public_api":
             api_id = gateway["id"]
-            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_trailplanner_api_stage"
+            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_trailplanner_public_api_stage"
 
 def retrieve_user_pool_id(env):
     pools = cognito.list_user_pools(MaxResults=20)

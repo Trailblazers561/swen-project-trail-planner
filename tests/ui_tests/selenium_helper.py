@@ -6,7 +6,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException, ElementNotInteractableException
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -74,6 +74,12 @@ class SeleniumHelper:
             element.send_keys(text)
         except StaleElementReferenceException:
             print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.clear()
+            element.send_keys(text)
+        except ElementNotInteractableException:
+            print("Threw ElementNotInteractableException, trying again")
             SeleniumHelper.wait(1)
             element = driver.find_element(*locator)
             element.clear()
