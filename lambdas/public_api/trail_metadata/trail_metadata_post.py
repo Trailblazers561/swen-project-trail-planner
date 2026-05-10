@@ -73,7 +73,7 @@ def create_trail(event, context):
             if area_name:
                 area_found = False
                 for area in areas:
-                    if area.get("name") == area:
+                    if area.get("name") == area_name:
                         trail_ids = area.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []

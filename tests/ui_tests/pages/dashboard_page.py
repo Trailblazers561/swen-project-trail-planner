@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
+from selenium.common.exceptions import StaleElementReferenceException
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -27,6 +28,8 @@ class DashboardPage:
     first_month_label = (By.XPATH, "(//div[@data-testid='calandar-popup']/div/div/div)[1]//span[@role='status']")
     previous_month_button = (By.XPATH, "//button[@aria-label='Go to the Previous Month']")
     next_month_button = (By.XPATH, "//button[@aria-label='Go to the Next Month']")
+    month_dropdown = (By.XPATH, "(//select[@aria-label='Choose the Month'])[1]")
+    year_dropdown = (By.XPATH, "(//select[@aria-label='Choose the Year'])[1]")
     day_xpath = "(//div[@data-testid='calandar-popup']/div/div/div)[1]//td[@data-day='{}']"
     granularity_dropdown = (By.XPATH, "//button[@data-testid='granularity-select']")
     selected_granularity = (By.XPATH, "//span[@data-testid='selected-granularity-option']")
@@ -84,7 +87,9 @@ class DashboardPage:
 
     def set_dashboard_filters(self, filter: DashboardFilterDTO) -> None:
         if filter.date_start != None:
-            self._set_date_range(filter.date_start, filter.date_end)
+            self._click_date(filter.date_start)
+        if filter.date_end != None:
+            self._click_date(filter.date_end)
         if filter.granularity != None:
             self._set_granularity(filter.granularity)
         if len(filter.trails) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trails)):
@@ -102,26 +107,20 @@ class DashboardPage:
         areas = {AreaDTO(area_name) for area_name in SH.retrieve_text_from_elements(self.driver, self.selected_areas)}
         return DashboardFilterDTO(date_start, date_end, granularity, trails, areas)
 
-    def _set_date_range(self, start: datetime, end: datetime) -> None:
+    def _click_date(self, date: datetime) -> None:
         SH.click_element(self.driver, self.date_range_picker)
-        SH.wait_for_element_appear(self.driver, self.date_calandar_popup)
 
-        def click_date(target: datetime):
-            while (True):
-                current_month_year = datetime.strptime(SH.retrieve_text_from_element(self.driver, self.first_month_label), "%B %Y")
-                if (target.year, target.month) < (current_month_year.year, current_month_year.month):
-                    SH.click_element(self.driver, self.previous_month_button)
-                elif (target.year, target.month) > (current_month_year.year, current_month_year.month):
-                    SH.click_element(self.driver, self.next_month_button)
-                else:
-                    break
-                SH.wait(.05)
-            SH.click_element(self.driver, (By.XPATH, self.day_xpath.format(target.strftime("%Y-%m-%d"))))
+        try:
+            SH.select_dropdown_option(self.driver, self.month_dropdown, str(date.month - 1))
+            SH.select_dropdown_option(self.driver, self.year_dropdown, str(date.year))
+        except StaleElementReferenceException:
+            SH.click_element(self.driver, self.date_range_picker)
+            SH.wait(.25)
+            SH.click_element(self.driver, self.date_range_picker)
+            SH.select_dropdown_option(self.driver, self.month_dropdown, str(date.month - 1))
+            SH.select_dropdown_option(self.driver, self.year_dropdown, str(date.year))
 
-        click_date(start)
-        if end != None:
-            click_date(end)
-
+        SH.click_element(self.driver, (By.XPATH, self.day_xpath.format(date.strftime("%Y-%m-%d"))))
         SH.click_element(self.driver, self.date_range_picker)
         SH.wait_for_element_disappear(self.driver, self.date_calandar_popup)
 
@@ -228,16 +227,16 @@ class DashboardPage:
             points = []
             for hovertemplate in line["hovertemplate"]:
                 count_match = re.search(r"Count:\s*(?P<count>\d+)", hovertemplate)
-                count = int(count_match.area("count")) if count_match else -1
+                count = int(count_match.group("count")) if count_match else -1
                 range_match = re.match(r"^(?P<date>.*?)\s-\s(.*?)\s\|", hovertemplate)
                 hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
                 day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
                 if range_match:
-                    points.append(PointDTO(datetime.strptime(range_match.area("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(range_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif hour_match:
-                    points.append(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.area('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(f"{title[-4:]} {hour_match.group('date')}", "%Y %b %d %I:%M %p").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 elif day_match:
-                    points.append(PointDTO(datetime.strptime(day_match.area("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
+                    points.append(PointDTO(datetime.strptime(day_match.group("date"), "%b %d, %Y").replace(tzinfo=ZoneInfo("America/New_York")), count))
                 else:
                     raise ValueError(f"Could Not Match Hovertemplate [{hovertemplate}] To Format For Graph [{title}]")
             line_set.add(LineDTO(line["name"], points))

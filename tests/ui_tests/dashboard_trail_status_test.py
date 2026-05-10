@@ -7,13 +7,10 @@ from selenium_helper import SeleniumHelper as SH
 from test_data import retrieve_trail_status_overview
 
 from dtos.trail_status_dto import TrailStatusDTO
-from dtos.user_dto import UserDTO
 from enums.trail_status_column import TrailStatusColumn
-from enums.user_enum import User
 from steps.dashboard.set_trail_status_colum_sort_step import SetTrailStatusColumnSort
 from steps.dashboard.retrieve_trail_status_step import RetrieveTrailStatusesStep
 from steps.dashboard.toggle_dashboard_view_step import ToggleDashboardViewStep
-from steps.login.login_step import LoginStep
 
 @pytest.mark.UI
 def dashboard_trail_status_test():
@@ -25,10 +22,8 @@ def dashboard_trail_status_test():
     driver = SH.get_driver()
 
     try:
-        pass
-        # Login
-        login_step = LoginStep(driver, UserDTO(user=User.ADMIN))
-        login_step.run()
+        # Go to Dashboard (Replace When Official Dashboard Button Becomes A Thing)
+        driver.get(driver.current_url.replace("home", "dashboard"))
 
         # Toggle View To Trail Status Overview
         toggle_dashboard_view_step = ToggleDashboardViewStep(driver)

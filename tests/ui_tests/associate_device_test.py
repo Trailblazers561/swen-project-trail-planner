@@ -7,10 +7,12 @@ from selenium_helper import SeleniumHelper as SH
 from test_data import DEVICES, TRAILS
 
 from dtos.user_dto import UserDTO
+from enums.user_action import UserAction
 from enums.user_enum import User
 from steps.dashboard.associate_device_step import AssociateDeviceStep
 from steps.dashboard.retrieve_associated_devices_step import RetrieveAssociatedDevicesStep
 from steps.login.login_step import LoginStep
+from steps.other.perform_user_action_step import PerformUserActionStep
 
 @pytest.mark.UI
 @pytest.mark.skip(reason="feature bugged")
@@ -24,8 +26,15 @@ def associate_device_test():
     driver = SH.get_driver()
 
     try:
+        # Go to Dashboard (Replace When Official Dashboard Button Becomes A Thing)
+        driver.get(driver.current_url.replace("home", "dashboard"))
+
+        # Go To Login
+        click_login_step = PerformUserActionStep(driver, UserAction.LOGIN_LOGOUT)
+        click_login_step.run()
+
         # Login
-        login_step = LoginStep(driver, UserDTO(user=User.ADMIN))
+        login_step = LoginStep(driver, UserDTO(user=User.TRAIL_MANAGER))
         login_step.run()
 
         # Wait for API Calls To Be Made

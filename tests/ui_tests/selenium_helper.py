@@ -106,9 +106,17 @@ class SeleniumHelper:
         element = driver.find_element(*locator)
         select = Select(element)
         try:
-            select.select_by_visible_text(option)
-        except:
-            select.select_by_value(option)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
 
     def retrieve_dropdown_options(driver: webdriver.Chrome, locator: tuple[str, str]) -> list[str]:
         print(f"Retrieving element {locator} dropdown options")

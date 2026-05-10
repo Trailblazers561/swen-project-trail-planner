@@ -149,7 +149,7 @@ const dashboard = () => {
             !hasDefaulted
         ) {
             setHasDefaulted(true);
-            // setSearchParams(""); // TODO: Clear search params or no?
+            setSearchParams("");
             // Trigger graph load after a small delay to ensure state is set
             setTimeout(() => {
                 if (granularity) {
