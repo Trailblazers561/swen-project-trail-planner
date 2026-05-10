@@ -24,6 +24,7 @@ class SeleniumHelper:
 
         if not LOCAL_RUN:
             options.add_argument('--headless')
+            options.add_argument("--window-size=1920,1080")
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -76,11 +77,6 @@ class SeleniumHelper:
             print("Threw StaleElementReferenceException, trying again")
             SeleniumHelper.wait(1)
             element = driver.find_element(*locator)
-            element.clear()
-            element.send_keys(text)
-        except ElementNotInteractableException:
-            print("Threw ElementNotInteractableException, scrolling to center and trying again")
-            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
             element.clear()
             element.send_keys(text)
 
