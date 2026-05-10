@@ -79,9 +79,8 @@ class SeleniumHelper:
             element.clear()
             element.send_keys(text)
         except ElementNotInteractableException:
-            print("Threw ElementNotInteractableException, trying again")
-            SeleniumHelper.wait(1)
-            element = driver.find_element(*locator)
+            print("Threw ElementNotInteractableException, scrolling to center and trying again")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
             element.clear()
             element.send_keys(text)
 
