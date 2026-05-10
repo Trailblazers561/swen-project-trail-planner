@@ -9,6 +9,7 @@ from test_data import AREAS
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.trail_dto import TrailDTO
 from dtos.user_dto import UserDTO
+from enums.user_action import UserAction
 from enums.user_enum import User
 from steps.dashboard.add_trail_step import AddTrailStep
 from steps.dashboard.edit_trail_step import EditTrailStep
@@ -16,6 +17,7 @@ from steps.dashboard.retrieve_dashboard_options_step import RetrieveDashboardOpt
 from steps.dashboard.retrieve_edit_trail_trails_step import RetrieveEditTrailTrailsStep
 from steps.dashboard.set_dashboard_filters_step import SetDashboardFiltersStep
 from steps.login.login_step import LoginStep
+from steps.other.perform_user_action_step import PerformUserActionStep
 
 @pytest.mark.UI
 def add_edit_trail_test():
@@ -28,8 +30,15 @@ def add_edit_trail_test():
     driver = SH.get_driver()
 
     try:
+        # Go to Dashboard (Replace When Official Dashboard Button Becomes A Thing)
+        driver.get(driver.current_url.replace("home", "dashboard"))
+
+        # Go To Login
+        click_login_step = PerformUserActionStep(driver, UserAction.LOGIN_LOGOUT)
+        click_login_step.run()
+
         # Login
-        login_step = LoginStep(driver, UserDTO(user=User.ADMIN))
+        login_step = LoginStep(driver, UserDTO(user=User.TRAIL_MANAGER))
         login_step.run()
 
         # Wait for API Calls To Be Made

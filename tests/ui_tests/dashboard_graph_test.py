@@ -10,14 +10,11 @@ from test_data import TRAILS, AREAS, retrieve_graph
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.trail_dto import TrailDTO
-from dtos.user_dto import UserDTO
 from enums.granularity import Granularity
-from enums.user_enum import User
 from steps.dashboard.retrieve_dashboard_filters_step import RetrieveDashboardFiltersStep
 from steps.dashboard.retrieve_dashboard_options_step import RetrieveDashboardOptionsStep
 from steps.dashboard.retrieve_graph_step import RetrieveGraphStep
 from steps.dashboard.set_dashboard_filters_step import SetDashboardFiltersStep
-from steps.login.login_step import LoginStep
 
 @pytest.mark.UI
 def dashboard_graph_test():
@@ -32,9 +29,8 @@ def dashboard_graph_test():
     driver = SH.get_driver()
 
     try:
-        # Login
-        login_step = LoginStep(driver, UserDTO(user=User.ADMIN))
-        login_step.run()
+        # Go to Dashboard (Replace When Official Dashboard Button Becomes A Thing)
+        driver.get(driver.current_url.replace("home", "dashboard"))
 
         # Wait for API Calls To Be Made
         SH.wait(3)
@@ -44,7 +40,7 @@ def dashboard_graph_test():
         retrieve_all_trails_step.run()
 
         pytest_check.equal(set(TRAILS.values()), set(retrieve_all_trails_step.trails))
-        pytest_check.equal({area.name for area in AREAS}, set(area.name for area in retrieve_all_trails_step.areas))
+        pytest_check.equal({area.name for area in AREAS if len(area.trails)}, set(area.name for area in retrieve_all_trails_step.areas))
 
         # Verify Correct Granularity Options Appear With Date Ranges
         granularities = [

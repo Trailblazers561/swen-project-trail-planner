@@ -87,7 +87,7 @@ def update_trail_metadata(event, context):
                 # Find the target area and add trail_id to it
                 area_found = False
                 for area in areas:
-                    if area.get("name") == area:
+                    if area.get("name") == area_name:
                         trail_ids = area.get("trail_ids", [])
                         if not isinstance(trail_ids, list):
                             trail_ids = []
