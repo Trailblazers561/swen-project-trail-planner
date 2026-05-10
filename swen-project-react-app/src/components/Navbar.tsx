@@ -15,15 +15,15 @@ function Navbar() {
                     {currentRole !== null ? (
                         <div className="grid grid-rows-2 grid-cols-1">
                             <div>
-                                <span>{username}</span>
+                                <span data-testid="username">{username}</span>
                             </div>
                             <div>
-                                <div>{Role[currentRole]}</div>
+                                <div data-testid="user-role">{Role[currentRole]}</div>
                             </div>
                         </div>
                     ) : (
                         <div className="grid grid-rows-1">
-                            <div>Guest</div>
+                            <div data-testid="user-role">Guest</div>
                         </div>
                     )}
                     <UserIcon />

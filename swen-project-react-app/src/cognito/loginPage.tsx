@@ -286,7 +286,7 @@ const LoginPage = () => {
               <p className="text-gray-500 mb-6">Sign in to your account</p>
               <form onSubmit={handleSignIn} className="space-y-4">
                 {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
                     <div className="mt-0.5">
                       <CircleAlert size={30} />
                     </div>
@@ -294,11 +294,11 @@ const LoginPage = () => {
                       <span className="text-lg font-semibold mb-1">There was a problem</span>
                       {loginError === LoginError.USER_NOT_FOUND ? (
                         <p className="text-sm text-red-700">
-                          No account was found with the specified email
+                          No account was found with the specified username or email
                         </p>
                       ) : loginError === LoginError.NOT_AUTHORIZED ? (
                         <p className="text-sm text-red-700">
-                          Incorrect email or password
+                          Incorrect username/email or password
                         </p>
                       ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
                         <>
@@ -328,6 +328,7 @@ const LoginPage = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   required
+                  data-testid="username-input"
                 />
                 <div>
                   <div className="relative">
@@ -338,6 +339,7 @@ const LoginPage = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2"
                       required
+                      data-testid="password-input"
                     />
                     <span
                       onMouseLeave={() => setShowPassword(false)}
@@ -358,7 +360,7 @@ const LoginPage = () => {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" variant="primary" className="w-full">
+                <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
                   Login
                 </Button>
               </form>
