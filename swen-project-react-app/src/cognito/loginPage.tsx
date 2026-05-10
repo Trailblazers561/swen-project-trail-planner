@@ -41,10 +41,12 @@ enum LoginError {
 const LoginPage = () => {
   const navigate = useNavigate();
   const { currentRole } = useAuth();
+  let leavingPage = false;
 
   useEffect(() => {
-    if (currentRole) {
-      navigate("/home", { replace: true });
+    if (currentRole && !leavingPage) {
+      leavingPage = true;
+      navigate(-1);
     }
   }, [currentRole]);
 
@@ -80,12 +82,6 @@ const LoginPage = () => {
         session?.RefreshToken || ""
       );
       console.log("Sign in successful", session);
-
-      if (session && typeof session.AccessToken !== "undefined") {
-        navigate("/dashboard");
-      } else {
-        console.error("SignIn session or AccessToken is undefined.");
-      }
     } catch (error) {
       setLoading(false);
       if (error instanceof UserNotFoundException) {
@@ -196,6 +192,8 @@ const LoginPage = () => {
       setLoading(false);
       if (error instanceof CodeMismatchException) {
         setLoginError(LoginError.CODE_MISMATCH);
+      } else if (error instanceof ExpiredCodeException) {
+        setLoginError(LoginError.EXPIRED_CODE)
       } else {
         setLoginError(LoginError.UNKNOWN_ERROR);
         alert(`Reset password failed: ${error}`);
@@ -626,6 +624,10 @@ const LoginPage = () => {
                       {loginError === LoginError.CODE_MISMATCH ? (
                         <p className="text-sm text-red-700">
                           Provided code is incorrect
+                        </p>
+                      ) : loginError === LoginError.EXPIRED_CODE ? (
+                        <p className="text-sm text-red-700">
+                          Provided code is expired, please request a new one
                         </p>
                       ) : loginError === LoginError.PASSWORD_MISMATCH ? (
                         <p className="text-sm text-red-700">

@@ -5,8 +5,9 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ProfileNotFound
 
+omit_dev_role = os.getenv("OMIT_DEV_ROLE", "false") == "true"
+
 try:
-    omit_dev_role = os.getenv("OMIT_DEV_ROLE", "false") == "true"
     if omit_dev_role:
         session = boto3
     else:
@@ -49,4 +50,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", required=True)
     args = parser.parse_args()
-    write_values(args.env)
+    if omit_dev_role:
+        write_values("local")
+    else:
+        write_values(args.env)
