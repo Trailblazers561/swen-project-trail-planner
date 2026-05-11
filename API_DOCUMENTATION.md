@@ -14,6 +14,11 @@ terraform output api_gateway_url
 
 ---
 
+The public API also uses a custom domain for the main environments. The format is:
+```
+https://trailblazers-public-api-<deploy_env>.adirondackwilderness.org
+```
+
 ## Authentication
 
 The API uses two authentication methods depending on the endpoint:
@@ -41,7 +46,7 @@ Authorization: Bearer {cognito_jwt_token}
   - ```aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id <CLIENT_ID> --auth-parameters USERNAME=<USERNAME>,PASSWORD=<PASSWORD>```
 
 ### 2. API Key Authentication
-The `/devices` endpoint requires an API key in the request header. This will eventually be changed to mTLS authentication.
+The `/devices` endpoint uses standard cognito authentication, not an API key. This will eventually be changed to mTLS authentication and put onto a different api.
 
 **Header Format:**
 ```
@@ -52,7 +57,7 @@ X-Api-Key: {aws_api_key}
 - Rate Limit: 50 requests per second
 - Burst Limit: 100 requests
 - Daily Quota: 10,000 requests per day
- > **Note**: The usage plan limits can be changed depending on needs in `api.tf` under `device_usage_plan`
+ > **Note**: The usage plan limits can be changed depending on needs in `public_api.tf` under `device_usage_plan`
 
 ---
 
@@ -680,7 +685,7 @@ Content-Type: application/json
 - **Daily Quota:** 10,000 requests per day
 
 When rate limits are exceeded, you will receive a `429 Too Many Requests` response.
- > **Note**: The usage plan limits can be changed depending on needs in `api.tf` under `device_usage_plan`
+ > **Note**: The usage plan limits can be changed depending on needs in `public_api.tf` under `device_usage_plan`
 
 ### Cognito Authenticated Endpoints
 Rate limits are determined by AWS API Gateway default limits and your AWS account configuration.

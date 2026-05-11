@@ -67,6 +67,40 @@ The fields are ensuring that the data presented to the user is correct. This is 
 
 Basic testing of the login feature. Ensures you can log in with all accounts, and verifies the error messages when submitting invalid login information.
 
+### Dashboard Graph Test
+
+Basic testing of the dashboard features and trail graph. Verifies all dashboard inputs work (date range, granularity, areas, trails) and that the graph reflects the selected inputs. All tests are performed as a guest user.
+
+### Dashboard Trail Status Test
+
+Basic testing of the dashboard trail status overview table. Ensures data displayed is correct and that sorting the table works as expected. All tests are performed as a guest user.
+Checks to Add
+ - Trail dropdown is reflected in table
+
+### Import Export Data Test
+
+Basic testing of the import and export features. Ensures export works with each granularity, and import... All tests are performed as a trail manager.
+Checks to Add
+ - Import
+
+### Add Edit Trail Test
+
+Basic testing of the add and edit trail option. Creates a trail with and without a group, updates a trail's name, and retires a trail. All tests are performed as a trail manager.
+Checks to Add
+ - Creating a trail with latitude, longitude, notes
+
+### Add Edit Area Test
+
+Basic testing of the add and edit area option. Creates an area with and without trails, updates an area's name, and deletes an area. All tests are performed as a trail manager.
+Checks to Add
+ - Make it work
+
+### Associate Device Test
+
+Basic testing of the associate device feature. Accociates an unpaired device, repairs a paired device, pairs a device to an already paired trail, and unpairs a paired device. All tests are performed as a trail manager.
+Checks to Add
+ - Make it work
+
 ## Common Issues
 
 ### Element Not Found Errors
@@ -85,3 +119,11 @@ If login fails:
 2. Check that the login page is accessible
 3. Verify the application is running
 
+### Pipeline Errors
+
+ - Many things break on the pipeline that work locally, getting things to work consistantly on the pipeline is an important part of UI testing
+ - Each pipeline run attaches error screenshots and test results to help debug the issue
+ - Change the .env LOCAL_RUN to false to run the test in headless mode to mimic a pipeline run
+ - The biggest difference between local and pipeline is timezone, watch out for potential timezone errors
+ - Try determining the next step based on current state of something if there is an issue that is pipeline exclusive (ie, click a button again if a process doesn't happen)
+ - Things take a lot longer to load on the pipeline, make sure to give everything enough time 
