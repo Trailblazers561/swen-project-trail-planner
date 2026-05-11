@@ -261,10 +261,23 @@ const dashboard = () => {
     }, [selectedDate, selectedDateEnd]);
 
     useEffect(() => {
-        if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
+        // Gate on trailMetadata being loaded — otherwise getResponse builds
+        // its trailIdToName map from an empty array and falls back to
+        // "Trail N" for every legend label. Adding trailMetadata to the
+        // dependency array also makes the chart re-fetch with correct names
+        // if trailMetadata arrives after the first attempted render (which
+        // happens on cold loads when /trail_data returns before
+        // /trail_metadata).
+        if (
+            selectedDate &&
+            selectedDateEnd &&
+            trails.length > 0 &&
+            granularity &&
+            trailMetadata.length > 0
+        ) {
             getResponse(selectedDate, selectedDateEnd, trails, granularity);
         }
-    }, [selectedDate, selectedDateEnd, trails, granularity]);
+    }, [selectedDate, selectedDateEnd, trails, granularity, trailMetadata]);
 
     function getDateRanges(
         startDate: Date,
