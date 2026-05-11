@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Environment Safety Rule — READ FIRST
+
+**Do NOT touch any deployed environment except the V1 staging stack (Terraform workspace `tst`, resource prefix `tst-`) unless Craig explicitly and clearly instructs otherwise in the current conversation.**
+
+Protected environments — do not modify, deploy to, or run destructive commands against:
+- **V1 production** — `tusage.adirondackwilderness.org`, `trailblazers-prod` branch, no `tst-` prefix in AWS
+- **V2 test** — `trailblazers-tst.adirondackwilderness.org`
+- **V2 UAT** — `trailblazers-uat.adirondackwilderness.org`
+
+Safe to use freely:
+- **V1 staging** — Terraform workspace `tst`, all resources prefixed `tst-`, API `https://2u0a6kwthj.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage`, frontend `http://trailplanner-bucket-22164505.s3-website-us-east-1.amazonaws.com`
+
 ## What This Repo Is
 
 AWS backend + React frontend for the Adirondack trail counter system (adirondackwilderness.org). Physical trail counter devices detect hikers, batch events locally, and upload once daily to AWS. A React dashboard displays trail popularity as a line graph with selectable date range, granularity, trails, and wilderness area groups.
@@ -12,7 +24,7 @@ See the parent `CLAUDE.md` (at `trail_counter_v1/CLAUDE.md`) for full system con
 
 **`master` is stale** (student team work through April 2025). The live production deployment is on **`trailblazers-prod`** — Cole's extended version, serving `tusage.adirondackwilderness.org`. This branch is ~18 commits ahead with a largely rewritten Lambda and new DynamoDB tables.
 
-**`v1.2` is the active development branch** (Craig, 2026-05-07). Branched from `trailblazers-prod`. Contains Phase 3 backend fixes: timestamp filtering, DynamoDB pagination, metadata endpoint pagination, error display in dashboard, default start date/granularity improvements, and Terraform deploy reliability fixes. Deployed to staging; pending production promotion.
+**`v1.2` is the active development branch** (Craig, 2026-05-08). Branched from `trailblazers-prod`. Contains Phase 3 backend fixes plus device health features: timestamp filtering, DynamoDB pagination, metadata endpoint pagination, error display in dashboard, default start date/granularity improvements, Terraform deploy reliability fixes, DeviceCallLog table + Lambda write on every call-in, firmware_version in payload, `GET /device_call_log` endpoint, device-centric Device View, inline trail association. Deployed to staging; pending production promotion.
 
 Note: `trails.adirondackwilderness.org` does not resolve — the live frontend URL is `tusage.adirondackwilderness.org` (CloudFront distribution `E2PAASMSQFH9QT`). DNS for adirondackwilderness.org is managed via Squarespace, not Route53 (Route53 is empty in this account). ACM cert validation CNAMEs must be kept in Squarespace DNS or auto-renewal will fail.
 
@@ -53,13 +65,13 @@ pytest completed/ -v        # requires BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD in 
 
 ## Lambda Architecture
 
-All 10 Lambda functions live in a single file: `lambdas/traildata.py`. They are deployed as separate Lambda resources in Terraform (`terraform/lambdas.tf`).
+All 11 Lambda functions live in a single file: `lambdas/traildata.py`. They are deployed as separate Lambda resources in Terraform (`terraform/lambdas.tf`).
 
 | Handler | Method | Route | Notes |
 |---------|--------|-------|-------|
 | `get_trail_data` | GET | `/trail_data` | Filter by `trails=1,2,3`, `start`/`end` Unix timestamps; concurrent queries via ThreadPoolExecutor |
 | `upload_trail_data` | POST | `/trail_data` | Cognito auth; batch writes to TrailDeviceLogs |
-| `upload_device_data` | POST | `/devices` | **API key auth** (no Cognito); resolves `trail_id` from DeviceMetadata → recent log GSI → defaults to 0; filters timestamps before 2025-01-01 |
+| `upload_device_data` | POST | `/devices` | **API key auth** (no Cognito); resolves `trail_id` from DeviceMetadata → recent log GSI → defaults to 0; filters timestamps before 2025-01-01; accepts empty `data` arrays (fixed — firmware no longer sends `{"ts":1}`); extracts `firmware_version`, `rssi`, `rsrp`, `rsrq`; writes to DeviceCallLog on every call-in |
 | `get_trail_metadata` | GET | `/trail_metadata` | All trail names and IDs |
 | `create_trail` | POST | `/trail_metadata` | Auto-increments `trail_id`; adds to "All Areas" group automatically |
 | `update_trail_metadata` | PUT | `/trail_metadata` | Rename trail and/or change group membership |
@@ -67,6 +79,7 @@ All 10 Lambda functions live in a single file: `lambdas/traildata.py`. They are 
 | `get_device_metadata` | GET | `/device_metadata` | Returns device_id, current_trail_id, battery, last_update |
 | `update_device_trail_association` | PUT | `/device_metadata` | Associate a device with a trail |
 | `get_trail_groups` | GET | `/trail_groups` | All groups with their trail_id lists |
+| `get_device_call_log` | GET | `/device_call_log` | No params = most recent entry per device; `?device_id=xxx` = full history newest first |
 
 ## DynamoDB Tables (V1 / trailblazers-prod)
 
@@ -76,6 +89,7 @@ All 10 Lambda functions live in a single file: `lambdas/traildata.py`. They are 
 | `DeviceMetadata` | `device_id` (S) | — | `current_trail_id`, `battery`, `last_update` |
 | `TrailMetadata` | `trail_id` (N) | — | `trail_name`; GSI: `trail_name-index` |
 | `TrailGroups` | `group_name` (S) | — | `trail_ids` (list of numbers) |
+| `DeviceCallLog` | `device_id` (S) | `timestamp` (N) | `firmware_version`, `battery`, `rssi`, `rsrp`, `rsrq`, `record_count`, `trail_id`; written on every call-in |
 
 Trail IDs seeded by Terraform: Mt. Marcy (1), Wolf Creek Mountain (2), Mt. Joe (3), Mt. America (4), Blueberry Trail (5), Sunset Peak (6), Cedar Loop (7), Eagle Ridge (8), Bear Claw Path (9). Groups: All Areas (1–9), High Peaks (1,2), Giant Mountain (3,4), Five Ponds (5,6,7).
 
@@ -83,15 +97,15 @@ Trail IDs seeded by Terraform: Mt. Marcy (1), Wolf Creek Mountain (2), Mt. Joe (
 
 - **React dashboard endpoints** — Cognito `USER_PASSWORD_AUTH`; ID token sent as `Authorization: Bearer <token>` from sessionStorage
 - **`POST /devices`** — API key only (`X-API-Key` header), `authorization_type = NONE`; rate-limited: 50 req/s, 100 burst, 10k/day via API Gateway usage plan
-- The current hardcoded API key (`MSD-24572-TRAIL-PLANNER-KEY`) was compromised; rotation is an open issue
+- The old API key (`MSD-24572-TRAIL-PLANNER-KEY`) was compromised and has been rotated. New key is in `secrets.h` (gitignored) on the firmware side and in `terraform/terraform.tfvars` (gitignored) on the backend side.
 
 ## React App Structure
 
-`src/dashboard.tsx` (954 lines) is the main component. It has two views toggled by a button:
-- **Graph view** — Plotly line charts with date range pickers, granularity selector (auto-adjusts: hourly/daily/weekly/monthly/yearly based on span), multi-select trail picker with group support
-- **List view** — Table of trail name, weekly count, battery (color-coded green/yellow/red), last updated date
+`src/dashboard.tsx` is the main component. It has two views toggled by a button:
+- **Graph view** — Plotly line charts with date range pickers, granularity selector (auto-adjusts: hourly/daily/weekly/monthly/yearly based on span), multi-select trail picker with area/group support
+- **Device View** — Device-centric table sourced from DeviceCallLog (most recent entry per device). Columns: Device ID (clickable), Associated Trail, Weekly Count, Firmware, Battery, Last Call-in. Unassociated devices sort to top with an inline "Assign Trail" dropdown. Associated devices have a pencil (✎) edit button to reassign. Clicking a device ID opens `DeviceDetailModal` showing the last 5 call-ins with full telemetry.
 
-Modals for trail management (create/edit/delete), group management, and device-to-trail association all live in `src/components/`.
+Modals for trail management (create/edit/delete) and area/group management live in `src/components/`. The old `AssociateDeviceModal` has been removed — trail association is now handled inline in Device View.
 
 API calls are centralized in `src/api.ts` — the `TrailData()` factory function returns methods for all endpoints, each injecting the Cognito token via `authHeaders()`.
 

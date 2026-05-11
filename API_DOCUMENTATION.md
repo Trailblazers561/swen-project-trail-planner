@@ -43,7 +43,7 @@ The `/devices` endpoint requires an API key in the request header.
 X-Api-Key: {aws_api_key}
 ```
 
-Please note that the default API key is `MSD-24572-TRAIL-PLANNER-KEY`. This can be changed in `api.tf`
+The API key is defined in `terraform/terraform.tfvars` (gitignored). It is not committed to the repository. This can be changed in `api.tf`.
 
 **Usage Plan Limits:**
 - Rate Limit: 50 requests per second
@@ -74,6 +74,10 @@ Content-Type: application/json
 {
   "device_id": "deviceA",
   "battery": 95,
+  "firmware_version": "1.1.0",
+  "rssi": -85,
+  "rsrp": -110,
+  "rsrq": -15,
   "data": [
     { "ts": 1759064864 },
     { "ts": 1759064924 }
@@ -83,11 +87,15 @@ Content-Type: application/json
 
 **Required Fields:**
 - `device_id` (string or number): Unique identifier for the device
-- `data` (array): At least one reading
+- `data` (array): Array of detection timestamps; may be empty (no detections that day)
 - Each reading must include only `ts` (integer Unix epoch); no other per-reading fields are accepted.
 
 **Optional Fields:**
-- `battery` (number): Device battery level applied to all readings in this request
+- `battery` (number): Device battery level (0–100)
+- `firmware_version` (string): Firmware version string (e.g. `"1.1.0"`)
+- `rssi` (number): RSSI signal strength in dBm
+- `rsrp` (number): LTE reference signal received power in dBm
+- `rsrq` (number): LTE reference signal received quality in dB
 - `trail_id` (integer): Optional override; if omitted, the server automatically determines the trail using:
   1. DeviceMetadata table (if device was previously registered)
   2. Most recent entry in TrailDeviceLogs for that device
@@ -100,10 +108,14 @@ Content-Type: application/json
 - If a device moves to a new trail, include `trail_id` in the payload to update the assignment
 
 **`/devices/` Filtering**
-- Any POST request to `/devices/` has the following limitations
-  - Duplicate timestamps from the **same** device are ignored
-  - Timestamps from before 1735707600 (January 1, 2025) are **ignored**
-    - This is due to the device sometimes sending 946702800 (January 1, 2000) timestamps
+- Any POST request to `/devices/` has the following behavior:
+  - Duplicate timestamps from the **same** device are silently ignored
+  - Timestamps from before 1735707600 (January 1, 2025) are silently ignored (guards against RTC-loss timestamps like January 1, 2000)
+  - An empty `data` array is accepted — the call-in is recorded in `DeviceCallLog` even with no detections
+
+**Side effects on success:**
+- Detection timestamps are written to `TrailDeviceLogs`
+- A call-in record is always written to `DeviceCallLog` (battery, firmware_version, signal quality, record_count, trail_id, timestamp)
 
 **Success Response (200 OK):**
 ```json
@@ -175,8 +187,8 @@ Content-Type: application/json
 
 **Query Parameters:**
 - `trails` (optional, string): Comma-separated list of trail IDs to filter by (e.g., `trails=1,2,3`)
-- `start` (optional, string): Start timestamp for filtering (not currently implemented in Lambda)
-- `end` (optional, string): End timestamp for filtering (not currently implemented in Lambda)
+- `start` (optional, integer): Start timestamp for filtering — Unix epoch seconds; applied as a DynamoDB `KeyConditionExpression` on the timestamp sort key
+- `end` (optional, integer): End timestamp for filtering — Unix epoch seconds; applied as a DynamoDB `KeyConditionExpression` on the timestamp sort key
 
 **Request Examples:**
 
@@ -201,17 +213,16 @@ GET /trail_data?trails=1&start=1759064864&end=1759065000
   {
     "trail_id": 1,
     "device_id": "deviceA",
-    "timestamp": 1759064864,
-    "battery": 95
+    "timestamp": 1759064864
   },
   {
     "trail_id": 1,
     "device_id": "deviceA",
-    "timestamp": 1759065044,
-    "battery": 94
+    "timestamp": 1759065044
   }
 ]
 ```
+> Note: `battery` may appear as a legacy field on older records (written before `DeviceCallLog` existed). Current uploads do not include `battery` in `TrailDeviceLogs` records.
 
 **Error Responses:**
 
@@ -306,6 +317,54 @@ curl -X POST https://{api-url}/trail_data \
   }'
 ```
 
+---
+
+### 4. Get Device Call Log
+
+Retrieve device call-in history. Used by Device View to show device health (most recent entry per device) and by the device detail modal (full history for one device).
+
+**Endpoint:** `GET /device_call_log`
+
+**Authentication:** Cognito JWT Token (required)
+
+**Headers:**
+```
+Authorization: Bearer {cognito_jwt_token}
+```
+
+**Query Parameters:**
+- `device_id` (optional, string): If provided, returns full history for that device (newest first). If omitted, returns the most recent entry for every device.
+
+**Success Response (200 OK) — most recent per device:**
+```json
+[
+  {
+    "device_id": "robot-counter-01",
+    "timestamp": 1759064864,
+    "trail_id": 1,
+    "battery": 85,
+    "firmware_version": "1.1.0",
+    "rssi": -85,
+    "rsrp": -110,
+    "rsrq": -15,
+    "record_count": 42
+  }
+]
+```
+
+**Example cURL:**
+```bash
+# Most recent entry per device
+curl -X GET "https://{api-url}/device_call_log" \
+  -H "Authorization: Bearer {cognito_jwt_token}"
+
+# Full history for one device
+curl -X GET "https://{api-url}/device_call_log?device_id=robot-counter-01" \
+  -H "Authorization: Bearer {cognito_jwt_token}"
+```
+
+---
+
 ## Data Models
 
 ### Trail Device Log Entry
@@ -354,8 +413,8 @@ Rate limits are determined by AWS API Gateway default limits and your AWS accoun
 
 2. **Batch Operations:** Both `/devices` and `/trail_data` POST endpoints support batch uploads for efficient data ingestion.
 
-3. **Query Filtering:** The `start` and `end` query parameters are accepted but not currently implemented in the Lambda function. They are reserved for future date range filtering functionality.
+3. **Query Filtering:** The `start` and `end` parameters on `GET /trail_data` are implemented as DynamoDB `KeyConditionExpression` filters on the timestamp sort key. Only records within the requested range are fetched — not filtered in-memory.
 
-4. **Additional Fields:** Both `/devices` and `/trail_data` endpoints accept additional custom fields beyond the required ones. These will be stored in DynamoDB.
+4. **DeviceCallLog:** Every `POST /devices` call writes a row to `DeviceCallLog` regardless of how many detections were in the payload. This table is the source for Device View health columns (battery, firmware, signal, last call-in).
 
 ---

@@ -153,10 +153,11 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
   - Device data ingestion
 - **Cognito User Pool**: User authentication
 - **DynamoDB Tables**:
-  - `TrailDeviceLogs`: Trail sensor data
-  - `TrailMetadata`: Trail information
-  - `TrailGroups`: Trail group/organization data
-  - `DeviceMetadata`: Device information and associations
+  - `TrailDeviceLogs`: Trail sensor data (detection timestamps per trail)
+  - `TrailMetadata`: Trail information and GPS coordinates
+  - `TrailGroups`: Wilderness area groupings
+  - `DeviceMetadata`: Device-to-trail associations and last-seen telemetry
+  - `DeviceCallLog`: Per-call-in telemetry history (firmware version, battery, signal quality, record count)
 
 ## Additional Commands
 
@@ -221,9 +222,9 @@ Ensure that your AWS IAM user has sufficient permissions for:
 The `/devices` API automatically handles device-to-trail linking without requiring manual registration:
 
 - **New devices**: Automatically assigned to trail_id 0 on first use
-- **Existing devices**: Server looks up the most recent trail assignment from previous data
+- **Existing devices**: Server looks up trail assignment from DeviceMetadata, then falls back to the most recent log entry
 - **Trail updates**: Include `trail_id` in the payload to change a device's trail assignment
-- **Caching**: Trail assignments are automatically cached in DeviceMetadata for faster lookups
+- **Dashboard**: Device View (formerly "List View") shows all devices with inline trail assignment — unassociated devices appear at the top with an "Assign Trail" dropdown; associated devices show a pencil button to reassign or unassign inline, without a modal
 
 ## Additional Resources
 
