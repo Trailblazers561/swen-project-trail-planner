@@ -31,6 +31,16 @@ export function TrailData() {
     });
   }
 
+  async function getDeviceCallLog(deviceId?: string) {
+    const url = deviceId
+      ? `${API_URL}/device_call_log?device_id=${encodeURIComponent(deviceId)}`
+      : `${API_URL}/device_call_log`;
+    return await request(url, {
+      method: "GET",
+      headers: authHeaders(),
+    });
+  }
+
   /**
    * Get device logs for specific trails between two dates
    * @param startdate ISO or epoch start date
@@ -174,6 +184,7 @@ export function TrailData() {
     getTrailMetadata,
     getTrailGroups,
     getDeviceMetadata,
+    getDeviceCallLog,
     getTrailLogsBetweenDates,
     getAllLogsBetweenDates,
     updateTrailMetadata,

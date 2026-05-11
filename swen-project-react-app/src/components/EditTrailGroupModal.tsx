@@ -187,7 +187,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
         setSuccess(null);
       }, 1500);
     } catch (err) {
-      setError(isCreateMode ? 'An error occurred while creating the group' : 'An error occurred while updating the group');
+      setError(isCreateMode ? 'An error occurred while creating the area' : 'An error occurred while updating the area');
       console.error(err);
     } finally {
       setLoading(false);
@@ -219,21 +219,21 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
     <div className="modal-overlay">
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className="modal-header">
-          <h2>{isCreateMode ? 'Create New Trail Group' : 'Edit Trail Group'}</h2>
+          <h2>{isCreateMode ? 'Create New Area' : 'Edit Area'}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             {!isCreateMode && (
               <div className="form-group">
-                <label htmlFor="group-select">Select Group:</label>
+                <label htmlFor="group-select">Select Area:</label>
                 <select
                   id="group-select"
                   value={selectedGroupName}
                   onChange={(e) => setSelectedGroupName(e.target.value)}
                   required
                 >
-                  <option value="">Select a group</option>
+                  <option value="">Select an area</option>
                   {availableGroups.map((group) => (
                     <option key={group.group_name} value={group.group_name}>
                       {group.group_name} ({group.trail_ids.length} trails)
@@ -243,14 +243,14 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
               </div>
             )}
             <div className="form-group">
-              <label htmlFor="group-name">Group Name: <span style={{ color: 'red' }}>*</span></label>
+              <label htmlFor="group-name">Area Name: <span style={{ color: 'red' }}>*</span></label>
               <input
                 id="group-name"
                 type="text"
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 required
-                placeholder="Enter group name"
+                placeholder="Enter area name"
                 disabled={!isCreateMode && !selectedGroupName}
               />
             </div>
@@ -313,7 +313,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
                           }}
                         />
                         <span style={{ fontSize: '0.9em', color: '#666' }}>
-                          {isChecked ? 'In group' : 'Not in group'}
+                          {isChecked ? 'In area' : 'Not in area'}
                         </span>
                       </label>
                     </div>
@@ -329,7 +329,7 @@ const EditTrailGroupModal: React.FC<EditTrailGroupModalProps> = ({
               Cancel
             </button>
             <button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (isCreateMode ? 'Create Group' : 'Update Group')}
+              {loading ? 'Saving...' : (isCreateMode ? 'Create Area' : 'Update Area')}
             </button>
           </div>
         </form>

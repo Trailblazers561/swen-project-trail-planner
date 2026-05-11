@@ -12,6 +12,7 @@ logs_table = dynamodb.Table(os.environ.get("TRAIL_LOGS_TABLE", "TrailDeviceLogs"
 trail_metadata_table = dynamodb.Table(os.environ.get("TRAIL_METADATA_TABLE", "TrailMetadata"))
 device_metadata_table = dynamodb.Table(os.environ.get("DEVICE_METADATA_TABLE", "DeviceMetadata"))
 trail_groups_table = dynamodb.Table(os.environ.get("TRAIL_GROUPS_TABLE", "TrailGroups"))
+device_call_log_table = dynamodb.Table(os.environ.get("DEVICE_CALL_LOG_TABLE", "DeviceCallLog"))
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -186,6 +187,7 @@ def upload_device_data(event, context):
         data_points = body.get("data")
         battery = body.get("battery")
         trail_id_override = body.get("trail_id")
+        firmware_version = body.get("firmware_version")
 
         missing_fields = []
         if not device_id:
@@ -205,13 +207,6 @@ def upload_device_data(event, context):
                 "statusCode": 400,
                 "headers": cors_headers(),
                 "body": json.dumps({"error": "Data field must be an array"})
-            }
-
-        if len(data_points) == 0:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Data array must be a non-empty list"})
             }
 
         # Determine trail_id using automatic resolution
@@ -296,14 +291,8 @@ def upload_device_data(event, context):
                 "device_id": device_id,
             }
 
-            # Determine battery priority: per-point > request-level
-            point_battery = point.get("battery")
-            battery_value = point_battery if point_battery is not None else battery
-            if battery_value is not None:
-                item["battery"] = Decimal(str(battery_value)) if isinstance(battery_value, float) else battery_value
-
             for key, value in point.items():
-                if key in ["ts", "timestamp", "trail_id"]:
+                if key in ["ts", "timestamp", "trail_id", "battery"]:
                     continue
                 if isinstance(value, float):
                     item[key] = Decimal(str(value))
@@ -314,10 +303,27 @@ def upload_device_data(event, context):
 
         if len(prepared_items) == 1:
             logs_table.put_item(Item=prepared_items[0])
-        else:
+        elif len(prepared_items) > 1:
             with logs_table.batch_writer() as batch:
                 for item in prepared_items:
                     batch.put_item(Item=item)
+
+        # Write call-in record regardless of data count
+        call_log_item = {
+            "device_id": device_id,
+            "timestamp": int(time.time()),
+            "trail_id": resolved_trail_id,
+            "record_count": len(prepared_items),
+        }
+        if battery is not None:
+            call_log_item["battery"] = Decimal(str(battery)) if isinstance(battery, float) else battery
+        if firmware_version is not None:
+            call_log_item["firmware_version"] = str(firmware_version)
+        for field in ("rssi", "rsrp", "rsrq"):
+            val = body.get(field)
+            if val is not None:
+                call_log_item[field] = Decimal(str(val)) if isinstance(val, float) else val
+        device_call_log_table.put_item(Item=call_log_item)
 
         return {
             "statusCode": 200,
@@ -440,6 +446,57 @@ def get_trail_groups(event, context):
         "headers": cors_headers(),
         "body": json.dumps(convert_decimals(_scan_all(trail_groups_table)))
     }
+
+def get_device_call_log(event, context):
+    """
+    GET /device_call_log
+      - No params: returns the most recent call-in record for every known device.
+      - ?device_id=xxx: returns full call-in history for that device, newest first.
+    """
+    try:
+        params = event.get("queryStringParameters") or {}
+        device_id = params.get("device_id")
+
+        if device_id:
+            # Full history for one device, newest first
+            items = []
+            kwargs = {
+                "KeyConditionExpression": Key("device_id").eq(device_id),
+                "ScanIndexForward": False,
+            }
+            while True:
+                resp = device_call_log_table.query(**kwargs)
+                items.extend(resp.get("Items", []))
+                if "LastEvaluatedKey" not in resp:
+                    break
+                kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
+        else:
+            # Most recent entry per device, using DeviceMetadata to enumerate devices
+            devices = _scan_all(device_metadata_table)
+            items = []
+            for device in devices:
+                did = device.get("device_id")
+                if not did:
+                    continue
+                resp = device_call_log_table.query(
+                    KeyConditionExpression=Key("device_id").eq(did),
+                    ScanIndexForward=False,
+                    Limit=1,
+                )
+                if resp.get("Items"):
+                    items.append(resp["Items"][0])
+
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps(convert_decimals(items)),
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"}),
+        }
 
 def create_trail(event, context):
     """

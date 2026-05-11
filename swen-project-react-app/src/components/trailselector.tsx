@@ -85,6 +85,16 @@ const TrailSelector = ({
             }));
     }, [trailData, selectedWilderness]);
 
+    // Auto-select "All Trails" on first data load when nothing is selected
+    useEffect(() => {
+        if (selectedTrails.length === 0 && (trailData["All Areas"]?.length ?? 0) > 0 && selectedWilderness === "All Areas") {
+            const defaultSelection = [{ value: "All Trails", label: "All Trails" }];
+            setSelectedTrails(defaultSelection);
+            onChange(["All Trails"]);
+            if (onGroupChange) onGroupChange("All Areas");
+        }
+    }, [trailData]);
+
     // Re-sync selection when group composition changes (e.g. a trail is added/removed from the group)
     useEffect(() => {
         if (isInitialMount.current) {

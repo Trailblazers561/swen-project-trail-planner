@@ -496,7 +496,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.trail_metadata_delete_integration.uri,
       aws_api_gateway_integration.device_metadata_get_integration.uri,
       aws_api_gateway_integration.device_metadata_put_integration.uri,
-      aws_api_gateway_integration.trail_groups_get_integration.uri
+      aws_api_gateway_integration.trail_groups_get_integration.uri,
+      aws_api_gateway_integration.device_call_log_get_integration.uri
     ]))
   }
 
@@ -587,6 +588,79 @@ resource "aws_api_gateway_usage_plan_key" "device_usage_plan_key" {
     aws_api_gateway_api_key.api_key,
     aws_api_gateway_usage_plan.device_usage_plan
   ]
+}
+
+# /device_call_log Resource
+resource "aws_api_gateway_resource" "device_call_log" {
+  path_part   = "device_call_log"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /device_call_log
+resource "aws_api_gateway_method" "device_call_log_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.device_call_log.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "device_call_log_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_call_log.id
+  http_method = aws_api_gateway_method.device_call_log_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "device_call_log_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_call_log.id
+  http_method = aws_api_gateway_method.device_call_log_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "device_call_log_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.device_call_log.id
+  http_method = aws_api_gateway_method.device_call_log_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+  depends_on = [
+    aws_api_gateway_integration.device_call_log_options_integration,
+    aws_api_gateway_method_response.device_call_log_options_response
+  ]
+}
+
+# GET /device_call_log
+resource "aws_api_gateway_method" "device_call_log_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.device_call_log.id
+  http_method   = "GET"
+  authorization = var.authorization_type
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "device_call_log_get_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.device_call_log.id
+  http_method             = aws_api_gateway_method.device_call_log_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_device_call_log.invoke_arn
 }
 
 # Outputs
