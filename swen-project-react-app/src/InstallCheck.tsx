@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { TrailData } from "./api";
 
 // Phone-friendly "is my device alive" view. Designed for use immediately
@@ -70,7 +70,13 @@ function batteryDisplay(b?: number): string {
 }
 
 export default function InstallCheck() {
-  const { getDeviceCallLog, getDeviceMetadata, getTrailMetadata } = TrailData();
+  // TrailData() builds new function references on every call, so we memoize
+  // it once on mount. Without this, getDeviceCallLog / getDeviceMetadata /
+  // getTrailMetadata change every render -> fetchAll's useCallback deps
+  // change every render -> the auto-refresh useEffect re-fires every
+  // render -> fetchAll() is called -> state updates -> another render ->
+  // infinite-fetch loop that hangs the browser.
+  const api = useMemo(() => TrailData(), []);
   const [rows, setRows] = useState<CallLogRow[]>([]);
   const [meta, setMeta] = useState<DeviceMeta[]>([]);
   const [trails, setTrails] = useState<Trail[]>([]);
@@ -84,9 +90,9 @@ export default function InstallCheck() {
     setError(null);
     try {
       const [callLogRes, metaRes, trailRes] = await Promise.all([
-        getDeviceCallLog(),
-        getDeviceMetadata(),
-        getTrailMetadata(),
+        api.getDeviceCallLog(),
+        api.getDeviceMetadata(),
+        api.getTrailMetadata(),
       ]);
       if (!callLogRes.success || !metaRes.success || !trailRes.success) {
         setError("Failed to load device status. Check connection.");
@@ -101,7 +107,7 @@ export default function InstallCheck() {
     } finally {
       setLoading(false);
     }
-  }, [getDeviceCallLog, getDeviceMetadata, getTrailMetadata]);
+  }, [api]);
 
   // Initial fetch + auto-refresh
   useEffect(() => {
