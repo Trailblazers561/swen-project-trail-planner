@@ -109,6 +109,8 @@ See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed 
 - `domain`: Root domain name (e.g., `adirondackwilderness.org`)
 - `sub`: Subdomain (e.g., `trailblazers-tst` for `trailblazers-tst.adirondackwilderness.org`)
 - `acm_certificate_arn`: SSL certificate ARN (required if `use_domain = true`)
+- `ses_identity_arn`: SES identity ARN (required if `local_run = false`)
+- `local_user_email`: Email to send from (configured aws identity) (required if `local_run = true`)
 - `authorization_enabled`: Enable API Gateway authorization (default: `true`)
 - `users`: Users to create on startup. (default: [`root_admin`, `admin`, `trail_manager`, `user`])
 
@@ -124,11 +126,11 @@ See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed 
 
 - **API Gateway**: RESTful API endpoints
 - **Lambda Functions**: Serverless compute for:
-  - Trail data management [traildata.py](lambdas/traildata.py)
+  - Trail data management [public_api](lambdas/public_api)
   - Device data ingestion
   - Simulate trail data [simulate_data.py](lambdas/simulate_data.py)
-  - CSV handling [export_csv.py](lambdas/export_csv.py), [import_csv.py](lambdas/import_csv.py), [generage_csv_upload_url.py](lambdas/generage_csv_upload_url.py)
-  - User management [user_management.py](user_management.py)
+  - CSV handling [csv](lambdas/public_api/csv) [csv_url](lambdas/public_api/csv_url)
+  - User management [users](lambdas/public_api/users)
 - **Cognito User Pool**: User authentication
 - **Lambda Authorizer**: API authorization
 - **DynamoDB Tables**:
