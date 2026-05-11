@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import TrailSelector from "./components/trailselector.tsx";
 import EditTrailModal from "./components/EditTrailModal";
 import EditTrailGroupModal from "./components/EditTrailGroupModal";
-import AssociateDeviceModal from "./components/AssociateDeviceModal";
+import DeviceDetailModal from "./components/DeviceDetailModal";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import DatePicker from "react-datepicker";
@@ -30,8 +30,10 @@ const dashboard = () => {
     const {
         getTrailLogsBetweenDates,
         getDeviceMetadata,
+        getDeviceCallLog,
         getTrailMetadata,
         getTrailGroups,
+        updateDeviceTrailAssociation,
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
@@ -54,8 +56,9 @@ const dashboard = () => {
     const [isAddTrailModalOpen, setIsAddTrailModalOpen] = useState(false);
     const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
     const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
-    const [isAssociateDeviceModalOpen, setIsAssociateDeviceModalOpen] =
-        useState(false);
+    const [assigningDeviceId, setAssigningDeviceId] = useState<string | null>(null);
+    const [assignTrailId, setAssignTrailId] = useState<number>(0);
+    const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
     const [graphLines, setGraphLines] = useState<
         Array<{
@@ -78,16 +81,19 @@ const dashboard = () => {
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
-    const [trailListData, setTrailListData] = useState<
+    const [deviceListData, setDeviceListData] = useState<
         Array<{
-            trail_id: number;
-            trail_name: string;
+            device_id: string;
+            trail_name: string | null;
+            trail_id: number | null;
             weeklyCount: number;
             batteryStatus: number | null;
-            lastUpdated: string | null;
+            firmwareVersion: string | null;
+            lastCallIn: string | null;
         }>
     >([]);
     const [loadingListData, setLoadingListData] = useState(false);
+    const [deviceFilter, setDeviceFilter] = useState("");
     const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(
         null
     );
@@ -210,9 +216,6 @@ const dashboard = () => {
         setIsAddGroupModalOpen(true);
     };
 
-    const handleAssociateDevice = () => {
-        setIsAssociateDeviceModalOpen(true);
-    };
 
     const handleTrailUpdated = async () => {
         await loadTrailData();
@@ -504,101 +507,97 @@ const dashboard = () => {
                     const startTimestamp = Math.floor(oneWeekAgo.getTime() / 1000);
                     const endTimestamp = Math.floor(now.getTime() / 1000);
 
-                    // Get all trail IDs
-                    const trailIds = trailMetadata
-                        .filter((t) => t && t.trail_id && t.trail_id !== 0)
-                        .map((t) => t.trail_id);
+                    // Fetch call log and device metadata in parallel; weekly counts fetched after
+                    const [callLogResponse, devicesResponse] = await Promise.all([
+                        getDeviceCallLog(),
+                        getDeviceMetadata(),
+                    ]);
+                    const callLogEntries: any[] = callLogResponse.success ? callLogResponse.json : [];
+                    const devices: any[] = devicesResponse.success ? devicesResponse.json : (deviceMetadataCache || []);
 
-                    if (trailIds.length === 0) {
-                        setTrailListData([]);
+                    if (callLogEntries.length === 0) {
+                        setDeviceListData([]);
                         setLoadingListData(false);
                         isFetchingListData.current = false;
                         return;
                     }
 
-                    // Fetch weekly counts
-                    const logsResponse = await getTrailLogsBetweenDates(
-                        startTimestamp,
-                        endTimestamp,
-                        trailIds
-                    );
-                    const logs = logsResponse.success ? await logsResponse.json : [];
-                    const devices = deviceMetadataCache || [];
-
-                    // Group devices by trail_id and find most recent for each trail
-                    const trailDeviceMap = new Map<
-                        number,
-                        { battery: number | null; lastUpdate: number | null }
-                    >();
-
-                    devices.forEach((device: any) => {
-                        const trailId = device.current_trail_id;
-                        if (trailId && trailId !== 0) {
-                            const lastUpdate = device.last_update
-                                ? typeof device.last_update === "number"
-                                    ? device.last_update
-                                    : parseInt(device.last_update)
-                                : null;
-                            const battery =
-                                device.battery !== undefined && device.battery !== null
-                                    ? typeof device.battery === "number"
-                                        ? device.battery
-                                        : parseFloat(device.battery)
-                                    : null;
-
-                            const existing = trailDeviceMap.get(trailId);
-                            if (
-                                !existing ||
-                                (lastUpdate &&
-                                    (!existing.lastUpdate || lastUpdate > existing.lastUpdate))
-                            ) {
-                                trailDeviceMap.set(trailId, { battery, lastUpdate });
-                            }
+                    // Map device_id → current trail_id from DeviceMetadata
+                    const deviceTrailMap = new Map<string, number>();
+                    devices.forEach((d: any) => {
+                        if (d.device_id && d.current_trail_id && d.current_trail_id !== 0) {
+                            deviceTrailMap.set(d.device_id, d.current_trail_id);
                         }
                     });
 
-                    // Count logs per trail for the week
-                    const trailCounts = new Map<number, number>();
-                    logs.forEach((log: { trail_id: number }) => {
-                        const trailId = log.trail_id;
-                        trailCounts.set(trailId, (trailCounts.get(trailId) || 0) + 1);
+                    // Map trail_id → trail_name
+                    const trailNameMap = new Map<number, string>();
+                    trailMetadata.forEach((t: any) => {
+                        if (t.trail_id && t.trail_name) trailNameMap.set(t.trail_id, t.trail_name);
                     });
 
-                    // Build the list data
-                    const listData = trailMetadata
-                        .filter((t) => t && t.trail_name && t.trail_id && t.trail_id !== 0)
-                        .map((trail) => {
-                            const weeklyCount = trailCounts.get(trail.trail_id) || 0;
-                            const deviceInfo = trailDeviceMap.get(trail.trail_id);
-                            const batteryStatus = deviceInfo?.battery ?? null;
-                            const lastUpdateTimestamp = deviceInfo?.lastUpdate ?? null;
+                    // Get weekly counts for all trails that have a device
+                    const trailIdsWithDevices = [...new Set(
+                        callLogEntries.map(e => deviceTrailMap.get(e.device_id)).filter((id): id is number => !!id && id !== 0)
+                    )];
+                    let trailCounts = new Map<number, number>();
+                    if (trailIdsWithDevices.length > 0) {
+                        const logsResponse = await getTrailLogsBetweenDates(startTimestamp, endTimestamp, trailIdsWithDevices);
+                        const logs: any[] = logsResponse.success ? logsResponse.json : [];
+                        logs.forEach((log: { trail_id: number }) => {
+                            trailCounts.set(log.trail_id, (trailCounts.get(log.trail_id) || 0) + 1);
+                        });
+                    }
 
-                            let lastUpdated: string | null = null;
-                            if (lastUpdateTimestamp) {
-                                const date = new Date(lastUpdateTimestamp * 1000);
-                                const month = String(date.getMonth() + 1).padStart(2, "0");
-                                const day = String(date.getDate()).padStart(2, "0");
-                                const year = date.getFullYear();
-                                // Format as MM/DD/YYYY
-                                lastUpdated = `${month}/${day}/${year}`;
-                            }
+                    const formatDate = (ts: number | null) => {
+                        if (!ts) return null;
+                        const d = new Date(ts * 1000);
+                        return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
+                    };
 
-                            return {
-                                trail_id: trail.trail_id,
-                                trail_name: trail.trail_name,
-                                weeklyCount,
-                                batteryStatus,
-                                lastUpdated,
-                            };
-                        })
-                        .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
+                    // Build device-centric list from call log entries
+                    const callLogDeviceIds = new Set(callLogEntries.map((e: any) => e.device_id));
+                    const callLogRows = callLogEntries.map((entry: any) => {
+                        const trailId = deviceTrailMap.get(entry.device_id) ?? null;
+                        const trailName = trailId ? (trailNameMap.get(trailId) ?? null) : null;
+                        const ts = entry.timestamp ? (typeof entry.timestamp === "number" ? entry.timestamp : parseInt(entry.timestamp)) : null;
+                        return {
+                            device_id: entry.device_id,
+                            trail_name: trailName,
+                            trail_id: trailId,
+                            weeklyCount: trailId ? (trailCounts.get(trailId) || 0) : 0,
+                            batteryStatus: entry.battery != null ? parseFloat(entry.battery) : null,
+                            firmwareVersion: entry.firmware_version ?? null,
+                            lastCallIn: formatDate(ts),
+                        };
+                    });
 
-                    setTrailListData(listData);
+                    // Also include unassociated devices from DeviceMetadata that have never called in
+                    const metadataOnlyRows = devices
+                        .filter((d: any) => (!d.current_trail_id || d.current_trail_id === 0) && !callLogDeviceIds.has(d.device_id))
+                        .map((d: any) => ({
+                            device_id: d.device_id,
+                            trail_name: null,
+                            trail_id: null,
+                            weeklyCount: 0,
+                            batteryStatus: d.battery != null ? parseFloat(d.battery) : null,
+                            firmwareVersion: null,
+                            lastCallIn: null,
+                        }));
+
+                    // Unassociated devices first, then associated; alphabetical within each group
+                    const listData = [...callLogRows, ...metadataOnlyRows].sort((a, b) => {
+                        if (!a.trail_name && b.trail_name) return -1;
+                        if (a.trail_name && !b.trail_name) return 1;
+                        return a.device_id.localeCompare(b.device_id);
+                    });
+
+                    setDeviceListData(listData);
                     setLoadingListData(false);
                     isFetchingListData.current = false;
                 } catch (error) {
-                    console.error("Error loading trail list data:", error);
-                    setTrailListData([]);
+                    console.error("Error loading device list data:", error);
+                    setDeviceListData([]);
                     setLoadingListData(false);
                     isFetchingListData.current = false;
                 }
@@ -639,7 +638,7 @@ const dashboard = () => {
                         }}
                     >
                         {viewMode === "graph"
-                            ? "Switch to List View"
+                            ? "Device View"
                             : "Switch to Graph View"}
                     </button>
                     <div style={{ display: "flex", gap: "10px" }}>
@@ -662,21 +661,14 @@ const dashboard = () => {
                             type="button"
                             onClick={handleAddGroup}
                         >
-                            Add Group
+                            Add Area
                         </button>
                         <button
                             className="action-button"
                             type="button"
                             onClick={handleEditGroup}
                         >
-                            Edit Group
-                        </button>
-                        <button
-                            className="action-button"
-                            type="button"
-                            onClick={handleAssociateDevice}
-                        >
-                            Associate Device
+                            Edit Area
                         </button>
                         <button
                             className="logout-button"
@@ -852,8 +844,17 @@ const dashboard = () => {
                                 color: "#333",
                             }}
                         >
-                            Trail Status Overview
+                            Device Status Overview
                         </h2>
+                        <div style={{ marginBottom: "12px" }}>
+                            <input
+                                type="text"
+                                placeholder="Filter by device ID…"
+                                value={deviceFilter}
+                                onChange={e => setDeviceFilter(e.target.value)}
+                                style={{ padding: "6px 10px", fontSize: "0.9em", border: "1px solid #ccc", borderRadius: "4px", width: "240px" }}
+                            />
+                        </div>
                         {loadingListData ? (
                             <div style={{ textAlign: "center", padding: "40px" }}>
                                 Loading trail data...
@@ -870,132 +871,134 @@ const dashboard = () => {
                                 >
                                     <thead>
                                         <tr style={{ backgroundColor: "#007bff", color: "white" }}>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "left",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Trail Name
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Weekly Count
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Battery Status
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: "12px",
-                                                    textAlign: "center",
-                                                    border: "1px solid #ddd",
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                Last Updated
-                                            </th>
+                                            {["Device ID", "Associated Trail", "Weekly Count", "Firmware", "Battery", "Last Call-in"].map((h, i) => (
+                                                <th key={h} style={{ padding: "12px", textAlign: i === 0 ? "left" : "center", border: "1px solid #ddd", fontWeight: "bold" }}>
+                                                    {h}
+                                                </th>
+                                            ))}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {trailListData.length === 0 ? (
+                                        {deviceListData.length === 0 ? (
                                             <tr>
                                                 <td
-                                                    colSpan={4}
+                                                    colSpan={6}
                                                     style={{
                                                         padding: "20px",
                                                         textAlign: "center",
                                                         color: "#666",
                                                     }}
                                                 >
-                                                    No trails found
+                                                    No devices found
                                                 </td>
                                             </tr>
                                         ) : (
-                                            trailListData.map((trail, index) => (
-                                                <tr
-                                                    key={trail.trail_id}
-                                                    style={{
-                                                        backgroundColor:
-                                                            index % 2 === 0 ? "#f9f9f9" : "#ffffff",
-                                                        borderBottom: "1px solid #e0e0e0",
-                                                    }}
-                                                >
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            border: "1px solid #ddd",
-                                                            fontWeight: "500",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.trail_name}
+                                            deviceListData.filter(d => !deviceFilter || d.device_id.toLowerCase().includes(deviceFilter.toLowerCase())).map((device, index) => {
+                                                const na = <span style={{ color: "#999" }}>N/A</span>;
+                                                const cell = (content: React.ReactNode) => (
+                                                    <td style={{ padding: "12px", textAlign: "center", border: "1px solid #ddd", color: "#333" }}>
+                                                        {content}
                                                     </td>
-                                                    <td
+                                                );
+                                                return (
+                                                    <tr
+                                                        key={device.device_id}
                                                         style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
+                                                            backgroundColor:
+                                                                index % 2 === 0 ? "#f9f9f9" : "#ffffff",
+                                                            borderBottom: "1px solid #e0e0e0",
                                                         }}
                                                     >
-                                                        {trail.weeklyCount}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.batteryStatus !== null ? (
-                                                            <span
-                                                                style={{
-                                                                    color:
-                                                                        trail.batteryStatus > 50
-                                                                            ? "#28a745"
-                                                                            : trail.batteryStatus > 20
-                                                                                ? "#ffc107"
-                                                                                : "#dc3545",
-                                                                    fontWeight: "bold",
-                                                                }}
-                                                            >
-                                                                {trail.batteryStatus}%
-                                                            </span>
+                                                        <td
+                                                            style={{
+                                                                padding: "12px",
+                                                                border: "1px solid #ddd",
+                                                                fontWeight: "500",
+                                                                color: "#007bff",
+                                                                fontFamily: "monospace",
+                                                                cursor: "pointer",
+                                                                textDecoration: "underline",
+                                                            }}
+                                                            onClick={() => setSelectedDeviceId(device.device_id)}
+                                                        >
+                                                            {device.device_id}
+                                                        </td>
+                                                        {device.trail_name && assigningDeviceId !== device.device_id ? (
+                                                            <td style={{ padding: "8px", textAlign: "center", border: "1px solid #ddd" }}>
+                                                                <span style={{ marginRight: "8px" }}>{device.trail_name}</span>
+                                                                <button
+                                                                    style={{ fontSize: "0.75em", padding: "2px 6px", cursor: "pointer", color: "#666", background: "none", border: "1px solid #ccc", borderRadius: "4px" }}
+                                                                    onClick={() => { setAssigningDeviceId(device.device_id); setAssignTrailId(device.trail_id ?? 0); }}
+                                                                >✎</button>
+                                                            </td>
                                                         ) : (
-                                                            <span style={{ color: "#999" }}>N/A</span>
+                                                            <td style={{ padding: "8px", textAlign: "center", border: "1px solid #ddd" }}>
+                                                                {assigningDeviceId === device.device_id ? (
+                                                                    <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+                                                                        <select
+                                                                            value={assignTrailId}
+                                                                            onChange={e => setAssignTrailId(Number(e.target.value))}
+                                                                            style={{ fontSize: "0.85em", padding: "4px" }}
+                                                                        >
+                                                                            <option value={0}>Select trail…</option>
+                                                                            {(() => {
+                                                                                const assignedTrailIds = new Set(
+                                                                                    deviceListData
+                                                                                        .filter(d => d.trail_id && d.device_id !== device.device_id)
+                                                                                        .map(d => d.trail_id)
+                                                                                );
+                                                                                return trailMetadata
+                                                                                    .filter(t => t.trail_id && t.trail_name && !assignedTrailIds.has(t.trail_id))
+                                                                                    .map(t => (
+                                                                                        <option key={t.trail_id} value={t.trail_id}>{t.trail_name}</option>
+                                                                                    ));
+                                                                            })()}
+                                                                        </select>
+                                                                        <button
+                                                                            style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer" }}
+                                                                            disabled={!assignTrailId}
+                                                                            onClick={async () => {
+                                                                                await updateDeviceTrailAssociation(device.device_id, assignTrailId);
+                                                                                setAssigningDeviceId(null);
+                                                                                setAssignTrailId(0);
+                                                                                handleTrailUpdated();
+                                                                            }}
+                                                                        >Save</button>
+                                                                        {device.trail_name && (
+                                                                            <button
+                                                                                style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer", color: "#dc3545", border: "1px solid #dc3545", background: "none", borderRadius: "4px" }}
+                                                                                onClick={async () => {
+                                                                                    await updateDeviceTrailAssociation(device.device_id, 0);
+                                                                                    setAssigningDeviceId(null);
+                                                                                    setAssignTrailId(0);
+                                                                                    handleTrailUpdated();
+                                                                                }}
+                                                                            >Unassign</button>
+                                                                        )}
+                                                                        <button
+                                                                            style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer" }}
+                                                                            onClick={() => { setAssigningDeviceId(null); setAssignTrailId(0); }}
+                                                                        >✕</button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <button
+                                                                        style={{ fontSize: "0.8em", padding: "4px 10px", cursor: "pointer", color: "#007bff", background: "none", border: "1px solid #007bff", borderRadius: "4px" }}
+                                                                        onClick={() => { setAssigningDeviceId(device.device_id); setAssignTrailId(0); }}
+                                                                    >Assign Trail</button>
+                                                                )}
+                                                            </td>
                                                         )}
-                                                    </td>
-                                                    <td
-                                                        style={{
-                                                            padding: "12px",
-                                                            textAlign: "center",
-                                                            border: "1px solid #ddd",
-                                                            color: "#333",
-                                                        }}
-                                                    >
-                                                        {trail.lastUpdated || (
-                                                            <span style={{ color: "#999" }}>N/A</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))
+                                                        {cell(device.weeklyCount)}
+                                                        {cell(device.firmwareVersion ?? na)}
+                                                        {cell(device.batteryStatus !== null ? (
+                                                            <span style={{ color: device.batteryStatus > 50 ? "#28a745" : device.batteryStatus > 20 ? "#ffc107" : "#dc3545", fontWeight: "bold" }}>
+                                                                {device.batteryStatus}%
+                                                            </span>
+                                                        ) : na)}
+                                                        {cell(device.lastCallIn ?? na)}
+                                                    </tr>
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>
@@ -1041,10 +1044,9 @@ const dashboard = () => {
                 trailGroups={trailGroups}
                 isCreateMode={true}
             />
-            <AssociateDeviceModal
-                isOpen={isAssociateDeviceModalOpen}
-                onClose={() => setIsAssociateDeviceModalOpen(false)}
-                onUpdate={handleTrailUpdated}
+            <DeviceDetailModal
+                deviceId={selectedDeviceId}
+                onClose={() => setSelectedDeviceId(null)}
             />
         </body>
     );
