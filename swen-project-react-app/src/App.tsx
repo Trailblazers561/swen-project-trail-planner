@@ -2,6 +2,7 @@ import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
+import InstallCheck from "./InstallCheck";
 import ConfirmUserPage from "./cognito/confirmUserPage";
 import React from 'react';
 
@@ -26,8 +27,11 @@ function App() {
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirm" element={<ConfirmUserPage />} />
-          <Route path="/dashboard" 
+          <Route path="/dashboard"
             element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/" />}
+          />
+          <Route path="/install-check"
+            element={isAuthenticated() ? <InstallCheck /> : <Navigate replace to="/login" />}
           />
         </Routes>
       </BrowserRouter>
