@@ -232,9 +232,24 @@ export default function InstallCheck() {
           marginBottom: "16px",
         }}
       >
-        {lastFetch === 0
-          ? "Loading..."
-          : `Updated ${lastFetchAge}s ago · auto-refreshing every ${REFRESH_INTERVAL_MS / 1000}s`}
+        {lastFetch === 0 ? (
+          "Loading..."
+        ) : (
+          <>
+            Updated{" "}
+            <span
+              style={{
+                display: "inline-block",
+                minWidth: "2em",
+                textAlign: "right",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {lastFetchAge}
+            </span>
+            s ago · auto-refreshing every {REFRESH_INTERVAL_MS / 1000}s
+          </>
+        )}
       </div>
 
       {error && (
@@ -308,7 +323,7 @@ export default function InstallCheck() {
               {trailName ? trailName : "Unassigned"}
             </div>
 
-            <Row label="Last call-in" value={age ? age.text : "Never"} bold />
+            <Row label="Last call-in" value={age ? age.text : "Never"} bold stableWidth />
             <Row label="Battery" value={batteryDisplay(d.battery)} />
             <Row label="Signal" value={signalQuality(d.rssi)} />
             <Row
@@ -334,10 +349,12 @@ function Row({
   label,
   value,
   bold,
+  stableWidth,
 }: {
   label: string;
   value: string;
   bold?: boolean;
+  stableWidth?: boolean;
 }) {
   return (
     <div
@@ -349,7 +366,19 @@ function Row({
       }}
     >
       <span style={{ color: palette.subtext }}>{label}</span>
-      <span style={{ fontWeight: bold ? 600 : 400 }}>{value}</span>
+      <span
+        style={{
+          fontWeight: bold ? 600 : 400,
+          ...(stableWidth && {
+            display: "inline-block",
+            minWidth: "7em",
+            textAlign: "right",
+            fontVariantNumeric: "tabular-nums",
+          }),
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
