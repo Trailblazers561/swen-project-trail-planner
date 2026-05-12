@@ -5,6 +5,7 @@
 .DS_Store
 swen-project-react-app/src/cognito/config.json
 swen-project-react-app/tsconfig.json
+USER_STORIES.pdf
 
 # Terraform
 .terraform/
