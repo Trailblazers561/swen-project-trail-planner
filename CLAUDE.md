@@ -47,11 +47,16 @@ npm run lint         # ESLint
 ```
 
 ### Terraform (run from `terraform/`)
+
+> ⚠️ **For the `tst` workspace, every plan/apply/destroy/refresh MUST include `-var-file=tst.tfvars`.** Bare invocation loads only `terraform.tfvars` (prod values) and produces a destructive plan that wants to wipe all staging DynamoDB tables and strip the `tst-` prefix from every resource. This is not drift — it is the missing-var-file signature. Stop immediately if you see mass DynamoDB replacements in a plan.
+
 ```bash
-terraform init       # first-time setup
-terraform plan       # preview changes
-terraform apply      # deploy (also builds and syncs React app to S3)
-terraform destroy    # tear down all AWS resources
+terraform workspace show                          # always confirm workspace first
+terraform init                                    # first-time setup
+terraform plan  -var-file=tst.tfvars              # staging preview
+terraform apply -var-file=tst.tfvars              # staging deploy (builds + syncs React app to S3)
+terraform destroy -var-file=tst.tfvars            # tear down staging
+# default workspace (prod): terraform.tfvars auto-loads — no -var-file needed
 ```
 
 ### Tests
