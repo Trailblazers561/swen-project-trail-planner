@@ -15,7 +15,15 @@ terraform.tfstate.backup
 terraform.tfstate.d/
 .terraform.tfstate.lock.info
 /lambdas/zips/*
+
+# By default ignore all tfvars (legacy terraform.tfvars / tst.tfvars contain API keys).
+# Explicitly allow per-tenant tfvars for new TrailCount workspaces — these contain
+# no secrets, only tenant/env/domain configuration.
 *.tfvars
+!adk-test.tfvars
+!adk-prod.tfvars
+!demo-test.tfvars
+!demo-prod.tfvars
 
 # Logs
 logs

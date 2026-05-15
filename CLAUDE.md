@@ -4,15 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ⚠️ Environment Safety Rule — READ FIRST
 
-**Do NOT touch any deployed environment except the V1 staging stack (Terraform workspace `tst`, resource prefix `tst-`) unless Craig explicitly and clearly instructs otherwise in the current conversation.**
+**STRICTLY OFF LIMITS — do NOT modify, deploy to, or destroy resources in these environments:**
+- **Legacy V1 production** (`default` workspace, no resource prefix) — `tusage.adirondackwilderness.org`. This is the V2 team's planned promotion target. CloudFront `E2PAASMSQFH9QT`, S3 bucket `trails.adirondackwilderness.org`, legacy API key `AWA-trail-counter-device-key-2016`. **Do not run `terraform destroy` while `default` workspace is selected.**
+- **V2 environments** — `trailblazers-tst.adirondackwilderness.org`, `trailblazers-uat.adirondackwilderness.org`. V2 student team's territory.
 
-Protected environments — do not modify, deploy to, or run destructive commands against:
-- **V1 production** — `tusage.adirondackwilderness.org`, `trailblazers-prod` branch, no `tst-` prefix in AWS
-- **V2 test** — `trailblazers-tst.adirondackwilderness.org`
-- **V2 UAT** — `trailblazers-uat.adirondackwilderness.org`
+**Safe / active environments (TrailCount cutover targets):**
+- **`adk-test` workspace** — `test.adk.trailcount.io`, resources prefixed `tc-adk-test-`. Active dev for ADK promotions.
+- **`adk-prod` workspace** — `adk.trailcount.io`, resources prefixed `tc-adk-prod-`. Real device data; The Garden trailhead deployment.
+- **`demo-test` workspace** — `test.demo.trailcount.io`, resources prefixed `tc-demo-test-`. Craig's playground; full-volume synthetic traffic.
+- **`demo-prod` workspace** — `demo.trailcount.io`, resources prefixed `tc-demo-prod-`. Public prospect-facing demo, ADK-flavored synthetic data.
+- **Legacy `tst` workspace** — still exists; receives current device uploads. Slated for destruction in A7 (`terraform destroy -var-file=tst.tfvars`) once device cuts over to `adk-prod`.
 
-Safe to use freely:
-- **V1 staging** — Terraform workspace `tst`, all resources prefixed `tst-`, API `https://2u0a6kwthj.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage`, frontend `http://trailplanner-bucket-22164505.s3-website-us-east-1.amazonaws.com`
+**Always verify workspace before any plan/apply/destroy:** `terraform workspace show`.
 
 ## What This Repo Is
 
@@ -22,19 +25,22 @@ See the parent `CLAUDE.md` (at `trail_counter_v1/CLAUDE.md`) for full system con
 
 ## Branch Model — Read This First
 
-**`master` is stale** (student team work through April 2025). The live production deployment is on **`trailblazers-prod`** — Cole's extended version, serving `tusage.adirondackwilderness.org`. This branch is ~18 commits ahead with a largely rewritten Lambda and new DynamoDB tables.
+**Active V1 branches (TrailCount cutover):**
+- **`v1-develop`** — where V1 work lands. Created 2026-05-15 from the v1.2 head, in A1 of the cutover.
+- **`v1-prod`** — literally what's deployed to `adk-prod` and `demo-prod`. Promotion: `v1-develop` → tag RC → cert checklist + 1-week soak on test → merge to `v1-prod` → apply.
+- **`v1.2.0-legacy`** (tag, not a branch) — marks the v1.2 state immediately before the cutover. Use for rollback reference.
 
-**`v1.2` is the active development branch** (Craig, 2026-05-08). Branched from `trailblazers-prod`. Contains Phase 3 backend fixes plus device health features: timestamp filtering, DynamoDB pagination, metadata endpoint pagination, error display in dashboard, default start date/granularity improvements, Terraform deploy reliability fixes, DeviceCallLog table + Lambda write on every call-in, firmware_version in payload, `GET /device_call_log` endpoint, device-centric Device View, inline trail association. Deployed to staging; pending production promotion.
+**Historical / inactive V1 branches (do not work on):**
+- `master` — student team work through April 2025; stale.
+- `trailblazers-prod` — Cole's V1 extensions, deployed at `tusage.adirondackwilderness.org`. V2 team's planned promotion target.
+- `v1.2` — pre-cutover Craig work; tagged as `v1.2.0-legacy` for posterity.
 
-Note: `trails.adirondackwilderness.org` does not resolve — the live frontend URL is `tusage.adirondackwilderness.org` (CloudFront distribution `E2PAASMSQFH9QT`). DNS for adirondackwilderness.org is managed via Squarespace, not Route53 (Route53 is empty in this account). ACM cert validation CNAMEs must be kept in Squarespace DNS or auto-renewal will fail.
+**V2 branches (other team — do not work on):**
+- `trailblazers-tst`, `trailblazers-uat`, etc. — V2 active development by Trailblazers team. V2 will eventually migrate off `tusage.adirondackwilderness.org` to TrailCount infrastructure via their own change process; do not preempt this.
 
-**V2 is in active development** on `trailblazers-*` branches (Trailblazers team). Do not touch those branches or their deployed environments:
-- `trailblazers-tst.adirondackwilderness.org` — V2 test
-- `trailblazers-uat.adirondackwilderness.org` — V2 UAT
+**DNS:** All DNS for `trailcount.io` and `adirondackwilderness.org` is managed via Squarespace, not Route 53 (Route 53 is empty in this account). ACM cert validation CNAMEs must be kept in Squarespace DNS or auto-renewal will fail.
 
-All V1 work uses `v1.2` (branched from `trailblazers-prod`). When promoting to production, merge `v1.2` → `trailblazers-prod`.
-
-**V2 migration — preferred path:** Deploy an adapter on the current V1 endpoint (`POST /trailplanner_api_stage/devices`) that accepts V1-format payloads. The V1 trail counter will be physically deployed at The Garden trailhead (Keene Valley, NY) ~May 18, 2026 for the summer. An adapter means the device can stay in place when V2 goes live — no field visit needed. The device endpoint can be updated via `config.txt` without reflashing, but the API key cannot.
+**V2 migration handoff:** When V2 ships (~August 2026), the V1 device(s) deployed at The Garden continue uploading to `adk-prod` until V2 hardware replaces them (~December 2026). V2 webapp+backend retires V1's `adk-prod` stack at handoff. See `../CUTOVER_PLAN.md` and `../TERRAFORM_A2.md`.
 
 ## Commands
 
@@ -48,16 +54,45 @@ npm run lint         # ESLint
 
 ### Terraform (run from `terraform/`)
 
-> ⚠️ **For the `tst` workspace, every plan/apply/destroy/refresh MUST include `-var-file=tst.tfvars`.** Bare invocation loads only `terraform.tfvars` (prod values) and produces a destructive plan that wants to wipe all staging DynamoDB tables and strip the `tst-` prefix from every resource. This is not drift — it is the missing-var-file signature. Stop immediately if you see mass DynamoDB replacements in a plan.
+**AWS_PROFILE=trail-admin is required.** Terraform needs read permissions on DynamoDB / IAM / S3 that your `default` profile (`craigmcg` user) doesn't have. The `trail-admin` profile assumes the `Trail_Mgr_Adm` role and has what's needed. Symptom of forgetting: `AccessDenied` errors on `DescribeTable` / `GetRole` / `GetBucketPolicy` during plan refresh. See [[reference_aws_profiles]] in memory.
+
+> ⚠️ **Always pass `-var-file=<workspace>.tfvars`** matching the current workspace. Bare invocation in a tenant-scoped workspace loads only `terraform.tfvars` (legacy prod values) and produces a destructive plan that wants to wipe the tenant stack. **Stop immediately if you see mass DynamoDB replacements or prefix-strip resource renames** — that's the missing-var-file signature.
 
 ```bash
+# Active tenant-scoped workspaces (use these for ongoing work):
+AWS_PROFILE=trail-admin terraform workspace select adk-test
+AWS_PROFILE=trail-admin terraform plan  -var-file=adk-test.tfvars
+AWS_PROFILE=trail-admin terraform apply -var-file=adk-test.tfvars     # creates ~50-100 resources
+
+# Same pattern for adk-prod.tfvars, demo-test.tfvars, demo-prod.tfvars.
+
+# Legacy tst workspace (still receiving device uploads; slated for destruction in A7):
+AWS_PROFILE=trail-admin terraform workspace select tst
+AWS_PROFILE=trail-admin terraform plan  -var-file=tst.tfvars
+
+# Legacy default workspace (V2's planned target — OFF LIMITS, see Environment Safety Rule):
+# Do not run terraform apply/destroy here.
+
 terraform workspace show                          # always confirm workspace first
-terraform init                                    # first-time setup
-terraform plan  -var-file=tst.tfvars              # staging preview
-terraform apply -var-file=tst.tfvars              # staging deploy (builds + syncs React app to S3)
-terraform destroy -var-file=tst.tfvars            # tear down staging
-# default workspace (prod): terraform.tfvars auto-loads — no -var-file needed
 ```
+
+#### First apply of a new tenant stack — the two-wave Squarespace DNS dance
+
+When you first `terraform apply` against e.g. `adk-test`, the apply will **pause** at `aws_acm_certificate_validation` — waiting for the ACM certs to be DNS-validated. In a second terminal, run `terraform output -json` to retrieve `dashboard_cert_validation_records` and `api_cert_validation_records`. Add those CNAMEs to Squarespace's DNS for `trailcount.io`. ACM polls DNS, validates within ~5 min, apply resumes and creates CloudFront + API Gateway custom domain.
+
+Once apply completes, retrieve `dashboard_cname_target` and `api_cname_target` outputs and add the user-facing CNAMEs in Squarespace:
+- `var.dashboard_domain` (e.g. `test.adk.trailcount.io`) → `dashboard_cname_target` (a `*.cloudfront.net` host)
+- `var.api_domain` (e.g. `api.test.adk.trailcount.io`) → `api_cname_target` (an `*.execute-api.us-east-1.amazonaws.com` regional host)
+
+#### Retrieving the device API key for a tenant stack
+
+For tenant-scoped workspaces, the device API key is auto-generated by `random_password` (see `terraform/secrets.tf`). After apply:
+
+```bash
+AWS_PROFILE=trail-admin terraform output -raw device_api_key
+```
+
+Paste the value into firmware `Core/Inc/secrets.h` (`DEVICE_API_KEY` macro), rebuild, and flash. Same firmware-side workflow as today; just changes where the value originates. To rotate: change a `keepers` argument on the `random_password` resource and re-apply.
 
 ### Tests
 ```bash
@@ -102,7 +137,9 @@ Trail IDs seeded by Terraform: Mt. Marcy (1), Wolf Creek Mountain (2), Mt. Joe (
 
 - **React dashboard endpoints** — Cognito `USER_PASSWORD_AUTH`; ID token sent as `Authorization: Bearer <token>` from sessionStorage
 - **`POST /devices`** — API key only (`X-API-Key` header), `authorization_type = NONE`; rate-limited: 50 req/s, 100 burst, 10k/day via API Gateway usage plan
-- The old API key (`MSD-24572-TRAIL-PLANNER-KEY`) was compromised and has been rotated. New key is in `secrets.h` (gitignored) on the firmware side and in `terraform/terraform.tfvars` (gitignored) on the backend side.
+- API key handling differs by workspace:
+  - **Legacy `tst` / `default` workspaces**: key is set in `terraform.tfvars` / `tst.tfvars` (gitignored or committed-with-staging-value), and pasted into firmware `secrets.h` (gitignored). The old compromised key (`MSD-24572-TRAIL-PLANNER-KEY`) was rotated out.
+  - **New tenant-scoped workspaces** (`adk-*`, `demo-*`): key is auto-generated by `random_password` in `secrets.tf`. Retrieve with `AWS_PROFILE=trail-admin terraform output -raw device_api_key` and paste into firmware `secrets.h`. Each tenant gets a unique key.
 
 ## React App Structure
 
@@ -125,8 +162,33 @@ If the React app can't reach the API or Cognito, check these files exist and con
 ## Key Terraform Variables
 
 `terraform/variables.tf`:
+
+**Tenant-scoping (added in A2 of the cutover):**
+- `tenant` — tenant name (e.g. `"adk"`, `"demo"`). Empty = legacy workspaces.
+- `env` — env within a tenant (`"prod"`, `"test"`). For legacy: `""` (default workspace) or `"tst"` (legacy staging).
+- `manage_dns` — bool, default false. When true, Terraform creates ACM certs + CloudFront with custom domain + API Gateway custom domain. New tenant-scoped workspaces set this true.
+- `dashboard_domain` — full FQDN for the dashboard (e.g. `"adk.trailcount.io"`). Used only when `manage_dns = true`.
+- `api_domain` — full FQDN for the API (e.g. `"api.adk.trailcount.io"`). Used only when `manage_dns = true`.
+
+**Other:**
 - `authorization_type` — `"COGNITO_USER_POOLS"` (default) or `"NONE"`
-- `has_cdn` / `has_domain` — CloudFront and Route53 are opt-in (both default false)
-- `acm_certificate_arn` — required when using a custom domain with CloudFront
+- `device_api_key` — used only by legacy workspaces (provide in tfvars). New tenant-scoped workspaces auto-generate via `random_password` in `secrets.tf`.
+
+**Dead variables** (kept for legacy compatibility; will be removed when legacy `tst` is destroyed in A7):
+- `has_cdn`, `has_domain`, `acm_certificate_arn` — replaced by `manage_dns` + auto-generated certs.
+
+**Resource naming pattern:**
+- New tenant-scoped: `tc-<tenant>-<env>-<resource>` (e.g. `tc-adk-test-DeviceMetadata`)
+- Legacy staging: `tst-<resource>` (preserved)
+- Legacy prod: no prefix (preserved; V2's promotion target)
+
+**Terraform files of note (added in A2):**
+- `acm.tf` — ACM cert resources (dashboard + api) gated by `manage_dns`
+- `cloudfront.tf` — CloudFront distribution + OAC + bucket policy, gated by `manage_dns`
+- `api_custom_domain.tf` — API Gateway custom domain + base path mapping, gated by `manage_dns`
+- `secrets.tf` — `random_password` for device API key + the local that resolves it
+- `outputs.tf` — DNS validation records + traffic CNAME targets (all return null/empty for non-tenant workspaces)
 
 Full API reference: `API_DOCUMENTATION.md` in the repo root.
+
+The high-level cutover plan + Terraform refactor primer live in the parent project: `../CUTOVER_PLAN.md` and `../TERRAFORM_A2.md`.

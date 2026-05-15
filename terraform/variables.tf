@@ -65,11 +65,39 @@ variable "device_api_key" {
 variable "env" {
   type        = string
   default     = ""
-  description = "Environment prefix for resource names (e.g. 'tst'). Empty string = no prefix (prod)."
+  description = "Environment within a tenant (e.g. 'prod', 'test'). Legacy workspaces use '' (default) or 'tst' (legacy staging)."
+}
+
+variable "tenant" {
+  type        = string
+  default     = ""
+  description = "Tenant name (e.g. 'adk', 'demo'). Empty = legacy workspaces (default and tst). New tenant-scoped workspaces set this to enable the tc-<tenant>-<env>- naming pattern."
+}
+
+variable "manage_dns" {
+  type        = bool
+  default     = false
+  description = "When true, Terraform creates ACM certs + CloudFront with custom domain + API Gateway custom domain. New tenant-scoped workspaces set this true. Legacy workspaces keep it false (DNS/certs managed manually outside Terraform if at all)."
+}
+
+variable "dashboard_domain" {
+  type        = string
+  default     = ""
+  description = "Full FQDN for the dashboard (e.g. 'adk.trailcount.io', 'test.adk.trailcount.io'). Used only when manage_dns = true."
+}
+
+variable "api_domain" {
+  type        = string
+  default     = ""
+  description = "Full FQDN for the API (e.g. 'api.adk.trailcount.io', 'api.test.adk.trailcount.io'). Used only when manage_dns = true."
 }
 
 locals {
-  name_prefix = var.env != "" ? "${var.env}-" : ""
+  # Resource name prefix. Three cases:
+  #   tenant-scoped (tenant='adk', env='test')  -> 'tc-adk-test-'
+  #   legacy staging  (tenant='',   env='tst')  -> 'tst-'         (preserves existing behavior)
+  #   legacy prod     (tenant='',   env='')     -> ''             (preserves existing behavior)
+  name_prefix = var.tenant != "" ? "tc-${var.tenant}-${var.env}-" : (var.env != "" ? "${var.env}-" : "")
 }
 
 resource "random_integer" "random_suffix" {

@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user_pool" {
-  name                = "${var.default_name}_user_pool"
+  name                = var.tenant != "" ? "${local.name_prefix}${var.default_name}_user_pool" : "${var.default_name}_user_pool"
   deletion_protection = "INACTIVE"
 
   username_attributes      = ["email"]
@@ -15,7 +15,7 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_client" "client" {
-  name         = "${var.default_name}_cognito_client"
+  name         = var.tenant != "" ? "${local.name_prefix}${var.default_name}_cognito_client" : "${var.default_name}_cognito_client"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 
   generate_secret              = false

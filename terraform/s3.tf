@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_s3_bucket_policy" "public_read" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
@@ -39,7 +39,7 @@ resource "aws_s3_bucket_policy" "public_read" {
 }
 
 resource "aws_s3_bucket_website_configuration" "website" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -65,7 +65,7 @@ resource "aws_s3_bucket_acl" "acl" {
   depends_on = [aws_s3_bucket_ownership_controls.bucket_ownership, aws_s3_bucket_public_access_block.public_access]
 
   bucket = aws_s3_bucket.bucket.id
-  acl    = var.has_cdn ? var.bucket_acl : "public-read"
+  acl    = var.manage_dns ? var.bucket_acl : "public-read"
 }
 
 #Injects user pool configuration into environment
@@ -83,9 +83,13 @@ EOF
 
 resource "null_resource" "deploy_react_app" {
   triggers = {
+    # Exclude cognito/config.json: it's written by local_sensitive_file.user_pool_config
+    # during this same apply, so including it in the hash makes filemd5 inconsistent
+    # between plan and apply.
     src_hash = sha256(join("", [
       for f in sort(fileset("${path.module}/${var.react_app_directory}/src", "**")) :
       filemd5("${path.module}/${var.react_app_directory}/src/${f}")
+      if f != "cognito/config.json"
     ]))
   }
 

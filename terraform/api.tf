@@ -7,7 +7,7 @@ resource "aws_api_gateway_rest_api" "api" {
       version = "1.0"
     }
   })
-  name = "${var.default_name}_api"
+  name = var.tenant != "" ? "${local.name_prefix}${var.default_name}_api" : "${var.default_name}_api"
 }
 
 # /trail_data Resource
@@ -549,7 +549,7 @@ EOF
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
   name  = "${local.name_prefix}Device API Key"
-  value = var.device_api_key
+  value = local.effective_device_api_key
 
   lifecycle {
     ignore_changes = [value]
