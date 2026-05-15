@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AWS backend + React frontend for the Adirondack trail counter system (adirondackwilderness.org). Physical trail counter devices detect hikers, batch events locally, and upload once daily to AWS. A React dashboard displays trail popularity as a line graph with selectable date range, granularity, trails, and wilderness area groups.
 
-See the parent `CLAUDE.md` (at `trail_counter_v1/CLAUDE.md`) for full system context: hardware, firmware, SIM status, open issues, and the actual API endpoint/key the device uses.
+See the parent `CLAUDE.md` (at `trailcount/CLAUDE.md`) for full system context: hardware, firmware, SIM status, open issues, and the actual API endpoint/key the device uses.
 
 ## Branch Model — Read This First
 

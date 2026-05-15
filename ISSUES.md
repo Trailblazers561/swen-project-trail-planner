@@ -59,9 +59,19 @@ API Gateway only includes CORS headers when the Lambda returns a valid response.
 
 ---
 
+### 8. Device call-in history modal shows misleading "No call-in history found" on auth failure
+**Severity: Medium**
+Observed 2026-05-13 on Device View. Clicking a device ID opens `DeviceDetailModal`, which queries `GET /device_call_log?device_id=xxx`. When the Cognito session has expired, the API returns 401/403, but the modal renders "No call-in history found." — the same message it shows for a device that genuinely has no call-in records. The user has no way to tell "session expired, log back in" from "device has never called in."
+
+Issue #6's fix (red error banner + redirect to `/login?reason=session_expired` on 401/403) was applied to `dashboard.tsx` trail data fetches but not to `DeviceDetailModal`'s call-log fetch. Likely also affects other modal-driven fetches.
+
+**Recommended fix:** In `DeviceDetailModal` (and an audit of other modal/component-level `api.ts` consumers), distinguish "fetch succeeded with empty array" from "fetch failed." On 401/403, redirect to `/login?reason=session_expired`. On other errors, show "Could not load call-in history" rather than the empty-state message.
+
+---
+
 ## Recommended Changes
 
-Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pending production promotion). Items 4 and 5 remain open.
+Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pending production promotion). Items 4, 5, and 8 remain open.
 
 | # | Change | File | Priority | Status |
 |---|--------|------|----------|--------|
@@ -71,3 +81,4 @@ Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pe
 | 4 | Replace full-table scans with keyed lookups or add `Limit` | `lambdas/traildata.py` — metadata endpoints | **Medium** | ⬜ Open |
 | 5 | Replace sequential trail queries with `batch_get_item` or parallel requests | `lambdas/traildata.py` — `get_trail_data()` loop | **Low** | ⬜ Open |
 | 6 | Show user-visible error when trail data fetch fails | `swen-project-react-app/src/dashboard.tsx` | **Medium** | ✅ Done (v1.2) |
+| 8 | Distinguish auth-expired from empty-history in `DeviceDetailModal` (and audit other modal fetches) | `swen-project-react-app/src/components/` | **Medium** | ⬜ Open |
