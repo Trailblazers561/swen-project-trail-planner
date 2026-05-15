@@ -29,6 +29,7 @@
 
 .input-glass {
   width: 100%;
+  box-sizing: border-box;
   padding: 15px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.1);
@@ -50,20 +51,20 @@
 }
 
 .button-3d {
-    background: #36006f;
+    background: #6a9e5e;
     color: #fff;
     padding: 15px 30px;
     font-size: 18px;
     border: none;
     border-radius: 8px;
-    box-shadow: 0 6px #280449;
+    box-shadow: 0 6px #1e3a18;
     cursor: pointer;
     margin: 5px;
     transition: all 0.2s ease;
 }
 
 .button-3d:active {
-    box-shadow: 0 2px #280449;
+    box-shadow: 0 2px #1e3a18;
     transform: translateY(4px);
 }
 
@@ -80,4 +81,86 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Frosted-glass card behind the login content so the logo + form don't
+   blend into the background photo. Matches the .input-glass aesthetic. */
+.loginForm {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 16px;
+  padding: 32px 40px;
+  max-width: 460px;
+  margin: 0 auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+
+.loginForm h4 {
+  margin: 0;
+  text-align: center;
+  font-weight: 500;
+  color: #1e3a18;
+}
+
+.loginForm .sponsor-line {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  letter-spacing: 0.4px;
+  color: #1e3a18;
+  opacity: 0.85;
+}
+
+.loginForm form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+}
+
+.loginForm form > div {
+  width: 100%;
+}
+
+/* Input contrast on the new light frosted background — white text from
+   .input-glass becomes unreadable against the light card, so scope a
+   dark-text override to within the login form. */
+.loginForm .input-glass {
+  color: #1e3a18;
+}
+.loginForm .input-glass::placeholder {
+  color: rgba(30, 58, 24, 0.6);
+}
+
+/* Cleaner Sign-In button — replaces .button-3d's heavy dark-green offset
+   shadow with a flat, modern look, scoped to .loginForm so it doesn't
+   change any other .button-3d usage. */
+.loginForm .button-3d {
+  background: #6a9e5e;
+  color: #fff;
+  padding: 12px 36px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  margin: 8px 0 0 0;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+}
+.loginForm .button-3d:hover {
+  background: #5b8d4f;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.loginForm .button-3d:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }

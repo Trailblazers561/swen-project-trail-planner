@@ -32,7 +32,8 @@ const LoginPage = () => {
 
   return (
     <div className="loginForm">
-      <img className="logo" alt="Logo" src="AWA-logo.png" />
+      <img className="logo" alt="TrailCount" src="trailcount-logo-primary.svg" />
+      <p className="sponsor-line">Sponsored by: Adirondack Wilderness Advocates</p>
       {sessionExpired && (
         <div style={{
           background: "#fff3cd",
