@@ -36,7 +36,9 @@ lerna-debug.log*
 
 # Node / JS
 node_modules/
-package-lock.json
+# package-lock.json is tracked (was previously ignored). Tracking it
+# pins exact dependency versions for reproducible builds and lets CI
+# cache npm installs by the lockfile hash.
 dist/
 dist-ssr/
 *.local
