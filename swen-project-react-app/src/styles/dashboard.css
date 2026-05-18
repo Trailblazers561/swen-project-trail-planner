@@ -43,7 +43,7 @@ select {
 .date-picker-start-date:focus,
 .date-picker-end-date:focus,
 select:focus {
-    border-color: #007bff;
+    border-color: #6a9e5e;
     outline: none;
     background-color: white;
 }
@@ -82,19 +82,19 @@ select {
 }
 
 .logout-button {
-    background-color: #dc3545;
+    background-color: #5a6268;
     color: white;
 }
 
 .logout-button:hover {
-    background-color: #c82333;
+    background-color: #474e54;
 }
 
 .action-button {
-    background-color: #007bff;
+    background-color: #6a9e5e;
     color: white;
 }
 
 .action-button:hover {
-    background-color: #0056b3;
+    background-color: #4e8040;
 }
