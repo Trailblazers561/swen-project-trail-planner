@@ -1,0 +1,92 @@
+name: Deploy webapp
+
+# Manual-trigger deploy. Pick a tenant workspace from the dropdown and the
+# workflow runs `terraform apply` against it, then invalidates the CloudFront
+# cache for the matching dashboard host. Same operation a human would run from
+# their laptop, just without the workspace-select footgun and with managed
+# AWS credentials via OIDC.
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Tenant workspace to deploy'
+        required: true
+        type: choice
+        default: adk-test
+        options:
+          - adk-test
+          - demo-test
+          - adk-prod
+          - demo-prod
+
+# Required for OIDC token exchange with AWS.
+permissions:
+  id-token: write
+  contents: read
+
+# Prevent two deploys to the same env from racing (Terraform state lock would
+# catch it too, but this is faster + cleaner).
+concurrency:
+  group: deploy-${{ inputs.env }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_IN_AUTOMATION: 'true'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        # Needed for `npm install && npm run build` inside the
+        # null_resource.deploy_react_app provisioner.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: swen-project-react-app/package-lock.json
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.2
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::650244845886:role/tc-github-actions-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform workspace select
+        run: terraform workspace select ${{ inputs.env }}
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve -input=false -var-file=${{ inputs.env }}.tfvars
+
+      - name: Invalidate CloudFront
+        # CloudFront caches HTML for up to 1h by default; explicit invalidation
+        # makes the new bundle visible immediately rather than waiting for TTL.
+        run: |
+          DIST_ID=$(terraform output -raw cloudfront_distribution_id)
+          if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "null" ]; then
+            echo "Invalidating CloudFront distribution $DIST_ID"
+            aws cloudfront create-invalidation \
+              --distribution-id "$DIST_ID" \
+              --paths "/index.html" "/" \
+              --query 'Invalidation.{Id:Id,Status:Status}' \
+              --output table
+          else
+            echo "No CloudFront distribution ID — skipping invalidation"
+          fi

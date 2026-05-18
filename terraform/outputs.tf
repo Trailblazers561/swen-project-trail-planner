@@ -41,3 +41,8 @@ output "api_cname_target" {
   description = "Point a CNAME at this from var.api_domain in Squarespace"
   value       = var.manage_dns ? aws_api_gateway_domain_name.api[0].regional_domain_name : null
 }
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID — used by the deploy workflow to invalidate cached HTML after each push"
+  value       = var.manage_dns ? aws_cloudfront_distribution.s3_distribution[0].id : null
+}
