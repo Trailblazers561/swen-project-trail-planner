@@ -69,9 +69,31 @@ Issue #6's fix (red error banner + redirect to `/login?reason=session_expired` o
 
 ---
 
+### 9. Chart conflates "zero hikers" with "no data"
+**Severity: Medium**
+Identified 2026-05-18. The trail-data chart in `dashboard.tsx` cannot currently distinguish three distinct states per date:
+
+| State | Meaning | Correct rendering |
+|---|---|---|
+| Device called in, hikers > 0 | Real activity | marker at hiker count |
+| Device called in, hikers == 0 | Quiet day, device healthy | marker at y=0 |
+| Device did not call in | Unknown — outage, dead battery, not deployed yet | gap (no marker) |
+
+`get_trail_data` returns only `TrailDeviceLogs` entries (one row per hiker event), so the chart code can't see "calls with zero count". The original bug: every date in the range rendered as a marker at y=0 — visually flat across no-data ranges, indistinguishable from a real "0 hikers" reading.
+
+A first-pass fix (branch `v1.2-chart-nodata-gaps`, commit `0fd9398`) converted empty ranges to `null` so Plotly draws gaps. That moves the chart from "always 0" to "always gap" — half right, but now it loses the *real* zero-hiker case. **Not merged to v1-develop.** The branch is preserved on origin as a starting point for the proper fix.
+
+**Recommended fix:** Either
+- **Frontend approach:** dashboard fetches both `/trail_data` and `/device_call_log?device_id=…` per device in the trail group, merges in JS — a date with DeviceCallLog rows but no TrailDeviceLogs rows is a real `0`, a date with neither is a gap. Adds per-render API calls, keeps backend simple.
+- **Backend approach:** modify `get_trail_data` to optionally include synthetic 0-count entries on dates where DeviceCallLog has rows but TrailDeviceLogs doesn't. Cleaner wire format, more Lambda work.
+
+Either way: the chart needs to distinguish `null` (no marker) from `0` (marker at zero). The `v1.2-chart-nodata-gaps` branch already has the null-handling plumbing in place; what's missing is the DeviceCallLog join.
+
+---
+
 ## Recommended Changes
 
-Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pending production promotion). Items 4, 5, and 8 remain open.
+Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pending production promotion). Items 4, 5, 8, and 9 remain open.
 
 | # | Change | File | Priority | Status |
 |---|--------|------|----------|--------|
@@ -82,3 +104,4 @@ Items 1–3 and 6 were completed in v1.2 (branch `v1.2`, deployed to staging, pe
 | 5 | Replace sequential trail queries with `batch_get_item` or parallel requests | `lambdas/traildata.py` — `get_trail_data()` loop | **Low** | ⬜ Open |
 | 6 | Show user-visible error when trail data fetch fails | `swen-project-react-app/src/dashboard.tsx` | **Medium** | ✅ Done (v1.2) |
 | 8 | Distinguish auth-expired from empty-history in `DeviceDetailModal` (and audit other modal fetches) | `swen-project-react-app/src/components/` | **Medium** | ⬜ Open |
+| 9 | Distinguish "zero hikers" from "no data" in chart (join `TrailDeviceLogs` with `DeviceCallLog`) | `dashboard.tsx` or `lambdas/traildata.py` | **Medium** | ⬜ Open (branch `v1.2-chart-nodata-gaps` is the starting point) |
