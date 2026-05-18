@@ -716,7 +716,9 @@ const dashboard = () => {
                         )}
                         <Plot
                             className="graph"
-                            config={{ displayModeBar: false }}
+                            useResizeHandler
+                            style={{ width: "100%", height: "700px" }}
+                            config={{ displayModeBar: false, responsive: true }}
                             data={aggregate && graphLines.length > 0
                                 ? [{
                                     x: graphLines[0].x,
@@ -754,8 +756,7 @@ const dashboard = () => {
                                     xref: "paper",
                                     x: 0.05,
                                 },
-                                width: 1000,
-                                height: 700,
+                                autosize: true,
                                 xaxis: {
                                     title: { text: "Date", font: { size: 18, color: "#7f7f7f" } },
                                     autorange: true,
