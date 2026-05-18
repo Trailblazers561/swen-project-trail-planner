@@ -47,7 +47,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ deviceId, onClose
                     ) : (
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9em" }}>
                             <thead>
-                                <tr style={{ backgroundColor: "#007bff", color: "white" }}>
+                                <tr style={{ backgroundColor: "#1e3a18", color: "white" }}>
                                     {headers.map((h) => (
                                         <th key={h} style={{ padding: "10px 12px", textAlign: "center", border: "1px solid #ddd", fontWeight: "bold" }}>
                                             {h}

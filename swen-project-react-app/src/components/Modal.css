@@ -95,7 +95,7 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #6a9e5e;
 }
 
 .error-message {
@@ -134,12 +134,12 @@
 }
 
 .modal-footer button[type="submit"] {
-  background-color: #007bff;
+  background-color: #6a9e5e;
   color: white;
 }
 
 .modal-footer button[type="submit"]:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #4e8040;
 }
 
 .modal-footer button:disabled {
@@ -193,13 +193,13 @@
 }
 
 .device-item:hover {
-  border-color: #007bff;
-  background-color: #f0f7ff;
+  border-color: #6a9e5e;
+  background-color: #f0f7ef;
 }
 
 .device-item.selected {
-  border-color: #007bff;
-  background-color: #e7f3ff;
+  border-color: #6a9e5e;
+  background-color: #e3f0dd;
   border-width: 2px;
 }
 

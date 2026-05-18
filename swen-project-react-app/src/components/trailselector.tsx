@@ -210,12 +210,12 @@ const TrailSelector = ({
                         minWidth: "200px",
                         borderRadius: "5px",
                         backgroundColor: "#fff",
-                        border: "2px solid #007bff",
+                        border: "2px solid #6a9e5e",
                         boxShadow: "none",
                     }),
                     multiValue: (base) => ({
                         ...base,
-                        backgroundColor: "#007bff",
+                        backgroundColor: "#6a9e5e",
                         color: "white",
                         borderRadius: "5px",
                         padding: "2px 5px",
@@ -229,7 +229,7 @@ const TrailSelector = ({
                         ...base,
                         color: "white",
                         ":hover": {
-                            backgroundColor: "#0056b3",
+                            backgroundColor: "#4e8040",
                             color: "white",
                         },
                     }),
@@ -240,10 +240,10 @@ const TrailSelector = ({
                     }),
                     option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isSelected ? "#007bff" : "#fff",
+                        backgroundColor: state.isSelected ? "#6a9e5e" : "#fff",
                         color: state.isSelected ? "white" : "#333",
                         ":hover": {
-                            backgroundColor: "#007bff",
+                            backgroundColor: "#6a9e5e",
                             color: "white",
                         },
                     }),
@@ -261,7 +261,7 @@ const TrailSelector = ({
                         minWidth: "200px",
                         borderRadius: "5px",
                         backgroundColor: "#fff",
-                        border: "2px solid #007bff",
+                        border: "2px solid #6a9e5e",
                         boxShadow: "none",
                     }),
                     menu: (base) => ({
@@ -271,10 +271,10 @@ const TrailSelector = ({
                     }),
                     option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isSelected ? "#007bff" : "#fff",
+                        backgroundColor: state.isSelected ? "#6a9e5e" : "#fff",
                         color: state.isSelected ? "white" : "#333",
                         ":hover": {
-                            backgroundColor: "#007bff",
+                            backgroundColor: "#6a9e5e",
                             color: "white",
                         },
                     }),

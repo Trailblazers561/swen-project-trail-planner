@@ -646,7 +646,7 @@ const dashboard = () => {
                         type="button"
                         onClick={toggleView}
                         style={{
-                            backgroundColor: viewMode === "graph" ? "#007bff" : "#6c757d",
+                            backgroundColor: "#4e8040",
                             color: "white",
                         }}
                     >
@@ -708,7 +708,7 @@ const dashboard = () => {
                                     width: 48,
                                     height: 48,
                                     border: "5px solid #e0e0e0",
-                                    borderTopColor: "#007bff",
+                                    borderTopColor: "#6a9e5e",
                                     borderRadius: "50%",
                                     animation: "spin 0.8s linear infinite",
                                 }} />
@@ -728,7 +728,7 @@ const dashboard = () => {
                                     type: "scatter" as const,
                                     mode: "lines+markers" as const,
                                     name: "Combined",
-                                    marker: { color: "blue" },
+                                    marker: { color: "#6a9e5e" },
                                 }]
                                 : graphLines.map((line, index) => ({
                                     x: line.x,
@@ -738,13 +738,13 @@ const dashboard = () => {
                                     name: line.name,
                                     marker: {
                                         color: [
-                                            "red",
-                                            "blue",
-                                            "green",
-                                            "orange",
-                                            "goldenrod",
-                                            "limegreen",
-                                            "papayawhip",
+                                            "#6a9e5e",
+                                            "#c87941",
+                                            "#5b8db8",
+                                            "#c4a040",
+                                            "#8b6b4a",
+                                            "#5b9e8a",
+                                            "#7b5ea7",
                                         ][index % 7],
                                     },
                                 }))
@@ -884,7 +884,7 @@ const dashboard = () => {
                                     }}
                                 >
                                     <thead>
-                                        <tr style={{ backgroundColor: "#007bff", color: "white" }}>
+                                        <tr style={{ backgroundColor: "#1e3a18", color: "white" }}>
                                             {["Device ID", "Associated Trail", "Weekly Count", "Firmware", "Battery", "Last Call-in"].map((h, i) => (
                                                 <th key={h} style={{ padding: "12px", textAlign: i === 0 ? "left" : "center", border: "1px solid #ddd", fontWeight: "bold" }}>
                                                     {h}
@@ -928,7 +928,7 @@ const dashboard = () => {
                                                                 padding: "12px",
                                                                 border: "1px solid #ddd",
                                                                 fontWeight: "500",
-                                                                color: "#007bff",
+                                                                color: "#6a9e5e",
                                                                 fontFamily: "monospace",
                                                                 cursor: "pointer",
                                                                 textDecoration: "underline",
@@ -996,7 +996,7 @@ const dashboard = () => {
                                                                     </div>
                                                                 ) : (
                                                                     <button
-                                                                        style={{ fontSize: "0.8em", padding: "4px 10px", cursor: "pointer", color: "#007bff", background: "none", border: "1px solid #007bff", borderRadius: "4px" }}
+                                                                        style={{ fontSize: "0.8em", padding: "4px 10px", cursor: "pointer", color: "#6a9e5e", background: "none", border: "1px solid #6a9e5e", borderRadius: "4px" }}
                                                                         onClick={() => { setAssigningDeviceId(device.device_id); setAssignTrailId(0); }}
                                                                     >Assign Trail</button>
                                                                 )}
