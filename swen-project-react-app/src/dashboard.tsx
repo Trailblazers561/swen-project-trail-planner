@@ -64,7 +64,11 @@ const dashboard = () => {
         Array<{
             name: string;
             x: Date[];
-            y: number[];
+            // null = no data on this date (rendered as a gap, not a 0 marker).
+            // A real numeric 0 would mean "device reported in, no hikers" — we
+            // don't currently distinguish that case from "no upload", so any
+            // empty range is treated as no-data.
+            y: (number | null)[];
         }>
     >([]);
 
@@ -317,14 +321,16 @@ const dashboard = () => {
     function countOccurrencesInRanges(
         ranges: { start: Date; end: Date }[],
         events: Date[]
-    ): Map<Date, number> {
-        let occurrences = new Map<Date, number>();
+    ): Map<Date, number | null> {
+        let occurrences = new Map<Date, number | null>();
 
         for (let range of ranges) {
             let count = events.filter(
                 (date) => date >= range.start && date <= range.end
             ).length;
-            occurrences.set(range.start, count);
+            // null for empty ranges so Plotly draws a gap instead of a 0
+            // marker. "no data" and "0 hikers" should look different.
+            occurrences.set(range.start, count > 0 ? count : null);
         }
         return occurrences;
     }
@@ -388,7 +394,7 @@ const dashboard = () => {
                 }
             );
 
-            var lines: { name: string; x: Date[]; y: number[] }[] = [];
+            var lines: { name: string; x: Date[]; y: (number | null)[] }[] = [];
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
@@ -722,9 +728,17 @@ const dashboard = () => {
                             data={aggregate && graphLines.length > 0
                                 ? [{
                                     x: graphLines[0].x,
-                                    y: graphLines[0].y.map((_, i) =>
-                                        graphLines.reduce((sum, line) => sum + (line.y[i] ?? 0), 0)
-                                    ),
+                                    // Aggregate is null only if every contributing
+                                    // line is null at that index; otherwise sum of
+                                    // known values. Keeps "no data" semantics.
+                                    y: graphLines[0].y.map((_, i) => {
+                                        const vals = graphLines
+                                            .map(line => line.y[i])
+                                            .filter((v): v is number => v !== null);
+                                        return vals.length === 0
+                                            ? null
+                                            : vals.reduce((sum, v) => sum + v, 0);
+                                    }),
                                     type: "scatter" as const,
                                     mode: "lines+markers" as const,
                                     name: "Combined",
