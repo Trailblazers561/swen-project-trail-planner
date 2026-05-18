@@ -1,11 +1,36 @@
 name: Deploy webapp
 
-# Manual-trigger deploy. Pick a tenant workspace from the dropdown and the
-# workflow runs `terraform apply` against it, then invalidates the CloudFront
-# cache for the matching dashboard host. Same operation a human would run from
-# their laptop, just without the workspace-select footgun and with managed
-# AWS credentials via OIDC.
+# Push-triggered, GitOps-style deploys. The act of pushing to a v1 branch is
+# the deploy.
+#
+# Branch -> environment mapping:
+#   v1-develop -> adk-test + demo-test  (test envs)
+#   v1.2       -> adk-prod + demo-prod  (prod envs)
+#
+# To promote test -> prod:
+#   git checkout v1.2 && git merge v1-develop && git push origin v1.2
+#
+# This workflow never triggers on pushes to master, trailblazers-*, or any
+# other branch, so the V2 team's work is completely unaffected. The workflow
+# file itself only needs to exist on the branches it triggers from.
 on:
+  push:
+    branches:
+      - v1-develop
+      - v1.2
+    paths:
+      # Skip when only unrelated files change (READMEs, ISSUES.md, CLAUDE.md,
+      # etc.). Touching code, infra, or the workflow itself triggers a deploy.
+      - 'swen-project-react-app/**'
+      - 'lambdas/**'
+      - 'terraform/**'
+      - '.github/workflows/deploy.yml'
+
+  # Optional manual trigger via API. Not visible in the GitHub Actions UI
+  # because the workflow file isn't on the default branch — that's intentional
+  # so V2's default-branch UI experience is unchanged. To trigger manually:
+  #   gh api repos/Trailblazers561/swen-project-trail-planner/actions/workflows/deploy.yml/dispatches \
+  #     -f ref=v1-develop -f 'inputs[env]=adk-test'
   workflow_dispatch:
     inputs:
       env:
@@ -19,24 +44,50 @@ on:
           - adk-prod
           - demo-prod
 
-# Required for OIDC token exchange with AWS.
 permissions:
-  id-token: write
+  id-token: write    # for AWS OIDC token exchange
   contents: read
-
-# Prevent two deploys to the same env from racing (Terraform state lock would
-# catch it too, but this is faster + cleaner).
-concurrency:
-  group: deploy-${{ inputs.env }}
-  cancel-in-progress: false
 
 env:
   AWS_REGION: us-east-1
   TF_IN_AUTOMATION: 'true'
 
 jobs:
-  deploy:
+  # Resolve which envs to deploy based on what triggered the workflow.
+  select-envs:
     runs-on: ubuntu-latest
+    outputs:
+      envs: ${{ steps.set.outputs.envs }}
+    steps:
+      - id: set
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            envs='["${{ inputs.env }}"]'
+          elif [ "${{ github.ref }}" = "refs/heads/v1-develop" ]; then
+            envs='["adk-test","demo-test"]'
+          elif [ "${{ github.ref }}" = "refs/heads/v1.2" ]; then
+            envs='["adk-prod","demo-prod"]'
+          else
+            envs='[]'
+          fi
+          echo "envs=$envs" >> "$GITHUB_OUTPUT"
+          echo "Resolved envs: $envs"
+
+  deploy:
+    needs: select-envs
+    if: needs.select-envs.outputs.envs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false   # one env failing shouldn't block the other
+      matrix:
+        env: ${{ fromJson(needs.select-envs.outputs.envs) }}
+
+    # Prevent two pushes to the same branch from racing on the same env.
+    # Different envs run in parallel; same env is serialized.
+    concurrency:
+      group: deploy-${{ matrix.env }}
+      cancel-in-progress: false
+
     defaults:
       run:
         working-directory: terraform
@@ -47,7 +98,7 @@ jobs:
 
       - name: Setup Node.js
         # Needed for `npm install && npm run build` inside the
-        # null_resource.deploy_react_app provisioner.
+        # null_resource.deploy_react_app provisioner that terraform runs.
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -70,18 +121,18 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform workspace select
-        run: terraform workspace select ${{ inputs.env }}
+        run: terraform workspace select ${{ matrix.env }}
 
       - name: Terraform apply
-        run: terraform apply -auto-approve -input=false -var-file=${{ inputs.env }}.tfvars
+        run: terraform apply -auto-approve -input=false -var-file=${{ matrix.env }}.tfvars
 
       - name: Invalidate CloudFront
-        # CloudFront caches HTML for up to 1h by default; explicit invalidation
-        # makes the new bundle visible immediately rather than waiting for TTL.
+        # CloudFront caches HTML up to 1h by default; explicit invalidation
+        # makes the new bundle visible immediately rather than waiting on TTL.
         run: |
           DIST_ID=$(terraform output -raw cloudfront_distribution_id)
           if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "null" ]; then
-            echo "Invalidating CloudFront distribution $DIST_ID"
+            echo "Invalidating CloudFront distribution $DIST_ID for ${{ matrix.env }}"
             aws cloudfront create-invalidation \
               --distribution-id "$DIST_ID" \
               --paths "/index.html" "/" \
