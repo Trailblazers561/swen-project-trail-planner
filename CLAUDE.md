@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`adk-prod` workspace** — `adk.trailcount.io`, resources prefixed `tc-adk-prod-`. Real device data; The Garden trailhead deployment.
 - **`demo-test` workspace** — `test.demo.trailcount.io`, resources prefixed `tc-demo-test-`. Craig's playground; full-volume synthetic traffic.
 - **`demo-prod` workspace** — `demo.trailcount.io`, resources prefixed `tc-demo-prod-`. Public prospect-facing demo, ADK-flavored synthetic data.
-- **Legacy `tst` workspace** — still exists; receives current device uploads. Slated for destruction in A7 (`terraform destroy -var-file=tst.tfvars`) once device cuts over to `adk-prod`.
+- ~~**Legacy `tst` workspace**~~ — **destroyed 2026-05-18** (`terraform destroy -var-file=tst.tfvars` then `terraform workspace delete tst`). All 99 resources gone, including ~22K rows of simulated robot-counter test data. No longer in the workspace list.
 
 **Always verify workspace before any plan/apply/destroy:** `terraform workspace show`.
 
@@ -25,18 +25,17 @@ See the parent `CLAUDE.md` (at `trailcount/CLAUDE.md`) for full system context: 
 
 ## Branch Model — Read This First
 
-**Active V1 branches (TrailCount cutover):**
-- **`v1-develop`** — where V1 work lands. Created 2026-05-15 from the v1.2 head, in A1 of the cutover.
-- **`v1-prod`** — literally what's deployed to `adk-prod` and `demo-prod`. Promotion: `v1-develop` → tag RC → cert checklist + 1-week soak on test → merge to `v1-prod` → apply.
-- **`v1.2.0-legacy`** (tag, not a branch) — marks the v1.2 state immediately before the cutover. Use for rollback reference.
+**Active V1 branches — both wired into CI/CD as of 2026-05-18:**
+- **`v1-develop`** — where v1.2.x work lands. Push triggers an auto-deploy to **adk-test + demo-test** via the GitHub Actions workflow at `.github/workflows/deploy.yml`.
+- **`v1-prod`** — what's deployed to **adk-prod + demo-prod**. Push to this branch fires the prod deploy in CI. Promotion: `git checkout v1-prod && git merge v1-develop --ff-only && git push origin v1-prod`. The merge step is the deliberate human action; no manual approval gate inside CI yet.
 
 **Historical / inactive V1 branches (do not work on):**
-- `master` — student team work through April 2025; stale.
-- `trailblazers-prod` — Cole's V1 extensions, deployed at `tusage.adirondackwilderness.org`. V2 team's planned promotion target.
-- `v1.2` — pre-cutover Craig work; tagged as `v1.2.0-legacy` for posterity.
+- `master` — student team work through April 2025; stale. Not in any CI trigger.
+- `trailblazers-prod` — Cole's V1 extensions, deployed at `tusage.adirondackwilderness.org`. V2 team's planned promotion target. Not in any CI trigger.
+- `v1.2` — vestigial alias at the same commit as `v1-prod` after 2026-05-18 FF. Not in any CI trigger. Will eventually be deleted or converted to a `v1.2.0` git tag; left in place for now.
 
 **V2 branches (other team — do not work on):**
-- `trailblazers-tst`, `trailblazers-uat`, etc. — V2 active development by Trailblazers team. V2 will eventually migrate off `tusage.adirondackwilderness.org` to TrailCount infrastructure via their own change process; do not preempt this.
+- `trailblazers-tst`, `trailblazers-uat`, etc. — V2 active development by Trailblazers team. The OIDC trust policy on the CI deploy role (`tc-github-actions-deploy`) is restricted to `v1-develop` + `v1-prod` only — workflows on `trailblazers-*` branches cannot assume the role even if a V2 dev pushed one. V2 will eventually migrate off `tusage.adirondackwilderness.org` to TrailCount infrastructure via their own change process; do not preempt this.
 
 **DNS:** All DNS for `trailcount.io` and `adirondackwilderness.org` is managed via Squarespace, not Route 53 (Route 53 is empty in this account). ACM cert validation CNAMEs must be kept in Squarespace DNS or auto-renewal will fail.
 
@@ -66,15 +65,13 @@ AWS_PROFILE=trail-admin terraform apply -var-file=adk-test.tfvars     # creates 
 
 # Same pattern for adk-prod.tfvars, demo-test.tfvars, demo-prod.tfvars.
 
-# Legacy tst workspace (still receiving device uploads; slated for destruction in A7):
-AWS_PROFILE=trail-admin terraform workspace select tst
-AWS_PROFILE=trail-admin terraform plan  -var-file=tst.tfvars
-
 # Legacy default workspace (V2's planned target — OFF LIMITS, see Environment Safety Rule):
 # Do not run terraform apply/destroy here.
 
 terraform workspace show                          # always confirm workspace first
 ```
+
+**Terraform state is remote (S3 + DynamoDB locking) as of 2026-05-18.** The `terraform/backend.tf` configures the S3 backend; running `terraform init` automatically points at `s3://tc-tfstate-650244845886/env/<workspace>/webapp/terraform.tfstate` with state-locking through DynamoDB table `tc-terraform-locks`. CI runners and local `terraform` runs share the same state. The `terraform.tfstate.d/` directory still exists locally with pre-migration backups (`*.pre-migrate-*.backup`) — kept for emergency rollback, gitignored.
 
 #### First apply of a new tenant stack — the two-wave Squarespace DNS dance
 
@@ -102,6 +99,39 @@ pytest completed/ -v        # requires BASE_URL, COGNITO_TOKEN, API_KEY in confi
 # UI tests — Selenium/Chrome (from swen-project-react-app-UI-tests/completed/)
 pytest completed/ -v        # requires BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD in config.py
 ```
+
+## CI/CD — GitHub Actions deploy workflow
+
+`.github/workflows/deploy.yml` runs `terraform apply` against tenant workspaces in response to pushes on V1 branches:
+
+| Push to | Auto-deploys to | Run topology |
+|---|---|---|
+| `v1-develop` | adk-test + demo-test | matrix job, two envs run in parallel |
+| `v1-prod` | adk-prod + demo-prod | matrix job, two envs run in parallel |
+
+Pushes to any other branch (master, trailblazers-*, feature branches) do **not** trigger this workflow. The `paths:` filter also skips runs when only docs change (READMEs, ISSUES.md, CLAUDE.md edits).
+
+**AWS auth via OIDC, no long-lived secrets.** The workflow uses `aws-actions/configure-aws-credentials@v4` to exchange a GitHub-issued OIDC token for temporary AWS credentials. The IAM role is `tc-github-actions-deploy`; its trust policy is locked to two specific repo sub claims:
+```
+repo:Trailblazers561/swen-project-trail-planner:ref:refs/heads/v1-develop
+repo:Trailblazers561/swen-project-trail-planner:ref:refs/heads/v1-prod
+```
+Workflows on any other ref (PR, trailblazers-*, master, feature branch) cannot assume the role. Known follow-up: scope the role's attached policy down from `AdministratorAccess` (see ISSUES.md / TODO list).
+
+**State backend resources (created out-of-band via AWS CLI on 2026-05-18, not in terraform):**
+- S3 bucket `tc-tfstate-650244845886` — terraform state for all four tenant workspaces (versioning + encryption + public-access-block enabled)
+- DynamoDB table `tc-terraform-locks` — state locking (PAY_PER_REQUEST)
+- IAM OIDC provider `token.actions.githubusercontent.com` — account-wide; shared infrastructure (V2 can use it later if they want their own CI)
+- IAM role `tc-github-actions-deploy` — assumed by GitHub Actions; AdministratorAccess attached (scope-down pending)
+
+Recreation steps if any of these are lost: see comments at the top of `terraform/backend.tf`.
+
+**Manual workflow_dispatch** is also defined in the workflow file but not visible in the GitHub Actions UI (because the file isn't on the default branch — intentional, so V2's default-branch experience is unchanged). To trigger manually:
+```bash
+gh api repos/Trailblazers561/swen-project-trail-planner/actions/workflows/deploy.yml/dispatches \
+  -f ref=v1-develop -f 'inputs[env]=adk-test'
+```
+Or just push to the relevant branch and let auto-deploy handle it.
 
 ## Lambda Architecture
 
@@ -155,9 +185,10 @@ API calls are centralized in `src/api.ts` — the `TrailData()` factory function
 
 Terraform writes these during `terraform apply`; they are gitignored:
 - `swen-project-react-app/.env` — `VITE_API_URL`, `VITE_COGNITO_REGION`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`
-- `swen-project-react-app/src/cognito/config.json` — Cognito pool/client IDs
 
-If the React app can't reach the API or Cognito, check these files exist and contain correct values from the deployed Terraform stack.
+The React app reads Cognito IDs from these env vars at build time (see `src/cognito/authService.tsx` — `import.meta.env.VITE_COGNITO_*`). The old `src/cognito/config.json` file written by a now-deleted `local_sensitive_file.user_pool_config` resource was dead code (nothing imported it) and was removed 2026-05-18. **Do not re-add a `local_sensitive_file` that writes into `src/`** — it'll trigger a `fileset()` race in `null_resource.deploy_react_app` that breaks first-time CI deploys on fresh workspaces.
+
+If the React app can't reach the API or Cognito, check `.env` exists and contains correct values from the deployed Terraform stack.
 
 ## Key Terraform Variables
 
@@ -174,7 +205,7 @@ If the React app can't reach the API or Cognito, check these files exist and con
 - `authorization_type` — `"COGNITO_USER_POOLS"` (default) or `"NONE"`
 - `device_api_key` — used only by legacy workspaces (provide in tfvars). New tenant-scoped workspaces auto-generate via `random_password` in `secrets.tf`.
 
-**Dead variables** (kept for legacy compatibility; will be removed when legacy `tst` is destroyed in A7):
+**Dead variables** (kept for legacy compatibility with the `default` workspace; can be removed once V2 promotes off the legacy stack):
 - `has_cdn`, `has_domain`, `acm_certificate_arn` — replaced by `manage_dns` + auto-generated certs.
 
 **Resource naming pattern:**
@@ -182,12 +213,13 @@ If the React app can't reach the API or Cognito, check these files exist and con
 - Legacy staging: `tst-<resource>` (preserved)
 - Legacy prod: no prefix (preserved; V2's promotion target)
 
-**Terraform files of note (added in A2):**
+**Terraform files of note:**
+- `backend.tf` (added 2026-05-18) — S3 backend config + recreation instructions for the state-bucket / lock table if they're ever lost
 - `acm.tf` — ACM cert resources (dashboard + api) gated by `manage_dns`
 - `cloudfront.tf` — CloudFront distribution + OAC + bucket policy, gated by `manage_dns`
 - `api_custom_domain.tf` — API Gateway custom domain + base path mapping, gated by `manage_dns`
 - `secrets.tf` — `random_password` for device API key + the local that resolves it
-- `outputs.tf` — DNS validation records + traffic CNAME targets (all return null/empty for non-tenant workspaces)
+- `outputs.tf` — DNS validation records, traffic CNAME targets, and `cloudfront_distribution_id` (used by CI for cache invalidation). All return null/empty for non-tenant workspaces.
 
 Full API reference: `API_DOCUMENTATION.md` in the repo root.
 
