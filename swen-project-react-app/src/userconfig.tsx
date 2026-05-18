@@ -1,20 +1,22 @@
 import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
+import UserDataTable from "./components/tables/UserDataTable";
 
 interface User {
-    user_id: string
-    username: string
-    email: string
-    role: string
+    user_id: number;
+    username: string;
+    email: string;
+    role: string;
 }
 
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
+    const [userListData, setUserListData] = useState<Array<User>>([]);
+    const [loadingListData, setLoadingListData] = useState(false);
 
     const { getUsers } = TrailData();
 
-    //WIP loading for users, currently is not working (something with authentication not working)
     const loadUsers = async () => {
         try {
             const response = await getUsers();
@@ -48,13 +50,16 @@ const Privileges = () => {
                 {users.length === 0 ? (
                     <div>No users found</div>
                 ) : (
-                    <ul>
-                        {users.map((user, index) => (
-                            <li key={index} className="p-2 border-b">
-                                {user}
-                            </li>
-                        ))}
-                    </ul>
+                    // <ul>
+                    //     {users.map((user, index) => (
+                    //         <li key={index} className="p-2 border-b">
+                    //             {user}
+                    //         </li>
+                    //     ))}
+                    // </ul>
+                    <div className="pt-4 m-4">
+                        <UserDataTable data={users} loading={loadingListData} />
+                    </div>
                 )}
             </div>
         </div>
