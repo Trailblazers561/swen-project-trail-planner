@@ -13,7 +13,6 @@ export function TrailData() {
     if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
-
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
       headers: await authHeaders(),

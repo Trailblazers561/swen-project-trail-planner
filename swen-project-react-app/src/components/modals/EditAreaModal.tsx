@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrailData } from '../api';
+import { TrailData } from '../../api';
 import './Modal.css';
-import { Button } from './ui/button';
+import { Button } from '../templates/button';
 
 interface Trail {
   id: number;
