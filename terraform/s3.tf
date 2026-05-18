@@ -68,28 +68,11 @@ resource "aws_s3_bucket_acl" "acl" {
   acl    = var.manage_dns ? var.bucket_acl : "public-read"
 }
 
-#Injects user pool configuration into environment
-resource "local_sensitive_file" "user_pool_config" {
-  content    = <<EOF
-{
-    "region": "us-east-1",
-    "userPoolId": "${aws_cognito_user_pool.user_pool.id}",
-    "clientId": "${aws_cognito_user_pool_client.client.id}"
-}
-EOF
-  filename   = "${path.module}/${var.react_app_directory}/src/cognito/config.json"
-  depends_on = [aws_cognito_user_pool.user_pool, aws_cognito_user_pool_client.client]
-}
-
 resource "null_resource" "deploy_react_app" {
   triggers = {
-    # Exclude cognito/config.json: it's written by local_sensitive_file.user_pool_config
-    # during this same apply, so including it in the hash makes filemd5 inconsistent
-    # between plan and apply.
     src_hash = sha256(join("", [
       for f in sort(fileset("${path.module}/${var.react_app_directory}/src", "**")) :
       filemd5("${path.module}/${var.react_app_directory}/src/${f}")
-      if f != "cognito/config.json"
     ]))
   }
 
@@ -97,5 +80,5 @@ resource "null_resource" "deploy_react_app" {
     command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
-  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.production_env]
+  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.production_env]
 }
