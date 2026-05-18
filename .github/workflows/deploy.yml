@@ -5,10 +5,10 @@ name: Deploy webapp
 #
 # Branch -> environment mapping:
 #   v1-develop -> adk-test + demo-test  (test envs)
-#   v1.2       -> adk-prod + demo-prod  (prod envs)
+#   v1-prod       -> adk-prod + demo-prod  (prod envs)
 #
 # To promote test -> prod:
-#   git checkout v1.2 && git merge v1-develop && git push origin v1.2
+#   git checkout v1-prod && git merge v1-develop && git push origin v1-prod
 #
 # This workflow never triggers on pushes to master, trailblazers-*, or any
 # other branch, so the V2 team's work is completely unaffected. The workflow
@@ -17,7 +17,7 @@ on:
   push:
     branches:
       - v1-develop
-      - v1.2
+      - v1-prod
     paths:
       # Skip when only unrelated files change (READMEs, ISSUES.md, CLAUDE.md,
       # etc.). Touching code, infra, or the workflow itself triggers a deploy.
@@ -65,7 +65,7 @@ jobs:
             envs='["${{ inputs.env }}"]'
           elif [ "${{ github.ref }}" = "refs/heads/v1-develop" ]; then
             envs='["adk-test","demo-test"]'
-          elif [ "${{ github.ref }}" = "refs/heads/v1.2" ]; then
+          elif [ "${{ github.ref }}" = "refs/heads/v1-prod" ]; then
             envs='["adk-prod","demo-prod"]'
           else
             envs='[]'
