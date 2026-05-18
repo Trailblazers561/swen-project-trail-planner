@@ -1,0 +1,147 @@
+# Trail Counter — Trail Definitions and Seasonality Configuration
+#
+# daily_hikers = summer_weekday_hikers × season_multiplier × dow_multiplier × weather_multiplier
+#
+# Season boundaries (computed each year):
+#   winter : Jan 1        – Mar 14
+#   spring : Mar 15       – day before Memorial Day  (last Mon of May)
+#   summer : Memorial Day – Columbus Day              (2nd Mon of Oct)
+#   fall   : day after Columbus Day – Dec 31
+#
+# Per-trail options:
+#   device_id             — device ID used by populate.py for this trail
+#   zero_day_probability  — chance of zero hikers regardless of other multipliers
+#   fixed_seed            — integer; when set, data for this trail is fully reproducible
+
+[weather]
+bad_day_probability    = 0.2
+bad_day_min_multiplier = 0.2
+bad_day_max_multiplier = 0.75
+
+[season_multipliers]
+winter = 0.3
+spring = 0.1
+summer = 1.0
+fall   = 0.1
+
+[dow_multipliers]
+monday    = 1.0
+tuesday   = 1.0
+wednesday = 1.0
+thursday  = 1.5
+friday    = 2.0
+saturday  = 4.0
+sunday    = 4.0
+
+# ---------------------------------------------------------------------------
+# High Peaks Area
+# ---------------------------------------------------------------------------
+
+[[trails]]
+id                    = 1
+name                  = "The Garden"
+area                  = "High Peaks"
+summer_weekday_hikers = 50
+device_id             = "robot-counter-01"
+
+[[trails]]
+id                    = 2
+name                  = "Heart Lake"
+area                  = "High Peaks"
+summer_weekday_hikers = 200
+device_id             = "robot-counter-02"
+
+[[trails]]
+id                    = 3
+name                  = "Elk Lake"
+area                  = "High Peaks"
+summer_weekday_hikers = 20
+device_id             = "robot-counter-03"
+
+[[trails]]
+id                    = 4
+name                  = "Upper Works"
+area                  = "High Peaks"
+summer_weekday_hikers = 40
+device_id             = "robot-counter-04"
+
+[[trails]]
+id                    = 5
+name                  = "Long Lake NP Trail"
+area                  = "High Peaks"
+summer_weekday_hikers = 10
+device_id             = "robot-counter-05"
+zero_day_probability  = 0.1
+
+[[trails]]
+id                    = 6
+name                  = "Averyville NP Trail"
+area                  = "High Peaks"
+summer_weekday_hikers = 5
+device_id             = "robot-counter-06"
+zero_day_probability  = 0.2
+
+[[trails]]
+id                    = 7
+name                  = "Blueberry Trail"
+area                  = "High Peaks"
+summer_weekday_hikers = 30
+device_id             = "robot-counter-07"
+
+# ---------------------------------------------------------------------------
+# Five Ponds Area
+# ---------------------------------------------------------------------------
+
+[[trails]]
+id                    = 8
+name                  = "High Rock"
+area                  = "Five Ponds"
+summer_weekday_hikers = 5
+device_id             = "robot-counter-08"
+zero_day_probability  = 0.2
+
+[[trails]]
+id                    = 9
+name                  = "Janacks Landing"
+area                  = "Five Ponds"
+summer_weekday_hikers = 5
+device_id             = "robot-counter-09"
+zero_day_probability  = 0.2
+
+# ---------------------------------------------------------------------------
+# Test Area — fixed seed ensures identical data on every populate run
+# ---------------------------------------------------------------------------
+
+[[trails]]
+id                    = 10
+name                  = "Test Trailhead 1"
+area                  = "Test Area"
+summer_weekday_hikers = 50
+device_id             = "test-device-001"
+fixed_seed            = 1001
+
+[[trails]]
+id                    = 11
+name                  = "Test Trailhead 2"
+area                  = "Test Area"
+summer_weekday_hikers = 25
+device_id             = "test-device-002"
+fixed_seed            = 1002
+
+[[trails]]
+id                    = 12
+name                  = "Test Trailhead 3"
+area                  = "Test Area"
+summer_weekday_hikers = 10
+device_id             = "test-device-003"
+fixed_seed            = 1003
+zero_day_probability  = 0.1
+
+[[trails]]
+id                    = 13
+name                  = "Test Trailhead 4"
+area                  = "Test Area"
+summer_weekday_hikers = 5
+device_id             = "test-device-004"
+fixed_seed            = 1004
+zero_day_probability  = 0.2

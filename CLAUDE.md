@@ -93,11 +93,15 @@ Paste the value into firmware `Core/Inc/secrets.h` (`DEVICE_API_KEY` macro), reb
 
 ### Tests
 ```bash
-# API tests (from swen-project-react-app-API-tests/completed/)
+# API tests (from swen-project-react-app-API-tests/completed/) — Cole-era, manual-run
 pytest completed/ -v        # requires BASE_URL, COGNITO_TOKEN, API_KEY in config.py
 
-# UI tests — Selenium/Chrome (from swen-project-react-app-UI-tests/completed/)
+# UI tests — Selenium/Chrome (from swen-project-react-app-UI-tests/completed/) — Cole-era, manual-run
 pytest completed/ -v        # requires BASE_URL, LOGIN_EMAIL, LOGIN_PASSWORD in config.py
+
+# test_platform/ — Python scripts that simulate device uploads, seed/purge data,
+# and validate the backend post-deploy. See test_platform/CLAUDE.md for usage.
+# Requires TRAIL_API_KEY env var (and AWS_PROFILE=trail-admin for purge.py).
 ```
 
 ## CI/CD — GitHub Actions deploy workflow
