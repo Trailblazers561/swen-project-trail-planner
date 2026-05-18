@@ -1,6 +1,8 @@
 # CloudFront and Route53 Deployment Guide
 
-This guide explains how to configure and deploy the Trail Planner application using AWS CloudFront (CDN) and Route53 (DNS) for production use.
+This guide explains how to configure and deploy the TrailCount webapp (formerly "Trail Planner") using AWS CloudFront (CDN) and Route53 (DNS) for production use.
+
+> **Note:** Post-cutover (2026-05-15), TrailCount tenant stacks (`adk-test`, `adk-prod`, `demo-test`, `demo-prod`) use CloudFront + ACM + API Gateway custom domains wired automatically by Terraform when `manage_dns = true`. See `../CLAUDE.md` and `../../TERRAFORM_A2.md` for the tenant-scoped workflow. DNS lives in **Squarespace, not Route 53** (Route 53 is empty in this account). The Route53 sections below were written for the legacy V1 era and are retained for reference only.
 
 ## Overview
 

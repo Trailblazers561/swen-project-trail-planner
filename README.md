@@ -1,10 +1,12 @@
-# Trail Planner - Infrastructure README
+# TrailCount Webapp - Infrastructure README
 
-This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the Trail Planner infrastructure on AWS.
+> Project rebrand note: this stack was originally called "Trail Planner" by the student team. It is now part of the **TrailCount** project sponsored by Adirondack Wilderness Advocates (AWA). See `../CLAUDE.md` and `../CUTOVER_PLAN.md` for current tenant-scoped workspaces and TrailCount-branded URLs (`adk.trailcount.io`, `demo.trailcount.io`, etc.). The Terraform mechanics below remain correct.
+
+This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the TrailCount webapp infrastructure on AWS.
 
 ## Overview
 
-The Trail Planner infrastructure includes:
+The TrailCount webapp infrastructure includes:
 - **React Frontend**: Hosted on S3 with optional CloudFront CDN
 - **API Gateway**: RESTful API with Cognito authentication
 - **Lambda Functions**: Serverless backend for trail data management

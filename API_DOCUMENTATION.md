@@ -1,4 +1,6 @@
-# Trail Planner API Documentation
+# TrailCount API Documentation
+
+> The student-team original called this "Trail Planner". The product is now **TrailCount**; the API shape below is unchanged.
 
 ## Base URL
 

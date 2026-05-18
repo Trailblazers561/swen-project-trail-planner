@@ -17,7 +17,7 @@ References existing test suites and identifies gaps. Requirements are tracked in
 | **Firmware** | Manual / hardware | On-device | Verify detection, buffering, and upload behavior with real hardware |
 
 ### Test Data Strategy
-- API and UI tests operate against the **live deployed environment** (`tusage.adirondackwilderness.org` / `yb930th90j` API)
+- API and UI tests operate against the **`adk-test` tenant stack** (`test.adk.trailcount.io` / `api.test.adk.trailcount.io`). Legacy V1 prod (`tusage.adirondackwilderness.org`) is off-limits to test runs.
 - `test_platform/` uses device ID prefix `test-` for records it creates, so they can be identified and purged without affecting nightly simulation data
 - Tests that create data SHALL clean up after themselves (purge test records on pass or fail)
 - Performance tests use `test_platform/populate.py` to seed controlled volumes before running
