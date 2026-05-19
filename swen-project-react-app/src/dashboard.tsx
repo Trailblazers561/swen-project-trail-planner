@@ -430,6 +430,8 @@ const dashboard = () => {
                 endDate,
                 granularity
             );
+            if (!response.success)
+                throw new Error("Failed to retrieve graph data");
 
             const responseJson = await response.json;
 
@@ -490,8 +492,13 @@ const dashboard = () => {
             setGraphLines(lines);
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
             setGraphUpdating(false);
+            setGraphBroken(false);
         } catch (error) {
             console.error("Error fetching trail data:", error);
+            setGraphLines([]);
+            setGraphTitle("");
+            setGraphUpdating(false);
+            setGraphBroken(true);
         }
     }
 
@@ -1003,13 +1010,17 @@ const dashboard = () => {
                 <div>
                     <div className="flex p-2.5 justify-between items-center">
                         <Button variant="primary" onClick={toggleView} className="items-center" data-testid="toggle-view">Toggle View</Button>
-                            {viewMode === "graph" ? (
+                            {viewMode === "graph" && !graphBroken ? (
                                 <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
-                                {graphTitle}
-                            </div>
-                        ) : (
-                            <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
-                        )}
+                                    {graphTitle}
+                                </div>
+                            ) : viewMode === "graph"  ? (
+                                <div className="text-lg font-bold text-red-700 rounded-lg border border-red-800 bg-red-50 px-4 py-0.75 mx-2" data-testid="graph-title">
+                                    Failed to Load Trail Data. Check Your Connection and Try Again.
+                                </div>
+                            ) : (
+                                <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
+                            )}
                         <div className="flex gap-2.5">
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                                 <DropdownMenu>
