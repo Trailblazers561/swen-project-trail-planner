@@ -5,7 +5,7 @@ import AssociateDeviceModal from "./components/AssociateDeviceModal";
 import TrailStatusTable from "./components/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
-import type { Layout } from "plotly.js";
+import type { Layout, Data } from "plotly.js";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
@@ -120,6 +120,7 @@ const dashboard = () => {
     const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
     const [areaOptions, setAreaOptions] = useState<MultiSelectOption[]>([])
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
+    const [graphBroken, setGraphBroken] = useState(false);
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
     const [allListData, setAllListData] = useState<Array<TrailListItem>>([]);
@@ -506,7 +507,9 @@ const dashboard = () => {
         const endStr = moment(endDate).tz("America/New_York").format("M/D/YYYY");
         const includesAll = trails.length == trailMetadata.length
 
-        if (includesAll) {
+        if (selectedAreas.length === 1 && areas.find(a => a.name === selectedAreas[0])?.trail_ids.length === trails.length) {
+            return `${selectedAreas[0]} from ${startStr} to ${endStr}`;
+        } else if (includesAll) {
             return `All Trails from ${startStr} to ${endStr}`;
         } else if (trails.length === 1) {
             return `${trails[0]} from ${startStr} to ${endStr}`;
@@ -789,6 +792,71 @@ const dashboard = () => {
         };
     }
 
+    function getPlotData(lines: Line[]): Data[] {
+        const data: Data[] = [];
+        // Enable this to display percentiles (update counts to use real percentiles)
+        if (lines.length === 1 && false) {
+            data.push({
+                x: lines[0].startDates.map(d => d.toISOString()),
+                y: lines[0].counts.map(c => c * 1.2),
+                type: "scatter",
+                mode: "lines",
+                line: { width: 0 },
+                hoverinfo: "skip",
+                showlegend: false
+            });
+            data.push({
+                x: lines[0].startDates.map(d => d.toISOString()),
+                y: lines[0].counts.map(c => c * .8),
+                type: "scatter",
+                mode: "lines",
+                line: { width: 0 },
+                fill: "tonexty",
+                fillcolor: "rgb(179, 205, 227)", // Pastel1 color (light blue)
+                name: "25th-75th Percentile",
+                hoverinfo: "skip"
+            });
+        }
+        lines.forEach(line => {
+            data.push({
+                x: line.startDates.map(d => d.toISOString()),
+                y: line.counts,
+                type: "scatter",
+                mode: "lines+markers",
+                name: line.trail_name,
+                line: {
+                    width: 3,
+                    color: line == lines[0] ? "#1F77B4" : undefined  // D3[0] default first line color
+                },
+                marker: {
+                    size: 6,
+                },
+                hovertemplate: line.counts.map((count: number, i: number) => {
+                    const s = new Date(line.startDates[i]);
+                    const e = new Date(line.endDates[i]);
+                    const sString = moment(s).tz("America/New_York").format("MMM D");
+                    const sYear = moment(s).tz("America/New_York").format("YYYY");
+                    const eString = moment(e).tz("America/New_York").format("MMM D");
+                    const eYear = moment(e).tz("America/New_York").format("YYYY");
+                    const sHour = moment(s).tz("America/New_York").format("h:mm A");
+
+                    let dateString: string;
+                    let countString: string;
+                    if (line.granularity === Granularity.Hour) {
+                        dateString = `${sString} ${sHour}`;
+                    } else if (line.granularity === Granularity.Day) {
+                        dateString = `${sString}, ${sYear}`;
+                    } else {
+                        dateString = `${sString}, ${sYear} - ${eString}, ${eYear}`;
+                    }
+                    countString = line.noDatas[i] ? "No Data" : `Count: ${count}`
+                    return `${dateString} | ${countString}`
+                  })
+            });
+        })
+        return data;
+    }
+
     // Makes graph columns have alternating colors
     function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> {
         const shapes: NonNullable<Layout["shapes"]> = [];
@@ -981,40 +1049,7 @@ const dashboard = () => {
                                 config={{ displayModeBar: false, responsive: true }}
                                 useResizeHandler={true}
                                 style={{ width: "100%", height: "100%" }}
-                                data={graphLines.map((line) => ({
-                                    x: line.startDates.map(d => d.toISOString()),
-                                    y: line.counts,
-                                    type: "scatter",
-                                    mode: "lines+markers",
-                                    name: line.trail_name,
-                                    line: {
-                                        width: 3,
-                                    },
-                                    marker: {
-                                        size: 6,
-                                    },
-                                    hovertemplate: line.counts.map((count: number, i: number) => {
-                                        const s = new Date(line.startDates[i]);
-                                        const e = new Date(line.endDates[i]);
-                                        const sString = moment(s).tz("America/New_York").format("MMM D");
-                                        const sYear = moment(s).tz("America/New_York").format("YYYY");
-                                        const eString = moment(e).tz("America/New_York").format("MMM D");
-                                        const eYear = moment(e).tz("America/New_York").format("YYYY");
-                                        const sHour = moment(s).tz("America/New_York").format("h:mm A");
-
-                                        let dateString: string;
-                                        let countString: string;
-                                        if (line.granularity === Granularity.Hour) {
-                                            dateString = `${sString} ${sHour}`;
-                                        } else if (line.granularity === Granularity.Day) {
-                                            dateString = `${sString}, ${sYear}`;
-                                        } else {
-                                            dateString = `${sString}, ${sYear} - ${eString}, ${eYear}`;
-                                        }
-                                        countString = line.noDatas[i] ? "No Data" : `Count: ${count}`
-                                        return `${dateString} | ${countString}`
-                                      }),
-                                }))}
+                                data={getPlotData(graphLines)}
                                 layout={getPlotLayout(graphLines)}
                             />
                         </div>
