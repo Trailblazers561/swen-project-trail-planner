@@ -2,12 +2,13 @@ import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
+import { Role } from "./Context";
 
 interface User {
     user_id: number;
     username: string;
     email: string;
-    role: string;
+    role: Role;
 }
 
 const Privileges = () => {
@@ -27,6 +28,15 @@ const Privileges = () => {
                 console.log("Users:", data);
 
                 setUsers(data.map((user) => user.username));
+
+                setUserListData(
+                data.map((user) => ({
+                    user_id: user.user_id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                }))
+            );
             }
         } catch (error) {
             console.error("Error loading users:", error);
@@ -58,7 +68,7 @@ const Privileges = () => {
                     //     ))}
                     // </ul>
                     <div className="pt-4 m-4">
-                        <UserDataTable data={users} loading={loadingListData} />
+                        <UserDataTable data={userListData} loading={loadingListData} />
                     </div>
                 )}
             </div>
