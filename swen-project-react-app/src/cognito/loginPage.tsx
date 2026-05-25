@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { signIn } from "./authService";
 import React from "react";
 
@@ -7,6 +7,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionExpired = searchParams.get("reason") === "session_expired";
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -30,7 +32,13 @@ const LoginPage = () => {
 
   return (
     <div className="loginForm">
-      <img className="logo" alt="Logo" src="AWA-logo.png" />
+      <img className="logo" alt="TrailCount" src="trailcount-logo-primary.svg" />
+      <p className="sponsor-line">Sponsored by: Adirondack Wilderness Advocates</p>
+      {sessionExpired && (
+        <div className="session-expired-banner">
+          Your session has expired. Please sign in again.
+        </div>
+      )}
       <h4>Sign in to your account</h4>
       <form onSubmit={handleSignIn}>
         <div>

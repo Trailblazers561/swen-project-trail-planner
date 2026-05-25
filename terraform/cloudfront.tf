@@ -1,20 +1,25 @@
 locals {
-  s3_origin_id = var.has_domain ? "${var.sub}.${var.domain}" : "trailplannerS3Origin"
-  full_domain  = var.has_domain ? "${var.sub}.${var.domain}" : ""
+  s3_origin_id = "trailplannerS3Origin"
 }
 
+# CloudFront origin access control — lets CloudFront read from a private S3 bucket
+# without making the bucket itself public.
 resource "aws_cloudfront_origin_access_control" "s3_access" {
-  count = var.has_cdn ? 1 : 0
+  count = var.manage_dns ? 1 : 0
 
-  name                              = "s3_access"
-  description                       = "s3 origin access policy"
+  name                              = "${local.name_prefix}s3_access"
+  description                       = "S3 origin access policy"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
 }
 
+# CloudFront distribution — the CDN sitting in front of the React app's S3 bucket.
+# Aliased to var.dashboard_domain (e.g. adk.trailcount.io), uses the ACM cert we
+# created in acm.tf. Implicit dependency on aws_acm_certificate_validation ensures
+# the cert is ISSUED before CloudFront tries to use it.
 resource "aws_cloudfront_distribution" "s3_distribution" {
-  count = var.has_cdn ? 1 : 0
+  count = var.manage_dns ? 1 : 0
 
   origin {
     domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
@@ -22,11 +27,11 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_id                = local.s3_origin_id
   }
 
-  aliases = var.has_domain ? [local.full_domain] : []
+  aliases = [var.dashboard_domain]
 
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "Some comment"
+  comment             = "${local.name_prefix}dashboard"
   default_root_object = "index.html"
 
   default_cache_behavior {
@@ -48,7 +53,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     max_ttl                = 86400
   }
 
-  # Cache behavior with precedence 0
   ordered_cache_behavior {
     path_pattern     = "/content/immutable/*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
@@ -71,7 +75,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     viewer_protocol_policy = "redirect-to-https"
   }
 
-  # Cache behavior with precedence 1
   ordered_cache_behavior {
     path_pattern     = "/content/*"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
@@ -93,10 +96,10 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     viewer_protocol_policy = "redirect-to-https"
   }
 
-  #Only use edge locations in US and EU
+  # Edge locations: US + EU only (cost optimization).
   price_class = "PriceClass_100"
 
-  #Restricts countries access to only North American countries
+  # Restrict viewer access to North America.
   restrictions {
     geo_restriction {
       restriction_type = "whitelist"
@@ -104,32 +107,33 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
-  #Ensures cloudfront is always routed to our App.jsx router
+  # SPA routing: serve index.html for 403s so React Router can handle deep links.
   custom_error_response {
-    error_code           = 403
-    response_page_path   = "/index.html"
-    response_code        = 200
+    error_code            = 403
+    response_page_path    = "/index.html"
+    response_code         = 200
     error_caching_min_ttl = 300
   }
 
   tags = {
-    Environment = "production"
+    Name   = "${local.name_prefix}dashboard"
+    Tenant = var.tenant
+    Env    = var.env
   }
 
-  #Sets up domain cert uses default cloudfront cert otherwise
   viewer_certificate {
-    acm_certificate_arn            = var.has_domain ? var.acm_certificate_arn : null
-    ssl_support_method             = var.has_domain ? "sni-only" : null
-    minimum_protocol_version       = var.has_domain ? "TLSv1.2_2021" : null
-    cloudfront_default_certificate = var.has_domain ? false : true
+    acm_certificate_arn      = aws_acm_certificate_validation.dashboard[0].certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  depends_on = [ aws_s3_bucket.bucket, null_resource.deploy_react_app ]
+  depends_on = [aws_s3_bucket.bucket, null_resource.deploy_react_app]
 }
 
-#Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
+# Bucket policy that lets only this CloudFront distribution read the bucket.
+# Replaces the public-read policy in s3.tf for manage_dns workspaces.
 resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
-  count = var.has_cdn ? 1 : 0
+  count = var.manage_dns ? 1 : 0
 
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
@@ -153,10 +157,9 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
     ]
   })
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+  depends_on = [aws_cloudfront_distribution.s3_distribution]
 }
 
 output "website_url" {
-  value = var.has_cdn ? "https://${var.has_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
+  value = var.manage_dns ? "https://${var.dashboard_domain}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
 }
-
