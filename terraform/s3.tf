@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "bucket" {
   bucket = var.has_domain ? "${var.sub}.${var.domain}" : "${var.bucket_name}-${random_integer.random_suffix.result}"
-  
+
   tags = {
     Name = var.bucket_name
   }
@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_s3_bucket_policy" "public_read" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
   policy = jsonencode({
@@ -35,11 +35,11 @@ resource "aws_s3_bucket_policy" "public_read" {
     ]
   })
 
-  depends_on = [ aws_s3_bucket_public_access_block.public_access ]
+  depends_on = [aws_s3_bucket_public_access_block.public_access]
 }
 
 resource "aws_s3_bucket_website_configuration" "website" {
-  count = var.has_cdn ? 0 : 1
+  count = var.manage_dns ? 0 : 1
 
   bucket = aws_s3_bucket.bucket.id
 
@@ -51,7 +51,7 @@ resource "aws_s3_bucket_website_configuration" "website" {
     key = "index.html"
   }
 
-  depends_on = [ aws_s3_bucket_public_access_block.public_access ]
+  depends_on = [aws_s3_bucket_public_access_block.public_access]
 }
 
 resource "aws_s3_bucket_ownership_controls" "bucket_ownership" {
@@ -62,29 +62,23 @@ resource "aws_s3_bucket_ownership_controls" "bucket_ownership" {
 }
 
 resource "aws_s3_bucket_acl" "acl" {
-  depends_on = [ aws_s3_bucket_ownership_controls.bucket_ownership, aws_s3_bucket_public_access_block.public_access ]
+  depends_on = [aws_s3_bucket_ownership_controls.bucket_ownership, aws_s3_bucket_public_access_block.public_access]
 
   bucket = aws_s3_bucket.bucket.id
-  acl    = var.has_cdn ?  var.bucket_acl : "public-read"
-}
-
-#Injects user pool configuration into environment
-resource "local_sensitive_file" "user_pool_config" {
-  content = <<EOF
-{
-    "region": "us-east-1",
-    "userPoolId": "${aws_cognito_user_pool.user_pool.id}",
-    "clientId": "${aws_cognito_user_pool_client.client.id}"
-}
-EOF
-  filename = "${path.module}/${var.react_app_directory}/src/cognito/config.json"
-  depends_on = [ aws_cognito_user_pool.user_pool, aws_cognito_user_pool_client.client]
+  acl    = var.manage_dns ? var.bucket_acl : "public-read"
 }
 
 resource "null_resource" "deploy_react_app" {
+  triggers = {
+    src_hash = sha256(join("", [
+      for f in sort(fileset("${path.module}/${var.react_app_directory}/src", "**")) :
+      filemd5("${path.module}/${var.react_app_directory}/src/${f}")
+    ]))
+  }
+
   provisioner "local-exec" {
     command = "cd ${var.react_app_directory} && npm install && npm run build && aws s3 sync ./dist s3://${aws_s3_bucket.bucket.bucket} --delete"
   }
 
-  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.user_pool_config, local_sensitive_file.production_env]
+  depends_on = [aws_s3_bucket.bucket, local_sensitive_file.production_env]
 }

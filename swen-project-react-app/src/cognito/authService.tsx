@@ -6,16 +6,27 @@ import {
   SignUpCommand,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import config from "./config.json";
+
+// Get Cognito configuration from environment variables
+const cognitoConfig = {
+  region: import.meta.env.VITE_COGNITO_REGION || "us-east-1",
+  userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+  clientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
+};
+
+// Validate that required config is present
+if (!cognitoConfig.userPoolId || !cognitoConfig.clientId) {
+  console.error("Missing Cognito configuration. Please ensure VITE_COGNITO_USER_POOL_ID and VITE_COGNITO_CLIENT_ID are set.");
+}
 
 export const cognitoClient = new CognitoIdentityProviderClient({
-  region: config.region,
+  region: cognitoConfig.region,
 });
 
 export const signIn = async (username: string, password: string) => {
   const params = {
     AuthFlow: "USER_PASSWORD_AUTH",
-    ClientId: config.clientId,
+    ClientId: cognitoConfig.clientId,
     AuthParameters: {
       USERNAME: username,
       PASSWORD: password,
@@ -44,7 +55,7 @@ export const signIn = async (username: string, password: string) => {
 
 export const signUp = async (email: string, password: string) => {
   const params = {
-    ClientId: config.clientId,
+    ClientId: cognitoConfig.clientId,
     Username: email,
     Password: password,
     UserAttributes: [
@@ -67,7 +78,7 @@ export const signUp = async (email: string, password: string) => {
 
 export const confirmSignUp = async (username: string, code: string) => {
   const params = {
-    ClientId: config.clientId,
+    ClientId: cognitoConfig.clientId,
     Username: username,
     ConfirmationCode: code,
   };

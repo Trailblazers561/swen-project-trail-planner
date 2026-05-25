@@ -1,12 +1,29 @@
 import requests
 import pytest
-
-# Base URL of the API (replace with actual URL)
-BASE_URL = "https://h12yxdhdlj.execute-api.us-east-1.amazonaws.com/trailplanner_api_stage/trail_data/"
-
-headers = {"Authorization": "eyJraWQiOiJKWlcxNG1oWnR6TkF2NTFXWnFVT3pUY1ZqT2dZZVF2SU5vT21FV2pmOWFjPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIyNDE4MjRjOC1lMDIxLTcwOTQtZDU4ZC1mMzllZGQ5N2NiZjYiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfSHVNbzgwa0JMIiwiY29nbml0bzp1c2VybmFtZSI6IjI0MTgyNGM4LWUwMjEtNzA5NC1kNThkLWYzOWVkZDk3Y2JmNiIsIm9yaWdpbl9qdGkiOiJjZmJkMjY2NC0zMGNmLTQxYTItOTE0NS05YjA0ODA4MjA5ODIiLCJhdWQiOiI0bmQxcTMwZzR2OGF2cTdrbzA4MDNjbG4wOSIsImV2ZW50X2lkIjoiYzQwMTdlN2YtYmNjMC00MzlhLTkzOTItMzdkMzU2N2JjOGE2IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NDQ3NTM4NzMsImV4cCI6MTc0NDc1NzQ3MywiaWF0IjoxNzQ0NzUzODczLCJqdGkiOiIzNGI4NmUzMi0wNGE4LTQzMzctYjUyMS1hYjZhOTk0NmVmNjAiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSJ9.mIXBvJUYsImcE5jgEH2huDK1Gu_mCALw7zlJ9a-oV7vyvjx2GmI7wvTDBjKqtxnC1IbiLNtuI8YAkW7-pydDloymFttMPrO-d4At8orkl1ouNMnCmT8e9wc5KSLLTGts_CzgLYw5PTEmkTaSDrw4rDMqRqlKRmxIt7G1T0F1F-h-tOSi52h2W9mvVpFwF-LgrgM_DJVEDoH1k_-Fa-qSNLmKhTubUoiHfo-DaGUqOz6Z3Pc_89z5bQm3Rc3edLZqoNMspdqKWP1TIvJvjVnML10DswyGd_dycXWc2QgS_1P_kz6tyLHcU7jSzqEYre7fEFMFGQ_kdtCHu51SNMS-hA"}
+from config import BASE_URL, get_cognito_headers
 
 @pytest.mark.API
-def test_get_all_requests():
-    response = requests.get(BASE_URL, headers=headers)
+def test_get_all_trail_data():
+    """
+    Test GET /trail_data to retrieve all trail device logs.
+    Updated to use correct endpoint path and query parameter format.
+    """
+    url = f"{BASE_URL}/trail_data"
+    headers = get_cognito_headers()
+    
+    response = requests.get(url, headers=headers)
+    
+    print(f"Response Status: {response.status_code}")
+    print(f"Response Body: {response.json()}")
+    
     assert response.status_code == 200
+    response_data = response.json()
+    # Response should be an array of trail device log entries
+    assert isinstance(response_data, list)
+    
+    # If there are items, verify they have the expected structure
+    if len(response_data) > 0:
+        item = response_data[0]
+        assert "trail_id" in item
+        assert "device_id" in item
+        assert "timestamp" in item
