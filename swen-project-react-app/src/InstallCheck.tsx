@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { TrailData } from "./api";
+import "./styles/installcheck.css";
 
 // Phone-friendly "is my device alive" view. Designed for use immediately
 // after installing a counter in the field — opens fast, shows clearly
@@ -187,90 +188,30 @@ export default function InstallCheck() {
   const lastFetchAge = Math.floor((now - lastFetch) / 1000);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: palette.bg,
-        color: palette.text,
-        fontFamily: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-        padding: "16px",
-        boxSizing: "border-box",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h1 style={{ fontSize: "20px", fontWeight: 600, margin: 0 }}>
-          Install Check
-        </h1>
-        <button
-          onClick={fetchAll}
-          disabled={loading}
-          style={{
-            fontSize: "14px",
-            padding: "8px 14px",
-            background: loading ? "#cccccc" : "#1f6feb",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: 500,
-          }}
-        >
+    <div className="ic-root">
+      <header className="ic-header">
+        <h1 className="ic-title">Install Check</h1>
+        <button className="ic-refresh-btn" onClick={fetchAll} disabled={loading}>
           {loading ? "..." : "Refresh"}
         </button>
       </header>
 
-      <div
-        style={{
-          fontSize: "12px",
-          color: palette.subtext,
-          marginBottom: "16px",
-        }}
-      >
+      <div className="ic-status-text">
         {lastFetch === 0 ? (
           "Loading..."
         ) : (
           <>
             Updated{" "}
-            <span
-              style={{
-                display: "inline-block",
-                minWidth: "2em",
-                textAlign: "right",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {lastFetchAge}
-            </span>
+            <span className="ic-status-counter">{lastFetchAge}</span>
             s ago · auto-refreshing every {REFRESH_INTERVAL_MS / 1000}s
           </>
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: "#fde2e2",
-            color: "#7a1a1a",
-            padding: "12px",
-            borderRadius: "6px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="ic-error">{error}</div>}
 
       {merged.length === 0 && !loading && !error && (
-        <div style={{ color: palette.subtext, fontSize: "14px" }}>
-          No devices found.
-        </div>
+        <div className="ic-empty">No devices found.</div>
       )}
 
       {merged.map((d) => {
@@ -289,47 +230,18 @@ export default function InstallCheck() {
         return (
           <div
             key={d.device_id}
-            style={{
-              background: palette.cardBg,
-              border: `1px solid ${palette.cardBorder}`,
-              borderLeft: `6px solid ${accentColor}`,
-              borderRadius: "8px",
-              padding: "14px 16px",
-              marginBottom: "12px",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-            }}
+            className="ic-card"
+            style={{ borderLeft: `6px solid ${accentColor}` }}
           >
-            <div
-              style={{
-                fontFamily: "ui-monospace, SFMono-Regular, monospace",
-                fontSize: "13px",
-                color: palette.subtext,
-                marginBottom: "6px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {d.device_id}
-            </div>
-            <div
-              style={{
-                fontSize: "16px",
-                fontWeight: 600,
-                marginBottom: "10px",
-                color: trailName ? palette.text : palette.unassigned,
-              }}
-            >
-              {trailName ? trailName : "Unassigned"}
+            <div className="ic-device-id">{d.device_id}</div>
+            <div className={`ic-trail-name ${trailName ? "ic-trail-assigned" : "ic-trail-unassigned"}`}>
+              {trailName ?? "Unassigned"}
             </div>
 
             <Row label="Last call-in" value={age ? age.text : "Never"} bold stableWidth />
             <Row label="Battery" value={batteryDisplay(d.battery)} />
             <Row label="Signal" value={signalQuality(d.rssi)} />
-            <Row
-              label="Firmware"
-              value={d.firmware_version ?? "—"}
-            />
+            <Row label="Firmware" value={d.firmware_version ?? "—"} />
             <Row
               label="Last upload"
               value={
@@ -356,29 +268,15 @@ function Row({
   bold?: boolean;
   stableWidth?: boolean;
 }) {
+  const valueClass = [
+    bold ? "ic-row-value-bold" : "",
+    stableWidth ? "ic-row-value-stable" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        fontSize: "14px",
-        marginBottom: "4px",
-      }}
-    >
-      <span style={{ color: palette.subtext }}>{label}</span>
-      <span
-        style={{
-          fontWeight: bold ? 600 : 400,
-          ...(stableWidth && {
-            display: "inline-block",
-            minWidth: "7em",
-            textAlign: "right",
-            fontVariantNumeric: "tabular-nums",
-          }),
-        }}
-      >
-        {value}
-      </span>
+    <div className="ic-row">
+      <span className="ic-row-label">{label}</span>
+      <span className={valueClass || undefined}>{value}</span>
     </div>
   );
 }

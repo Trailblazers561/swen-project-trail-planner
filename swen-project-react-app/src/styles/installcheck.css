@@ -1,0 +1,121 @@
+/* ── Install Check ───────────────────────────────────────── */
+
+.ic-root {
+  min-height: 100vh;
+  background: var(--ic-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.ic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ic-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ic-refresh-btn {
+  font-size: 14px;
+  padding: 8px 14px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ic-refresh-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.ic-status-text {
+  font-size: 12px;
+  color: var(--ic-subtext);
+  margin-bottom: 16px;
+}
+
+.ic-status-counter {
+  display: inline-block;
+  min-width: 2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ic-error {
+  background: #fde2e2;
+  color: #7a1a1a;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.ic-empty {
+  color: var(--ic-subtext);
+  font-size: 14px;
+}
+
+.ic-card {
+  background: white;
+  border: 1px solid #dfe2e6;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ic-device-id {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  color: var(--ic-subtext);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ic-trail-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.ic-trail-assigned {
+  color: var(--color-text);
+}
+
+.ic-trail-unassigned {
+  color: var(--ic-unassigned);
+}
+
+.ic-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ic-row-label {
+  color: var(--ic-subtext);
+}
+
+.ic-row-value-bold {
+  font-weight: 600;
+}
+
+.ic-row-value-stable {
+  display: inline-block;
+  min-width: 7em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

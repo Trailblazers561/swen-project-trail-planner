@@ -35,15 +35,7 @@ const LoginPage = () => {
       <img className="logo" alt="TrailCount" src="trailcount-logo-primary.svg" />
       <p className="sponsor-line">Sponsored by: Adirondack Wilderness Advocates</p>
       {sessionExpired && (
-        <div style={{
-          background: "#fff3cd",
-          border: "1px solid #ffc107",
-          borderRadius: "4px",
-          padding: "8px 12px",
-          marginBottom: "12px",
-          color: "#856404",
-          fontSize: "14px",
-        }}>
+        <div className="session-expired-banner">
           Your session has expired. Please sign in again.
         </div>
       )}

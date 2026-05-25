@@ -632,29 +632,17 @@ const dashboard = () => {
     return (
         <body>
             <div className="dashboard-div">
-                <div
-                    style={{
-                        display: "flex",
-                        padding: "10px",
-                        gap: "10px",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
+                <div className="dashboard-toolbar">
                     <button
-                        className="action-button"
+                        className="action-button toggle-button"
                         type="button"
                         onClick={toggleView}
-                        style={{
-                            backgroundColor: "#4e8040",
-                            color: "white",
-                        }}
                     >
                         {viewMode === "graph"
                             ? "Device View"
                             : "Switch to Graph View"}
                     </button>
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <div className="dashboard-toolbar-actions">
                         <button
                             className="action-button"
                             type="button"
@@ -693,25 +681,10 @@ const dashboard = () => {
                     </div>
                 </div>
                 {viewMode === "graph" ? (
-                    <div style={{ position: "relative" }}>
+                    <div className="graph-wrapper">
                         {loadingChart && (
-                            <div style={{
-                                position: "absolute",
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: "rgba(255,255,255,0.6)",
-                                zIndex: 10,
-                            }}>
-                                <div style={{
-                                    width: 48,
-                                    height: 48,
-                                    border: "5px solid #e0e0e0",
-                                    borderTopColor: "#6a9e5e",
-                                    borderRadius: "50%",
-                                    animation: "spin 0.8s linear infinite",
-                                }} />
+                            <div className="loading-overlay">
+                                <div className="loading-spinner" />
                             </div>
                         )}
                         <Plot
@@ -774,14 +747,7 @@ const dashboard = () => {
                             }}
                         />
                         {dataFetchError && (
-                            <div style={{
-                                color: "#721c24",
-                                background: "#f8d7da",
-                                border: "1px solid #f5c6cb",
-                                borderRadius: "4px",
-                                padding: "8px 16px",
-                                margin: "0 16px 8px",
-                            }}>
+                            <div className="data-error-banner">
                                 {dataFetchError}
                             </div>
                         )}
@@ -824,12 +790,12 @@ const dashboard = () => {
                                 </select>
                             </div>
                             <div className="filter-group">
-                                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                                <label className="aggregate-label">
                                     <input
                                         type="checkbox"
+                                        className="aggregate-checkbox"
                                         checked={aggregate}
                                         onChange={(e) => setAggregate(e.target.checked)}
-                                        style={{ width: 16, height: 16, cursor: "pointer" }}
                                     />
                                     Aggregate
                                 </label>
@@ -849,110 +815,70 @@ const dashboard = () => {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ padding: "20px" }}>
-                        <h2
-                            style={{
-                                marginBottom: "20px",
-                                fontSize: "24px",
-                                fontWeight: "bold",
-                                color: "#333",
-                            }}
-                        >
-                            Device Status Overview
-                        </h2>
-                        <div style={{ marginBottom: "12px" }}>
+                    <div className="device-view">
+                        <h2 className="device-view-title">Device Status Overview</h2>
+                        <div className="device-filter-container">
                             <input
                                 type="text"
+                                className="device-filter-input"
                                 placeholder="Filter by device ID…"
                                 value={deviceFilter}
                                 onChange={e => setDeviceFilter(e.target.value)}
-                                style={{ padding: "6px 10px", fontSize: "0.9em", border: "1px solid #ccc", borderRadius: "4px", width: "240px" }}
                             />
                         </div>
                         {loadingListData ? (
-                            <div style={{ textAlign: "center", padding: "40px" }}>
+                            <div className="device-view-loading">
                                 Loading trail data...
                             </div>
                         ) : (
-                            <div style={{ overflowX: "auto" }}>
-                                <table
-                                    style={{
-                                        width: "100%",
-                                        borderCollapse: "collapse",
-                                        backgroundColor: "#fff",
-                                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                    }}
-                                >
+                            <div className="device-table-wrapper">
+                                <table className="device-table">
                                     <thead>
-                                        <tr style={{ backgroundColor: "#1e3a18", color: "white" }}>
-                                            {["Device ID", "Associated Trail", "Weekly Count", "Firmware", "Battery", "Last Call-in"].map((h, i) => (
-                                                <th key={h} style={{ padding: "12px", textAlign: i === 0 ? "left" : "center", border: "1px solid #ddd", fontWeight: "bold" }}>
-                                                    {h}
-                                                </th>
+                                        <tr className="device-table-header">
+                                            {["Device ID", "Associated Trail", "Weekly Count", "Firmware", "Battery", "Last Call-in"].map((h) => (
+                                                <th key={h}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {deviceListData.length === 0 ? (
-                                            <tr>
-                                                <td
-                                                    colSpan={6}
-                                                    style={{
-                                                        padding: "20px",
-                                                        textAlign: "center",
-                                                        color: "#666",
-                                                    }}
-                                                >
-                                                    No devices found
-                                                </td>
+                                            <tr className="device-table-empty">
+                                                <td colSpan={6}>No devices found</td>
                                             </tr>
                                         ) : (
                                             deviceListData.filter(d => !deviceFilter || d.device_id.toLowerCase().includes(deviceFilter.toLowerCase())).map((device, index) => {
-                                                const na = <span style={{ color: "#999" }}>N/A</span>;
-                                                const cell = (content: React.ReactNode) => (
-                                                    <td style={{ padding: "12px", textAlign: "center", border: "1px solid #ddd", color: "#333" }}>
-                                                        {content}
-                                                    </td>
-                                                );
+                                                const na = <span className="device-na">N/A</span>;
+                                                const cell = (content: React.ReactNode) => <td>{content}</td>;
+                                                const batteryClass = device.batteryStatus !== null
+                                                    ? device.batteryStatus > 50 ? "battery-high" : device.batteryStatus > 20 ? "battery-medium" : "battery-low"
+                                                    : "";
                                                 return (
                                                     <tr
                                                         key={device.device_id}
-                                                        style={{
-                                                            backgroundColor:
-                                                                index % 2 === 0 ? "#f9f9f9" : "#ffffff",
-                                                            borderBottom: "1px solid #e0e0e0",
-                                                        }}
+                                                        className={index % 2 === 0 ? "device-table-row-even" : "device-table-row-odd"}
                                                     >
                                                         <td
-                                                            style={{
-                                                                padding: "12px",
-                                                                border: "1px solid #ddd",
-                                                                fontWeight: "500",
-                                                                color: "#6a9e5e",
-                                                                fontFamily: "monospace",
-                                                                cursor: "pointer",
-                                                                textDecoration: "underline",
-                                                            }}
+                                                            className="device-id-cell"
                                                             onClick={() => setSelectedDeviceId(device.device_id)}
                                                         >
                                                             {device.device_id}
                                                         </td>
                                                         {device.trail_name && assigningDeviceId !== device.device_id ? (
-                                                            <td style={{ padding: "8px", textAlign: "center", border: "1px solid #ddd" }}>
-                                                                <span style={{ marginRight: "8px" }}>{device.trail_name}</span>
+                                                            <td className="device-trail-cell">
+                                                                <span className="device-trail-label">{device.trail_name}</span>
                                                                 <button
-                                                                    style={{ fontSize: "0.75em", padding: "2px 6px", cursor: "pointer", color: "#666", background: "none", border: "1px solid #ccc", borderRadius: "4px" }}
+                                                                    className="device-edit-btn"
                                                                     onClick={() => { setAssigningDeviceId(device.device_id); setAssignTrailId(device.trail_id ?? 0); }}
                                                                 >✎</button>
                                                             </td>
                                                         ) : (
-                                                            <td style={{ padding: "8px", textAlign: "center", border: "1px solid #ddd" }}>
+                                                            <td className="device-trail-cell">
                                                                 {assigningDeviceId === device.device_id ? (
-                                                                    <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+                                                                    <div className="device-assign-form">
                                                                         <select
+                                                                            className="device-assign-select"
                                                                             value={assignTrailId}
                                                                             onChange={e => setAssignTrailId(Number(e.target.value))}
-                                                                            style={{ fontSize: "0.85em", padding: "4px" }}
                                                                         >
                                                                             <option value={0}>Select trail…</option>
                                                                             {(() => {
@@ -969,7 +895,7 @@ const dashboard = () => {
                                                                             })()}
                                                                         </select>
                                                                         <button
-                                                                            style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer" }}
+                                                                            className="device-assign-btn"
                                                                             disabled={!assignTrailId}
                                                                             onClick={async () => {
                                                                                 await updateDeviceTrailAssociation(device.device_id, assignTrailId);
@@ -980,7 +906,7 @@ const dashboard = () => {
                                                                         >Save</button>
                                                                         {device.trail_name && (
                                                                             <button
-                                                                                style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer", color: "#dc3545", border: "1px solid #dc3545", background: "none", borderRadius: "4px" }}
+                                                                                className="device-unassign-btn"
                                                                                 onClick={async () => {
                                                                                     await updateDeviceTrailAssociation(device.device_id, 0);
                                                                                     setAssigningDeviceId(null);
@@ -990,13 +916,13 @@ const dashboard = () => {
                                                                             >Unassign</button>
                                                                         )}
                                                                         <button
-                                                                            style={{ fontSize: "0.8em", padding: "4px 8px", cursor: "pointer" }}
+                                                                            className="device-assign-btn"
                                                                             onClick={() => { setAssigningDeviceId(null); setAssignTrailId(0); }}
                                                                         >✕</button>
                                                                     </div>
                                                                 ) : (
                                                                     <button
-                                                                        style={{ fontSize: "0.8em", padding: "4px 10px", cursor: "pointer", color: "#6a9e5e", background: "none", border: "1px solid #6a9e5e", borderRadius: "4px" }}
+                                                                        className="device-assign-trail-btn"
                                                                         onClick={() => { setAssigningDeviceId(device.device_id); setAssignTrailId(0); }}
                                                                     >Assign Trail</button>
                                                                 )}
@@ -1005,7 +931,7 @@ const dashboard = () => {
                                                         {cell(device.weeklyCount)}
                                                         {cell(device.firmwareVersion ?? na)}
                                                         {cell(device.batteryStatus !== null ? (
-                                                            <span style={{ color: device.batteryStatus > 50 ? "#28a745" : device.batteryStatus > 20 ? "#ffc107" : "#dc3545", fontWeight: "bold" }}>
+                                                            <span className={batteryClass}>
                                                                 {device.batteryStatus}%
                                                             </span>
                                                         ) : na)}

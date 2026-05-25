@@ -234,8 +234,60 @@
   .device-sections {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-content-large {
     max-width: 95%;
   }
+}
+
+/* ── Device detail modal ─────────────────────────────────── */
+
+.device-detail-h2 {
+  font-family: monospace;
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.device-detail-status {
+  text-align: center;
+  color: var(--color-subtext);
+}
+
+.device-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.device-detail-header-row {
+  background-color: var(--color-forest);
+  color: white;
+}
+
+.device-detail-th {
+  padding: 10px 12px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  font-weight: bold;
+}
+
+.device-detail-row-even {
+  background-color: var(--color-bg-alt);
+}
+
+.device-detail-row-odd {
+  background-color: white;
+}
+
+.device-detail-td {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.device-detail-td-left {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
 }

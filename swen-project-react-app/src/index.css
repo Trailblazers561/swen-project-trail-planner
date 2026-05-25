@@ -1,4 +1,29 @@
 :root {
+  /* brand palette */
+  --color-primary: #6a9e5e;
+  --color-primary-hover: #4e8040;
+  --color-forest: #1e3a18;
+  --color-parchment: #ddd8c4;
+  /* status */
+  --color-danger: #dc3545;
+  --color-danger-hover: #c82333;
+  --color-warning: #ffc107;
+  --color-success: #28a745;
+  /* ui chrome */
+  --color-gray: #5a6268;
+  --color-gray-hover: #474e54;
+  --color-text: #333;
+  --color-subtext: #666;
+  --color-border: #ddd;
+  --color-bg-alt: #f9f9f9;
+  /* install check */
+  --ic-fresh: #1f7a3a;
+  --ic-stale: #b88500;
+  --ic-dead: #b03030;
+  --ic-unassigned: #5a6470;
+  --ic-bg: #f5f5f7;
+  --ic-subtext: #6c727a;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
