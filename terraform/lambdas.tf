@@ -96,7 +96,13 @@ resource "aws_lambda_function" "pre_register_device" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      CERTIFICATE_AUTHORITY_URL = "https://${aws_instance.ca_instance.private_ip}:9000"
     }
+  }
+
+  vpc_config {
+    security_group_ids = [aws_security_group.lambda_sg.id]
+    subnet_ids = [aws_subnet.private_subnet.id]
   }
 }
 

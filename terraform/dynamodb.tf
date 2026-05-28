@@ -25,6 +25,7 @@ resource "aws_dynamodb_table" "device_table" {
     firmware_version: string
     date_manufactured: number (UNIX timestamp)
     date_retired: number (UNIX timestamp)
+    is_blocked: boolean
   */
 }
 

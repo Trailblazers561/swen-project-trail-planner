@@ -81,3 +81,8 @@ resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
 }
+
+variable "ssh_key_name" {
+  type = string
+  description = "key pair for ssh to the certificate authority on our ec2 instance"
+}
