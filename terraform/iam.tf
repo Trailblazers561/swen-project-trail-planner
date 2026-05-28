@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "6.17.0"
-    }
-  }
-}
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
@@ -113,6 +105,11 @@ resource "aws_iam_role_policy_attachment" "lambda_secrets_access" {
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
   role       = aws_iam_role.lambda_iam_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy" {
+  role = aws_iam_role.ca_iam_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_role" "lambda_iam_role" {

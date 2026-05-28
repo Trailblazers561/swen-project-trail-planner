@@ -650,7 +650,6 @@ resource "aws_lambda_function" "change_user_group" {
   handler       = "user_management.change_user_group"
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
 
   environment {
     variables = {
