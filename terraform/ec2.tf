@@ -26,13 +26,24 @@ user_data = <<-EOF
 #!/bin/bash
 set -e
 yum update -y --skip-broken
-yum install -y docker --skip-broken
+yum install -y docker amazon-ecr-credential-helper --skip-broken
 service docker start
 systemctl enable docker
 usermod -aG docker ec2-user
+
+# make docker use ecr credential helper
+mkdir -p /root/.docker
+cat > /root/.docker/config.json <<'DOCKERCONFIG'
+{
+  "credHelpers": {
+    "${aws_ecr_repository.step_ca.registry_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com": "ecr-login"
+  }
+}
+DOCKERCONFIG
+
+# ensure ebs mount finishes before moving on
 mkdir -p /opt/ca_instance
-aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${aws_ecr_repository.step_ca.registry_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com
-docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
+chmod 777 /opt/ca_instance
 cat > /usr/local/bin/wait-for-ebs.sh <<'SCRIPT'
 #!/bin/bash
 until [ -b /dev/nvme1n1 ]; do sleep 2; done
@@ -43,6 +54,7 @@ if ! blkid -t TYPE=xfs /dev/nvme1n1; then
   mkfs -t xfs /dev/nvme1n1
 fi
 mkdir -p /opt/ca_instance
+chmod 777 /opt/ca_instance
 mount /dev/nvme1n1 /opt/ca_instance
 UUID=$(blkid -s UUID -o value /dev/nvme1n1)
 grep -q "$UUID" /etc/fstab || echo "UUID=$UUID /opt/ca_instance xfs defaults,nofail 0 2" >> /etc/fstab
@@ -53,7 +65,6 @@ cat > /etc/systemd/system/mount-ca-data.service <<'UNIT'
 [Unit]
 Description=Mount CA data EBS volume
 After=local-fs.target
-Before=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
@@ -65,6 +76,42 @@ UNIT
 systemctl daemon-reload
 systemctl enable mount-ca-data.service
 systemctl start mount-ca-data.service
+
+# ensure ecr endpoint is ready to go before moving on
+until aws ecr describe-repositories --region ${data.aws_region.current.name} > /dev/null 2>&1; do
+  echo "Waiting for ECR endpoint..."
+  sleep 10
+done
+
+# pull step-ca image
+docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
+
+# generate passwords
+openssl rand -base64 32 > /opt/ca_instance/password.txt
+chmod 600 /opt/ca_instance/password.txt
+openssl rand -base64 32 > /opt/ca_instance/intermediate_password.txt
+chmod 600 /opt/ca_instance/intermediate_password.txt
+
+# initialize step-ca
+docker run --rm -v /opt/ca_instance:/home/step -e DOCKER_STEPCA_INIT_NAME="YourOrg CA" -e DOCKER_STEPCA_INIT_DNS_NAMES="localhost" -e DOCKER_STEPCA_INIT_ADDRESS=":9000" -e DOCKER_STEPCA_INIT_PROVISIONER_NAME="device-provisioner" -e DOCKER_STEPCA_INIT_PASSWORD_FILE="/home/step/password.txt" ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
+
+# change intermediate key password
+docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password.txt --new-password-file /home/step/intermediate_password.txt --force
+
+# back up to secrets manager
+secret_put() {
+aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
+}
+secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password.txt)"
+secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password.txt)"
+secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
+secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
+secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
+secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
+secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
+
+# start step-ca
+docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} --password-file /home/step/intermediate_password.txt
 EOF
 
   tags = {
