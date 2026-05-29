@@ -81,6 +81,13 @@ resource "aws_security_group" "vpce_sg" {
     cidr_blocks = [aws_vpc.cert_vpc.cidr_block]
   }
 
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ca_sg.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -104,5 +111,29 @@ resource "aws_vpc_endpoint" "ssm" {
 
   tags = {
     Name = "${var.deploy_env}_${each.value}_endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.cert_vpc.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet.id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "${var.deploy_env}_ecr_api_endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.cert_vpc.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet.id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "${var.deploy_env}_ecr_dkr_endpoint"
   }
 }

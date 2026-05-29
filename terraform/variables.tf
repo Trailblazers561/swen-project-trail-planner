@@ -81,3 +81,8 @@ resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
 }
+
+variable "step_ca_version" {
+  type    = string
+  default = "latest"
+}

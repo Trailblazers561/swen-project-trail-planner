@@ -74,6 +74,20 @@ resource "aws_iam_policy" "secrets_policy" {
   policy = data.aws_iam_policy_document.secrets_policy.json
 }
 
+data "aws_iam_policy_document" "ca_ecr_policy" {
+  statement {
+    effect    = "Allow"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "ca_ecr_auth" {
+  name   = "${var.deploy_env}_ca_ecr_auth_policy"
+  role   = aws_iam_role.ca_iam_role.id
+  policy = data.aws_iam_policy_document.ca_ecr_policy.json
+}
+
 #May want to be limited in the future for security concerns
 resource "aws_iam_role_policy_attachment" "lambda_dynamodb_full_access" {
   role       = aws_iam_role.lambda_iam_role.name
@@ -110,6 +124,11 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role = aws_iam_role.ca_iam_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "ca_ecr_pull" {
+  role       = aws_iam_role.ca_iam_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 resource "aws_iam_role" "lambda_iam_role" {
