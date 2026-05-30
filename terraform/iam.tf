@@ -9,17 +9,6 @@ data "aws_iam_policy_document" "assume_role" {
 
     actions = ["sts:AssumeRole"]
   }
-
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["apigateway.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
 }
 
 data "aws_iam_policy_document" "secrets_policy" {
@@ -55,17 +44,21 @@ data "aws_iam_policy_document" "ca_policy" {
 data "aws_iam_policy_document" "ca_secrets_policy" {
   statement {
     effect = "Allow"
-
     actions = [
       "secretsmanager:CreateSecret",
       "secretsmanager:PutSecretValue",
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret"
     ]
-
     resources = [
       "arn:aws:secretsmanager:${data.aws_region.current.name}:*:secret:cert-auth*"
     ]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["secretsmanager:GetRandomPassword"]
+    resources = ["*"]
   }
 }
 

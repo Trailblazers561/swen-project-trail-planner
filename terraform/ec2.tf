@@ -84,11 +84,15 @@ until aws ecr describe-repositories --region ${data.aws_region.current.name} > /
   sleep 10
 done
 
-# pull step-ca image
-docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
+# pull step-ca image, inelegant retry loop to ensure the "other part" of the ecr endpoint is ready to go. 2 minutes and change should be sufficient.
+for i in 1 2 3 4 5; do
+  docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} && break
+  echo "docker pull failed, attempt number $i, retrying in 30 secs"
+  sleep 30
+done
 
-# ensure secrets manager endpoint is ready to go before moving on
-until aws secretsmanager list-secrets --region ${data.aws_region.current.name} > /dev/null 2>&1; do
+# ensure secrets manager endpoint is ready to go before moving on, uses a generic command that should always work if the endpoint is functional
+until aws secretsmanager get-random-password --region ${data.aws_region.current.name} > /dev/null 2>&1; do
   echo "Waiting for Secrets Manager endpoint..."
   sleep 10
 done
@@ -140,8 +144,13 @@ else
   secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
 fi
 
+# step-ca is picky about the password location when running it how i am below, needs to be in this place
+cp /opt/ca_instance/intermediate_password /opt/ca_instance/secrets/password
+chown 1000:1000 /opt/ca_instance/secrets/password
+chmod 644 /opt/ca_instance/secrets/password
+
 # start step-ca
-docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} --password-file /home/step/intermediate_password
+docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
 EOF
 
   tags = {
