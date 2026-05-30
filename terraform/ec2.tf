@@ -76,6 +76,7 @@ UNIT
 systemctl daemon-reload
 systemctl enable mount-ca-data.service
 systemctl start mount-ca-data.service
+chown -R 1000:1000 /opt/ca_instance
 
 # ensure ecr endpoint is ready to go before moving on
 until aws ecr describe-repositories --region ${data.aws_region.current.name} > /dev/null 2>&1; do
@@ -87,23 +88,22 @@ done
 docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
 
 # generate passwords
-openssl rand -base64 32 > /opt/ca_instance/password.txt
-chmod 600 /opt/ca_instance/password.txt
-openssl rand -base64 32 > /opt/ca_instance/intermediate_password.txt
-chmod 600 /opt/ca_instance/intermediate_password.txt
+openssl rand -base64 32 > /opt/ca_instance/password
+chmod 644 /opt/ca_instance/password
+openssl rand -base64 32 > /opt/ca_instance/intermediate_password
+chmod 644 /opt/ca_instance/intermediate_password
 
 # initialize step-ca
-docker run --rm -v /opt/ca_instance:/home/step -e DOCKER_STEPCA_INIT_NAME="YourOrg CA" -e DOCKER_STEPCA_INIT_DNS_NAMES="localhost" -e DOCKER_STEPCA_INIT_ADDRESS=":9000" -e DOCKER_STEPCA_INIT_PROVISIONER_NAME="device-provisioner" -e DOCKER_STEPCA_INIT_PASSWORD_FILE="/home/step/password.txt" ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
-
+docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "YourOrg CA" --dns "localhost" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
 # change intermediate key password
-docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password.txt --new-password-file /home/step/intermediate_password.txt --force
+docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
 
 # back up to secrets manager
 secret_put() {
 aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
 }
-secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password.txt)"
-secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password.txt)"
+secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
+secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
 secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
 secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
 secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
@@ -111,7 +111,7 @@ secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/interm
 secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
 
 # start step-ca
-docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} --password-file /home/step/intermediate_password.txt
+docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} --password-file /home/step/intermediate_password
 EOF
 
   tags = {
