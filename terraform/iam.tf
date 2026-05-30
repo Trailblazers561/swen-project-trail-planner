@@ -58,9 +58,9 @@ data "aws_iam_policy_document" "ca_secrets_policy" {
 
     actions = [
       "secretsmanager:CreateSecret",
-      "secretsmanager:UpdateSecret",
+      "secretsmanager:PutSecretValue",
       "secretsmanager:GetSecretValue",
-      "secretsmanager:DeleteSecret"
+      "secretsmanager:DescribeSecret"
     ]
 
     resources = [
