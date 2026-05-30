@@ -87,28 +87,58 @@ done
 # pull step-ca image
 docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
 
-# generate passwords
-openssl rand -base64 32 > /opt/ca_instance/password
-chmod 644 /opt/ca_instance/password
-openssl rand -base64 32 > /opt/ca_instance/intermediate_password
-chmod 644 /opt/ca_instance/intermediate_password
+# ensure secrets manager endpoint is ready to go before moving on
+until aws secretsmanager list-secrets --region ${data.aws_region.current.name} > /dev/null 2>&1; do
+  echo "Waiting for Secrets Manager endpoint..."
+  sleep 10
+done
 
-# initialize step-ca
-docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "YourOrg CA" --dns "localhost" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
-# change intermediate key password
-docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
+# check if secretsmanager has our secrets present, restore if so, else generate fresh and upload secrets
+if aws secretsmanager describe-secret --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} > /dev/null 2>&1; then
+  mkdir -p /opt/ca_instance/certs
+  mkdir -p /opt/ca_instance/secrets
+  mkdir -p /opt/ca_instance/config
+  mkdir -p /opt/ca_instance/db
 
-# back up to secrets manager
-secret_put() {
-aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
-}
-secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
-secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
-secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
-secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
-secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
-secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
-secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
+  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/root_ca.crt
+  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/intermediate_ca.crt
+  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/root_ca_key
+  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/intermediate_ca_key
+  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-config" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/config/ca.json
+  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/password
+  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/intermediate_password
+
+  chmod 644 /opt/ca_instance/password
+  chmod 644 /opt/ca_instance/intermediate_password
+  chown -R 1000:1000 /opt/ca_instance
+
+else
+
+  # generate passwords
+  openssl rand -base64 32 > /opt/ca_instance/password
+  chmod 644 /opt/ca_instance/password
+  openssl rand -base64 32 > /opt/ca_instance/intermediate_password
+  chmod 644 /opt/ca_instance/intermediate_password
+  chown -R 1000:1000 /opt/ca_instance
+
+
+  # initialize step-ca
+  docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "YourOrg CA" --dns "localhost" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
+  # change intermediate key password
+  docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
+
+  # back up to secrets manager
+  secret_put() {
+  aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
+  }
+  secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
+  secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
+  secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
+  secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
+  secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
+  secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
+  secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
+fi
 
 # start step-ca
 docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} --password-file /home/step/intermediate_password

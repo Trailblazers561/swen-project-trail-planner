@@ -82,7 +82,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_subnet.id]
-  security_group_ids  = [aws_security_group.lambda_sg.id, aws_security_group.vpce_sg.id]
+  security_group_ids  = [aws_security_group.lambda_sg.id, aws_security_group.vpce_sg.id, aws_security_group.ca_sg.id]
   private_dns_enabled = true
 
   tags = {
