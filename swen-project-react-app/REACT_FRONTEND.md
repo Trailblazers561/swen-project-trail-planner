@@ -1,10 +1,10 @@
-# Trail Planner - React Frontend
+# Trail Count - React Frontend
 
-This is the React frontend application for the Trail Planner system, built with Vite and React.
+This is the React frontend application for the Trail Count system, built with Vite and React.
 
 ## Overview
 
-The Trail Planner frontend provides:
+The Trail Count frontend provides:
 - **Dashboard**: Interactive graphs and data visualization for trail usage
 - **Trail Management**: Add, edit, and organize trails and areas
 - **Device Management**: Associate devices with trails

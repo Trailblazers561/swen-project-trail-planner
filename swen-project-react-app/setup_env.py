@@ -23,20 +23,20 @@ def retrieve_api_url(env):
     gateways = api_gateway.get_rest_apis(limit=20)
     api_id = ""
     for gateway in gateways["items"]:
-        if gateway["name"] == f"{env}_trailplanner_public_api":
+        if gateway["name"] == f"{env}_traillcount_public_api":
             api_id = gateway["id"]
-            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_trailplanner_public_api_stage"
+            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_traillcount_public_api_stage"
 
 def retrieve_user_pool_id(env):
     pools = cognito.list_user_pools(MaxResults=20)
     for pool in pools["UserPools"]:
-        if pool["Name"] == f"{env}_trailplanner_user_pool":
+        if pool["Name"] == f"{env}_traillcount_user_pool":
             return pool["Id"]
 
 def retrieve_user_id(env):
     clients = cognito.list_user_pool_clients(UserPoolId=retrieve_user_pool_id(env), MaxResults=20)
     for client in clients["UserPoolClients"]:
-        if client["ClientName"] == f"{env}_trailplanner_cognito_client":
+        if client["ClientName"] == f"{env}_traillcount_cognito_client":
             return client["ClientId"]
 
 def write_values(env):

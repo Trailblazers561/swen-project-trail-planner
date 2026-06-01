@@ -10,14 +10,14 @@ dynamodb = boto3.resource('dynamodb')
 
 def load_test_data(env):
     # Load Tables
-    hour_table = dynamodb.Table(f"{env}_trailplanner_device_trail_log_hour_table")
-    day_table = dynamodb.Table(f"{env}_trailplanner_device_trail_log_day_table")
-    week_table = dynamodb.Table(f"{env}_trailplanner_device_trail_log_week_table")
-    month_table = dynamodb.Table(f"{env}_trailplanner_device_trail_log_month_table")
-    trail_table = dynamodb.Table(f"{env}_trailplanner_trail_table")
-    device_table = dynamodb.Table(f"{env}_trailplanner_device_table")
-    device_trail_table = dynamodb.Table(f"{env}_trailplanner_device_trail_table")
-    area_table = dynamodb.Table(f"{env}_trailplanner_area_table")
+    hour_table = dynamodb.Table(f"{env}_traillcount_device_trail_log_hour_table")
+    day_table = dynamodb.Table(f"{env}_traillcount_device_trail_log_day_table")
+    week_table = dynamodb.Table(f"{env}_traillcount_device_trail_log_week_table")
+    month_table = dynamodb.Table(f"{env}_traillcount_device_trail_log_month_table")
+    trail_table = dynamodb.Table(f"{env}_traillcount_trail_table")
+    device_table = dynamodb.Table(f"{env}_traillcount_device_table")
+    device_trail_table = dynamodb.Table(f"{env}_traillcount_device_trail_table")
+    area_table = dynamodb.Table(f"{env}_traillcount_area_table")
 
     # Delete Table Items
     for table in [hour_table, day_table, week_table, month_table]:

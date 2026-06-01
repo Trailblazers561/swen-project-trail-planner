@@ -120,11 +120,11 @@ resource "aws_api_gateway_rest_api" "public_api" {
   body = jsonencode({
     openapi = "3.0.1"
     info = {
-      title   = "${var.deploy_env}_trailplanner_public_api"
+      title   = "${var.deploy_env}_traillcount_public_api"
       version = "1.0"
     }
   })
-  name = "${var.deploy_env}_trailplanner_public_api"
+  name = "${var.deploy_env}_traillcount_public_api"
 }
 
 resource "aws_api_gateway_domain_name" "api_domain" {
@@ -150,18 +150,18 @@ resource "aws_api_gateway_base_path_mapping" "api_mapping" {
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.public_api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.public_api.id
-  stage_name    = "${var.deploy_env}_trailplanner_public_api_stage"
+  stage_name    = "${var.deploy_env}_traillcount_public_api_stage"
 }
 
 # API Key 
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.deploy_env} TrailPlanner Device API Key"
-  value = "${var.deploy_env}-trail-planner-key-trail-trail-trail-trail"
+  name = "${var.deploy_env} TrailCount Device API Key"
+  value = "REDACTED"
 }
 
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "device_usage_plan" {
-  name = "${var.deploy_env} TrailPlanner Device API Usage Plan"
+  name = "${var.deploy_env} TrailCount Device API Usage Plan"
 
   api_stages {
     api_id = aws_api_gateway_rest_api.public_api.id
@@ -219,7 +219,7 @@ data "archive_file" "helper_layer" {
 }
 
 resource "aws_lambda_layer_version" "helper_layer" {
-  layer_name = "${var.deploy_env}-trailplanner-helper-layer"
+  layer_name = "${var.deploy_env}-traillcount-helper-layer"
   filename = data.archive_file.helper_layer.output_path
   source_code_hash = data.archive_file.helper_layer.output_base64sha256
   compatible_runtimes = ["python3.12"]
@@ -238,7 +238,7 @@ data "archive_file" "public_api_lambda_zips" {
 resource "aws_lambda_function" "public_api_lambdas" {
   for_each = local.public_api_methods
 
-  function_name = "${var.deploy_env}_trailplanner_${each.key}"
+  function_name = "${var.deploy_env}_traillcount_${each.key}"
   role = aws_iam_role.lambda_iam_role.arn
   handler = "${each.value.handler}"
   runtime = "python3.12"
@@ -370,7 +370,7 @@ resource "aws_api_gateway_integration_response" "public_api_options_integration_
 
 # Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
-  name = "${var.deploy_env}_trailplanner_lambda_authorizer"
+  name = "${var.deploy_env}_traillcount_lambda_authorizer"
   rest_api_id = aws_api_gateway_rest_api.public_api.id
   authorizer_uri = aws_lambda_function.lambda_authorizer.invoke_arn
   type = local.gateway_authorizer_type

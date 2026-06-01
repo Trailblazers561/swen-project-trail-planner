@@ -6,7 +6,7 @@ This guide talks about the custom SES identity used to send emails with AWS. The
 
 1. Navigate to `Amazon SES`in the AWS console
 2. Create an identity and select `domain`
-3. Enter appropriate domain/subdomain ie. `trailplanner-auth.adirondackwilderness.org`
+3. Enter appropriate domain/subdomain ie. `traillcount-auth.adirondackwilderness.org`
 4. Leave the following selects unchecked: `Assign a default configuration set` and `Assign to a tenant`
 5. Check `Use a custom MAIL FROM domain`
    - Enter mail from domain ie. `mail`

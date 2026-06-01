@@ -1,4 +1,4 @@
-# Trail Planner API Documentation
+# Trail Count API Documentation
 
 ## Base URL
 
