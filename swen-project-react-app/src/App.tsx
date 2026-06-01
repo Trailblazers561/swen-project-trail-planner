@@ -23,13 +23,13 @@ function App() {
                             }
                         />
                         <Route path="/home" element={<LandingPage />} />
-                        <Route path="/login" element={<LoginPage />} />
                         <Route path="/dashboard" element={<DashBoard />} />
                         <Route path="/test" element={<Test />} />
                         <Route path="/privileges" 
                         element={(currentRole === Role.Admin || currentRole === Role.Root) ? <Privileges /> : <Navigate replace to="/login" />} 
                         />
                     </Route>
+                    <Route path="/login" element={<LoginPage />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
