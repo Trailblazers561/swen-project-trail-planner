@@ -101,7 +101,7 @@ const updateUserRole = async (option: string, row: UserRow) => {
 
         const roleForApi = roleMap[newRole];
 
-        const response = await updateUserRole(row.user_id, roleForApi);
+        const response = await updateUserRole(row.username, roleForApi);
         console.log(response.json);
     } catch (error) {
         console.error("Error updating role:", error);
