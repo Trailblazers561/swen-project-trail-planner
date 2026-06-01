@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { UserRole } from "./lib/apiTypes";
 
 export enum Role {
     User = 1,
@@ -6,6 +7,13 @@ export enum Role {
     Admin = 3,
     Root = 4
 }
+
+export const roleMap: Record<number, UserRole> = {
+    1: UserRole.User,
+    2: UserRole.TrailManager,
+    3: UserRole.Admin,
+    4: UserRole.RootAdmin,
+};
 
 type AuthContextType = {
     username: string;
@@ -15,12 +23,14 @@ type AuthContextType = {
     setAuth: (idToken: string, accessToken: string, refreshToken: string) => void;
 };
 
+
+
 const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [roles, setRoles] = useState<Role[]>([]);
     const [username, setUsername] = useState<string>("");
-
+    const [loading, setLoading] = useState(true)
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
     const refreshAuth = () => {
@@ -62,9 +72,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         refreshAuth();
     };
 
-    const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
+    const setAuth = async (idToken: string, accessToken: string, refreshToken: string) => {
         setTokens(idToken, accessToken, refreshToken)
-        refreshAuth();
+
+        await refreshAuth();
     }
 
     return (

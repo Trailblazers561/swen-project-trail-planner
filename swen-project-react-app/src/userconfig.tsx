@@ -5,7 +5,7 @@ import UserDataTable from "./components/tables/UserDataTable";
 import { Role } from "./Context";
 
 interface User {
-    user_id: number;
+    user_id: string;
     username: string;
     email: string;
     role: Role;
@@ -58,7 +58,7 @@ const Privileges = () => {
             {/* Render users */}
             <div className="p-4">
                 {users.length === 0 ? (
-                    <div>No users found</div>
+                    <div>Loading...</div>
                 ) : (
                     // <ul>
                     //     {users.map((user, index) => (
