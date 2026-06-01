@@ -4,7 +4,7 @@ import { Role, useAuth } from "@/Context";
 import { Link } from "react-router-dom";
 
 function Navbar() {
-    const { email, currentRole } = useAuth();
+    const { username, currentRole } = useAuth();
     return (
         <nav className="sticky top-0 w-full bg-white shadow-md z-50 mb-20px z-[1000]" id="navbar">
             <div className="top-0 left-0 w-lvw h-18 bg-[var(--color-navbar)] text-white flex items-center justify-between p-4">
@@ -15,15 +15,15 @@ function Navbar() {
                     {currentRole !== null ? (
                         <div className="grid grid-rows-2 grid-cols-1">
                             <div>
-                                <span>{email}</span>
+                                <span data-testid="username">{username}</span>
                             </div>
                             <div>
-                                <div>{Role[currentRole]}</div>
+                                <div data-testid="user-role">{Role[currentRole]}</div>
                             </div>
                         </div>
                     ) : (
                         <div className="grid grid-rows-1">
-                            <div>Guest</div>
+                            <div data-testid="user-role">Guest</div>
                         </div>
                     )}
                     <UserIcon />
