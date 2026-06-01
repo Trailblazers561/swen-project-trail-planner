@@ -1,5 +1,5 @@
 locals {
-  s3_origin_id = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "traillcountS3Origin"
+  s3_origin_id = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "trailcountS3Origin"
   full_domain  = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : ""
 }
 

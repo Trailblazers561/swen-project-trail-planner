@@ -56,7 +56,7 @@ Edit `variables.tf` or create `terraform.tfvars` with your configuration:
 ```hcl
 # Basic configuration
 env = "local"
-bucket_name = "traillcount-bucket"
+bucket_name = "trailcount-bucket"
 ```
 
 ### 4. Apply the Terraform Configuration

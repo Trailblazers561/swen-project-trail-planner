@@ -48,7 +48,7 @@ acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1
 
 ```hcl
 # Bucket name (only used if use_domain is false)
-bucket_name = "traillcount-bucket"
+bucket_name = "trailcount-bucket"
 ```
 
 ### Default User Account Information

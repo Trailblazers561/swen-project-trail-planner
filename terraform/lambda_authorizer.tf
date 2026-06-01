@@ -1,6 +1,6 @@
 # Lambda Authorizer Lambda Function
 resource "aws_lambda_function" "lambda_authorizer" {
-  function_name = "${var.deploy_env}_traillcount_api_authorizer"
+  function_name = "${var.deploy_env}_trailcount_api_authorizer"
   role          = aws_iam_role.lambda_authorizer_role.arn
   handler       = "lambda_authorizer.handler"
   runtime       = "python3.12"
@@ -49,7 +49,7 @@ data "archive_file" "authorizer_layer" {
 }
 
 resource "aws_lambda_layer_version" "authorizer_layer" {
-  layer_name          = "${var.deploy_env}-traillcount-authorizer-layer"
+  layer_name          = "${var.deploy_env}-trailcount-authorizer-layer"
   filename            = data.archive_file.authorizer_layer.output_path
   source_code_hash    = data.archive_file.authorizer_layer.output_base64sha256
   compatible_runtimes = ["python3.12"]
@@ -63,7 +63,7 @@ data "archive_file" "lambda_authorizer_zip" {
 
 # Lambda Authorizer Role
 resource "aws_iam_role" "lambda_authorizer_role" {
-  name               = "${var.deploy_env}_traillcount_lambda_authorizer_role"
+  name               = "${var.deploy_env}_trailcount_lambda_authorizer_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
