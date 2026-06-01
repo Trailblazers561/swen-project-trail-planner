@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains all tests for the Trail Planner application. All tests use pytest with the format defined in [pytest.ini](pytest.ini). 
+This directory contains all tests for the Trail Count application. All tests use pytest with the format defined in [pytest.ini](pytest.ini). 
 
 ## Prerequisites
 

@@ -9,15 +9,15 @@ def custom_message(event, context):
     code = event["request"]["codeParameter"]
 
     if trigger == "CustomMessage_SignUp":
-        event["response"]["emailSubject"] = "Verify Your TrailPlanner Account"
+        event["response"]["emailSubject"] = "Verify Your TrailCount Account"
         event["response"]["emailMessage"] = get_email_layout(username, code, "verify your email address")
 
     if trigger == "CustomMessage_ResendCode":
-        event["response"]["emailSubject"] = "Verify Your TrailPlanner Account (Resend)"
+        event["response"]["emailSubject"] = "Verify Your TrailCount Account (Resend)"
         event["response"]["emailMessage"] = get_email_layout(username, code, "verify your email address")
 
     if trigger == "CustomMessage_ForgotPassword":
-        event["response"]["emailSubject"] = "Reset Your TrailPlanner Account Password"
+        event["response"]["emailSubject"] = "Reset Your TrailCount Account Password"
         event["response"]["emailMessage"] = get_email_layout(username, code, "reset your password")
 
     print(event["response"])
@@ -46,7 +46,7 @@ def get_email_layout(username, code, purpose):
                                 style="width: 70%; margin: 0px auto 20px auto;"
                             />
                         </a>
-                        <h2 style="margin:0 0 10px 0;">Welcome to TrailPlanner!</h2>
+                        <h2 style="margin:0 0 10px 0;">Welcome to TrailCount!</h2>
                         <p style="color: #444444; font-size: 14px;">
                             Hello {username}, to {purpose} please use the following code:
                         </p>

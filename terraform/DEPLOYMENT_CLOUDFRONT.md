@@ -1,6 +1,6 @@
 # CloudFront and Route53 Deployment Guide
 
-This guide explains how to configure and deploy the Trail Planner application using AWS CloudFront (CDN) for production use.
+This guide explains how to configure and deploy the Trail Count application using AWS CloudFront (CDN) for production use.
 
 ## Overview
 
@@ -48,7 +48,7 @@ acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1
 
 ```hcl
 # Bucket name (only used if use_domain is false)
-bucket_name = "trailplanner-bucket"
+bucket_name = "traillcount-bucket"
 ```
 
 ### Default User Account Information

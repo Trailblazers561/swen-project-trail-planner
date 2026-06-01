@@ -46,6 +46,6 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
 }
 
 resource "aws_iam_role" "lambda_iam_role" {
-  name               = "${var.deploy_env}_trailplanner_lambda_iam_role"
+  name               = "${var.deploy_env}_traillcount_lambda_iam_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }

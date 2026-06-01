@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains UI tests for the Trail Planner application using Selenium WebDriver. All tests use pytest and are configured to test the React frontend application. The general purpose testing documentation can be found in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
+This directory contains UI tests for the Trail Count application using Selenium WebDriver. All tests use pytest and are configured to test the React frontend application. The general purpose testing documentation can be found in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
 ## Prerequisites
 

@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user_pool" {
-  name                = "${var.deploy_env}_trailplanner_user_pool"
+  name                = "${var.deploy_env}_traillcount_user_pool"
   deletion_protection = "INACTIVE"
 
   alias_attributes = ["email"]
@@ -27,12 +27,12 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain" {
-  domain       = "${var.deploy_env}-trailplanner-user-confirmation"
+  domain       = "${var.deploy_env}-traillcount-user-confirmation"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
 resource "aws_cognito_user_pool_client" "client" {
-  name         = "${var.deploy_env}_trailplanner_cognito_client"
+  name         = "${var.deploy_env}_traillcount_cognito_client"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 
   generate_secret              = false
