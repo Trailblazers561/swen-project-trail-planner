@@ -1,4 +1,4 @@
-import { Role } from "@/Context";
+import { Role, roleMap } from "@/Context";
 import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import {
@@ -9,9 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/templates/select";
+import { TrailData } from "@/api";
 
 interface UserRow {
-    user_id: number;
+    user_id: string;
     username: string;
     email: string;
     role: Role;
@@ -21,6 +22,7 @@ interface Props {
     data: UserRow[];
     loading: boolean;
 }
+
 
 const columns: TableColumn<UserRow>[] = [
     {
@@ -51,10 +53,7 @@ const columns: TableColumn<UserRow>[] = [
     name: "Actions",
     center: true,
     cell: (row: UserRow) => (
-        <Select
-            onValueChange={(value) => {
-                console.log(value, row);
-            }}
+        <Select onValueChange={(value) => { updateUserRole(value, row); }}
         >
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select Action" />
@@ -75,6 +74,39 @@ const columns: TableColumn<UserRow>[] = [
     ),
 }
 ];
+
+const stringToEnum: Record<string, Role> = {
+    ["user"]: Role.User,
+    ["trail_manager"]: Role.Manager,
+    ["admin"]: Role.Admin,
+    ["root_admin"]: Role.Root,
+};
+
+const updateUserRole = async (option: string, row: UserRow) => {
+    const isPromote = option === "promote";
+    const isDemote = option === "demote";
+    const { updateUserRole } = TrailData();
+
+    try {
+        // the call filling the table converts our Roles back to strings, so we need to convert them back
+        let newRole: Role = stringToEnum[row.role];
+
+        if (isPromote && newRole < Role.Root) {
+            newRole = newRole + 1;
+        }
+        
+        if (isDemote && newRole > Role.User) {
+            newRole = newRole - 1;
+        }
+
+        const roleForApi = roleMap[newRole];
+
+        const response = await updateUserRole(row.user_id, roleForApi);
+        console.log(response.json);
+    } catch (error) {
+        console.error("Error updating role:", error);
+    }
+};
 
 const customStyles = {
     table: {
