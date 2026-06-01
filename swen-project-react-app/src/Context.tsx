@@ -8,21 +8,23 @@ export enum Role {
 }
 
 type AuthContextType = {
-    email: string;
+    username: string;
     roles: Role[];
     currentRole: Role | null;
+    clearAuth: () => void;
+    setAuth: (idToken: string, accessToken: string, refreshToken: string) => void;
 };
 
 const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [roles, setRoles] = useState<Role[]>([]);
-    const [email, setEmail] = useState<string>("");
+    const [username, setUsername] = useState<string>("");
 
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
-    useEffect(() => {
-        const idToken = sessionStorage.getItem("idToken");
+    const refreshAuth = () => {
+        const idToken = localStorage.getItem("idToken");
 
         if (idToken) {
             try {
@@ -33,22 +35,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const parsedRoles: Role[] = [];
 
                 groups.forEach((group) => {
-                    if (group.includes("root")) parsedRoles.push(Role.Root);
-                    else if (group.includes("admin")) parsedRoles.push(Role.Admin);
-                    else if (group.includes("manager")) parsedRoles.push(Role.Manager);
-                    else if (group.includes("user")) parsedRoles.push(Role.User);
+                    if (group === "root_admin") parsedRoles.push(Role.Root);
+                    else if (group === "admin") parsedRoles.push(Role.Admin);
+                    else if (group === "trail_manager") parsedRoles.push(Role.Manager);
+                    else if (group === "user") parsedRoles.push(Role.User);
                 });
 
                 setRoles(parsedRoles.length ? parsedRoles : []);
-                setEmail(payload["email"] || "");
+                setUsername(payload["cognito:username"] || "");
             } catch (e) {
                 console.error("Failed to parse idToken:", e);
             }
         }
+        else {
+            setRoles([]);
+            setUsername("");
+        }
+    };
+
+    useEffect(() => {
+        refreshAuth();
     }, []);
 
+    const clearAuth = () => {
+        localStorage.clear();
+        refreshAuth();
+    };
+
+    const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
+        setTokens(idToken, accessToken, refreshToken)
+        refreshAuth();
+    }
+
     return (
-        <Context.Provider value={{ email, roles, currentRole }}>
+        <Context.Provider value={{ username, roles, currentRole, clearAuth, setAuth }}>
             {children}
         </Context.Provider>
     );
@@ -61,3 +81,27 @@ export const useAuth = () => {
     }
     return context;
 };
+
+export function isAuthenticated() {
+    return !!localStorage.getItem("idToken");
+}
+
+export function isTokenExpired() {
+    const idToken = localStorage.getItem("idToken");
+    if (!idToken)
+        return false;
+
+    const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
+
+    return expiration <= Date.now();
+}
+
+export function setTokens(idToken: string, accessToken: string, refreshToken: string) {
+    localStorage.setItem("idToken", idToken);
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+}
+
+export function getToken() {
+    return localStorage.getItem("accessToken") ?? "";
+}

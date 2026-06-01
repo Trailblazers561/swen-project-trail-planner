@@ -5,17 +5,17 @@ import { useAuth } from "./Context.tsx";
 // Author: Richard Tang
 
 function Test() {
-  const { currentRole, email } = useAuth();
+  const { currentRole, username } = useAuth();
 
   console.log("Roles:", currentRole);
-  console.log("Email:", email);
+  console.log("Username:", username);
 
   return (
     <div>
       <Navbar />
       <h1>Roles:</h1>
       <pre>{JSON.stringify(currentRole, null, 2)}</pre>
-      <pre>{JSON.stringify(email, null, 2)}</pre>
+      <pre>{JSON.stringify(username, null, 2)}</pre>
     </div>
   );
 }

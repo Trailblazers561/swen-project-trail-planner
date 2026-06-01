@@ -1,5 +1,5 @@
 from enum import Enum
 
 class UserAction(Enum):
-    LOGOUT = "logout"
+    LOGIN_LOGOUT = "login-logout"
     MANAGE_USERS = "manage_users"

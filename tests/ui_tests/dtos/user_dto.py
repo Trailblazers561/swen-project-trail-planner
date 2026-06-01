@@ -1,19 +1,22 @@
 import pytest_check
 from enums.user_enum import User
+from enums.user_role import UserRole
 
 class UserDTO:
-    def __init__(self, email: str="", password: str="", name: str="", user: User = None):
+    def __init__(self, name: str="", password: str="",  email: str="", role: UserRole=None, user: User = None):
         if user == None:
-            self.email = email
-            self.password = password
             self.name = name
+            self.password = password
+            self.email = email
+            self.role = role
         else:
-            self.email = user.email
+            self.name = user.username
             self.password = user.password
-            self.name = user.name
+            self.email = user.email
+            self.role = user.role
 
     def __str__(self):
-        return f"UserDTO [email={self.email}, password={self.password}, name={self.name}]"
+        return f"UserDTO [email={self.email}, password={self.password}, name={self.name}, role={self.role}]"
 
     def __repr__(self):
         return str(self)
@@ -29,5 +32,5 @@ class UserDTO:
             return
         other: UserDTO = other
 
-        pytest_check.equal(self.email, other.email)
+        pytest_check.equal(self.name, other.name)
         pytest_check.equal(self.password, other.password)

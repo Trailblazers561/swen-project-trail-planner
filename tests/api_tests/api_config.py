@@ -25,10 +25,11 @@ def get_cognito_headers():
         "Content-Type": "application/json"
     }
 
-# Headers for API key-authenticated requests
+# Headers for API key-authenticated requests (CHANGED TO COGNITO_TOKEN UNTIL THEY ARE MOVED OFF PUBLIC API)
 def get_api_key_headers():
     return {
-        "X-Api-Key": API_KEY,
+        "Authorization": f"Bearer {COGNITO_TOKEN}",
+        # "X-Api-Key": API_KEY
         "Content-Type": "application/json"
     }
 

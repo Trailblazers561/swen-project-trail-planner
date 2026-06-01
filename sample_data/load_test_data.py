@@ -10,14 +10,14 @@ dynamodb = boto3.resource('dynamodb')
 
 def load_test_data(env):
     # Load Tables
-    hour_table = dynamodb.Table(f"{env}_DeviceTrailLogHour")
-    day_table = dynamodb.Table(f"{env}_DeviceTrailLogDay")
-    week_table = dynamodb.Table(f"{env}_DeviceTrailLogWeek")
-    month_table = dynamodb.Table(f"{env}_DeviceTrailLogMonth")
-    trail_table = dynamodb.Table(f"{env}_Trail")
-    device_table = dynamodb.Table(f"{env}_Device")
-    device_trail_table = dynamodb.Table(f"{env}_DeviceTrail")
-    trail_group_table = dynamodb.Table(f"{env}_TrailGroup")
+    hour_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_hour_table")
+    day_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_day_table")
+    week_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_week_table")
+    month_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_month_table")
+    trail_table = dynamodb.Table(f"{env}_trailcount_trail_table")
+    device_table = dynamodb.Table(f"{env}_trailcount_device_table")
+    device_trail_table = dynamodb.Table(f"{env}_trailcount_device_trail_table")
+    area_table = dynamodb.Table(f"{env}_trailcount_area_table")
 
     # Delete Table Items
     for table in [hour_table, day_table, week_table, month_table]:
@@ -151,16 +151,16 @@ def load_test_data(env):
                     }
                 )
 
-    # Load Test Trail Group Data
-    with open(Path(__file__).parent / "test_trail_groups.csv") as f:
+    # Load Test Trail Area Data
+    with open(Path(__file__).parent / "test_areas.csv") as f:
         reader = csv.DictReader(f)
-        groups = {}
+        areas = {}
         for row in reader:
-            if not groups.get(row["name"]):
-                groups[row["name"]] = []
-            groups[row["name"]].append(int(row["trail_id"]))
-        with trail_group_table.batch_writer() as batch:
-            for name, trail_ids in groups.items():
+            if not areas.get(row["name"]):
+                areas[row["name"]] = []
+            areas[row["name"]].append(int(row["trail_id"]))
+        with area_table.batch_writer() as batch:
+            for name, trail_ids in areas.items():
                 batch.put_item(
                     Item={
                         "name": name,
