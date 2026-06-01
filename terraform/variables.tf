@@ -16,18 +16,19 @@ locals {
 locals {
   password = local.test_run ? "testPassword123!" : "password" # Sometimes google tells you your password has been found, this avoids that issue when testing
   users = {
-    root_admin = { username = "root_admin@gmail.com",    password = local.password, email = "root_admin@gmail.com" }
-    admin = { username = "admin@gmail.com",    password = local.password, email = "admin@gmail.com" }
-    trail_manager = { username = "trail_manager@gmail.com", password = local.password, email = "trail_manager@gmail.com" }
-    user = { username = "user@gmail.com",   password = local.password,  email = "user@gmail.com" }
+    root_admin = { email = "root_admin@gmail.com", password = local.password, groups=["root_admin", "admin", "trail_manager", "user"] }
+    admin = { email = "admin@gmail.com", password = local.password, groups=["admin", "trail_manager", "user"] }
+    trail_manager = { email = "trail_manager@gmail.com", password = local.password, groups=["trail_manager", "user"] }
+    user = { email = "user@gmail.com", password = local.password, groups=["user"] }
   }
 }
 
 locals {
   use_domain = !local.local_run && !local.test_run
   domain = "adirondackwilderness.org"
-  sub_domain = "trailblazers-${var.deploy_env}"
+  cloudfront_sub_domain = "trailblazers-${var.deploy_env}"
   api_sub_domain = "trailblazers-api-${var.deploy_env}"
+  verification_email = local.local_run ? var.local_user_email : "TrailCount@trailcount-auth.${local.domain}"
 }
 
 // Will get populated from github actions and stored in the repo, not populated in a local run
@@ -37,9 +38,21 @@ variable "acm_certificate_arn" {
   description = "Domain certificate arn"
 }
 
+// Will get populated from github actions and stored in the repo, should be overriden for a local run too
+variable "ses_identity_arn" {
+  type        = string
+  default     = "arn:"
+  description = "SES identity arn"
+}
+
+variable "local_user_email" {
+  type = string
+  default = "email@g.rit.edu"
+}
+
 variable "bucket_name" {
   type    = string
-  default = "trailplanner-bucket"
+  default = "trailcount-bucket"
 }
 
 # Set to false to disable auth

@@ -7,15 +7,17 @@ from datetime import datetime
 import csv
 
 from selenium_helper import SeleniumHelper as SH
-from test_data import TRAIL_GROUPS, retrieve_csv_list
+from test_data import AREAS, retrieve_csv_list
 
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.user_dto import UserDTO
 from enums.granularity import Granularity
+from enums.user_action import UserAction
 from enums.user_enum import User
 from steps.dashboard.export_data_step import ExportDataStep
 from steps.dashboard.set_dashboard_filters_step import SetDashboardFiltersStep
 from steps.login.login_step import LoginStep
+from steps.other.perform_user_action_step import PerformUserActionStep
 
 @pytest.mark.UI
 def import_export_data_test():
@@ -27,15 +29,22 @@ def import_export_data_test():
     driver = SH.get_driver()
 
     try:
+        # Go to Dashboard (Replace When Official Dashboard Button Becomes A Thing)
+        driver.get(driver.current_url.replace("home", "dashboard"))
+
+        # Go To Login
+        click_login_step = PerformUserActionStep(driver, UserAction.LOGIN_LOGOUT)
+        click_login_step.run()
+
         # Login
-        login_step = LoginStep(driver, UserDTO(user=User.ADMIN))
+        login_step = LoginStep(driver, UserDTO(user=User.TRAIL_MANAGER))
         login_step.run()
 
         # Wait for API Calls To Be Made
         SH.wait(3)
 
         # Verify Export For Each Granularity
-        selected_trails = {next(iter(TRAIL_GROUPS[0].trails)), next(iter(TRAIL_GROUPS[1].trails))}
+        selected_trails = {next(iter(AREAS[0].trails)), next(iter(AREAS[1].trails))}
         granularity_filters = [
             DashboardFilterDTO(datetime.fromisoformat("2024-01-01"), datetime.fromisoformat("2026-01-01"), Granularity.YEAR, trails=selected_trails),
             DashboardFilterDTO(datetime.fromisoformat("2026-01-15"), datetime.fromisoformat("2026-03-16"), Granularity.MONTH, trails=selected_trails),
@@ -71,7 +80,7 @@ def verify_export(driver, filter: DashboardFilterDTO):
     with open(export_data_step.export_file_path) as f:
         reader = csv.DictReader(f)
         expected_headers = ["Trail ID", "Trail Name", "Start Time", f"{filter.granularity.value} Count", "Battery %"]
-        pytest_check.assert_equal(expected_headers, reader.fieldnames)
+        pytest_check.equal(expected_headers, reader.fieldnames)
         if expected_headers != reader.fieldnames: return
         expected_rows = retrieve_csv_list(filter.date_start, filter.date_end, filter.granularity, [trail.id for trail in filter.trails])
         for i, row in enumerate(reader):

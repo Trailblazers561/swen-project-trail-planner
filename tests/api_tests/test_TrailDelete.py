@@ -22,7 +22,7 @@ def test_delete_trail_success():
     
     # Create the trail metadata
     create_payload = {
-        "trail_name": test_trail_name
+        "name": test_trail_name
     }
     
     create_response = requests.post(url, json=create_payload, headers=headers)
@@ -118,36 +118,36 @@ def test_delete_trail_unauthorized():
 
 
 @pytest.mark.API
-def test_delete_trail_removes_from_groups():
+def test_delete_trail_removes_from_areas():
     """
-    Test that deleting a trail removes it from all trail groups.
+    Test that deleting a trail removes it from all areas.
     """
     url = f"{BASE_URL}/trail_metadata"
     headers = get_cognito_headers()
     
-    # Get existing trails and groups
+    # Get existing trails and areas
     trails_response = requests.get(url, headers=headers)
-    groups_response = requests.get(f"{BASE_URL}/trail_groups", headers=headers)
+    areas_response = requests.get(f"{BASE_URL}/areas", headers=headers)
     
     assert trails_response.status_code == 200
-    assert groups_response.status_code == 200
+    assert areas_response.status_code == 200
     
     trails = trails_response.json()
-    groups = groups_response.json()
+    areas = areas_response.json()
     
-    if len(trails) == 0 or len(groups) == 0:
-        pytest.skip("Need at least one trail and one group for this test")
+    if len(trails) == 0 or len(areas) == 0:
+        pytest.skip("Need at least one trail and one area for this test")
     
-    # Use first trail and first group
+    # Use first trail and first area
     test_trail = trails[0]
     trail_id = test_trail.get("id")
-    test_group = groups[0]
-    group_name = test_group.get("name")
+    test_area = areas[0]
+    area_name = test_area.get("name")
     
-    # Add trail to group first
+    # Add trail to area first
     update_payload = {
         "trail_id": trail_id,
-        "trail_group": group_name
+        "area_name": area_name
     }
     update_response = requests.put(url, json=update_payload, headers=headers)
     assert update_response.status_code == 200
@@ -155,26 +155,26 @@ def test_delete_trail_removes_from_groups():
     # Wait a moment
     time.sleep(1)
     
-    # Verify trail is in group
-    groups_response_2 = requests.get(f"{BASE_URL}/trail_groups", headers=headers)
-    assert groups_response_2.status_code == 200
-    updated_groups = groups_response_2.json()
-    updated_group = next((g for g in updated_groups if g.get("name") == group_name), None)
-    assert updated_group is not None
-    assert trail_id in updated_group.get("trail_ids", [])
+    # Verify trail is in area
+    areas_response_2 = requests.get(f"{BASE_URL}/areas", headers=headers)
+    assert areas_response_2.status_code == 200
+    updated_areas = areas_response_2.json()
+    updated_area = next((a for a in updated_areas if a.get("name") == area_name), None)
+    assert updated_area is not None
+    assert trail_id in updated_area.get("trail_ids", [])
     
     # Delete the trail
     delete_payload = {
-        "trail_id": trail_id
+        "id": trail_id
     }
     delete_response = requests.delete(url, json=delete_payload, headers=headers)
     
     # Note: This test might fail if the trail is the only one in the system
     if delete_response.status_code == 200:
-        # Verify trail is removed from group
-        groups_response_3 = requests.get(f"{BASE_URL}/trail_groups", headers=headers)
-        assert groups_response_3.status_code == 200
-        final_groups = groups_response_3.json()
-        final_group = next((g for g in final_groups if g.get("group_name") == group_name), None)
-        if final_group:
-            assert trail_id not in final_group.get("trail_ids", []), "Trail should be removed from group"
+        # Verify trail is removed from area
+        areas_response_3 = requests.get(f"{BASE_URL}/areas", headers=headers)
+        assert areas_response_3.status_code == 200
+        final_areas = areas_response_3.json()
+        final_area = next((a for a in final_areas if a.get("area_name") == area_name), None)
+        if final_area:
+            assert trail_id not in final_area.get("trail_ids", []), "Trail should be removed from area"

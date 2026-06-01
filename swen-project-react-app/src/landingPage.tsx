@@ -100,7 +100,7 @@ const LandingPage = () => {
                                 <Button
                                     variant="primary"
                                     size="sm"
-                                    onClick={() => navigate(`/dashboard?trailId=${trail.id}`)}
+                                    onClick={() => navigate(`/dashboard?trailName=${trail.name}`)}
                                 >
                                 See Trail Data
                                 </Button>

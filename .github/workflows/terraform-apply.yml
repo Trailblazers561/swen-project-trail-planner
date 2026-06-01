@@ -14,6 +14,8 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
   CONFIG_DIRECTORY: "./terraform"
+  TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
+  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
 
 jobs:
   terraform-apply:
@@ -36,7 +38,6 @@ jobs:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
       TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
       TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
-      TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -54,6 +55,8 @@ jobs:
 
       - name: Setup Terraform Folder
         run: |
+          mkdir -p lambdas/layers/helper/python
+          cp lambdas/helper_functions.py lambdas/layers/helper/python
           mkdir -p terraform/lambdas
           cp -r lambdas/* terraform/lambdas/
           mkdir -p terraform/swen-project-react-app
