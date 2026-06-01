@@ -7,7 +7,13 @@ import Navbar from "./components/Navbar";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
 import { Granularity } from "./lib/apiTypes";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const LandingPage = () => {
 
@@ -37,41 +43,56 @@ const LandingPage = () => {
         [45.6, -71.0], 
     ];
 
-    const [timeRange, setTimeRange] = useState("30d");
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [selectedPreset, setSelectedPreset] = useState("all");
 
-    const getDateRange = (range: string) => {
-        const endDate = new Date();
-        const startDate = new Date();
+    const applyPreset = (preset: string) => {
+    const end = new Date();
+    const start = new Date();
+    
+    switch (preset) {
+        case "today":
+            start.setHours(0, 0, 0, 0);
+            break;
 
-        switch (range) {
-            case "7d":
-                startDate.setDate(endDate.getDate() - 7);
-                break;
-            case "30d":
-                startDate.setDate(endDate.getDate() - 30);
-                break;
-            case "90d":
-                startDate.setDate(endDate.getDate() - 90);
-                break;
-            case "365d":
-                startDate.setFullYear(endDate.getFullYear() - 1);
-                break;
-            case "all":
-                startDate.setFullYear(2000);
-                break;
-        }
+        case "2weeks":
+            start.setDate(end.getDate() - 14);
+            break;
 
-        return { startDate, endDate };
+        case "month":
+            start.setMonth(end.getMonth() - 1);
+            break;
+
+        case "all":
+            start.setFullYear(2000);
+            break;
+    }
+
+    setSelectedPreset(preset);
+    setStartDate(start);
+    setEndDate(end);
     };
 
     useEffect(() => {
         async function fetchTrails() {
             try {
                 const res = await getTrailMetadata();
-
                 if (res.success) {
-                    setTrails(await res.json); //renders pins
-                    console.log("trail metadata:", res.json);
+                    const trailData = await res.json;
+                    setTrails(trailData);
+
+                    const dates = trailData
+                        .map((t: any) => Number(t.date_activated))
+                        .filter(Boolean);
+
+                    if (dates.length > 0) {
+                        const earliest = new Date(Math.min(...dates) * 1000);
+
+                    setStartDate(earliest);
+                    setEndDate(new Date());
+                }
+
                 } else {
                     console.warn("Trail metadata not available");
                     setTrails([]);
@@ -85,22 +106,28 @@ const LandingPage = () => {
         fetchTrails();
     }, []);
 
-    const parsedTrails = trails.map(trail => ({
-        ...trail,
-        id: Number(trail.id),
-        latitude: Number(trail.latitude),
-        longitude: Number(trail.longitude),
-    }))
-        .filter(trail =>
-        Number.isFinite(trail.latitude) &&
-        Number.isFinite(trail.longitude)
-    );
+    const parsedTrails = useMemo(
+        () =>
+        trails
+            .map(trail => ({
+                ...trail,
+                id: Number(trail.id),
+                latitude: Number(trail.latitude),
+                longitude: Number(trail.longitude),
+            }))
+            .filter(
+                trail =>
+                    Number.isFinite(trail.latitude) &&
+                    Number.isFinite(trail.longitude)
+            ),
+        [trails]
+        );
 
     useEffect(() => { 
     async function fetchTrailUsage() {
         try {
 
-            const { startDate, endDate } = getDateRange(timeRange);
+            if (!startDate || !endDate) return;
 
             const trailIds = parsedTrails.map(t => t.id);
 
@@ -137,70 +164,108 @@ const LandingPage = () => {
     if (parsedTrails.length > 0) {
         fetchTrailUsage();
     }
-    }, [parsedTrails, timeRange]);
+    }, [parsedTrails, startDate, endDate]);
 
-    const getTrailColor = (trailId: number, days: number, p20: number, p40: number, p60: number, p80: number) => {
-        const usage = trailUsage[trailId] ?? 0;
+    const getTrailColor = (trailId: number, days: number) => {
+
+        const usage = trailUsage[trailId];
+
         if (!usage || days <= 0) return "gray";
 
         const avg = usage / days;
 
-        if (avg <= p20) return "#3b82f6";
-        if (avg <= p40) return "#22c55e";
-        if (avg <= p60) return "#eab308";
-        if (avg <= p80) return "#f97316";
-        return "#ef4444";
+        switch (true) {
+            case avg < 20:
+                return "#3b82f6";
+
+            case avg < 35:
+                return "#22c55e";
+
+            case avg < 50:
+                return "#eab308";
+
+            case avg < 75:
+                return "#f97316";
+
+            default:
+                return "#ef4444";
+        }
     };
 
-    const { p20, p40, p60, p80, days } = useMemo(() => {
-        const { startDate, endDate } = getDateRange(timeRange);
-
-        const days =
+    //Calculates relative business. Will be changed in the future
+    const days = useMemo(() => {
+        if (!startDate || !endDate) {
+            return 1;
+        }
+        
+        return Math.max(
+            1,
             (endDate.getTime() - startDate.getTime()) /
-            (1000 * 60 * 60 * 24);
-
-        const averages = parsedTrails.map(t =>
-            (trailUsage[t.id] ?? 0) / (days || 1)
+            (1000 * 60 * 60 * 24)
         );
-
-        const sorted = [...averages].sort((a, b) => a - b);
-
-        const percentile = (p: number) =>
-            sorted[Math.floor(p * (sorted.length - 1))] ?? 0;
-
-        return {
-            days,
-            p20: percentile(0.2),
-            p40: percentile(0.4),
-            p60: percentile(0.6),
-            p80: percentile(0.8),
-        };
-    }, [parsedTrails, trailUsage, timeRange]);
+    }, [startDate, endDate]);
 
   return (
 
         <div className="h-screen w-screen relative overflow-hidden">
              <Navbar/>
-                <div className="absolute top-5 right-52 z-[1000]"></div>
 
-                <div className="absolute top-20 left-4 z-[2000] pointer-events-auto">
-                    <Select
-                        value={timeRange}
-                        onValueChange={setTimeRange}
-                    >
-                        <SelectTrigger className="w-40 bg-white">
-                            <SelectValue />
+                <div className="absolute top-20 left-4 z-[9999] pointer-events-auto">
+                    <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
+
+                        <div className="font-semibold mb-3 text-center">
+                            Time Frame
+                        </div>
+
+                    <div className="flex justify-center">
+                        <Select
+                            value={selectedPreset}
+                            onValueChange={(value) => applyPreset(value)}
+                        >
+                        <SelectContent className="z-[10000]" />
+                        <SelectTrigger className="w-48 bg-white">
+                            <SelectValue/>
                         </SelectTrigger>
 
-                        <SelectContent className="z-[5000]">
-                            <SelectItem value="7d">Last 7 Days</SelectItem>
-                            <SelectItem value="30d">Last 30 Days</SelectItem>
-                            <SelectItem value="90d">Last 90 Days</SelectItem>
-                            <SelectItem value="365d">Last Year</SelectItem>
+                        <SelectContent className="z-[10000]">
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
+                            <SelectItem value="month">Last Month</SelectItem>
                             <SelectItem value="all">All Time</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
+
+                <div className="flex justify-center gap-2 mt-2">
+                    <input
+                        type="date"
+                        value={
+                        startDate
+                        ? startDate.toISOString().split("T")[0] : ""
+                        }
+                        onChange={(e) => {
+                            setSelectedPreset("custom");
+                            setStartDate(new Date(e.target.value));
+                        }}
+                        className="border rounded px-2 py-1 bg-white"
+                    />
+
+                    <input
+                        type="date"
+                        value={
+                            endDate
+                            ? endDate.toISOString().split("T")[0] : ""
+                        } 
+                        onChange={(e) => {
+                            setSelectedPreset("custom");
+                            setEndDate(new Date(e.target.value));
+                        }}
+                        className="border rounded px-2 py-1 bg-white"
+                    />
+                </div>
+
+            </div>
+            </div>
                 
                 <MapContainer
                     center={[44.02, -73.82]} 
@@ -222,7 +287,7 @@ const LandingPage = () => {
                         <Marker
                             key={trail.id}
                             position={[trail.latitude, trail.longitude]}
-                            icon={createTrailIcon(getTrailColor(trail.id, days, p20, p40, p60, p80))}
+                            icon={createTrailIcon(getTrailColor(trail.id, days))}
                         >
                             <Popup>
                                 <div
