@@ -12,13 +12,13 @@ from boto3.dynamodb.conditions import Attr, Key
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailplanner_device_trail_hour_table"))
-log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailplanner_device_trail_day_table"))
-log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailplanner_device_trail_week_table"))
-log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailplanner_device_trail_month_table"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailplanner_trail_table"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailplanner_device_table"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailplanner_device_trail_table"))
+log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_hour_table"))
+log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_day_table"))
+log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_week_table"))
+log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_month_table"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
 
 # Trails to update, Name: [mean, std_dev]
 trail_hikers = {
@@ -252,12 +252,12 @@ def get_weather_multiplier(latitude, longitude):
     try:
         url = f"https://api.weather.gov/points/{latitude},{longitude}"
 
-        url_request = urllib.request.Request(url, headers={"User-Agent": "AWA TrailPlanner"})
+        url_request = urllib.request.Request(url, headers={"User-Agent": "AWA TrailCount"})
 
         with urllib.request.urlopen(url_request) as response:
             url_data = json.loads(response.read())
 
-        weather_request = urllib.request.Request(url_data["properties"]["forecast"], headers={"User-Agent": "AWA TrailPlanner"})
+        weather_request = urllib.request.Request(url_data["properties"]["forecast"], headers={"User-Agent": "AWA TrailCount"})
 
         with urllib.request.urlopen(weather_request) as response:
             weather_data = json.loads(response.read())

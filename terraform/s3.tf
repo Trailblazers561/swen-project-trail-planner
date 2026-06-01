@@ -1,8 +1,8 @@
 resource "aws_s3_bucket" "react_bucket" {
-  bucket = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "${var.deploy_env}-trailplanner-react-bucket-${random_integer.random_suffix.result}"
+  bucket = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "${var.deploy_env}-trailcount-react-bucket-${random_integer.random_suffix.result}"
 
   tags = {
-    Name = "${var.deploy_env}-trailplanner-react-bucket"
+    Name = "${var.deploy_env}-trailcount-react-bucket"
   }
 
   force_destroy = true
@@ -60,10 +60,10 @@ resource "null_resource" "deploy_react_app" {
 }
 
 resource "aws_s3_bucket" "csv_bucket" {
-  bucket = "${var.deploy_env}-trailplanner-csv-bucket-${random_integer.random_suffix.result}"
+  bucket = "${var.deploy_env}-trailcount-csv-bucket-${random_integer.random_suffix.result}"
 
   tags = {
-    Name = "${var.deploy_env}-trailplanner-csv-bucket"
+    Name = "${var.deploy_env}-trailcount-csv-bucket"
   }
 
   force_destroy = true

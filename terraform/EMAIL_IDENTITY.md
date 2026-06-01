@@ -6,7 +6,7 @@ This guide talks about the custom SES identity used to send emails with AWS. The
 
 1. Navigate to `Amazon SES`in the AWS console
 2. Create an identity and select `domain`
-3. Enter appropriate domain/subdomain ie. `trailplanner-auth.adirondackwilderness.org`
+3. Enter appropriate domain/subdomain ie. `trailcount-auth.adirondackwilderness.org`
 4. Leave the following selects unchecked: `Assign a default configuration set` and `Assign to a tenant`
 5. Check `Use a custom MAIL FROM domain`
    - Enter mail from domain ie. `mail`
@@ -40,6 +40,13 @@ This guide talks about the custom SES identity used to send emails with AWS. The
    - Leave TTL as the default (`4 hrs`)
    - Enter the specified value in the data section (omitting quotation marks)
  - AWS will automatically verifiy the identity if everything is setup correctly
+
+## Repository Variable
+
+ - The repository has an action variable that needs to be updated with the new SES ARN
+1. Copy the `Amazon Resource Name (ARN)` from the aws console of the created SES identity
+2. Go to the repository and navigate to Settings -> Secrets and variables -> Actions -> Variables
+3. Update the `SES_IDENTITY_ARN` variable to the new ARN
 
 ## Troubleshooting
 

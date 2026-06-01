@@ -1,10 +1,10 @@
-# Trail Planner - Infrastructure README
+# Trail Count - Infrastructure README
 
-This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the Trail Planner infrastructure on AWS.
+This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the Trail Count infrastructure on AWS.
 
 ## Overview
 
-The Trail Planner infrastructure includes:
+The Trail Count infrastructure includes:
 - **React Frontend**: Hosted on S3 with optional CloudFront CDN
 - **API Gateway**: RESTful API with Cognito authentication
 - **Lambda Functions**: Serverless backend for trail data management
@@ -56,7 +56,7 @@ Edit `variables.tf` or create `terraform.tfvars` with your configuration:
 ```hcl
 # Basic configuration
 env = "local"
-bucket_name = "trailplanner-bucket"
+bucket_name = "trailcount-bucket"
 ```
 
 ### 4. Apply the Terraform Configuration

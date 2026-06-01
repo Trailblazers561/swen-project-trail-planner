@@ -16,20 +16,20 @@ def retrieve_api_url(env):
     gateways = api_gateway.get_rest_apis(limit=20)
     api_id = ""
     for gateway in gateways["items"]:
-        if gateway["name"] == f"{env}_trailplanner_public_api":
+        if gateway["name"] == f"{env}_trailcount_public_api":
             api_id = gateway["id"]
-            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_trailplanner_public_api_stage"
+            return f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{env}_trailcount_public_api_stage"
 
 def retrieve_user_pool_id(env):
     pools = cognito.list_user_pools(MaxResults=20)
     for pool in pools["UserPools"]:
-        if pool["Name"] == f"{env}_trailplanner_user_pool":
+        if pool["Name"] == f"{env}_trailcount_user_pool":
             return pool["Id"]
 
 def retrieve_client_id(env):
     clients = cognito.list_user_pool_clients(UserPoolId=retrieve_user_pool_id(env), MaxResults=20)
     for client in clients["UserPoolClients"]:
-        if client["ClientName"] == f"{env}_trailplanner_cognito_client":
+        if client["ClientName"] == f"{env}_trailcount_cognito_client":
             return client["ClientId"]
 
 def retrieve_token(env):
@@ -48,7 +48,7 @@ def write_values(env):
         file.write(f"CLOUDFRONT_URL=http://{retrieve_cloudfront_url(env)}\n")
         file.write(f"API_URL={retrieve_api_url(env)}\n")
         file.write(f"API_TOKEN={retrieve_token(env)}\n")
-        file.write(f"API_KEY={env}-trail-planner-key-trail-trail-trail-trail\n")
+        file.write(f"API_KEY={env}-trail-co-key-trail-trail-trail-trail\n")
         file.write(f"LOCAL_RUN={'true' if env == 'local' else 'false'}")
 
 if __name__ == "__main__":

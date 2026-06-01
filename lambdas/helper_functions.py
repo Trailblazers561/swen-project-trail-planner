@@ -7,14 +7,14 @@ from boto3.dynamodb.conditions import Key, Attr
 
 dynamodb = boto3.resource('dynamodb')
 
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailplanner_device_trail_hour_table"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailplanner_device_trail_day_table"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailplanner_device_trail_week_table"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailplanner_device_trail_month_table"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailplanner_trail_table"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailplanner_device_table"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailplanner_device_trail_table"))
-area_table = dynamodb.Table(os.environ.get("AREA_TABLE", "local_trailplanner_area_table"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_hour_table"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_day_table"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_week_table"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_month_table"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
+area_table = dynamodb.Table(os.environ.get("AREA_TABLE", "local_trailcount_area_table"))
 
 table_time_map = {
     "hour":  device_trail_log_hour_table,
