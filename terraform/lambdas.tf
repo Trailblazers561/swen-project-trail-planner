@@ -6,7 +6,7 @@ data "archive_file" "simulate_data_zip" {
 }
 
 resource "aws_lambda_function" "simulate_data" {
-  function_name = "${var.deploy_env}_trailplanner_simulate_data"
+  function_name = "${var.deploy_env}_trailcount_simulate_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "simulate_data.simulate_data"
   runtime       = "python3.12"
@@ -28,14 +28,14 @@ resource "aws_lambda_function" "simulate_data" {
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
-    name = "${var.deploy_env}_trailplanner_trigger_simulate_data"
+    name = "${var.deploy_env}_trailcount_trigger_simulate_data"
     schedule_expression = "cron(0 3 * * ? *)" # This runs at 10:00pm / 11:00pm EST
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda_every_day" {
     count = local.test_run ? 0 : 1
     rule = aws_cloudwatch_event_rule.trigger_simulate_data.name
-    target_id = "${var.deploy_env}_trailplanner_simulate_data_event"
+    target_id = "${var.deploy_env}_trailcount_simulate_data_event"
     arn = aws_lambda_function.simulate_data.arn
 }
 
@@ -97,7 +97,7 @@ data "archive_file" "cleanup_lambda_zip" {
 }
 
 resource "aws_lambda_function" "cleanup_lambda" {
-  function_name = "${var.deploy_env}_trailplanner_cleanup_csv_bucket"
+  function_name = "${var.deploy_env}_trailcount_cleanup_csv_bucket"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "cleanup_lambda.cleanup"
   runtime       = "python3.11"
@@ -113,13 +113,13 @@ resource "aws_lambda_function" "cleanup_lambda" {
 }
 
 resource "aws_cloudwatch_event_rule" "csv_bucket_daily_cleanup" {
-  name                = "${var.deploy_env}_trailplanner_daily_cleanup"
+  name                = "${var.deploy_env}_trailcount_daily_cleanup"
   schedule_expression = "rate(1 day)"
 }
 
 resource "aws_cloudwatch_event_target" "trigger_cleanup" {
   rule      = aws_cloudwatch_event_rule.csv_bucket_daily_cleanup.name
-  target_id = "${var.deploy_env}_trailplanner_cleanup_event"
+  target_id = "${var.deploy_env}_trailcount_cleanup_event"
   arn       = aws_lambda_function.cleanup_lambda.arn
 }
 
@@ -153,7 +153,7 @@ data "archive_file" "cognito_config_lambda_zips" {
 resource "aws_lambda_function" "cognito_config_lambdas" {
   for_each = local.cognito_config_lambdas
 
-  function_name = "${var.deploy_env}_trailplanner_${each.key}"
+  function_name = "${var.deploy_env}_trailcount_${each.key}"
   role = aws_iam_role.lambda_iam_role.arn
   handler = "${each.key}.${each.value}"
   runtime = "python3.12"
