@@ -37,6 +37,7 @@ const LandingPage = () => {
 
     const [trails, setTrails] = useState<any[]>([]);
     const [trailUsage, setTrailUsage] = useState<Record<number, number>>({}); 
+    const [loadingUsage, setLoadingUsage] = useState(false);
 
     const parkBounds: L.LatLngBoundsExpression = [
         [42.2, -75.8], 
@@ -126,6 +127,7 @@ const LandingPage = () => {
     useEffect(() => { 
     async function fetchTrailUsage() {
         try {
+            setLoadingUsage(true);
 
             if (!startDate || !endDate) return;
 
@@ -158,6 +160,8 @@ const LandingPage = () => {
 
         } catch (err) {
             console.error("Failed to fetch trail usage:", err);
+        } finally {
+            setLoadingUsage(false);
         }
     }
 
@@ -166,11 +170,20 @@ const LandingPage = () => {
     }
     }, [parsedTrails, startDate, endDate]);
 
+
     const getTrailColor = (trailId: number, days: number) => {
+
+        if (loadingUsage) {
+            const existingUsage = trailUsage[trailId];
+
+            if (!existingUsage) {
+                return "gray";
+            }
+        }
 
         const usage = trailUsage[trailId];
 
-        if (!usage || days <= 0) return "gray";
+        if (usage === undefined || days <= 0) return "gray";
 
         const avg = usage / days;
 
