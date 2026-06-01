@@ -28,9 +28,36 @@ type AuthContextType = {
 const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [username, setUsername] = useState<string>("");
-    const [loading, setLoading] = useState(true)
+    let initialRoles: Role[] = [];
+    let initialUsername: string = "";
+    const idToken = localStorage.getItem("idToken");
+
+    if (idToken) {
+        try {
+            const payload = JSON.parse(atob(idToken.split(".")[1]));
+
+            const groups: string[] = payload["cognito:groups"] || [];
+
+            const parsedRoles: Role[] = [];
+
+            groups.forEach((group) => {
+                if (group === "root_admin") parsedRoles.push(Role.Root);
+                else if (group === "admin") parsedRoles.push(Role.Admin);
+                else if (group === "trail_manager") parsedRoles.push(Role.Manager);
+                else if (group === "user") parsedRoles.push(Role.User);
+            });
+
+            initialRoles = parsedRoles.length ? parsedRoles : [];
+            initialUsername = payload["cognito:username"] || "";
+        } catch (e) {
+            initialRoles = [];
+            initialUsername = "";
+        }
+    }
+
+
+    const [roles, setRoles] = useState<Role[]>(initialRoles);
+    const [username, setUsername] = useState<string>(initialUsername);
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
     const refreshAuth = () => {
@@ -75,7 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const setAuth = async (idToken: string, accessToken: string, refreshToken: string) => {
         setTokens(idToken, accessToken, refreshToken)
 
-        await refreshAuth();
+        refreshAuth();
     }
 
     return (
