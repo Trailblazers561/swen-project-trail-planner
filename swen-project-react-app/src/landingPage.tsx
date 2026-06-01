@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Navbar from "./components/Navbar";
 import { useState, useEffect } from "react";
 import { TrailData } from "./api";
 
@@ -69,46 +68,45 @@ const LandingPage = () => {
   return (
 
         <div className="h-screen w-screen relative overflow-hidden">
-             <Navbar/>
-                <div className="absolute top-5 right-52 z-[1000]"></div>
-                <MapContainer
-                    center={[44.02, -73.82]} 
-                    zoom={8}
-                    minZoom={8}
-                    maxZoom={15}
-                    zoomControl={false}
-                    scrollWheelZoom={true}
-                    className="h-full w-full"
-                    maxBounds={parkBounds}
-                    maxBoundsViscosity={0.8}
-                    >
-                        <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-                        />
-                        <ZoomControl position="bottomright" />
+            <div className="absolute top-5 right-52 z-[1000]"></div>
+            <MapContainer
+                center={[44.02, -73.82]} 
+                zoom={8}
+                minZoom={8}
+                maxZoom={15}
+                zoomControl={false}
+                scrollWheelZoom={true}
+                className="h-full w-full"
+                maxBounds={parkBounds}
+                maxBoundsViscosity={0.8}
+                >
+                    <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+                    />
+                    <ZoomControl position="bottomright" />
 
-                    {parsedTrails.map((trail) => (
-                    <Marker key={trail.id} position={[trail.latitude, trail.longitude]} icon = {createTrailIcon("red")}>
-                        <Popup>
-                            <div onClick={(e) => e.stopPropagation()} className="space-y-2">
-                                <div>
-                                <strong>{trail.name}</strong>
-                                <br />
-                                {trail.notes}
-                                </div>
-
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => navigate(`/dashboard?trailName=${trail.name}`)}
-                                >
-                                See Trail Data
-                                </Button>
+                {parsedTrails.map((trail) => (
+                <Marker key={trail.id} position={[trail.latitude, trail.longitude]} icon = {createTrailIcon("red")}>
+                    <Popup>
+                        <div onClick={(e) => e.stopPropagation()} className="space-y-2">
+                            <div>
+                            <strong>{trail.name}</strong>
+                            <br />
+                            {trail.notes}
                             </div>
-                        </Popup>
-                    </Marker>
-                    ))}
-                </MapContainer>
+
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => navigate(`/dashboard?trailName=${trail.name}`)}
+                            >
+                            See Trail Data
+                            </Button>
+                        </div>
+                    </Popup>
+                </Marker>
+                ))}
+            </MapContainer>
                 
         </div>
   );

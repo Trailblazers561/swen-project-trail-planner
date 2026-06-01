@@ -20,7 +20,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Navbar from "./components/Navbar.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -898,7 +897,6 @@ const dashboard = () => {
 
     return (
         <div data-testid="dashboard-root">
-            <Navbar />
             <div className="flex flex-col">
                 <div className="filter-container flex w-full justify-between items-end px-6 py-2">
                     <div className="flex gap-8 items-start flex-wrap">
