@@ -317,7 +317,7 @@ const LandingPage = () => {
                                         variant="primary"
                                         size="sm"
                                         onClick={() =>
-                                            navigate(`/dashboard?trailId=${trail.id}`)
+                                            navigate(`/dashboard?trailName=${trail.name}`)
                                         }
                                     >
                                         See Trail Data

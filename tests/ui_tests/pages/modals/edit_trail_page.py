@@ -19,7 +19,7 @@ class EditTrailPage:
     cancel_delete_button = (By.XPATH, "//button[@data-testid='cancel-delete']")
     # Edit & Add
     trail_name_input = (By.XPATH, "//input[@id='trail-name']")
-    trail_group_select = (By.XPATH, "//select[@id='trail-group']")
+    area_select = (By.XPATH, "//select[@id='area']")
     create_update_trail_button = (By.XPATH, "//button[@data-testid='confirm-button']")
     close_button = (By.XPATH, "//button[@data-testid='modal-close']")
 
@@ -41,8 +41,8 @@ class EditTrailPage:
     def set_trail_information(self, trail: TrailDTO):
         if trail.name:
             self._set_trail_name(trail.name)
-        if trail.trail_group_name:
-            self._set_trail_group(trail.trail_group_name)
+        if trail.area_name:
+            self._set_area(trail.area_name)
 
     def delete_trail(self, confirm=True):
         SH.click_element(self.driver, self.delete_trail_button)
@@ -62,8 +62,8 @@ class EditTrailPage:
     def _set_trail_name(self, name: str):
         SH.enter_text_to_element(self.driver, self.trail_name_input, name)
 
-    def _set_trail_group(self, group: str):
-        SH.select_dropdown_option(self.driver, self.trail_group_select, group)
+    def _set_area(self, area: str):
+        SH.select_dropdown_option(self.driver, self.area_select, area)
 
     def retrieve_trail_options(self) -> list[TrailDTO]:
         options = SH.retrieve_dropdown_options(self.driver, self.trail_select)[1:] #Skip Select a trail

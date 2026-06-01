@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium_helper import SeleniumHelper as SH
+from selenium.common.exceptions import StaleElementReferenceException
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -11,7 +12,7 @@ import time
 from dtos.dashboard_filter_dto import DashboardFilterDTO
 from dtos.graph_dto import GraphDTO, LineDTO, PointDTO
 from dtos.trail_dto import TrailDTO
-from dtos.trail_group_dto import TrailGroupDTO
+from dtos.area_dto import AreaDTO
 from dtos.trail_status_dto import TrailStatusDTO
 from enums.granularity import Granularity
 from enums.trail_status_column import TrailStatusColumn
@@ -27,6 +28,8 @@ class DashboardPage:
     first_month_label = (By.XPATH, "(//div[@data-testid='calandar-popup']/div/div/div)[1]//span[@role='status']")
     previous_month_button = (By.XPATH, "//button[@aria-label='Go to the Previous Month']")
     next_month_button = (By.XPATH, "//button[@aria-label='Go to the Next Month']")
+    month_dropdown = (By.XPATH, "(//select[@aria-label='Choose the Month'])[1]")
+    year_dropdown = (By.XPATH, "(//select[@aria-label='Choose the Year'])[1]")
     day_xpath = "(//div[@data-testid='calandar-popup']/div/div/div)[1]//td[@data-day='{}']"
     granularity_dropdown = (By.XPATH, "//button[@data-testid='granularity-select']")
     selected_granularity = (By.XPATH, "//span[@data-testid='selected-granularity-option']")
@@ -34,8 +37,8 @@ class DashboardPage:
     granularity_dropdown_option_xpath = "//div[@data-testid='granularity-option']/span[text()='{}']"
     trails_dropdown = (By.XPATH, "//button[@data-testid='trail-selector']")
     selected_trails = (By.XPATH, trails_dropdown[1] + "//span[@data-slot='badge']")
-    trail_groups_dropdown = (By.XPATH, "//button[@data-testid='trail-group-selector']")
-    selected_trail_groups = (By.XPATH, trail_groups_dropdown[1] + "//span[@data-slot='badge']")
+    areas_dropdown = (By.XPATH, "//button[@data-testid='area-selector']")
+    selected_areas = (By.XPATH, areas_dropdown[1] + "//span[@data-slot='badge']")
     multi_select_dropdown_option_xpath = "//div[@data-value='{}']"
     multi_select_dropdown_option = (By.XPATH, "//div[@data-testid='multi-select-option']")
     dropdown_clear = (By.XPATH, "//div[@data-testid='multi-select-clear']")
@@ -49,9 +52,9 @@ class DashboardPage:
     trail_options_button = (By.XPATH, "//button[@data-testid='trail-options']")
     add_trail_options_button = (By.XPATH, "//div[@data-testid='add-trail']")
     edit_trail_options_button = (By.XPATH, "//div[@data-testid='edit-trail']")
-    trail_group_options_button = (By.XPATH, "//button[@data-testid='trail-group-options']")
-    add_group_options_button = (By.XPATH, "//div[@data-testid='add-trail-group']")
-    edit_group_options_button = (By.XPATH, "//div[@data-testid='edit-trail-group']")
+    area_options_button = (By.XPATH, "//button[@data-testid='area-options']")
+    add_area_options_button = (By.XPATH, "//div[@data-testid='add-area']")
+    edit_area_options_button = (By.XPATH, "//div[@data-testid='edit-area']")
     # Graph View
     graph_title_label = (By.XPATH, "//div[@data-testid='graph-title']")
     outer_graph = (By.XPATH, "//div[@data-testid='outer-dashboard-graph']")
@@ -63,6 +66,10 @@ class DashboardPage:
     weekly_count_header = (By.XPATH, table_head + "//div[@data-column-id='2' and @role='columnheader']")
     battery_status_header = (By.XPATH, table_head + "//div[@data-column-id='3' and @role='columnheader']")
     last_updated_header = (By.XPATH, table_head + "//div[@data-column-id='4' and @role='columnheader']")
+    trail_name_arrow = (By.XPATH, trail_name_header[1] + "/span")
+    weekly_count_arrow = (By.XPATH, weekly_count_header[1] + "/span")
+    battery_status_arrow = (By.XPATH, battery_status_header[1] + "/span")
+    last_updated_arrow = (By.XPATH, last_updated_header[1] + "/span")
     table_body = table_root + "//div[contains(@class, 'TableBody')]"
     trail_name_labels = (By.XPATH, table_body + "//div[@data-column-id='1']")
     weekly_count_labels = (By.XPATH, table_body + "//div[@data-column-id='2']")
@@ -80,13 +87,15 @@ class DashboardPage:
 
     def set_dashboard_filters(self, filter: DashboardFilterDTO) -> None:
         if filter.date_start != None:
-            self._set_date_range(filter.date_start, filter.date_end)
+            self._click_date(filter.date_start)
+        if filter.date_end != None:
+            self._click_date(filter.date_end)
         if filter.granularity != None:
             self._set_granularity(filter.granularity)
         if len(filter.trails) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trails)):
             self._select_trails(filter.trails)
-        if len(filter.trail_groups) or len(SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)):
-            self._select_trail_groups(filter.trail_groups)
+        if len(filter.areas) or len(SH.retrieve_text_from_elements(self.driver, self.selected_areas)):
+            self._select_areas(filter.areas)
 
     def retrieve_dashboard_filters(self) -> DashboardFilterDTO:
         date_range = SH.retrieve_text_from_element(self.driver, self.date_range_picker)
@@ -95,29 +104,23 @@ class DashboardPage:
         date_end = datetime.strptime(dates[1], "%b %d, %Y") if len(dates) >= 2 else None
         granularity = Granularity(SH.retrieve_text_from_element(self.driver, self.selected_granularity))
         trails = {TrailDTO(trail_name) for trail_name in SH.retrieve_text_from_elements(self.driver, self.selected_trails)}
-        trail_groups = {TrailGroupDTO(group_name) for group_name in SH.retrieve_text_from_elements(self.driver, self.selected_trail_groups)}
-        return DashboardFilterDTO(date_start, date_end, granularity, trails, trail_groups)
+        areas = {AreaDTO(area_name) for area_name in SH.retrieve_text_from_elements(self.driver, self.selected_areas)}
+        return DashboardFilterDTO(date_start, date_end, granularity, trails, areas)
 
-    def _set_date_range(self, start: datetime, end: datetime) -> None:
+    def _click_date(self, date: datetime) -> None:
         SH.click_element(self.driver, self.date_range_picker)
-        SH.wait_for_element_appear(self.driver, self.date_calandar_popup)
 
-        def click_date(target: datetime):
-            while (True):
-                current_month_year = datetime.strptime(SH.retrieve_text_from_element(self.driver, self.first_month_label), "%B %Y")
-                if (target.year, target.month) < (current_month_year.year, current_month_year.month):
-                    SH.click_element(self.driver, self.previous_month_button)
-                elif (target.year, target.month) > (current_month_year.year, current_month_year.month):
-                    SH.click_element(self.driver, self.next_month_button)
-                else:
-                    break
-                SH.wait(.05)
-            SH.click_element(self.driver, (By.XPATH, self.day_xpath.format(target.strftime("%Y-%m-%d"))))
+        try:
+            SH.select_dropdown_option(self.driver, self.month_dropdown, str(date.month - 1))
+            SH.select_dropdown_option(self.driver, self.year_dropdown, str(date.year))
+        except StaleElementReferenceException:
+            SH.click_element(self.driver, self.date_range_picker)
+            SH.wait(.25)
+            SH.click_element(self.driver, self.date_range_picker)
+            SH.select_dropdown_option(self.driver, self.month_dropdown, str(date.month - 1))
+            SH.select_dropdown_option(self.driver, self.year_dropdown, str(date.year))
 
-        click_date(start)
-        if end != None:
-            click_date(end)
-
+        SH.click_element(self.driver, (By.XPATH, self.day_xpath.format(date.strftime("%Y-%m-%d"))))
         SH.click_element(self.driver, self.date_range_picker)
         SH.wait_for_element_disappear(self.driver, self.date_calandar_popup)
 
@@ -134,13 +137,13 @@ class DashboardPage:
             SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(trail.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
-    def _select_trail_groups(self, trail_groups: list[TrailGroupDTO]) -> None:
-        SH.click_element(self.driver, self.trail_groups_dropdown)
+    def _select_areas(self, areas: list[AreaDTO]) -> None:
+        SH.click_element(self.driver, self.areas_dropdown)
         SH.wait(.2)
         if SH.is_element_visible(self.driver, self.dropdown_clear):
             SH.click_element(self.driver, self.dropdown_clear)
-        for group in trail_groups:
-            SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(group.name)))
+        for area in areas:
+            SH.click_element(self.driver, (By.XPATH, self.multi_select_dropdown_option_xpath.format(area.name)))
         SH.click_element(self.driver, self.dropdown_close)
 
     def retrieve_granularity_options(self) -> list[Granularity]:
@@ -164,15 +167,15 @@ class DashboardPage:
         SH.click_element(self.driver, self.trails_dropdown)
         return trails
 
-    def retrieve_trail_group_options(self) -> list[TrailGroupDTO]:
-        SH.click_element(self.driver, self.trail_groups_dropdown)
+    def retrieve_area_options(self) -> list[AreaDTO]:
+        SH.click_element(self.driver, self.areas_dropdown)
         SH.wait(.2)
-        groups = []
+        areas = []
         options = SH.retrieve_text_from_elements(self.driver, self.multi_select_dropdown_option)
         for option in options:
-            groups.append(TrailGroupDTO(option))
-        SH.click_element(self.driver, self.trail_groups_dropdown)
-        return groups
+            areas.append(AreaDTO(option))
+        SH.click_element(self.driver, self.areas_dropdown)
+        return areas
 
     def click_associate_device(self) -> None:
         SH.click_element(self.driver, self.associate_device_button)
@@ -196,17 +199,18 @@ class DashboardPage:
         SH.click_element(self.driver, self.trail_options_button)
         SH.click_element(self.driver, self.edit_trail_options_button)
 
-    def click_add_trail_group(self) -> None:
-        SH.click_element(self.driver, self.trail_group_options_button)
-        SH.click_element(self.driver, self.add_group_options_button)
+    def click_add_area(self) -> None:
+        SH.click_element(self.driver, self.area_options_button)
+        SH.click_element(self.driver, self.add_area_options_button)
 
-    def click_edit_trail_group(self) -> None:
-        SH.click_element(self.driver, self.trail_group_options_button)
-        SH.click_element(self.driver, self.edit_group_options_button)
+    def click_edit_area(self) -> None:
+        SH.click_element(self.driver, self.area_options_button)
+        SH.click_element(self.driver, self.edit_area_options_button)
 
     def retrieve_graph(self) -> GraphDTO:
         start_time = time.time()
         while True:
+            time.sleep(.5)
             if SH.retrieve_element_attribute(self.driver, self.outer_graph, "data-graph-updating") == "false":
                 break
             # Timeout and continue if the graph has been updating for a minute. I know this is long, but I'm pretty sure the pipeline is reaaalllllyyyyyyy slow.
@@ -214,7 +218,7 @@ class DashboardPage:
             if time.time() - start_time > 60:
                 self.driver.save_screenshot(Path(__file__).resolve().parents[1] / f"errors/dashboard_retrieve_graph_timeout_{int(time.time())}.png")
                 break
-            time.sleep(.5)
+        time.sleep(.5)
 
         title = SH.retrieve_text_from_element(self.driver, self.graph_title_label)
         lines = self.driver.execute_script("return document.querySelector('.js-plotly-plot').data")
@@ -222,8 +226,8 @@ class DashboardPage:
         for line in lines:
             points = []
             for hovertemplate in line["hovertemplate"]:
-                count_match = re.search(r"Count:\s*(\d+)", hovertemplate)
-                count = int(count_match.group(1)) if count_match else 0
+                count_match = re.search(r"Count:\s*(?P<count>\d+)", hovertemplate)
+                count = int(count_match.group("count")) if count_match else -1
                 range_match = re.match(r"^(?P<date>.*?)\s-\s(.*?)\s\|", hovertemplate)
                 hour_match = re.match(r"^(?P<date>.*?M)\s\|", hovertemplate)
                 day_match = re.match(r"^(?P<date>.*?)\s\|", hovertemplate)
@@ -274,14 +278,48 @@ class DashboardPage:
     def select_rows_per_page(self, rows: int) -> None:
         SH.select_dropdown_option(self.driver, self.rows_per_page_dropdown, str(rows))
 
-    def click_trail_status_column(self, column: TrailStatusColumn):
+    def set_trail_status_column_sort(self, column: TrailStatusColumn, ascending: bool):
         if column == TrailStatusColumn.TRAIL_NAME:
-            SH.click_element(self.driver, self.trail_name_header)
+            header = self.trail_name_header
         elif column == TrailStatusColumn.WEEKLY_COUNT:
-            SH.click_element(self.driver, self.weekly_count_header)
+            header = self.weekly_count_header
         elif column == TrailStatusColumn.BATTERY_STATUS:
-            SH.click_element(self.driver, self.battery_status_header)
+            header = self.battery_status_header
         elif column == TrailStatusColumn.LAST_UPDATED:
-            SH.click_element(self.driver, self.last_updated_header)
+            header = self.last_updated_header
+        else:
+            raise ValueError("Invalid column")
+        if not self._get_column_clicked(column):
+            SH.click_element(self.driver, header)
+        SH.wait(.5)
+        if self._get_column_ascending(column) == ascending:
+            return
+        SH.click_element(self.driver, header)
+        SH.wait(.5)
+        if self._get_column_ascending(column) != ascending:
+            SH.click_element(self.driver, header)
+
+
+    def _get_column_ascending(self, column: TrailStatusColumn) -> bool:
+        if column == TrailStatusColumn.TRAIL_NAME:
+            return SH.retrieve_element_style(self.driver, self.trail_name_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.WEEKLY_COUNT:
+            return SH.retrieve_element_style(self.driver, self.weekly_count_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.BATTERY_STATUS:
+            return SH.retrieve_element_style(self.driver, self.battery_status_arrow, "transform") == "none"
+        elif column == TrailStatusColumn.LAST_UPDATED:
+            return SH.retrieve_element_style(self.driver, self.last_updated_arrow, "transform") == "none"
+        else:
+            raise ValueError("Invalid column")
+
+    def _get_column_clicked(self, column: TrailStatusColumn) -> bool:
+        if column == TrailStatusColumn.TRAIL_NAME:
+            return SH.retrieve_element_style(self.driver, self.trail_name_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.WEEKLY_COUNT:
+            return SH.retrieve_element_style(self.driver, self.weekly_count_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.BATTERY_STATUS:
+            return SH.retrieve_element_style(self.driver, self.battery_status_arrow, "transform") == "1"
+        elif column == TrailStatusColumn.LAST_UPDATED:
+            return SH.retrieve_element_style(self.driver, self.last_updated_arrow, "transform") == "1"
         else:
             raise ValueError("Invalid column")

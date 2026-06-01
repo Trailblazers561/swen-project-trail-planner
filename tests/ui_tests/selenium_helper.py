@@ -6,7 +6,7 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException, ElementNotInteractableException
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import os
@@ -14,7 +14,7 @@ import os
 from ui_config import BASE_URL, LOCAL_RUN
 
 DEFAULT_WAIT = 10
-WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
+WEBSITE_ROOT = (By.XPATH, "//div[@id='root']")
 
 class SeleniumHelper:
     def get_driver() -> webdriver.Chrome:
@@ -24,6 +24,7 @@ class SeleniumHelper:
 
         if not LOCAL_RUN:
             options.add_argument('--headless')
+            options.add_argument("--window-size=1920,1080")
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
@@ -43,7 +44,7 @@ class SeleniumHelper:
         options.add_experimental_option("prefs", prefs)
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(BASE_URL+"/login")
+        driver.get(BASE_URL)
         SeleniumHelper.wait_for_element_appear(driver, WEBSITE_ROOT, 30)
         return driver
 
@@ -106,9 +107,17 @@ class SeleniumHelper:
         element = driver.find_element(*locator)
         select = Select(element)
         try:
-            select.select_by_visible_text(option)
-        except:
-            select.select_by_value(option)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
 
     def retrieve_dropdown_options(driver: webdriver.Chrome, locator: tuple[str, str]) -> list[str]:
         print(f"Retrieving element {locator} dropdown options")
@@ -146,6 +155,11 @@ class SeleniumHelper:
         print(f"Retrieving element {locator} attribute {attribute}")
         element = driver.find_element(*locator)
         return element.get_attribute(attribute)
+
+    def retrieve_element_style(driver: webdriver.Chrome, locator: tuple[str, str], style: str) -> str:
+        print(f"Retrieving element {locator} style {style}")
+        element = driver.find_element(*locator)
+        return element.value_of_css_property(style)
 
     def retrieve_checkbox_selected(driver: webdriver.Chrome, locator: tuple[str, str]) -> bool:
         print(f"Retrieving element {locator} selected")

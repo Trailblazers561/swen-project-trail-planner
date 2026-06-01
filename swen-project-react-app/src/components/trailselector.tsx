@@ -7,7 +7,7 @@ interface Trail {
     name: string;
 }
 
-interface TrailGroup {
+interface Area {
     name: string;
     trail_ids: number[];
 }
@@ -18,7 +18,7 @@ interface TrailSelectorProps {
     clearGraph: () => void;
     clearName: () => void;
     trailMetadata?: Trail[];
-    trailGroups?: TrailGroup[];
+    areas?: Area[];
 }
 
 const TrailSelector = ({
@@ -27,45 +27,45 @@ const TrailSelector = ({
     clearName,
     clearTrails,
     trailMetadata = [],
-    trailGroups = []
+    areas = []
 }: TrailSelectorProps) => {
     const [selectedWilderness, setSelectedWilderness] = useState<string>("");
     const [selectedTrails, setSelectedTrails] = useState<Array<{ value: string; label: string }>>([]);
 
-    // Build wilderness options from trail groups (exclude empty groups)
+    // Build wilderness options from areas (exclude empty areas)
     const wildernessOptions = useMemo(() => {
         const options: MultiSelectOption[] = [];
-        trailGroups.forEach(group => {
-            if (group.name &&
-                group.trail_ids &&
-                Array.isArray(group.trail_ids) &&
-                group.trail_ids.length > 0) {
-                options.push({ value: group.name, label: group.name });
+        areas.forEach(area => {
+            if (area.name &&
+                area.trail_ids &&
+                Array.isArray(area.trail_ids) &&
+                area.trail_ids.length > 0) {
+                options.push({ value: area.name, label: area.name });
             }
         });
         return options;
-    }, [trailGroups]);
+    }, [areas]);
 
-    // Build trail data map -  groups contain their specific trails
+    // Build trail data map -  areas contain their specific trails
     const trailData = useMemo(() => {
         const data: Record<string, string[]> = {};
 
         // Filter out any trails with invalid names
         const validTrails = trailMetadata.filter(t => t && t.name && t.name.trim().length > 0);
 
-        // Add trails for each group (only trails that exist in metadata)
-        trailGroups.forEach(group => {
-            if (group.name) {
-                const groupTrails = (group.trail_ids || [])
+        // Add trails for each area (only trails that exist in metadata)
+        areas.forEach(area => {
+            if (area.name) {
+                const areaTrails = (area.trail_ids || [])
                     .map(id => validTrails.find(t => t.id === id))
                     .filter((t): t is Trail => t !== undefined)
                     .map(t => t.name);
-                data[group.name] = groupTrails;
+                data[area.name] = areaTrails;
             }
         });
 
         return data;
-    }, [trailMetadata, trailGroups]);
+    }, [trailMetadata, areas]);
 
     // Get filtered trails for the selected wilderness
     const filteredTrails = useMemo(() => {
@@ -113,14 +113,14 @@ const TrailSelector = ({
 
     const selectKey = useMemo(() => {
         const trailCount = trailMetadata.filter(t => t && t.name).length;
-        const groupCount = trailGroups.length;
+        const areaCount = areas.length;
         const trailIds = trailMetadata
             .filter(t => t && t.id)
             .map(t => t.id)
             .sort()
             .join(',');
-        return `trail-select-${trailCount}-${groupCount}-${trailIds}-${selectedWilderness}`;
-    }, [trailMetadata, trailGroups, selectedWilderness]);
+        return `trail-select-${trailCount}-${areaCount}-${trailIds}-${selectedWilderness}`;
+    }, [trailMetadata, areas, selectedWilderness]);
 
     const handleWildernessChange = (selectedOption: { value: string; label: string } | null) => {
         if (!selectedOption) return;
@@ -131,7 +131,7 @@ const TrailSelector = ({
         // Auto-select appropriate trails based on wilderness
         let autoSelectedTrails: Array<{ value: string; label: string }> = [];
 
-        // Select all trails in the group
+        // Select all trails in the area
         const trailsForWilderness = trailData[newWilderness] || [];
         autoSelectedTrails = trailsForWilderness.map(trail => ({
             value: trail,

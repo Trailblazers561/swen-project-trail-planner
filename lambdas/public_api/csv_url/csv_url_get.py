@@ -1,13 +1,7 @@
-import os
 import json
 import uuid
-import boto3
 
-s3_client = boto3.client('s3')
-
-# Table references
-s3_bucket = os.environ.get("TRAIL_S3_BUCKET")
-
+from helper_functions import csv_bucket, s3_client, cors_headers
 
 def generate_url(event, context):
     """
@@ -18,7 +12,7 @@ def generate_url(event, context):
         fullFilePath = "tmp-upload/" + str(uuid.uuid4()) + "/trail_data.csv"
 
         url = s3_client.generate_presigned_url('put_object',
-                                               Params={'Bucket': s3_bucket,
+                                               Params={'Bucket': csv_bucket,
                                                        'Key': fullFilePath},
                                                ExpiresIn=3600)
         print(f"file path {fullFilePath} generated to upload file to")
@@ -33,11 +27,3 @@ def generate_url(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
-
-
-def cors_headers():
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization"
-    }

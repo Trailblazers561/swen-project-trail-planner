@@ -1,6 +1,6 @@
 locals {
-  s3_origin_id = local.use_domain ? "${local.sub_domain}.${local.domain}" : "trailplannerS3Origin"
-  full_domain  = local.use_domain ? "${local.sub_domain}.${local.domain}" : ""
+  s3_origin_id = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "trailcountS3Origin"
+  full_domain  = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : ""
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {
@@ -13,7 +13,7 @@ resource "aws_cloudfront_origin_access_control" "s3_access" {
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
+    domain_name              = aws_s3_bucket.react_bucket.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_access.id
     origin_id                = local.s3_origin_id
   }
@@ -120,12 +120,12 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cloudfront_default_certificate = local.use_domain ? false : true
   }
 
-  depends_on = [aws_s3_bucket.bucket, null_resource.deploy_react_app]
+  depends_on = [aws_s3_bucket.react_bucket]
 }
 
 #Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
 resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
-  bucket = aws_s3_bucket.bucket.id
+  bucket = aws_s3_bucket.react_bucket.id
   policy = jsonencode({
     Version = "2008-10-17"
     Id      = "PolicyForCloudFrontPrivateContent"
@@ -137,7 +137,7 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
           Service = "cloudfront.amazonaws.com"
         }
         Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.bucket.arn}/*"
+        Resource = "${aws_s3_bucket.react_bucket.arn}/*"
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
@@ -155,5 +155,5 @@ output "website_url" {
 }
 
 output "distribution_id" {
-  value = "${aws_cloudfront_distribution.s3_distribution.id}"
+  value = aws_cloudfront_distribution.s3_distribution.id
 }
