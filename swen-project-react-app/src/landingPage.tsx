@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/templates/button";
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Navbar from "./components/Navbar";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
 import { Granularity } from "./lib/apiTypes";
@@ -13,7 +12,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/templates/select";
 
 const LandingPage = () => {
 
@@ -220,17 +219,16 @@ const LandingPage = () => {
         );
     }, [startDate, endDate]);
 
-  return (
+    return (
 
         <div className="h-screen w-screen relative overflow-hidden">
-             <Navbar/>
 
-                <div className="absolute top-20 left-4 z-[9999] pointer-events-auto">
-                    <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
+            <div className="absolute top-20 left-4 z-[9999] pointer-events-auto">
+                <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
 
-                        <div className="font-semibold mb-3 text-center">
-                            Time Frame
-                        </div>
+                    <div className="font-semibold mb-3 text-center">
+                        Time Frame
+                    </div>
 
                     <div className="flex justify-center">
                         <Select
@@ -336,59 +334,59 @@ const LandingPage = () => {
                         </div>
                     )}              
 
-            </div>
+                </div>
             </div>
                 
-                <MapContainer
-                    center={[44.02, -73.82]} 
-                    zoom={8}
-                    minZoom={8}
-                    maxZoom={15}
-                    zoomControl={false}
-                    scrollWheelZoom={true}
-                    className="h-full w-full"
-                    maxBounds={parkBounds}
-                    maxBoundsViscosity={0.8}
+            <MapContainer
+                center={[44.02, -73.82]} 
+                zoom={8}
+                minZoom={8}
+                maxZoom={15}
+                zoomControl={false}
+                scrollWheelZoom={true}
+                className="h-full w-full"
+                maxBounds={parkBounds}
+                maxBoundsViscosity={0.8}
+            >
+                <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+                />
+                <ZoomControl position="bottomright" />
+
+                {parsedTrails.map((trail) => (
+                    <Marker
+                        key={trail.id}
+                        position={[trail.latitude, trail.longitude]}
+                        icon={createTrailIcon(getTrailColor(trail.id, days))}
                     >
-                        <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-                        />
-                        <ZoomControl position="bottomright" />
-
-                    {parsedTrails.map((trail) => (
-                        <Marker
-                            key={trail.id}
-                            position={[trail.latitude, trail.longitude]}
-                            icon={createTrailIcon(getTrailColor(trail.id, days))}
-                        >
-                            <Popup>
-                                <div
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="space-y-2"
-                                >
-                                    <div>
-                                        <strong>{trail.name}</strong>
-                                        <br />
-                                        {trail.notes}
-                                    </div>
-
-                                    <Button
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() =>
-                                            navigate(`/dashboard?trailName=${trail.name}`)
-                                        }
-                                    >
-                                        See Trail Data
-                                    </Button>
+                        <Popup>
+                            <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="space-y-2"
+                            >
+                                <div>
+                                    <strong>{trail.name}</strong>
+                                    <br />
+                                    {trail.notes}
                                 </div>
-                            </Popup>
-                        </Marker>
-                    ))}
-                </MapContainer>
+
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() =>
+                                        navigate(`/dashboard?trailName=${trail.name}`)
+                                    }
+                                >
+                                    See Trail Data
+                                </Button>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+            </MapContainer>
                 
         </div>
-  );
+    );
 };
 
 export default LandingPage;

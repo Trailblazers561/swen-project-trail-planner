@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp, confirmSignUp, resendConfirmationCode, forgotPassword, confirmForgotPassword } from "./authService";
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/templates/button";
 import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "@/Context";
 import {
