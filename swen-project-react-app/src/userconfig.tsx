@@ -43,6 +43,16 @@ const Privileges = () => {
         }
     };
 
+    const handleRoleUpdated = (username: string, newRole: Role) => {
+    setUserListData(prev =>
+        prev.map(user =>
+            user.username === username
+                ? { ...user, role: newRole }
+                : user
+        )
+    );
+};
+
     useEffect(() => {
         loadUsers();
     }, []);
@@ -52,7 +62,7 @@ const Privileges = () => {
             <Navbar />
 
             <div className="w-full bg-[var(--color-button-secondary)]">
-                <div className="font-semibold text-2xl p-2 ml-2 text-left"> Privilege Management </div>
+                <div className="font-semibold text-2xl p-2 ml-2 text-left"> User Configuration </div>
             </div>
 
             {/* Render users */}
@@ -68,7 +78,7 @@ const Privileges = () => {
                     //     ))}
                     // </ul>
                     <div className="pt-4 m-4">
-                        <UserDataTable data={userListData} loading={loadingListData} />
+                        <UserDataTable data={userListData} loading={loadingListData} onRoleUpdated={handleRoleUpdated}/>
                     </div>
                 )}
             </div>
