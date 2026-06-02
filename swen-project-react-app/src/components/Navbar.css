@@ -1,0 +1,16 @@
+a {
+  font-weight: 500;
+  font-size: large;
+  color: white;
+  text-decoration: inherit;
+  text-justify: right;
+}
+
+a:hover {
+  color: #cccccc;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: flex-end; /* Pushes all child items to the right */
+}
