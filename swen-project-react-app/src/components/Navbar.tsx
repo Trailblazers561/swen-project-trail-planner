@@ -1,4 +1,4 @@
-import { UserIcon } from "@/components/ui/usericon"
+import { UserIcon } from "@/components/templates/usericon"
 import logo from "@/assets/images/awa-logo.png"
 import { Role, useAuth } from "@/Context";
 import { Link } from "react-router-dom";
