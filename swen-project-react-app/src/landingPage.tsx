@@ -40,7 +40,7 @@ const LandingPage = () => {
     const { getTrailMetadata, getTrailLogs } = TrailData();
 
     const [trails, setTrails] = useState<any[]>([]);
-    const [trailUsage, setTrailUsage] = useState<Record<number, number>>({}); 
+    const [trailUsage] = useState<Record<number, number>>({}); 
     const [loadingUsage, setLoadingUsage] = useState(false);
 
     const parkBounds: L.LatLngBoundsExpression = [
@@ -129,6 +129,7 @@ const LandingPage = () => {
     async function fetchTrailUsage() {
         try {
             setLoadingUsage(true);
+
 
             if (!startDate || !endDate) return;
 
