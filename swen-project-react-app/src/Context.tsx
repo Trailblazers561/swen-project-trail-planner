@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { UserRole } from "./lib/apiTypes";
 
 export enum Role {
     User = 1,
@@ -6,6 +7,13 @@ export enum Role {
     Admin = 3,
     Root = 4
 }
+
+export const roleMap: Record<number, UserRole> = {
+    1: UserRole.User,
+    2: UserRole.TrailManager,
+    3: UserRole.Admin,
+    4: UserRole.RootAdmin,
+};
 
 type AuthContextType = {
     username: string;
@@ -15,12 +23,41 @@ type AuthContextType = {
     setAuth: (idToken: string, accessToken: string, refreshToken: string) => void;
 };
 
+
+
 const Context = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [username, setUsername] = useState<string>("");
+    let initialRoles: Role[] = [];
+    let initialUsername: string = "";
+    const idToken = localStorage.getItem("idToken");
 
+    if (idToken) {
+        try {
+            const payload = JSON.parse(atob(idToken.split(".")[1]));
+
+            const groups: string[] = payload["cognito:groups"] || [];
+
+            const parsedRoles: Role[] = [];
+
+            groups.forEach((group) => {
+                if (group === "root_admin") parsedRoles.push(Role.Root);
+                else if (group === "admin") parsedRoles.push(Role.Admin);
+                else if (group === "trail_manager") parsedRoles.push(Role.Manager);
+                else if (group === "user") parsedRoles.push(Role.User);
+            });
+
+            initialRoles = parsedRoles.length ? parsedRoles : [];
+            initialUsername = payload["cognito:username"] || "";
+        } catch (e) {
+            initialRoles = [];
+            initialUsername = "";
+        }
+    }
+
+
+    const [roles, setRoles] = useState<Role[]>(initialRoles);
+    const [username, setUsername] = useState<string>(initialUsername);
     const currentRole = roles.length ? roles.reduce((a, b) => (b > a ? b : a)) : null;
 
     const refreshAuth = () => {
@@ -64,6 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
         setTokens(idToken, accessToken, refreshToken)
+
         refreshAuth();
     }
 

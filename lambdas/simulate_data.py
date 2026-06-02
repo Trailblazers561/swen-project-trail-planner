@@ -47,15 +47,6 @@ trail_locations = {
     "Blueberry Trail": (44.19170852844113,-74.26349195383426)
 }
 
-
-import urllib.request
-import json
-
-def fetch_weather(url):
-    with urllib.request.urlopen(url) as response:
-        data = response.read()
-        return json.loads(data)
-
 # Hiker Multiplier based on day of the week Monday - Sunday
 weekday_modifier = {0: .8, 1: .65, 2: .50, 3: .60, 4: .90, 5: 1.95, 6: 1.6}
 hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40, 1.64, 1.40, 1.29, 1.17, 1.05, 1.05, 1.17, 1.40, 1.76, 2.11, 1.87, 1.52, 1.17, 0.82, 0.59, 0.35, 0.28]]

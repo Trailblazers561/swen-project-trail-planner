@@ -1,29 +1,28 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import EditTrailModal from "./components/EditTrailModal";
-import EditAreaModal from "./components/EditAreaModal.tsx";
-import AssociateDeviceModal from "./components/AssociateDeviceModal";
-import TrailStatusTable from "./components/TrailDataTable.tsx";
+import EditTrailModal from "./components/modals/EditTrailModal.tsx";
+import EditAreaModal from "./components/modals/EditAreaModal.tsx";
+import AssociateDeviceModal from "./components/modals/AssociateDeviceModal.tsx";
+import TrailStatusTable from "./components/tables/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
 import type { Layout, Data } from "plotly.js";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/templates/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
+import { DatePickerWithRange } from "./components/templates/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
-import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/ui/multi-select.tsx";
-import { Button } from "./components/ui/button.tsx";
+import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/templates/multi-select.tsx";
+import { Button } from "./components/templates/button.tsx";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Navbar from "./components/Navbar.tsx";
+} from "@/components/templates/dropdown-menu.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check, X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/templates/popover.tsx";
 import { fileOpen } from 'browser-fs-access';
 import { useSearchParams } from "react-router-dom";
 import { Role, useAuth } from "@/Context";
@@ -898,7 +897,6 @@ const dashboard = () => {
 
     return (
         <div data-testid="dashboard-root">
-            <Navbar />
             <div className="flex flex-col">
                 <div className="filter-container flex w-full justify-between items-end px-6 py-2">
                     <div className="flex gap-8 items-start flex-wrap">
