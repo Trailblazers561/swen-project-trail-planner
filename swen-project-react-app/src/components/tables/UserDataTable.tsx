@@ -1,4 +1,4 @@
-import { Role, roleMap } from "@/Context";
+import { Role, roleMap, useAuth } from "@/Context";
 import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { TrailData } from "@/api";
@@ -16,21 +16,13 @@ interface Props {
     onRoleUpdated: (username: string, newRole: Role) => void;
 }
 
-const stringToEnum: Record<string, Role> = {
-    ["user"]: Role.User,
-    ["trail_manager"]: Role.Manager,
-    ["admin"]: Role.Admin,
-    ["root_admin"]: Role.Root,
-};
-
 const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (username: string, newRole: Role) => void) => {
     const isPromote = option === "promote";
     const isDemote = option === "demote";
     const { updateUserRole } = TrailData();
 
     try {
-        // the call filling the table converts our Roles back to strings, so we need to convert them back
-        let newRole: Role = stringToEnum[row.role];
+        let newRole: Role = row.role;
 
         if (isPromote && newRole < Role.Root) {
             newRole = newRole + 1;
@@ -99,6 +91,7 @@ const roleDisplayMap: Record<string | number, string> = {
 
 const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
 
+    const { currentRole, username } = useAuth();
 
     const columns: TableColumn<UserRow>[] = [
         {
@@ -127,10 +120,18 @@ const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
 
                 return (
                     <div>
-                        <Button onClick={() => { updateUserRole("promote", row, onRoleUpdated); }} disabled={row.role === Role.Root} className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 mr-2">
+                        <Button
+                            onClick={() => { updateUserRole("promote", row, onRoleUpdated); }}
+                            disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin)}
+                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 mr-2"
+                        >
                             Promote
                         </Button>
-                        <Button onClick={() => { updateUserRole("demote", row, onRoleUpdated); }} disabled={row.role === Role.User} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1">
+                        <Button
+                            onClick={() => { updateUserRole("demote", row, onRoleUpdated); }}
+                            disabled={row.username === username || row.role === Role.User}
+                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-1"
+                        >
                             Demote
                         </Button>
                     </div>
