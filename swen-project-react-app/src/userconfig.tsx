@@ -11,10 +11,16 @@ interface User {
     role: Role;
 }
 
+export const stringToEnum: Record<string, number> = {
+    "user": 1,
+    "trail_manager": 2,
+    "admin": 3,
+    "root_admin": 4,
+};
+
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
     const [userListData, setUserListData] = useState<Array<User>>([]);
-    const [loadingListData, setLoadingListData] = useState(false);
 
     const { getUsers } = TrailData();
 
@@ -30,13 +36,13 @@ const Privileges = () => {
                 setUsers(data.map((user) => user.username));
 
                 setUserListData(
-                data.map((user) => ({
-                    user_id: user.user_id,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                }))
-            );
+                    data.map((user) => ({
+                        user_id: user.user_id,
+                        username: user.username,
+                        email: user.email,
+                        role: stringToEnum[user.role],
+                    }))
+                );
             }
         } catch (error) {
             console.error("Error loading users:", error);
@@ -44,14 +50,14 @@ const Privileges = () => {
     };
 
     const handleRoleUpdated = (username: string, newRole: Role) => {
-    setUserListData(prev =>
-        prev.map(user =>
-            user.username === username
-                ? { ...user, role: newRole }
-                : user
-        )
-    );
-};
+        setUserListData(prev =>
+            prev.map(user =>
+                user.username === username
+                    ? { ...user, role: newRole }
+                    : user
+            )
+        );
+    };
 
     useEffect(() => {
         loadUsers();
@@ -70,15 +76,8 @@ const Privileges = () => {
                 {users.length === 0 ? (
                     <div>Loading...</div>
                 ) : (
-                    // <ul>
-                    //     {users.map((user, index) => (
-                    //         <li key={index} className="p-2 border-b">
-                    //             {user}
-                    //         </li>
-                    //     ))}
-                    // </ul>
                     <div className="pt-4 m-4">
-                        <UserDataTable data={userListData} loading={loadingListData} onRoleUpdated={handleRoleUpdated}/>
+                        <UserDataTable data={userListData} onRoleUpdated={handleRoleUpdated} />
                     </div>
                 )}
             </div>

@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         refreshAuth();
     };
 
-    const setAuth = async (idToken: string, accessToken: string, refreshToken: string) => {
+    const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
         setTokens(idToken, accessToken, refreshToken)
 
         refreshAuth();
