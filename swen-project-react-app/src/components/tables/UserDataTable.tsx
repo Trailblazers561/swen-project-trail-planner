@@ -13,7 +13,6 @@ interface UserRow {
 
 interface Props {
     data: UserRow[];
-    loading: boolean;
     onRoleUpdated: (username: string, newRole: Role) => void;
 }
 
@@ -36,7 +35,7 @@ const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (user
         if (isPromote && newRole < Role.Root) {
             newRole = newRole + 1;
         }
-        
+
         if (isDemote && newRole > Role.User) {
             newRole = newRole - 1;
         }
@@ -46,7 +45,7 @@ const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (user
         console.log(row.username);
         const response = await updateUserRole(row.username, roleForApi);
         console.log(response.json);
-        if(response.success) {
+        if (response.success) {
             onRoleUpdated(row.username, newRole);
             console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);
         }
@@ -96,56 +95,55 @@ const roleDisplayMap: Record<string | number, string> = {
     [Role.Manager]: "Trail Manager",
     [Role.Admin]: "Admin",
     [Role.Root]: "Root Admin",
-
-    user: "User",
-    trail_manager: "Trail Manager",
-    admin: "Admin",
-    root_admin: "Root Admin",
 };
 
-const UserDataTable: React.FC<Props> = ({ data, loading, onRoleUpdated, }) => {
+const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
+
 
     const columns: TableColumn<UserRow>[] = [
-    {
-        name: "Username",
-        selector: (row) => row.username,
-        sortable: true,
-        grow: 2,
-    },
-    {
-    name: "Role",
-    selector: (row) => roleDisplayMap[row.role] ?? String(row.role),
-    sortable: true,
-    center: true,
-},
-    {
-        name: "Email",
-        selector: (row) => row.email,
-        sortable: true,
-        center: true,
-    },
-    {
-    name: "Actions",
-    center: true,
-    cell: (row: UserRow) => (
-        <div>
-            <Button onClick={() => { updateUserRole("promote", row, onRoleUpdated); }} disabled={row.role === Role.Root} className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 mr-2">
-                Promote
-            </Button>
-            <Button onClick={() => { updateUserRole("demote", row, onRoleUpdated); }} disabled={row.role === Role.User} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1">
-                Demote
-            </Button>
-        </div>
-    ),
-}
-];
+        {
+            name: "Username",
+            selector: (row) => row.username,
+            sortable: true,
+            grow: 2,
+        },
+        {
+            name: "Role",
+            selector: (row) => roleDisplayMap[row.role] ?? String(row.role),
+            sortable: true,
+            center: true,
+        },
+        {
+            name: "Email",
+            selector: (row) => row.email,
+            sortable: true,
+            center: true,
+        },
+        {
+            name: "Actions",
+            center: true,
+            cell: (row: UserRow) => {
+
+
+                return (
+                    <div>
+                        <Button onClick={() => { updateUserRole("promote", row, onRoleUpdated); }} disabled={row.role === Role.Root} className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 mr-2">
+                            Promote
+                        </Button>
+                        <Button onClick={() => { updateUserRole("demote", row, onRoleUpdated); }} disabled={row.role === Role.User} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1">
+                            Demote
+                        </Button>
+                    </div>
+                );
+            }
+        }
+    ];
 
     return (
         <div className="bg-gray-50 shadow-md" data-testid="trail-user-table">
             <DataTable
                 columns={columns}
                 data={data}
-                progressPending={loading}
                 pagination={true}
                 striped
                 responsive
