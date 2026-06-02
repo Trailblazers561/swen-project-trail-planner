@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Select from "react-select";
-import { MultiSelectOption } from "./ui/multi-select";
+import { MultiSelectOption } from "./templates/multi-select";
 
 interface Trail {
     id: number;

@@ -13,7 +13,6 @@ export function TrailData() {
     if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
-
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
       headers: await authHeaders(),
@@ -268,7 +267,6 @@ export function TrailData() {
    * @param targetUserRole - Optional List of trail IDs to include in the csv
    */
   async function getUsers(maxCount?: number, targetUserRole?: UserRole) {
-    //?trails=${trailsParam}&start=${startdate}&end=${enddate}
     const queries: string[] = []
     if (maxCount !== undefined)
       queries.push(`max_count=${maxCount.toString()}`)
@@ -284,15 +282,15 @@ export function TrailData() {
 
   /**
    * Updates cognito users role
-   * @param targetUserId - User ID for the user that will be updated
+   * @param targetUsername - Username for the user that will be updated
    * @param targetUserRole - UserRole to set the given user to
    */
-  async function updateUserRole(targetUserId: string, targetUserRole: UserRole) {
+  async function updateUserRole(targetUsername: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
       method: "POST",
       headers: await authHeaders(),
       body: JSON.stringify({
-        target_user_id: targetUserId,
+        target_username: targetUsername,
         target_user_role: targetUserRole
       }),
     });
