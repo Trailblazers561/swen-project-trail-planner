@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { TrailData } from '../api';
+import { TrailData } from '../../api';
 import './Modal.css';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Button } from './ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '../templates/dropdown-menu';
+import { Button } from '../templates/button';
 
 interface Trail {
   id: number;
