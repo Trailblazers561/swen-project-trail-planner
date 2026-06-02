@@ -19,6 +19,10 @@ const LandingPage = () => {
 
     const navigate = useNavigate();
 
+    const [showLegend, setShowLegend] = useState(false);
+
+    const [displayedUsage, setDisplayedUsage] = useState<Record<number, number>>({});
+
     const createTrailIcon = (color: string) =>
     L.divIcon({
         className: "",
@@ -46,7 +50,7 @@ const LandingPage = () => {
 
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
-    const [selectedPreset, setSelectedPreset] = useState("all");
+    const [selectedPreset, setSelectedPreset] = useState("month");
 
     const applyPreset = (preset: string) => {
     const end = new Date();
@@ -65,9 +69,6 @@ const LandingPage = () => {
             start.setMonth(end.getMonth() - 1);
             break;
 
-        case "all":
-            start.setFullYear(2000);
-            break;
     }
 
     setSelectedPreset(preset);
@@ -156,7 +157,7 @@ const LandingPage = () => {
                 usageMap[log.trail_id] += log.count;
             });
 
-            setTrailUsage(usageMap);
+            setDisplayedUsage(usageMap);
 
         } catch (err) {
             console.error("Failed to fetch trail usage:", err);
@@ -181,7 +182,7 @@ const LandingPage = () => {
             }
         }
 
-        const usage = trailUsage[trailId];
+        const usage = displayedUsage[trailId];
 
         if (usage === undefined || days <= 0) return "gray";
 
@@ -244,7 +245,6 @@ const LandingPage = () => {
                             <SelectItem value="today">Today</SelectItem>
                             <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
                             <SelectItem value="month">Last Month</SelectItem>
-                            <SelectItem value="all">All Time</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -276,6 +276,64 @@ const LandingPage = () => {
                         className="border rounded px-2 py-1 bg-white"
                     />
                 </div>
+                
+                <hr className="my-3" />
+
+                    <button
+                        className="w-full text-left font-semibold text-sm"
+                        onClick={() => setShowLegend(!showLegend)}
+                    >
+                        Trail Usage Legend {showLegend ? "▼" : "▶"}
+                    </button>
+
+                    {showLegend && (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-xs">
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#3b82f6" }}
+                                />
+                                <span>0–19 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#22c55e" }}
+                                />
+                                <span>20–34 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#eab308" }}
+                                />
+                                <span>35–49 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#f97316" }}
+                                />
+                                <span>50–74 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#ef4444" }}
+                                />
+                                <span>75+ hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded bg-gray-400" />
+                                <span>No Data</span>
+                            </div>
+                        </div>
+                    )}              
 
             </div>
             </div>
