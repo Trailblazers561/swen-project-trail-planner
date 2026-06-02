@@ -1,4 +1,3 @@
-import Navbar from "./components/Navbar";
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
@@ -65,7 +64,6 @@ const Privileges = () => {
 
     return (
         <div className="flex flex-col">
-            <Navbar />
 
             <div className="w-full bg-[var(--color-button-secondary)]">
                 <div className="font-semibold text-2xl p-2 ml-2 text-left"> User Configuration </div>
