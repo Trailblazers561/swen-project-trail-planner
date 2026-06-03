@@ -1,33 +1,50 @@
+import json
+import math
 import os
-import boto3
-from boto3.dynamodb.conditions import Key, Attr
 import random
-from datetime import datetime, timedelta, timezone
+import urllib.request
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
+
+import boto3
+from boto3.dynamodb.conditions import Attr, Key
 
 dynamodb = boto3.resource('dynamodb')
 
 # Table references
-log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_DeviceTrailLogHour"))
-log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_DeviceTrailLogDay"))
-log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_DeviceTrailLogWeek"))
-log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_DeviceTrailLogMonth"))
-trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_Trail"))
-device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
-device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_DeviceTrail"))
+log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_hour_table"))
+log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_day_table"))
+log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_week_table"))
+log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_month_table"))
+trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
+device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
+device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
 
 # Trails to update, Name: [mean, std_dev]
-trails = {
-    "Mt. Marcy": [90, 20],
-    "Giant Mountain": [50, 12],
-    "Poke-O-Moonshine Ranger Trail": [40, 10],
-    "Mt. Skylight": [35, 9],
-    "Cat Mountain": [30, 8],
-    "Bald Peak": [25, 6],
-    "Beaver Meadow Trail": [20, 5],
-    "Mt. Haystack": [20, 7],
-    "Mud Lake": [15, 5],
-    "Blueberry Trail": [15, 8]
+trail_hikers = {
+    "Mt. Marcy": (90, 20),
+    "Giant Mountain": (50, 12),
+    "Poke-O-Moonshine Ranger Trail": (40, 10),
+    "Mt. Skylight": (35, 9),
+    "Cat Mountain": (30, 8),
+    "Bald Peak": (25, 6),
+    "Beaver Meadow Trail": (20, 5),
+    "Mt. Haystack": (20, 7),
+    "Mud Lake": (15, 5),
+    "Blueberry Trail": (15, 8)
+}
+
+trail_locations = {
+    "Mt. Marcy": (44.11253718129244,-73.92346562443319),
+    "Giant Mountain": (44.16134866063158,-73.72068652994203),
+    "Poke-O-Moonshine Ranger Trail": (44.40358464109767,-73.5023778168447),
+    "Mt. Skylight": (44.0994052305797,-73.93061282259401),
+    "Cat Mountain": (43.568768922716494,-73.70789845375656),
+    "Bald Peak": (44.159648937334154,-73.66541145322645),
+    "Mt. Haystack": (44.10566991873866,-73.9004196532753),
+    "Beaver Meadow Trail": (44.56934541161058,-72.69856435671466),
+    "Mud Lake": (43.21206021300888,-74.22804919647487),
+    "Blueberry Trail": (44.19170852844113,-74.26349195383426)
 }
 
 # Hiker Multiplier based on day of the week Monday - Sunday
@@ -37,12 +54,12 @@ hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40
 def simulate_data(event, context):
     print(event)
     # Retrieve Timestamp for start of day (EST) when lambda was called
-    date = datetime.fromisoformat(event["time"][:10]).replace(tzinfo=ZoneInfo("America/New_York"))
-    timestamp = int(date.timestamp())
+    today = datetime.fromisoformat(event["time"][:10]).replace(tzinfo=ZoneInfo("America/New_York"))
+    timestamp = int(today.timestamp())
 
-    trail_list = trail_table.scan(FilterExpression=Attr("name").is_in(list(trails.keys())))["Items"]
+    trail_list = trail_table.scan(FilterExpression=Attr("name").is_in(list(trail_hikers.keys())))["Items"]
 
-    for trail, stats in trails.items():
+    for trail, stats in trail_hikers.items():
         print(f"Attempting to simulate data for trail [{trail}]")
         # Check if trail is in the database, create it if not found
         trail_exists = next((t for t in trail_list if t["name"] == trail), None)
@@ -60,7 +77,7 @@ def simulate_data(event, context):
         response = log_day_table.query(
             KeyConditionExpression=(
                 Key("device_trail_id").eq(device_trail_id) &
-                Key("start").eq(int((date - timedelta(days=1)).timestamp()))
+                Key("start").eq(int((today - timedelta(days=1)).timestamp()))
             ),
             Limit=1
         )
@@ -71,9 +88,10 @@ def simulate_data(event, context):
             battery = battery - 1
 
         # Determine amount of hikers for the day
-        hikers = max(int(random.normalvariate(*stats) * weekday_modifier[date.weekday()]), 0)
-        today_start_utc = date.astimezone(timezone.utc)
-        tomorrow_start_utc = (date + timedelta(days=1)).astimezone(timezone.utc)
+        multiplier = weekday_modifier[today.weekday()] * get_weather_multiplier(*trail_locations[trail]) * get_holiday_multiplier(today.date())
+        hikers = max(int(random.normalvariate(*stats) * multiplier), 0)
+        today_start_utc = today.astimezone(timezone.utc)
+        tomorrow_start_utc = (today + timedelta(days=1)).astimezone(timezone.utc)
         today_hours = int((tomorrow_start_utc - today_start_utc).total_seconds() / 3600)
 
         counts  = [int(hikers * m) + (random.random() < (hikers * m % 1)) for m in hour_modifier[:today_hours]]
@@ -86,10 +104,10 @@ def simulate_data(event, context):
 
         log_day(device_trail_id, timestamp, hikers, battery)
 
-        week_timestamp = int((date - timedelta(days=date.weekday())).timestamp())
+        week_timestamp = int((today - timedelta(days=today.weekday())).timestamp())
         log_week(device_trail_id, week_timestamp, hikers, battery)
 
-        month_timestamp = int((date.replace(day=1)).timestamp())
+        month_timestamp = int((today.replace(day=1)).timestamp())
         log_month(device_trail_id, month_timestamp, hikers, battery)
 
 def create_trail(trail: str) -> int:
@@ -189,8 +207,7 @@ def log_week(device_trail_id: int, start: int, count: int, battery: int):
         ExpressionAttributeValues={
             ":count": count,
             ":battery": battery
-        },
-        ReturnValues="ALL_NEW"
+        }
     )
 
 def log_month(device_trail_id: int, start: int, count: int, battery: int):
@@ -208,6 +225,61 @@ def log_month(device_trail_id: int, start: int, count: int, battery: int):
         ExpressionAttributeValues={
             ":count": count,
             ":battery": battery
-        },
-        ReturnValues="ALL_NEW"
+        }
     )
+
+forecast_multipliers = (("thunder", 0.3), ("snow", 0.4), ("rain", 0.6), ("showers", 0.6), ("cloud", 1.0), ("sun", 1.3), ("clear", 1.3))
+def get_forecast_multiplier(forecast):
+    forecast = forecast.lower()
+    for forecast_multiplier in forecast_multipliers:
+        if forecast_multiplier[0] in forecast:
+            return forecast_multiplier[1]
+    return 1.0
+
+def get_temp_multiplier(temp):
+    return round(math.e**(-.0016 * (abs(temp - 70) ** 1.6)), 2)
+
+def get_weather_multiplier(latitude, longitude):
+    try:
+        url = f"https://api.weather.gov/points/{latitude},{longitude}"
+
+        url_request = urllib.request.Request(url, headers={"User-Agent": "AWA TrailCount"})
+
+        with urllib.request.urlopen(url_request) as response:
+            url_data = json.loads(response.read())
+
+        weather_request = urllib.request.Request(url_data["properties"]["forecast"], headers={"User-Agent": "AWA TrailCount"})
+
+        with urllib.request.urlopen(weather_request) as response:
+            weather_data = json.loads(response.read())
+
+        forecast_multiplier = get_forecast_multiplier(weather_data["properties"]["periods"][0]["shortForecast"])
+        temp_multiplier = get_temp_multiplier(weather_data["properties"]["periods"][0]["temperature"])
+
+        return round(forecast_multiplier * temp_multiplier, 2)
+    except Exception as e:
+        print(f"Error retrieving weather multiplier {e}")
+        return 1.0
+
+def nth_weekday(year, month, weekday, n):
+    if n == -1:
+        next_month = date(year, month + 1, 1) if month != 12 else date(year + 1, 1, 1)
+        last_day = next_month - timedelta(days=1)
+        return last_day - timedelta(days=(last_day.weekday() - weekday) % 7)
+    else:
+        start_date = date(year, month, 1)
+        first_weekday = start_date + timedelta(days=(weekday - start_date.weekday()) % 7)
+        return first_weekday + timedelta(weeks=n-1)
+
+def get_holiday_multiplier(today):
+    holidays = [date(today.year, 1, 1), nth_weekday(today.year, 1, 0, 3), nth_weekday(today.year, 2, 0, 3), nth_weekday(today.year, 5, 0, -1), date(today.year, 6, 19), date(today.year, 7, 4), date(today.year, 7, 9), nth_weekday(today.year, 9, 0, 1), nth_weekday(today.year, 10, 0, 2), date(today.year, 10, 31), date(today.year, 11, 11), nth_weekday(today.year, 11, 0, 4), date(today.year, 12, 25)]
+    closest_holiday = 365
+
+    for holiday in holidays:
+        days_from_holiday = abs((today - holiday).days)
+        days_from_holiday = min(days_from_holiday, 365 - days_from_holiday)
+        if days_from_holiday < closest_holiday:
+            closest_holiday = days_from_holiday
+
+    holiday_dict = {0: 2.3, 1: 2.0, 2: 1.8, 3: 1.6, 4: 1.5}
+    return holiday_dict.get(closest_holiday, 1.0)

@@ -1,6 +1,6 @@
 # Lambda Authorizer Lambda Function
 resource "aws_lambda_function" "lambda_authorizer" {
-  function_name = "${var.deploy_env}_trailplanner_api_authorizer"
+  function_name = "${var.deploy_env}_trailcount_api_authorizer"
   role          = aws_iam_role.lambda_authorizer_role.arn
   handler       = "lambda_authorizer.handler"
   runtime       = "python3.12"
@@ -18,6 +18,15 @@ resource "aws_lambda_function" "lambda_authorizer" {
       USER = aws_cognito_user_group.default_user_group.name
     }
   }
+}
+
+resource "aws_lambda_permission" "allow_apigateway_invoke_authorizer" {
+  statement_id  = "AllowExecutionFromAPIGateway-LambdaAuthorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_authorizer.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.public_api.execution_arn}/*/*"
 }
 
 resource "null_resource" "authorizer_pip_install" {
@@ -40,7 +49,7 @@ data "archive_file" "authorizer_layer" {
 }
 
 resource "aws_lambda_layer_version" "authorizer_layer" {
-  layer_name          = "${var.deploy_env}-authorizer-layer"
+  layer_name          = "${var.deploy_env}-trailcount-authorizer-layer"
   filename            = data.archive_file.authorizer_layer.output_path
   source_code_hash    = data.archive_file.authorizer_layer.output_base64sha256
   compatible_runtimes = ["python3.12"]
@@ -54,7 +63,7 @@ data "archive_file" "lambda_authorizer_zip" {
 
 # Lambda Authorizer Role
 resource "aws_iam_role" "lambda_authorizer_role" {
-  name               = "${var.deploy_env}_lambda_authorizer_role"
+  name               = "${var.deploy_env}_trailcount_lambda_authorizer_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 

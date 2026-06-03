@@ -1,12 +1,12 @@
-# Trail Planner - React Frontend
+# Trail Count - React Frontend
 
-This is the React frontend application for the Trail Planner system, built with Vite and React.
+This is the React frontend application for the Trail Count system, built with Vite and React.
 
 ## Overview
 
-The Trail Planner frontend provides:
+The Trail Count frontend provides:
 - **Dashboard**: Interactive graphs and data visualization for trail usage
-- **Trail Management**: Add, edit, and organize trails and trail groups
+- **Trail Management**: Add, edit, and organize trails and areas
 - **Device Management**: Associate devices with trails
 - **List View**: Overview of all trails with weekly counts, battery status, and last updated dates
 - **Graph View**: Time-series visualization of trail usage data
@@ -21,7 +21,7 @@ The Trail Planner frontend provides:
    - Date range filtering
    - Granularity selection (Hourly, Daily, Weekly, Monthly, Yearly)
    - Multi-trail selection
-   - Trail group filtering
+   - Areas filtering
 
 2. **List View**:
    - Table of all trails
@@ -32,9 +32,9 @@ The Trail Planner frontend provides:
 ### Trail Management
 
 - **Add Trail**: Create new trails
-- **Edit Trail**: Update trail names and group associations
+- **Edit Trail**: Update trail names and area associations
 - **Delete Trail**: Remove trails and associated data
-- **Trail Groups**: Organize trails into wilderness areas/groups
+- **Areas**: Organize trails into wilderness areas
 
 ### Device Management
 
@@ -101,7 +101,7 @@ swen-project-react-app/
 │   ├── components/          # React components
 │   │   ├── trailselector.tsx    # Trail selection dropdowns
 │   │   ├── EditTrailModal.tsx   # Trail add/edit modal
-│   │   ├── EditTrailGroupModal.tsx  # Group management modal
+│   │   ├── EditAreaModal.tsx  # Area management modal
 │   │   ├── AssociateDeviceModal.tsx  # Device association modal
 │   │   ├── Listview.tsx # Empty
 │   │   ├── Modal.css # CSS for the modals to use
@@ -122,7 +122,7 @@ swen-project-react-app/
 ### Dashboard (`dashboard.tsx`)
 
 Main application component that:
-- Manages state for trails, groups, and graph data
+- Manages state for trails, areas, and graph data
 - Handles view switching (graph/list)
 - Coordinates data fetching and display
 - Manages modal states
@@ -130,7 +130,7 @@ Main application component that:
 ### TrailSelector (`components/trailselector.tsx`)
 
 React-Select based component for:
-- Selecting wilderness areas/groups
+- Selecting wilderness areas
 - Selecting individual trails
 - Multi-select support
 - "All Trails" option
@@ -140,16 +140,16 @@ React-Select based component for:
 Modal for:
 - Creating new trails
 - Editing existing trail information
-- Assigning trails to groups
+- Assigning trails to areas
 - Deleting trails
 
-### EditTrailGroupModal (`components/EditTrailGroupModal.tsx`)
+### EditAreaModal (`components/EditAreaModal.tsx`)
 
 Modal for:
-- Creating new trail groups
-- Editing group names
-- Managing trail-to-group associations
-- Ensuring trails are only in one group
+- Creating new areas
+- Editing area names
+- Managing trail-to-area associations
+- Ensuring trails are only in one area
 
 ## API Integration
 

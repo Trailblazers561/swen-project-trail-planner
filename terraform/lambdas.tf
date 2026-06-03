@@ -1,309 +1,4 @@
-data "archive_file" "traildata_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/traildata.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-}
-
-resource "aws_lambda_function" "get_trail_data" {
-  function_name = "${var.deploy_env}_traildata_get_trail_data"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.get_trail_data"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-  timeout = 10
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "upload_trail_data" {
-  function_name = "${var.deploy_env}_traildata_upload_trail_data"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.upload_trail_data"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "register_device" {
-  function_name = "${var.deploy_env}_traildata_register_device"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.register_device"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "upload_device_data" {
-  function_name = "${var.deploy_env}_traildata_upload_device_data"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.upload_device_data"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "update_trail_metadata" {
-  function_name = "${var.deploy_env}_traildata_update_trail_metadata"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.update_trail_metadata"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "update_device_trail_association" {
-  function_name = "${var.deploy_env}_traildata_update_device_trail_association"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.update_device_trail_association"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "get_trail_metadata" {
-  function_name = "${var.deploy_env}_traildata_get_trail_metadata"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.get_trail_metadata"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "get_device_metadata" {
-  function_name = "${var.deploy_env}_traildata_get_device_metadata"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.get_device_metadata"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "get_trail_group_metadata" {
-  function_name = "${var.deploy_env}_traildata_get_trail_group_metadata"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.get_trail_group_metadata"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "delete_trail" {
-  function_name = "${var.deploy_env}_traildata_delete_trail"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.delete_trail"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "create_trail" {
-  function_name = "${var.deploy_env}_traildata_create_trail"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.create_trail"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-resource "aws_lambda_function" "delete_trail_group" {
-  function_name = "${var.deploy_env}_traildata_delete_trail_group"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "traildata.delete_trail_group"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-    }
-  }
-}
-
-# Map of function names to Lambda function resources
-locals {
-  api_lambda_functions = {
-    "lambda_authorizer"                         = aws_lambda_function.lambda_authorizer
-    "traildata_upload_trail_data"            = aws_lambda_function.upload_trail_data
-    "traildata_get_trail_data"               = aws_lambda_function.get_trail_data
-    "traildata_register_device"               = aws_lambda_function.register_device
-    "traildata_upload_device_data"           = aws_lambda_function.upload_device_data
-    "traildata_update_trail_metadata"        = aws_lambda_function.update_trail_metadata
-    "traildata_create_trail"                  = aws_lambda_function.create_trail
-    "traildata_update_device_trail_association" = aws_lambda_function.update_device_trail_association
-    "traildata_get_trail_metadata"           = aws_lambda_function.get_trail_metadata
-    "traildata_get_device_metadata"          = aws_lambda_function.get_device_metadata
-    "traildata_get_trail_group_metadata"             = aws_lambda_function.get_trail_group_metadata
-    "traildata_delete_trail"                 = aws_lambda_function.delete_trail
-    "traildata_delete_trail_group"        = aws_lambda_function.delete_trail_group
-    "traildata_export_csv"                     = aws_lambda_function.export_csv
-    "traildata_import_csv"                     = aws_lambda_function.import_csv
-    "traildata_generate_csv_upload_url"        = aws_lambda_function.generate_csv_upload_url
-    "get_users"                                     = aws_lambda_function.get_users
-    "change_user_group"                      = aws_lambda_function.change_user_group
-  }
-}
-
-resource "aws_lambda_permission" "allow_apigateway_all_functions" {
-  for_each = local.api_lambda_functions
-
-  statement_id  = "AllowExecutionFromAPIGateway-${each.key}"
-  action        = "lambda:InvokeFunction"
-  function_name = each.value.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
-}
-
+# Simulate Data Lambda
 data "archive_file" "simulate_data_zip" {
   type        = "zip"
   source_file = "${path.module}/${local.lambda_code_directory}/simulate_data.py"
@@ -311,13 +6,13 @@ data "archive_file" "simulate_data_zip" {
 }
 
 resource "aws_lambda_function" "simulate_data" {
-  function_name = "${var.deploy_env}_simulate_traildata"
+  function_name = "${var.deploy_env}_trailcount_simulate_data"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "simulate_data.simulate_data"
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/simulate_data.zip"
   code_sha256 = data.archive_file.simulate_data_zip.output_base64sha256
-  timeout = 30
+  timeout = 300
   environment {
     variables = {
       DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
@@ -327,20 +22,20 @@ resource "aws_lambda_function" "simulate_data" {
       TRAIL_TABLE = aws_dynamodb_table.trail_table.name
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      AREA_TABLE    = aws_dynamodb_table.area_table.name
     }
   }
 }
 
 resource "aws_cloudwatch_event_rule" "trigger_simulate_data" {
-    name = "${var.deploy_env}_trigger_simulate_data"
+    name = "${var.deploy_env}_trailcount_trigger_simulate_data"
     schedule_expression = "cron(0 3 * * ? *)" # This runs at 10:00pm / 11:00pm EST
 }
 
 resource "aws_cloudwatch_event_target" "trigger_lambda_every_day" {
     count = local.test_run ? 0 : 1
     rule = aws_cloudwatch_event_rule.trigger_simulate_data.name
-    target_id = "${var.deploy_env}_simulate_data_event"
+    target_id = "${var.deploy_env}_trailcount_simulate_data_event"
     arn = aws_lambda_function.simulate_data.arn
 }
 
@@ -394,104 +89,7 @@ resource "terraform_data" "invoke_simulate_data" {
   }
 }
 
-data "archive_file" "export_csv_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/export_csv.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/export_csv.zip"
-}
-
-resource "aws_lambda_function" "export_csv" {
-  function_name = "${var.deploy_env}_export_csv"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "export_csv.create_and_fill_csv"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/export_csv.zip"
-  code_sha256   = data.archive_file.export_csv_zip.output_base64sha256
-  timeout       = 30
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
-      DEVICE_TABLE = aws_dynamodb_table.device_table.name
-      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
-      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
-    }
-  }
-}
-
-data "archive_file" "import_csv_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/import_csv.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/import_csv.zip"
-}
-
-resource "aws_lambda_function" "import_csv" {
-  function_name = "${var.deploy_env}_import_csv"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "import_csv.parse_csv_and_export_data"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/import_csv.zip"
-  code_sha256   = data.archive_file.import_csv_zip.output_base64sha256
-  timeout       = 600
-
-  environment {
-    variables = {
-      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
-      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
-      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
-      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
-      DEVICE_TRAIL_TABLE                             = aws_dynamodb_table.device_trail_table.name
-      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
-    }
-  }
-}
-
-data "archive_file" "generate_csv_upload_url_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/generate_csv_upload_url.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/generate_csv_upload_url.zip"
-}
-
-resource "aws_lambda_function" "generate_csv_upload_url" {
-  function_name = "${var.deploy_env}_generate_csv_upload_url"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "generate_csv_upload_url.generate_url"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/generate_csv_upload_url.zip"
-  code_sha256   = data.archive_file.generate_csv_upload_url_zip.output_base64sha256
-  timeout       = 3
-
-  environment {
-    variables = {
-      TRAIL_S3_BUCKET       = aws_s3_bucket.csv_bucket.bucket
-    }
-  }
-}
-
-resource "aws_cloudwatch_event_rule" "daily_cleanup" {
-  name                = "${var.deploy_env}_daily_cleanup"
-  schedule_expression = "rate(1 day)"
-}
-
-resource "aws_cloudwatch_event_target" "trigger_cleanup" {
-  rule      = aws_cloudwatch_event_rule.daily_cleanup.name
-  target_id = "${var.deploy_env}_cleanup_event"
-  arn       = aws_lambda_function.cleanup_lambda.arn
-}
-
-resource "aws_lambda_permission" "allow_cloudwatch" {
-  statement_id  = "AllowExecutionFromCloudWatch"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.cleanup_lambda.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.daily_cleanup.arn
-}
-
+# Daily Cleanup Lambda
 data "archive_file" "cleanup_lambda_zip" {
   type        = "zip"
   source_file = "${path.module}/${local.lambda_code_directory}/cleanup_lambda.py"
@@ -499,7 +97,7 @@ data "archive_file" "cleanup_lambda_zip" {
 }
 
 resource "aws_lambda_function" "cleanup_lambda" {
-  function_name = "${var.deploy_env}_cleanup_csv_bucket"
+  function_name = "${var.deploy_env}_trailcount_cleanup_csv_bucket"
   role          = aws_iam_role.lambda_iam_role.arn
   handler       = "cleanup_lambda.cleanup"
   runtime       = "python3.11"
@@ -514,47 +112,67 @@ resource "aws_lambda_function" "cleanup_lambda" {
   }
 }
 
-# Lambdas for /users API endpoint
-data "archive_file" "user_management_zip" {
-  type        = "zip"
-  source_file = "${path.module}/${local.lambda_code_directory}/user_management.py"
-  output_path = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
+resource "aws_cloudwatch_event_rule" "csv_bucket_daily_cleanup" {
+  name                = "${var.deploy_env}_trailcount_daily_cleanup"
+  schedule_expression = "rate(1 day)"
 }
 
-resource "aws_lambda_function" "get_users" {
-  function_name = "${var.deploy_env}_get_users"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "user_management.get_users"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
+resource "aws_cloudwatch_event_target" "trigger_cleanup" {
+  rule      = aws_cloudwatch_event_rule.csv_bucket_daily_cleanup.name
+  target_id = "${var.deploy_env}_trailcount_cleanup_event"
+  arn       = aws_lambda_function.cleanup_lambda.arn
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.cleanup_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.csv_bucket_daily_cleanup.arn
+}
+
+
+locals {
+  cognito_config_lambdas = {
+    pre_sign_up = "remove_unverified_user"
+    post_confirmation = "confirm_user"
+    custom_message = "custom_message"
+  }
+}
+
+// Create Each Cognito Config Lambda Zip File
+data "archive_file" "cognito_config_lambda_zips" {
+  for_each = local.cognito_config_lambdas
+
+  type = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/cognito_config/${each.key}.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/${each.key}.zip"
+}
+
+// Create Each Cognito Config Lambda
+resource "aws_lambda_function" "cognito_config_lambdas" {
+  for_each = local.cognito_config_lambdas
+
+  function_name = "${var.deploy_env}_trailcount_${each.key}"
+  role = aws_iam_role.lambda_iam_role.arn
+  handler = "${each.key}.${each.value}"
+  runtime = "python3.12"
+  filename = data.archive_file.cognito_config_lambda_zips[each.key].output_path
+  source_code_hash = data.archive_file.cognito_config_lambda_zips[each.key].output_base64sha256
 
   environment {
     variables = {
-      COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
-      ROOT_ADMIN = aws_cognito_user_group.root_admin_group.name
-      ADMIN = aws_cognito_user_group.admin_group.name
-      TRAIL_MANAGER = aws_cognito_user_group.trail_manager_group.name
-      USER = aws_cognito_user_group.default_user_group.name
+      LOGO_URL = "https://${local.use_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution.domain_name}/AWA-logo.png"
     }
   }
 }
 
-resource "aws_lambda_function" "change_user_group" {
-  function_name = "${var.deploy_env}_change_user_group"
-  role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "user_management.change_user_group"
-  runtime       = "python3.12"
-  filename      = "${path.module}/${local.lambda_code_directory}/zips/user_management.zip"
-  code_sha256 = data.archive_file.traildata_zip.output_base64sha256
-
-  environment {
-    variables = {
-      COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
-      ROOT_ADMIN = aws_cognito_user_group.root_admin_group.name
-      ADMIN = aws_cognito_user_group.admin_group.name
-      TRAIL_MANAGER = aws_cognito_user_group.trail_manager_group.name
-      USER = aws_cognito_user_group.default_user_group.name
-    }
-  }
+// Allow Lambdas To Be Invoked By Cognito
+resource "aws_lambda_permission" "allow_cognito_cognito_config_lambdas" {
+  for_each = aws_lambda_function.cognito_config_lambdas
+  
+  statement_id  = "AllowExecutionFromCognito"
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.function_name
+  principal     = "cognito-idp.amazonaws.com"
 }

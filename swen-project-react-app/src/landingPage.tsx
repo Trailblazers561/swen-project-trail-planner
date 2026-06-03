@@ -1,13 +1,26 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/templates/button";
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import Navbar from "./components/Navbar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
+import { Granularity } from "./lib/apiTypes";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/templates/select";
 
 const LandingPage = () => {
+
+    const navigate = useNavigate();
+
+    const [showLegend, setShowLegend] = useState(false);
+
+    const [displayedUsage, setDisplayedUsage] = useState<Record<number, number>>({});
 
     const createTrailIcon = (color: string) =>
     L.divIcon({
@@ -23,95 +36,357 @@ const LandingPage = () => {
         popupAnchor: [1, -36],
     });
 
+    const { getTrailMetadata, getTrailLogs } = TrailData();
+
+    const [trails, setTrails] = useState<any[]>([]);
+    const [trailUsage] = useState<Record<number, number>>({}); 
+    const [loadingUsage, setLoadingUsage] = useState(false);
+
     const parkBounds: L.LatLngBoundsExpression = [
         [42.2, -75.8], 
         [45.6, -71.0], 
     ];
 
-    const navigate = useNavigate();
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
+    const [selectedPreset, setSelectedPreset] = useState("month");
 
-    const { getTrailMetadata } = TrailData();
+    const applyPreset = (preset: string) => {
+    const end = new Date();
+    const start = new Date();
+    
+    switch (preset) {
+        case "today":
+            start.setHours(0, 0, 0, 0);
+            break;
 
-    const [trails, setTrails] = useState<any[]>([]);
+        case "2weeks":
+            start.setDate(end.getDate() - 14);
+            break;
 
-    const parsedTrails = trails.map(trail => ({
-        ...trail,
-        id: Number(trail.id),
-        latitude: Number(trail.latitude),
-        longitude: Number(trail.longitude),
-    }))
-        .filter(trail =>
-        Number.isFinite(trail.latitude) &&
-        Number.isFinite(trail.longitude)
-    );
+        case "month":
+            start.setMonth(end.getMonth() - 1);
+            break;
+
+    }
+
+    setSelectedPreset(preset);
+    setStartDate(start);
+    setEndDate(end);
+    };
 
     useEffect(() => {
-    async function fetchTrails() {
-        try {
-            const res = await getTrailMetadata();
+        async function fetchTrails() {
+            try {
+                const res = await getTrailMetadata();
+                if (res.success) {
+                    const trailData = await res.json;
+                    setTrails(trailData);
 
-            if (res.success) {
-                setTrails(res.json);
-                console.log("trail metadata:", res);
-            } else {
-                console.warn("Trail metadata not available");
+                    const dates = trailData
+                        .map((t: any) => Number(t.date_activated))
+                        .filter(Boolean);
+
+                    if (dates.length > 0) {
+                        const earliest = new Date(Math.min(...dates) * 1000);
+
+                    setStartDate(earliest);
+                    setEndDate(new Date());
+                }
+
+                } else {
+                    console.warn("Trail metadata not available");
+                    setTrails([]);
+                }
+            } catch (err) {
+                console.error("Failed to load trails:", err);
                 setTrails([]);
             }
+        }
+
+        fetchTrails();
+    }, []);
+
+    const parsedTrails = useMemo(
+        () =>
+        trails
+            .map(trail => ({
+                ...trail,
+                id: Number(trail.id),
+                latitude: Number(trail.latitude),
+                longitude: Number(trail.longitude),
+            }))
+            .filter(
+                trail =>
+                    Number.isFinite(trail.latitude) &&
+                    Number.isFinite(trail.longitude)
+            ),
+        [trails]
+        );
+
+    useEffect(() => { 
+    async function fetchTrailUsage() {
+        try {
+            setLoadingUsage(true);
+
+
+            if (!startDate || !endDate) return;
+
+            const trailIds = parsedTrails.map(t => t.id);
+
+            if (trailIds.length === 0) return;
+
+            const response = await getTrailLogs(
+                trailIds,
+                startDate,
+                endDate,
+                Granularity.Day
+            );
+
+            if (!response.success) return;
+
+            const logs = await response.json;
+
+            const usageMap: Record<number, number> = {};
+
+            logs.forEach((log: any) => {
+                if (!usageMap[log.trail_id]) {
+                    usageMap[log.trail_id] = 0;
+                }
+
+                usageMap[log.trail_id] += log.count;
+            });
+
+            setDisplayedUsage(usageMap);
+
         } catch (err) {
-            console.error("Failed to load trails:", err);
-            setTrails([]);
+            console.error("Failed to fetch trail usage:", err);
+        } finally {
+            setLoadingUsage(false);
         }
     }
 
-    fetchTrails();
-    }, []);
-    
-  return (
+    if (parsedTrails.length > 0) {
+        fetchTrailUsage();
+    }
+    }, [parsedTrails, startDate, endDate]);
+
+
+    const getTrailColor = (trailId: number, days: number) => {
+
+        if (loadingUsage) {
+            const existingUsage = trailUsage[trailId];
+
+            if (!existingUsage) {
+                return "gray";
+            }
+        }
+
+        const usage = displayedUsage[trailId];
+
+        if (usage === undefined || days <= 0) return "gray";
+
+        const avg = usage / days;
+
+        switch (true) {
+            case avg < 20:
+                return "#3b82f6";
+
+            case avg < 35:
+                return "#22c55e";
+
+            case avg < 50:
+                return "#eab308";
+
+            case avg < 75:
+                return "#f97316";
+
+            default:
+                return "#ef4444";
+        }
+    };
+
+    //Calculates relative business. Will be changed in the future
+    const days = useMemo(() => {
+        if (!startDate || !endDate) {
+            return 1;
+        }
+        
+        return Math.max(
+            1,
+            (endDate.getTime() - startDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+    }, [startDate, endDate]);
+
+    return (
 
         <div className="h-screen w-screen relative overflow-hidden">
-             <Navbar/>
-                <div className="absolute top-5 right-52 z-[1000]"></div>
-                <MapContainer
-                    center={[44.02, -73.82]} 
-                    zoom={8}
-                    minZoom={8}
-                    maxZoom={15}
-                    zoomControl={false}
-                    scrollWheelZoom={true}
-                    className="h-full w-full"
-                    maxBounds={parkBounds}
-                    maxBoundsViscosity={0.8}
-                    >
-                        <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-                        />
-                        <ZoomControl position="bottomright" />
 
-                    {parsedTrails.map((trail) => (
-                    <Marker key={trail.id} position={[trail.latitude, trail.longitude]} icon = {createTrailIcon("red")}>
+            <div className="absolute top-20 left-4 z-[9999] pointer-events-auto">
+                <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
+
+                    <div className="font-semibold mb-3 text-center">
+                        Time Frame
+                    </div>
+
+                    <div className="flex justify-center">
+                        <Select
+                            value={selectedPreset}
+                            onValueChange={(value) => applyPreset(value)}
+                        >
+                        <SelectContent className="z-[10000]" />
+                        <SelectTrigger className="w-48 bg-white">
+                            <SelectValue/>
+                        </SelectTrigger>
+
+                        <SelectContent className="z-[10000]">
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
+                            <SelectItem value="month">Last Month</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex justify-center gap-2 mt-2">
+                    <input
+                        type="date"
+                        value={
+                        startDate
+                        ? startDate.toISOString().split("T")[0] : ""
+                        }
+                        onChange={(e) => {
+                            setSelectedPreset("custom");
+                            setStartDate(new Date(e.target.value));
+                        }}
+                        className="border rounded px-2 py-1 bg-white"
+                    />
+
+                    <input
+                        type="date"
+                        value={
+                            endDate
+                            ? endDate.toISOString().split("T")[0] : ""
+                        } 
+                        onChange={(e) => {
+                            setSelectedPreset("custom");
+                            setEndDate(new Date(e.target.value));
+                        }}
+                        className="border rounded px-2 py-1 bg-white"
+                    />
+                </div>
+                
+                <hr className="my-3" />
+
+                    <button
+                        className="w-full text-left font-semibold text-sm"
+                        onClick={() => setShowLegend(!showLegend)}
+                    >
+                        Trail Usage Legend {showLegend ? "▼" : "▶"}
+                    </button>
+
+                    {showLegend && (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-xs">
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#3b82f6" }}
+                                />
+                                <span>0–19 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#22c55e" }}
+                                />
+                                <span>20–34 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#eab308" }}
+                                />
+                                <span>35–49 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#f97316" }}
+                                />
+                                <span>50–74 hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded"
+                                    style={{ background: "#ef4444" }}
+                                />
+                                <span>75+ hikers/day</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded bg-gray-400" />
+                                <span>No Data</span>
+                            </div>
+                        </div>
+                    )}              
+
+                </div>
+            </div>
+                
+            <MapContainer
+                center={[44.02, -73.82]} 
+                zoom={8}
+                minZoom={8}
+                maxZoom={15}
+                zoomControl={false}
+                scrollWheelZoom={true}
+                className="h-full w-full"
+                maxBounds={parkBounds}
+                maxBoundsViscosity={0.8}
+            >
+                <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+                />
+                <ZoomControl position="bottomright" />
+
+                {parsedTrails.map((trail) => (
+                    <Marker
+                        key={trail.id}
+                        position={[trail.latitude, trail.longitude]}
+                        icon={createTrailIcon(getTrailColor(trail.id, days))}
+                    >
                         <Popup>
-                            <div onClick={(e) => e.stopPropagation()} className="space-y-2">
+                            <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="space-y-2"
+                            >
                                 <div>
-                                <strong>{trail.name}</strong>
-                                <br />
-                                {trail.notes}
+                                    <strong>{trail.name}</strong>
+                                    <br />
+                                    {trail.notes}
                                 </div>
 
                                 <Button
                                     variant="primary"
                                     size="sm"
-                                    onClick={() => navigate(`/dashboard?trailId=${trail.id}`)}
+                                    onClick={() =>
+                                        navigate(`/dashboard?trailName=${trail.name}`)
+                                    }
                                 >
-                                See Trail Data
+                                    See Trail Data
                                 </Button>
                             </div>
                         </Popup>
                     </Marker>
-                    ))}
-                </MapContainer>
+                ))}
+            </MapContainer>
                 
         </div>
-  );
+    );
 };
 
 export default LandingPage;

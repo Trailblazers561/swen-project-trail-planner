@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_api_key_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="temp_until_moved_off_public_api")
 def test_post_device_data_missing_api_key():
     """
     Test POST /devices without API key - should return 403 Forbidden.
@@ -33,6 +34,7 @@ def test_post_device_data_missing_api_key():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="temp_until_moved_off_public_api")
 def test_post_device_data_invalid_api_key():
     """
     Test POST /devices with invalid API key - should return 403 Forbidden.

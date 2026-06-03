@@ -1,29 +1,28 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import EditTrailModal from "./components/EditTrailModal";
-import EditTrailGroupModal from "./components/EditTrailGroupModal";
-import AssociateDeviceModal from "./components/AssociateDeviceModal";
-import TrailStatusTable from "./components/TrailDataTable.tsx";
+import EditTrailModal from "./components/modals/EditTrailModal.tsx";
+import EditAreaModal from "./components/modals/EditAreaModal.tsx";
+import AssociateDeviceModal from "./components/modals/AssociateDeviceModal.tsx";
+import TrailStatusTable from "./components/tables/TrailDataTable.tsx";
 import "./styles/dashboard.css";
 import Plot from "react-plotly.js";
-import type { Layout } from "plotly.js";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select.tsx";
+import type { Layout, Data } from "plotly.js";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./components/templates/select.tsx";
 import "react-datepicker/dist/react-datepicker.css";
 import { TrailData } from "./api";
-import { DatePickerWithRange } from "./components/ui/daterangepicker.tsx";
+import { DatePickerWithRange } from "./components/templates/daterangepicker.tsx";
 import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
-import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/ui/multi-select.tsx";
-import { Button } from "./components/ui/button.tsx";
+import { MultiSelect, MultiSelectOption, MultiSelectGroup, MultiSelectRef } from "./components/templates/multi-select.tsx";
+import { Button } from "./components/templates/button.tsx";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Navbar from "./components/Navbar.tsx";
+} from "@/components/templates/dropdown-menu.tsx";
 import { Granularity, GranularityText } from "./lib/apiTypes";
 import { Loader2, Check, X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/templates/popover.tsx";
 import { fileOpen } from 'browser-fs-access';
 import { useSearchParams } from "react-router-dom";
 import { Role, useAuth } from "@/Context";
@@ -32,19 +31,31 @@ import moment from "moment-timezone";
 interface Trail {
     id: number;
     name: string;
+    notes: string;
+    latitude: number;
+    longitude: number;
 }
 
-interface TrailGroup {
+interface Area {
     name: string;
     trail_ids: number[];
 }
 
 interface Line {
     trail_name: string;
-    startDate: Date[];
-    endDate: Date[];
-    count: number[];
+    startDates: Date[];
+    endDates: Date[];
+    counts: number[];
+    noDatas: boolean[];
     granularity: Granularity;
+}
+
+interface TrailListItem {
+    trail_id: number;
+    trail_name: string;
+    weeklyCount: number;
+    batteryStatus: number | null;
+    lastUpdated: string | null;
 }
 
 const dashboard = () => {
@@ -54,14 +65,14 @@ const dashboard = () => {
         getTrailLogs,
         getDeviceMetadata,
         getTrailMetadata,
-        getTrailGroupMetadata,
+        getAreaMetadata,
         exportCSV,
         importCSV,
     } = TrailData();
 
     const [trailMetadata, setTrailMetadata] = useState<Trail[]>([]);
-    const [trailGroups, setTrailGroups] = useState<TrailGroup[]>([]);
-    const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+    const [areas, setAreas] = useState<Area[]>([]);
+    const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
 
     // Build trail map from metadata - updates automatically when metadata changes
     const trailMap = useMemo<Record<string, number>>(() => {
@@ -78,8 +89,8 @@ const dashboard = () => {
         useState<Trail | null>(null);
     const [isEditTrailModalOpen, setIsEditTrailModalOpen] = useState(false);
     const [isAddTrailModalOpen, setIsAddTrailModalOpen] = useState(false);
-    const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
-    const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
+    const [isEditAreaModalOpen, setIsEditAreaModalOpen] = useState(false);
+    const [isAddAreaModalOpen, setIsAddAreaModalOpen] = useState(false);
     const [isAssociateDeviceModalOpen, setIsAssociateDeviceModalOpen] =
         useState(false);
 
@@ -99,27 +110,22 @@ const dashboard = () => {
     );
 
     const [range, setRange] = React.useState<DateRange | undefined>({ from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined })
-    const [trails, setTrails] = useState<string[]>([]);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const trailName = searchParams.get("trailName");
+    const [trails, setTrails] = useState<string[]>(trailName ? [trailName] : []);
 
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
     const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
+    const [areaOptions, setAreaOptions] = useState<MultiSelectOption[]>([])
     const [graphTitle, setGraphTitle] = useState<string>("No Trails Selected");
+    const [graphBroken, setGraphBroken] = useState(false);
     const [hasDefaulted, setHasDefaulted] = useState(false);
     const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
-    const [trailListData, setTrailListData] = useState<
-        Array<{
-            trail_id: number;
-            trail_name: string;
-            weeklyCount: number;
-            batteryStatus: number | null;
-            lastUpdated: string | null;
-        }>
-    >([]);
+    const [allListData, setAllListData] = useState<Array<TrailListItem>>([]);
+    const [trailListData, setTrailListData] = useState<Array<TrailListItem>>([]);
     const [loadingListData, setLoadingListData] = useState(false);
-    const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(
-        null
-    );
+    const [deviceMetadataCache, setDeviceMetadataCache] = useState<any[] | null>(null);
     const isFetchingListData = useRef(false);
     const [isDownloadingStatus, setIsDownloadingStatus] = useState<"idle" | "downloading" | "done" | "error"> ("idle");
     const [isUploadingStatus, setIsUploadingStatus] = useState<"idle" | "uploading" | "done" | "error"> ("idle");
@@ -128,7 +134,7 @@ const dashboard = () => {
     const [graphUpdating, setGraphUpdating] = useState<boolean>(false);
     const graphUpdatingRef = useRef(0);
 
-    // Load trail metadata and groups from database
+    // Load trail metadata and areas from database
     useEffect(() => {
         loadTrailData();
     }, []);
@@ -137,21 +143,20 @@ const dashboard = () => {
     useEffect(() => {
         if (
             trailMetadata.length > 0 &&
-            trails.length === 0 &&
+            (trails.length === 0 || trails.length === 1) &&
             selectedDate &&
             selectedDateEnd &&
             !hasDefaulted
         ) {
-            const defaultTrails: string[] = [];
-            setTrails(defaultTrails);
             setHasDefaulted(true);
+            setSearchParams("");
             // Trigger graph load after a small delay to ensure state is set
             setTimeout(() => {
                 if (granularity) {
                     getResponse(
                         selectedDate,
                         selectedDateEnd,
-                        defaultTrails,
+                        trails,
                         granularity
                     );
                 }
@@ -161,14 +166,14 @@ const dashboard = () => {
 
     const loadTrailData = async () => {
         try {
-            const [metadataResponse, groupsResponse] = await Promise.all([
+            const [metadataResponse, areasResponse] = await Promise.all([
                 getTrailMetadata(),
-                getTrailGroupMetadata(),
+                getAreaMetadata(),
             ]);
 
-            if (metadataResponse.success && groupsResponse.success) {
+            if (metadataResponse.success && areasResponse.success) {
                 const metadata = await metadataResponse.json;
-                const groups = await groupsResponse.json;
+                const areas = await areasResponse.json;
 
                 // Filter out any invalid entries
                 const validMetadata = (metadata || []).filter(
@@ -178,19 +183,18 @@ const dashboard = () => {
                         t.name &&
                         t.name.trim().length > 0
                 );
-                // Filter out invalid groups and empty groups (groups with no trails)
-                const validGroups = (groups || []).filter(
-                    (g: TrailGroup) =>
-                        g &&
-                        g.name &&
-                        g.name.trim().length > 0 &&
-                        g.trail_ids &&
-                        Array.isArray(g.trail_ids) &&
-                        g.trail_ids.length > 0
+                // Filter out invalid areas
+                const validAreas = (areas || []).filter(
+                    (a: Area) =>
+                        a &&
+                        a.name &&
+                        a.name.trim().length > 0 &&
+                        a.trail_ids &&
+                        Array.isArray(a.trail_ids)
                 );
 
                 setTrailMetadata(validMetadata);
-                setTrailGroups(validGroups);
+                setAreas(validAreas);
             }
         } catch (error) {
             console.error("Error loading trail data:", error);
@@ -206,12 +210,12 @@ const dashboard = () => {
         setIsAddTrailModalOpen(true);
     };
 
-    const handleEditGroup = () => {
-        setIsEditGroupModalOpen(true);
+    const handleEditArea = () => {
+        setIsEditAreaModalOpen(true);
     };
 
-    const handleAddGroup = () => {
-        setIsAddGroupModalOpen(true);
+    const handleAddArea = () => {
+        setIsAddAreaModalOpen(true);
     };
 
     const handleAssociateDevice = () => {
@@ -233,7 +237,7 @@ const dashboard = () => {
         }
         
         try{
-            const response = await exportCSV(trailList, selectedDate, selectedDateEnd);
+            const response = await exportCSV(trailList, selectedDate, selectedDateEnd, granularity);
             if (!response.success)
                 throw new Error("Failed to export");
 
@@ -280,27 +284,6 @@ const dashboard = () => {
         }, 500);
     };
 
-    const [searchParams] = useSearchParams();
-    const trailId = searchParams.get("trailId");
-
-    useEffect(() => {
-        if (!trailId || trailMetadata.length === 0) return;
-        
-        const id = Number(trailId);
-        if (Number.isNaN(id)) return;
-
-        const trail = trailMetadata.find(t => t.id === id);
-        if (!trail) return;
-            setTrails(prev => {
-            if (prev.length === 1 && prev[0] === trail.name) return prev;
-            return [trail.name];
-        });
-        
-        //auto refresh graph on page load
-        if (selectedDate && selectedDateEnd && granularity) {
-            getResponse(selectedDate, selectedDateEnd, [trail.name], granularity);
-        }
-    }, [trailId, trailMetadata]);
 
     function getDateDifference(startDate: Date, endDate: Date): number {
         const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -344,7 +327,14 @@ const dashboard = () => {
 
     useEffect(() => {
         updateTrailsOptions();
-    }, [trailMetadata, selectedGroups])
+    }, [trailMetadata, selectedAreas])
+
+    useEffect(() => {
+        const areaNames = areas.map((area) => area.name);
+        const areaValues = areaSelectRef.current?.getSelectedValues().filter(value => areaNames.includes(value)) ?? [];
+        areaSelectRef.current?.setSelectedValues(areaValues)
+        setAreaOptions(fillAreasMultiselect())
+    }, [areas])
 
     useEffect(() => {
         if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
@@ -439,6 +429,8 @@ const dashboard = () => {
                 endDate,
                 granularity
             );
+            if (!response.success)
+                throw new Error("Failed to retrieve graph data");
 
             const responseJson = await response.json;
 
@@ -454,7 +446,7 @@ const dashboard = () => {
                 }
             );
 
-            var lines: { trail_name: string; startDate: Date[]; endDate: Date[]; count: number[]; granularity: Granularity }[] = [];
+            var lines: { trail_name: string; startDates: Date[]; endDates: Date[]; counts: number[]; noDatas: boolean[]; granularity: Granularity }[] = [];
 
             const trailIdToName = new Map<number, string>();
             trailMetadata
@@ -472,6 +464,7 @@ const dashboard = () => {
 
                 let dateMap = new Map<Date, Date>();
                 let countMap = new Map<Date, number>();
+                let noDataMap = new Map<Date, boolean>();
 
                 for (let range of ranges) {
                     const eventsInRange = dateCountArray.filter(
@@ -482,22 +475,29 @@ const dashboard = () => {
 
                     dateMap.set(range.start, range.end);
                     countMap.set(range.start, totalCount);
+                    noDataMap.set(range.start, eventsInRange.length === 0);
                 }
 
                 const startDates = Array.from(dateMap.keys());
                 const endDates = Array.from(dateMap.values());
                 const counts = Array.from(countMap.values());
+                const noDatas = Array.from(noDataMap.values());
 
-                lines.push({ trail_name: trailName, startDate: startDates, endDate: endDates, count: counts, granularity: granularity });
+                lines.push({ trail_name: trailName, startDates: startDates, endDates: endDates, counts: counts, noDatas: noDatas, granularity: granularity });
             }
 
+            if (responseGraphRef !== graphUpdatingRef.current)
+                return;
             setGraphLines(lines);
             setGraphTitle(formatGraphTitle(startDate, endDate, trails));
-
-            if (responseGraphRef === graphUpdatingRef.current)
-                setGraphUpdating(false);
+            setGraphUpdating(false);
+            setGraphBroken(false);
         } catch (error) {
             console.error("Error fetching trail data:", error);
+            setGraphLines([]);
+            setGraphTitle("");
+            setGraphUpdating(false);
+            setGraphBroken(true);
         }
     }
 
@@ -513,7 +513,9 @@ const dashboard = () => {
         const endStr = moment(endDate).tz("America/New_York").format("M/D/YYYY");
         const includesAll = trails.length == trailMetadata.length
 
-        if (includesAll) {
+        if (selectedAreas.length === 1 && areas.find(a => a.name === selectedAreas[0])?.trail_ids.length === trails.length) {
+            return `${selectedAreas[0]} from ${startStr} to ${endStr}`;
+        } else if (includesAll) {
             return `All Trails from ${startStr} to ${endStr}`;
         } else if (trails.length === 1) {
             return `${trails[0]} from ${startStr} to ${endStr}`;
@@ -560,16 +562,39 @@ const dashboard = () => {
         setTrails(selectedTrails);
 
         if (selectedTrails.length === 0) {
+            ++graphUpdatingRef.current;
             setGraphLines([]);
             setGraphTitle("No Trails Selected");
             return;
         }
     };
 
+    const handleAreaChange = (newSelectedAreas: string[]) => {
+        const newAreas = newSelectedAreas.filter(area => !selectedAreas.includes(area));
+        const trailValues = trails;
+        const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
+        areas.forEach((area) => {
+            if (newAreas.includes(area.name)) {
+                area.trail_ids.forEach((id) => {
+                    const trailName = trailIdMap.get(id);
+                    if (trailName && !trailValues.includes(trailName))
+                        trailValues.push(trailName)
+                })
+            }
+        })
+        if (trailMetadata.length !== 0)
+            setTrailOptions(trailMetadata.map((trail) => ({value: trail.name, label: trail.name})));
+        else
+            setTrailOptions(trailValues.map((trail) => ({value: trail, label: trail})));
+        trailSelectRef.current?.setSelectedValues(trailValues);
+        if (selectedAreas.length !== 0 || newSelectedAreas.length !== 0)
+            setSelectedAreas(newSelectedAreas);
+    }
+
     const trailSelectRef = useRef<MultiSelectRef>(null);
     const updateTrailsOptions = () => {
         const availableTrails: string[] = [];
-        if (selectedGroups.length === 0) {
+        if (selectedAreas.length === 0) {
             const options: MultiSelectOption[] = [];
             trailMetadata.forEach((trail) => {
                 if (trail && trail.name && trail.name.trim().length > 0) {
@@ -581,26 +606,28 @@ const dashboard = () => {
         } else {
             const groups: MultiSelectGroup[] = [];
             const trailIdMap = new Map(trailMetadata.map(t => [t.id, t.name]));
-            trailGroups.forEach((group) => {
-                if (selectedGroups.includes(group.name)) {
-                    const groupOptions = group.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({ label: name, value: name }));
-                    if (groupOptions.length > 0)
-                        groups.push({ heading: group.name, options: groupOptions });
-                    availableTrails.push(...groupOptions.map(option => option.label))
+            areas.forEach((area) => {
+                if (selectedAreas.includes(area.name)) {
+                    const areaOptions = area.trail_ids.map((id) => trailIdMap.get(id)).filter((name) => name != undefined).map((name) => ({ label: name, value: name }));
+                    if (areaOptions.length > 0)
+                        groups.push({ heading: area.name, options: areaOptions });
+                    availableTrails.push(...areaOptions.map(option => option.label))
                 }
             })
             setTrailOptions(groups);
         }
-        const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? []
-        trailSelectRef.current?.setSelectedValues(trailValues)
+
+        const trailValues = trailSelectRef.current?.getSelectedValues().filter(value => availableTrails.includes(value)) ?? [];
+        trailSelectRef.current?.setSelectedValues(trailValues);
     };
 
-    const fillTrailGroupsMultiselect = (): MultiSelectOption[] => {
+    const areaSelectRef = useRef<MultiSelectRef>(null);
+    const fillAreasMultiselect = (): MultiSelectOption[] => {
         const options: MultiSelectOption[] = [];
 
-        trailGroups.forEach((group) => {
-            if (group && group.name && group.name.trim().length > 0) {
-                options.push({ value: group.name, label: group.name });
+        areas.forEach((area) => {
+            if (area && area.name && area.name.trim().length > 0 && area.trail_ids && Array.isArray(area.trail_ids) && area.trail_ids.length > 0) {
+                options.push({ value: area.name, label: area.name });
             }
         });
 
@@ -623,7 +650,6 @@ const dashboard = () => {
     // Compute list data from cached data and trail metadata
     useEffect(() => {
         if (
-            viewMode === "list" &&
             trailMetadata.length > 0 &&
             deviceMetadataCache !== null &&
             !isFetchingListData.current
@@ -671,7 +697,7 @@ const dashboard = () => {
                         trailInformation.set(trailId, currentInformation);
                     });
 
-                    const listData = trails
+                    const allListData = trails
                     .filter((t) => t && t.name && t.id && t.id !== 0)
                     .map((trail) => {
                         const information = trailInformation.get(trail.id);
@@ -689,7 +715,7 @@ const dashboard = () => {
                     })
                     .sort((a, b) => a.trail_name.localeCompare(b.trail_name));
 
-                    setTrailListData(listData);
+                    setAllListData(allListData);
                     setLoadingListData(false);
                     isFetchingListData.current = false;
                 } catch (error) {
@@ -700,7 +726,22 @@ const dashboard = () => {
                 }
             })();
         }
-    }, [viewMode, trailMetadata, deviceMetadataCache]);
+    }, [trailMetadata, deviceMetadataCache]);
+
+    // Update displayed list data to match trails variable
+    useEffect(() => {
+        if (
+            viewMode === "list" &&
+            allListData.length > 0 &&
+            !isFetchingListData.current
+        ) {
+            if (trails.length == 0)
+                setTrailListData(allListData);
+            else
+                setTrailListData(allListData.filter((item) => trails.includes(item.trail_name)));
+
+        }
+    }, [viewMode, trails, allListData]);
 
     // Reset fetch flag when switching away from list view
     useEffect(() => {
@@ -757,16 +798,81 @@ const dashboard = () => {
         };
     }
 
+    function getPlotData(lines: Line[]): Data[] {
+        const data: Data[] = [];
+        // Enable this to display percentiles (update counts to use real percentiles)
+        if (lines.length === 1 && false) {
+            data.push({
+                x: lines[0].startDates.map(d => d.toISOString()),
+                y: lines[0].counts.map(c => c * 1.2),
+                type: "scatter",
+                mode: "lines",
+                line: { width: 0 },
+                hoverinfo: "skip",
+                showlegend: false
+            });
+            data.push({
+                x: lines[0].startDates.map(d => d.toISOString()),
+                y: lines[0].counts.map(c => c * .8),
+                type: "scatter",
+                mode: "lines",
+                line: { width: 0 },
+                fill: "tonexty",
+                fillcolor: "rgb(179, 205, 227)", // Pastel1 color (light blue)
+                name: "25th-75th Percentile",
+                hoverinfo: "skip"
+            });
+        }
+        lines.forEach(line => {
+            data.push({
+                x: line.startDates.map(d => d.toISOString()),
+                y: line.counts,
+                type: "scatter",
+                mode: "lines+markers",
+                name: line.trail_name,
+                line: {
+                    width: 3,
+                    color: line == lines[0] ? "#1F77B4" : undefined  // D3[0] default first line color
+                },
+                marker: {
+                    size: 6,
+                },
+                hovertemplate: line.counts.map((count: number, i: number) => {
+                    const s = new Date(line.startDates[i]);
+                    const e = new Date(line.endDates[i]);
+                    const sString = moment(s).tz("America/New_York").format("MMM D");
+                    const sYear = moment(s).tz("America/New_York").format("YYYY");
+                    const eString = moment(e).tz("America/New_York").format("MMM D");
+                    const eYear = moment(e).tz("America/New_York").format("YYYY");
+                    const sHour = moment(s).tz("America/New_York").format("h:mm A");
+
+                    let dateString: string;
+                    let countString: string;
+                    if (line.granularity === Granularity.Hour) {
+                        dateString = `${sString} ${sHour}`;
+                    } else if (line.granularity === Granularity.Day) {
+                        dateString = `${sString}, ${sYear}`;
+                    } else {
+                        dateString = `${sString}, ${sYear} - ${eString}, ${eYear}`;
+                    }
+                    countString = line.noDatas[i] ? "No Data" : `Count: ${count}`
+                    return `${dateString} | ${countString}`
+                  })
+            });
+        })
+        return data;
+    }
+
     // Makes graph columns have alternating colors
     function generateVerticalBands(lines: Line[]): NonNullable<Layout["shapes"]> {
         const shapes: NonNullable<Layout["shapes"]> = [];
         let dates;
-        if (!lines.length || !lines[0].startDate?.length) {
+        if (!lines.length || !lines[0].startDates?.length) {
             if (!selectedDate || !selectedDateEnd)
                 return shapes;
             dates = getDateRanges(selectedDate, selectedDateEnd, granularity).map(d => d.start.toISOString())
         } else {
-            dates = lines[0].startDate.map(d => d.toISOString());
+            dates = lines[0].startDates.map(d => d.toISOString());
         }
 
         for (let i = 0; i < dates.length - 1; i++) {
@@ -791,27 +897,25 @@ const dashboard = () => {
 
     return (
         <div data-testid="dashboard-root">
-            <Navbar />
             <div className="flex flex-col">
                 <div className="filter-container flex w-full justify-between items-end px-6 py-2">
                     <div className="flex gap-8 items-start flex-wrap">
                         <div className="flex gap-2">
                             <div className="filter-group flex flex-col">
-
                                 <label>Date Range:</label>
                                 <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
                             </div>
                             <div className="filter-group flex flex-col">
                                 <label>Granularity:</label>
                                 <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
-                                    <SelectTrigger className="w-[150px]">
-                                        <SelectValue placeholder="Select an option" />
+                                    <SelectTrigger className="w-[150px]" data-testid="granularity-select">
+                                        <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
                                     </SelectTrigger>
 
                                     <SelectContent>
                                         <SelectGroup>
                                             {granularityOptions.map((option) => (
-                                                <SelectItem key={option} value={option}>
+                                                <SelectItem key={option} value={option} data-testid="granularity-option">
                                                     {GranularityText[option]}
                                                 </SelectItem>
                                             ))}
@@ -820,119 +924,101 @@ const dashboard = () => {
                                 </Select>
                             </div>
                         </div>
-                        <div className="filter-group flex flex-col">
-                            <label>Granularity:</label>
-                            <Select value={granularity}  onValueChange={(value) => setGranularity(value as Granularity)}>
-                            <SelectTrigger className="w-[150px]" data-testid="granularity-select">
-                                <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                <SelectGroup>
-                                {granularityOptions.map((option) => (
-                                    <SelectItem key={option} value={option} data-testid="granularity-option">
-                                    {GranularityText[option]}
-                                    </SelectItem>
-                                ))}
-                                </SelectGroup>
-                            </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                     <div className="filter-group flex flex-col">
-
+                        <label>Areas:</label>
+                        <MultiSelect ref={areaSelectRef} options={areaOptions} onValueChange={handleAreaChange} value={selectedAreas} data-testid="area-selector" />
+                    </div>
+                    <div className="filter-group flex flex-col">
                         <label>Trails:</label>
                         <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} data-testid="trail-selector"/>
-
-                        </div>
-                        <div className="filter-group flex flex-col">
-
-                        <label>Trail Groups:</label>
-                        <MultiSelect options={fillTrailGroupsMultiselect()} onValueChange={setSelectedGroups} value={selectedGroups} data-testid="trail-group-selector" />
-
-                        </div>
-                        <div className="flex flex-col ml-auto">
-                            <label>Additional Options:</label>
-                            <div className="flex flex-row gap-2">
-                                {(currentRole === null ) && (
-                                    <div>Please log in or register to view additional options.</div>
-                                )}
-                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                    <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
-                                )}
-                                {currentRole !== null && (
-                                    <Popover open={isDownloadingStatus !== "idle"}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
-                                                Export Data
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            {isDownloadingStatus === "downloading" && (
-                                                <div>
-                                                    <Loader2 className="animate-spin" />
-                                                    <span>Downloading...</span>
-                                                </div>
-                                            )}
-                                            {isDownloadingStatus === "done" && (
-                                                <div>
-                                                    <Check />
-                                                    <span>Downloaded</span>
-                                                </div>
-                                            )}
-                                            {isDownloadingStatus === "error" && (
-                                                <div>
-                                                    <X/>
-                                                    <span>Failed to download.</span>
-                                                </div>
-                                            )}
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                                {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                  <Popover open={isUploadingStatus !== "idle"}>
-                                      <PopoverTrigger asChild>
-                                          <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
-                                              Import Data
-                                          </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                          {isUploadingStatus === "uploading" && (
-                                              <div>
-                                                  <Loader2 className="animate-spin" />
-                                                  <span>Uploading...</span>
-                                              </div>
-                                          )}
-                                          {isUploadingStatus === "done" && (
-                                              <div>
-                                                  <Check/>
-                                                  <span>Uploaded</span>
-                                              </div>
-                                          )}
-                                          {isUploadingStatus === "error" && (
-                                              <div>
-                                                  <X/>
-                                                  <span>Failed to import.</span>
-                                              </div>
-                                          )}
-                                      </PopoverContent>
-                                  </Popover>
-                                )}
-                            </div>
+                    </div>
+                    <div className="flex flex-col ml-auto">
+                        <label>Additional Options:</label>
+                        <div className="flex flex-row gap-2">
+                            {(currentRole === null ) && (
+                                <div>Please log in or register to view additional options.</div>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                            )}
+                            {currentRole !== null && (
+                                <Popover open={isDownloadingStatus !== "idle"}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
+                                            Export Data
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        {isDownloadingStatus === "downloading" && (
+                                            <div>
+                                                <Loader2 className="animate-spin" />
+                                                <span>Downloading...</span>
+                                            </div>
+                                        )}
+                                        {isDownloadingStatus === "done" && (
+                                            <div>
+                                                <Check />
+                                                <span>Downloaded</span>
+                                            </div>
+                                        )}
+                                        {isDownloadingStatus === "error" && (
+                                            <div>
+                                                <X/>
+                                                <span>Failed to download.</span>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                                <Popover open={isUploadingStatus !== "idle"}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
+                                            Import Data
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        {isUploadingStatus === "uploading" && (
+                                            <div>
+                                                <Loader2 className="animate-spin" />
+                                                <span>Uploading...</span>
+                                            </div>
+                                        )}
+                                        {isUploadingStatus === "done" && (
+                                            <div>
+                                                <Check/>
+                                                <span>Uploaded</span>
+                                            </div>
+                                        )}
+                                        {isUploadingStatus === "error" && (
+                                            <div>
+                                                <X/>
+                                                <span>Failed to import.</span>
+                                            </div>
+                                        )}
+                                    </PopoverContent>
+                                </Popover>
+                            )}
                         </div>
                     </div>
                 </div>
+            </div>
             <div className="w-full border-t bg-gray-50">
                 <div>
                     <div className="flex p-2.5 justify-between items-center">
                         <Button variant="primary" onClick={toggleView} className="items-center" data-testid="toggle-view">Toggle View</Button>
-                            {viewMode === "graph" ? (
+                            {viewMode === "graph" && !graphBroken ? (
                                 <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
-                                {graphTitle}
-                            </div>
-                        ) : (
-                            <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
-                        )}
+                                    {graphTitle}
+                                </div>
+                            ) : viewMode === "graph"  ? (
+                                <div className="text-lg font-bold text-red-700 rounded-lg border border-red-800 bg-red-50 px-4 py-0.75 mx-2" data-testid="graph-title">
+                                    Failed to Load Trail Data. Check Your Connection and Try Again.
+                                </div>
+                            ) : (
+                                <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
+                            )}
                         <div className="flex gap-2.5">
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                                 <DropdownMenu>
@@ -950,12 +1036,12 @@ const dashboard = () => {
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="primary" data-testid="trail-group-options">Trail Group Options</Button>
+                                        <Button variant="primary" data-testid="area-options">Area Options</Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
                                         <DropdownMenuGroup>
-                                            <DropdownMenuItem onClick={handleAddGroup} data-testid="add-trail-group">Add Group</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleEditGroup} data-testid="edit-trail-group">Edit Group</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleAddArea} data-testid="add-area">Add Area</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleEditArea} data-testid="edit-area">Edit Area</DropdownMenuItem>
                                         </DropdownMenuGroup>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -972,36 +1058,7 @@ const dashboard = () => {
                                 config={{ displayModeBar: false, responsive: true }}
                                 useResizeHandler={true}
                                 style={{ width: "100%", height: "100%" }}
-                                data={graphLines.map((line) => ({
-                                    x: line.startDate.map(d => d.toISOString()),
-                                    y: line.count,
-                                    type: "scatter",
-                                    mode: "lines+markers",
-                                    name: line.trail_name,
-                                    line: {
-                                        width: 3,
-                                    },
-                                    marker: {
-                                        size: 6,
-                                    },
-                                    hovertemplate: line.count.map((count: number, i: number) => {
-                                        const s = new Date(line.startDate[i]);
-                                        const e = new Date(line.endDate[i]);
-                                        const sString = moment(s).tz("America/New_York").format("MMM D");
-                                        const sYear = moment(s).tz("America/New_York").format("YYYY");
-                                        const eString = moment(e).tz("America/New_York").format("MMM D");
-                                        const eYear = moment(e).tz("America/New_York").format("YYYY");
-                                        const sHour = moment(s).tz("America/New_York").format("h:mm A");
-
-                                        if (line.granularity === Granularity.Hour) {
-                                            return `${sString} ${sHour} | Count: ${count}`;
-                                        } else if (line.granularity === Granularity.Day) {
-                                            return `${sString}, ${sYear} | Count: ${count}`;
-                                        } else {
-                                            return `${sString}, ${sYear} - ${eString}, ${eYear} | Count: ${count}`;
-                                        }
-                                      }),
-                                }))}
+                                data={getPlotData(graphLines)}
                                 layout={getPlotLayout(graphLines)}
                             />
                         </div>
@@ -1037,20 +1094,20 @@ const dashboard = () => {
                 availableTrails={trailMetadata}
                 isCreateMode={true}
             />
-            <EditTrailGroupModal
-                isOpen={isEditGroupModalOpen}
-                onClose={() => setIsEditGroupModalOpen(false)}
+            <EditAreaModal
+                isOpen={isEditAreaModalOpen}
+                onClose={() => setIsEditAreaModalOpen(false)}
                 onUpdate={handleTrailUpdated}
                 availableTrails={trailMetadata}
-                trailGroups={trailGroups}
+                areas={areas}
                 isCreateMode={false}
             />
-            <EditTrailGroupModal
-                isOpen={isAddGroupModalOpen}
-                onClose={() => setIsAddGroupModalOpen(false)}
+            <EditAreaModal
+                isOpen={isAddAreaModalOpen}
+                onClose={() => setIsAddAreaModalOpen(false)}
                 onUpdate={handleTrailUpdated}
                 availableTrails={trailMetadata}
-                trailGroups={trailGroups}
+                areas={areas}
                 isCreateMode={true}
             />
             <AssociateDeviceModal

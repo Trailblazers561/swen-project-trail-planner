@@ -1,6 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { UserRole, Granularity } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
+import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
 
 export function TrailData() {
   /**
@@ -12,7 +13,6 @@ export function TrailData() {
     if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
-
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
       headers: await authHeaders(),
@@ -20,16 +20,16 @@ export function TrailData() {
   }
 
   /**
-   * Get trail groups
-   * @param trailGroupList - Optional list of trail group names of trail groups to retrieve
+   * Get areas
+   * @param areaList - Optional list of area names of areas to retrieve
    */
-  async function getTrailGroupMetadata(trailGroupList?: string[]) {
+  async function getAreaMetadata(areaList?: string[]) {
     const queries: string[] = []
-    if (trailGroupList)
-      trailGroupList.forEach(trailGroup => {queries.push(`trail_group=${encodeURIComponent(trailGroup)}`)})
+    if (areaList)
+      areaList.forEach(area => {queries.push(`name=${encodeURIComponent(area)}`)})
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
-    return await request(`${API_URL}/trail_groups${queryString}`, {
+    return await request(`${API_URL}/areas${queryString}`, {
       method: "GET",
       headers: await authHeaders(),
     });
@@ -65,7 +65,7 @@ export function TrailData() {
     const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
     if (granularity == Granularity.Year) granularity = Granularity.Month;
 
-    const url = `${API_URL}/trail_data?start=${startDate.toISOString()}&end=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
+    const url = `${API_URL}/trail_data?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: await authHeaders(),
@@ -73,20 +73,28 @@ export function TrailData() {
   }
 
   /**
-   * Update trail metadata (name and/or trail group)
+   * Update trail metadata (name and/or area)
    * @param trailId - The ID of the trail to update
    * @param trailName - new name for the trail
-   * @param trailGroup - Optional trail group name to assign the trail to
+   * @param area - Optional area name to assign the trail to
    */
-  async function updateTrailMetadata(trailId: number, trailName?: string, trailGroup?: string) {
+  async function updateTrailMetadata(trailId: number, trailName?: string, area?: string, notes?: string, latitude?: number, longitude?: number) {
+    const payload: Record<string, any> = {trail_id: trailId};
+    if (trailName)
+      payload.name = trailName;
+    if (area)
+      payload.area_name = area;
+    if (notes)
+      payload.notes = notes;
+    if (latitude)
+      payload.latitude = latitude;
+    if (longitude)
+      payload.longitude = longitude;
+
     return await request(`${API_URL}/trail_metadata`, {
       method: "PUT",
       headers: await authHeaders(),
-      body: JSON.stringify({
-        trail_id: trailId,
-        trail_name: trailName,
-        trail_group: trailGroup,
-      }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -97,7 +105,7 @@ export function TrailData() {
    * @param dateInstalled - Optional: Date the device was installed on the new trail
    * @param dateRemoved - Optional: Date the device was removed from the old trail
    */
-  async function updateDeviceTrailAssociation(deviceId: string, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
+  async function updateDeviceTrailAssociation(deviceId: number, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
     const payload: Record<string, any> = {
       device_id: deviceId,
       trail_id: trailId,
@@ -117,18 +125,18 @@ export function TrailData() {
   /**
    * Create a new trail
    * @param trailName - The name of the trail to create
-   * @param trailGroup - Optional trail group name to assign the trail to
+   * @param area - Optional area name to assign the trail to
    * @param notes - Optional notes for the created trail
    * @param latitude - Optional latitude of the trail head
    * @param longitude - Optional longitude of the trail head
    * @param dateActivated - Optional date trail was activated, defaults to current time if not specified
    */
-  async function createTrail(trailName: string, trailGroup?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
+  async function createTrail(trailName: string, area?: string, notes?: string, latitude?: number, longitude?: number, dateActivated?: Date) {
     const payload: Record<string, any> = {
-      trail_name: trailName
+      name: trailName
     }
-    if (trailGroup)
-      payload.trail_group = trailGroup;
+    if (area)
+      payload.area_name = area;
     if (notes)
       payload.notes = notes;
     if (latitude)
@@ -146,9 +154,9 @@ export function TrailData() {
 
   /**
    * Retires a trail and all associated data
-   * @param trailId - The ID of the trail to delete
+   * @param trailId - The ID of the trail to retire
    */
-  async function deleteTrail(trailId: number) {
+  async function retireTrail(trailId: number) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "DELETE",
       headers: await authHeaders(),
@@ -159,49 +167,49 @@ export function TrailData() {
   }
 
   /**
-   * Create a new trail group (NOT Implemented)
-   * @param groupName - The name of the trail group to create
-   * @param trailIds - Optional array of trail IDs to include in the group
+   * Create a new area
+   * @param areaName - The name of the area to create
+   * @param trailIds - Optional array of trail IDs to include in the area
    */
-  async function createTrailGroup(groupName: string, trailIds: number[] = []) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function createArea(areaName: string, trailIds: number[] = []) {
+    return await request(`${API_URL}/areas`, {
       method: "POST",
       headers: await authHeaders(),
       body: JSON.stringify({
-        group_name: groupName,
+        name: areaName,
         trail_ids: trailIds,
       }),
     });
   }
 
   /**
-   * Update a trail group (rename or change trail IDs) (NOT Implemented)
-   * @param oldGroupName - The current name of the trail group
-   * @param newGroupName - Optional new name for the trail group
-   * @param trailIds - Optional array of trail IDs to update in the group
+   * Update a area (rename or change trail IDs)
+   * @param oldName - The current name of the area
+   * @param newName - Optional new name for the area
+   * @param trailIds - Optional array of trail IDs to update in the area
    */
-  async function updateTrailGroup(oldGroupName: string, newGroupName?: string, trailIds?: number[]) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function updateArea(oldName: string, newName?: string, trailIds?: number[]) {
+    return await request(`${API_URL}/areas`, {
       method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
-        old_group_name: oldGroupName,
-        new_group_name: newGroupName,
+        original_name: oldName,
+        new_name: newName,
         trail_ids: trailIds,
       }),
     });
   }
 
   /**
-   * Delete a trail group
-   * @param groupName - The name of the trail group to delete
+   * Delete a area
+   * @param areaName - The name of the area to delete
    */
-  async function deleteTrailGroup(groupName: string) {
-    return await request(`${API_URL}/trail_groups`, {
+  async function deleteArea(areaName: string) {
+    return await request(`${API_URL}/areas`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
-        group_name: groupName,
+        name: areaName,
       }),
     });
   }
@@ -216,8 +224,8 @@ export function TrailData() {
   async function exportCSV(trailIdList: number[], startDate: Date, endDate: Date, granularity?: Granularity) {
     const queries: string[] = []
     trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
-    queries.push(`start_date=${startDate.toISOString()}`)
-    queries.push(`end_date=${endDate.toISOString()}`)
+    queries.push(`start_time=${startDate.toISOString()}`)
+    queries.push(`end_time=${endDate.toISOString()}`)
     if (granularity)
       queries.push(`granularity=${granularity}`)
     const queryString = queries.length ? `?${queries.join("&")}` : "";
@@ -234,7 +242,7 @@ export function TrailData() {
    */
       async function importCSV(csvFile: File) {
 
-        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv/csv-url`, {
+        const { uploadUrl, s3FilePath } = (await request(`${API_URL}/csv_url`, {
           method: "GET",
           headers: await authHeaders(),
         }))["json"];
@@ -259,7 +267,6 @@ export function TrailData() {
    * @param targetUserRole - Optional List of trail IDs to include in the csv
    */
   async function getUsers(maxCount?: number, targetUserRole?: UserRole) {
-    //?trails=${trailsParam}&start=${startdate}&end=${enddate}
     const queries: string[] = []
     if (maxCount !== undefined)
       queries.push(`max_count=${maxCount.toString()}`)
@@ -275,15 +282,15 @@ export function TrailData() {
 
   /**
    * Updates cognito users role
-   * @param targetUserId - User ID for the user that will be updated
+   * @param targetUsername - Username for the user that will be updated
    * @param targetUserRole - UserRole to set the given user to
    */
-  async function updateUserRole(targetUserId: string, targetUserRole: UserRole) {
+  async function updateUserRole(targetUsername: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
       method: "POST",
       headers: await authHeaders(),
       body: JSON.stringify({
-        target_user_id: targetUserId,
+        target_username: targetUsername,
         target_user_role: targetUserRole
       }),
     });
@@ -293,16 +300,16 @@ export function TrailData() {
 
   return {
     getTrailMetadata,
-    getTrailGroupMetadata,
+    getAreaMetadata,
     getDeviceMetadata,
     getTrailLogs,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
-    deleteTrail,
-    createTrailGroup,
-    updateTrailGroup,
-    deleteTrailGroup,
+    retireTrail,
+    createArea,
+    updateArea,
+    deleteArea,
     exportCSV,
     importCSV,
     getUsers,
@@ -310,20 +317,23 @@ export function TrailData() {
   };
 }
 
+let refreshing: Promise<any | undefined>  | null = null;
 async function authHeaders() {
-  const idToken = sessionStorage.getItem("idToken");
-  if (!idToken)
-    return {Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`, "Content-Type": "application/json"};
-
-  const expiration = JSON.parse(atob(idToken.split('.')[1]))["exp"] * 1000;
+  if (!isAuthenticated())
+    return {Authorization: `Bearer `, "Content-Type": "application/json"};
 
   // If token is expired refresh it
-  if (expiration < Date.now()) {
-    await refreshTokens();
+  if (isTokenExpired()) {
+    // If we haven't started a refresh then start a refresh
+    if (!refreshing)
+        refreshing = refreshTokens().finally(() => {refreshing = null;});
+
+    // Wait for refresh to finish
+    await refreshing;
   }
 
   return {
-    Authorization: `Bearer ${sessionStorage.getItem("accessToken")}`,
+    Authorization: `Bearer ${getToken()}`,
     "Content-Type": "application/json",
   };
 }

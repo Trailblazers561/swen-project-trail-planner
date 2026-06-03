@@ -81,7 +81,7 @@ Function installNode
 
 Function checkSetupCompletion{
     
-    $setupComplete = $env:TrailPlannerSetupComplete
+    $setupComplete = $env:TrailCountSetupComplete
     if($setupComplete){
         Write-Output "This script has been run before, do you want to run it again? [y/n]"
 
@@ -163,7 +163,7 @@ installNode
 awsSetupInstructions
 
 # Set this env variable so that setup isn't reapeated if this script has already been run
-[System.Environment]::SetEnvironmentVariable("TrailPlannerSetupComplete", "True", "User")
+[System.Environment]::SetEnvironmentVariable("TrailCountSetupComplete", "True", "User")
 
 Read-Host -Prompt "Setup complete, press Enter to exit."
 exit 0
