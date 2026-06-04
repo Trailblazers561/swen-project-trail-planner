@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
-import { Granularity } from "./lib/apiTypes";
+import { TimeFrame } from "./lib/apiTypes";
 import {
     Select,
     SelectContent,
@@ -36,7 +36,7 @@ const LandingPage = () => {
         popupAnchor: [1, -36],
     });
 
-    const { getTrailMetadata, getTrailLogs } = TrailData();
+    const { getTrailMetadata, getHeatmapData } = TrailData();
 
     const [trails, setTrails] = useState<any[]>([]);
     const [trailUsage] = useState<Record<number, number>>({}); 
@@ -49,30 +49,39 @@ const LandingPage = () => {
 
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
-    const [selectedPreset, setSelectedPreset] = useState("month");
+    const [selectedPreset, setSelectedPreset] = useState<TimeFrame | null>(TimeFrame.Month);
 
     const applyPreset = (preset: string) => {
-    const end = new Date();
-    const start = new Date();
-    
-    switch (preset) {
-        case "today":
-            start.setHours(0, 0, 0, 0);
-            break;
+        const end = new Date();
+        const start = new Date();
+        let presetValue = null;
+        
+        switch (preset) {
+            case "day":
+                presetValue = TimeFrame.Day;
+                start.setHours(0, 0, 0, 0);
+                break;
 
-        case "2weeks":
-            start.setDate(end.getDate() - 14);
-            break;
+            case "week":
+                presetValue = TimeFrame.Week;
+                start.setDate(end.getDate() - 7);
+                break;
 
-        case "month":
-            start.setMonth(end.getMonth() - 1);
-            break;
+            case "fortnight":
+                presetValue = TimeFrame.Fortnight;
+                start.setDate(end.getDate() - 14);
+                break;
 
-    }
+            case "month":
+                presetValue = TimeFrame.Month;
+                start.setMonth(end.getMonth() - 1);
+                break;
 
-    setSelectedPreset(preset);
-    setStartDate(start);
-    setEndDate(end);
+        }
+
+        setSelectedPreset(presetValue);
+        setStartDate(start);
+        setEndDate(end);
     };
 
     useEffect(() => {
@@ -129,35 +138,21 @@ const LandingPage = () => {
         try {
             setLoadingUsage(true);
 
-
             if (!startDate || !endDate) return;
 
             const trailIds = parsedTrails.map(t => t.id);
 
             if (trailIds.length === 0) return;
 
-            const response = await getTrailLogs(
-                trailIds,
-                startDate,
-                endDate,
-                Granularity.Day
-            );
+            if (!selectedPreset) return;
+
+            const response = await getHeatmapData(trailIds, selectedPreset);
 
             if (!response.success) return;
 
-            const logs = await response.json;
+            const data = await response.json;
 
-            const usageMap: Record<number, number> = {};
-
-            logs.forEach((log: any) => {
-                if (!usageMap[log.trail_id]) {
-                    usageMap[log.trail_id] = 0;
-                }
-
-                usageMap[log.trail_id] += log.count;
-            });
-
-            setDisplayedUsage(usageMap);
+            setDisplayedUsage(data);
 
         } catch (err) {
             console.error("Failed to fetch trail usage:", err);
@@ -172,7 +167,7 @@ const LandingPage = () => {
     }, [parsedTrails, startDate, endDate]);
 
 
-    const getTrailColor = (trailId: number, days: number) => {
+    const getTrailColor = (trailId: number) => {
 
         if (loadingUsage) {
             const existingUsage = trailUsage[trailId];
@@ -182,23 +177,21 @@ const LandingPage = () => {
             }
         }
 
-        const usage = displayedUsage[trailId];
+        const intensity = displayedUsage[trailId];
 
-        if (usage === undefined || days <= 0) return "gray";
-
-        const avg = usage / days;
+        if (intensity === undefined || intensity === null) return "gray";
 
         switch (true) {
-            case avg < 20:
+            case intensity <= -1.5:
                 return "#3b82f6";
 
-            case avg < 35:
+            case intensity <= -0.5:
                 return "#22c55e";
 
-            case avg < 50:
+            case intensity <= 0.5:
                 return "#eab308";
 
-            case avg < 75:
+            case intensity <= 1.5:
                 return "#f97316";
 
             default:
@@ -232,7 +225,7 @@ const LandingPage = () => {
 
                     <div className="flex justify-center">
                         <Select
-                            value={selectedPreset}
+                            value={selectedPreset ?? ""}
                             onValueChange={(value) => applyPreset(value)}
                         >
                         <SelectContent className="z-[10000]" />
@@ -241,8 +234,9 @@ const LandingPage = () => {
                         </SelectTrigger>
 
                         <SelectContent className="z-[10000]">
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
+                            <SelectItem value="day">Yesterday</SelectItem>
+                            <SelectItem value="week">Last Week</SelectItem>
+                            <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
                             <SelectItem value="month">Last Month</SelectItem>
                         </SelectContent>
                     </Select>
@@ -256,7 +250,7 @@ const LandingPage = () => {
                         ? startDate.toISOString().split("T")[0] : ""
                         }
                         onChange={(e) => {
-                            setSelectedPreset("custom");
+                            setSelectedPreset(null);
                             setStartDate(new Date(e.target.value));
                         }}
                         className="border rounded px-2 py-1 bg-white"
@@ -269,7 +263,7 @@ const LandingPage = () => {
                             ? endDate.toISOString().split("T")[0] : ""
                         } 
                         onChange={(e) => {
-                            setSelectedPreset("custom");
+                            setSelectedPreset(null);
                             setEndDate(new Date(e.target.value));
                         }}
                         className="border rounded px-2 py-1 bg-white"
@@ -357,7 +351,7 @@ const LandingPage = () => {
                     <Marker
                         key={trail.id}
                         position={[trail.latitude, trail.longitude]}
-                        icon={createTrailIcon(getTrailColor(trail.id, days))}
+                        icon={createTrailIcon(getTrailColor(trail.id))}
                     >
                         <Popup>
                             <div

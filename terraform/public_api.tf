@@ -56,6 +56,13 @@ locals {
         handler = "devices_put.upload_device_data"
       }
     }
+    heatmap = {
+      GET = {
+        file = "heatmap/heatmap_get.py"
+        handler = "heatmap_get.get_heatmap_data"
+        timeout = 10
+      }
+    }
     trail_data = {
       GET = {
         file = "trail_data/trail_data_get.py"

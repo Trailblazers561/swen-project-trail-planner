@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { UserRole, Granularity } from "./lib/apiTypes";
+import { UserRole, Granularity, TimeFrame } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
 import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
 
@@ -66,6 +66,23 @@ export function TrailData() {
     if (granularity == Granularity.Year) granularity = Granularity.Month;
 
     const url = `${API_URL}/trail_data?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
+   * Get device logs for specific trails between two dates
+   * @param trailIdList array of trail ids of trails to retrieve data for
+   * @param timeFrame TimeFrame of heatmap data to retrieve
+   */
+  async function getHeatmapData(trailIdList: number[], timeFrame: TimeFrame) {
+    const trailIdQueries: string[] = []
+    trailIdList.forEach(id => {trailIdQueries.push(`trail_id=${id}`)})
+    const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
+
+    const url = `${API_URL}/heatmap?time_frame=${timeFrame}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: await authHeaders(),
@@ -303,6 +320,7 @@ export function TrailData() {
     getAreaMetadata,
     getDeviceMetadata,
     getTrailLogs,
+    getHeatmapData,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
