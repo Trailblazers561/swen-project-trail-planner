@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp, confirmSignUp, resendConfirmationCode, forgotPassword, confirmForgotPassword } from "./authService";
 import React from "react";
+import MediaQuery from "react-responsive";
+import { useMediaQuery } from "react-responsive";
 import { Button } from "@/components/templates/button";
 import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight, LoaderCircle } from "lucide-react";
 import { useAuth } from "@/Context";
@@ -14,6 +16,7 @@ import {
   CodeMismatchException,
   ExpiredCodeException,
   InvalidParameterException,
+  DeviceType$,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 enum LoginMode {
@@ -261,123 +264,157 @@ const LoginPage = () => {
         resendPasswordCode();
   }, [resentCode]);
 
+  type DeviceType = {
+    children: React.ReactNode;
+  }
+
+  const Desktop = ({children}: DeviceType) => {
+    const isDesktop = useMediaQuery({ minWidth: 992 })
+    return isDesktop ? children : null
+  }
+  const Mobile = ({children}: DeviceType) => {
+    const isMobile = useMediaQuery({maxWidth: 500})
+    return isMobile ? children: null
+  }
+
   return (
     <div className="flex h-screen">
-
-      <div
-        className="fixed left-0 top-0 h-screen w-11/16 bg-cover bg-center"
-        style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
-      >
-        <div className="absolute inset-0 bg-black/20" />
-        <img
-          src="/AWA-logo.png"
-          alt="Logo"
-          className="absolute top-8 left-1/2 w-56 md:w-64 -translate-x-1/2"
-        />
-      </div>
+      <Desktop>
+        <div
+          className="fixed left-0 top-0 h-screen w-11/16 bg-cover bg-center"
+          style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-black/20" />
+          <img
+            src="/AWA-logo.png"
+            alt="Logo"
+            className="absolute top-8 left-1/2 w-56 md:w-64 -translate-x-1/2"
+          />
+        </div>
+      </Desktop>
+      <Mobile>
+        <div
+          className="fixed left-0 top-0 h-5/16 w-screen bg-cover bg-center"
+          style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
+        >
+          <div className="absolute inset-0 bg-black/20" />
+          <img
+            src="/AWA-logo.png"
+            alt="Logo"
+            className="absolute top-8 left-1/2 max-h-10/16 max-w-10/16 md:w-64 -translate-x-1/2"
+          />
+        </div>
+      </Mobile>
 
       {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
       {loading && (<div className="fixed right-0 top-0 h-screen w-5/16  bg-black/40 z-499"></div>)}
       <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
         <div className="flex w-full max-w-4xl items-start" id="loginForm">
           {loginMode == LoginMode.SIGN_IN && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
-              <p className="text-gray-500 mb-6">Sign in to your account</p>
-              <form onSubmit={handleSignIn} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <span className="text-lg font-semibold mb-1">There was a problem</span>
-                      {loginError === LoginError.USER_NOT_FOUND ? (
-                        <p className="text-sm text-red-700">
-                          No account was found with the specified username or email
-                        </p>
-                      ) : loginError === LoginError.NOT_AUTHORIZED ? (
-                        <p className="text-sm text-red-700">
-                          Incorrect username/email or password
-                        </p>
-                      ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
-                        <>
+            <div>
+            <Desktop>
+              <div className="flex-1 px-10 pt-6 h-124">
+                <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
+                <p className="text-gray-500 mb-6">Sign in to your account</p>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  {loginError !== null && (
+                    <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
+                      <div className="mt-0.5">
+                        <CircleAlert size={30} />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-lg font-semibold mb-1">There was a problem</span>
+                        {loginError === LoginError.USER_NOT_FOUND ? (
                           <p className="text-sm text-red-700">
-                            Please verify your email before logging in
+                            No account was found with the specified username or email
                           </p>
-                          <button
-                            type="button"
-                            onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
-                            className="text-sm hover:underline cursor-pointer"
-                          >
-                            Resend code?
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
+                        ) : loginError === LoginError.NOT_AUTHORIZED ? (
+                          <p className="text-sm text-red-700">
+                            Incorrect username/email or password
+                          </p>
+                        ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
+                          <>
+                            <p className="text-sm text-red-700">
+                              Please verify your email before logging in
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
+                              className="text-sm hover:underline cursor-pointer"
+                            >
+                              Resend code?
+                            </button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-red-700">
+                            An error has occured
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    placeholder="Username or Email"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    required
+                    data-testid="username-input"
+                  />
+                  <div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                        data-testid="password-input"
+                      />
+                      <span
+                        onMouseLeave={() => setShowPassword(false)}
+                        onMouseDown={() => setShowPassword(true)}
+                        onMouseUp={() => setShowPassword(false)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                      </span>
+                    </div>
+                    <div className="text-right text-sm">
+                      <button
+                        type="button"
+                        onClick={() => setLoginMode(LoginMode.FORGOT_PASSWORD)}
+                        className="text-dark-yellow-green hover:underline cursor-pointer"
+                      >
+                        Forgot password?
+                      </button>
                     </div>
                   </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Username or Email"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                  data-testid="username-input"
-                />
-                <div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      required
-                      data-testid="password-input"
-                    />
-                    <span
-                      onMouseLeave={() => setShowPassword(false)}
-                      onMouseDown={() => setShowPassword(true)}
-                      onMouseUp={() => setShowPassword(false)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    >
-                      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                    </span>
-                  </div>
-                  <div className="text-right text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setLoginMode(LoginMode.FORGOT_PASSWORD)}
-                      className="text-dark-yellow-green hover:underline cursor-pointer"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
+                  <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
+                    Login
+                  </Button>
+                </form>
+                <div className="text-sm flex justify-between mt-10 border py-2 px-3 rounded-md">
+                  <span className="text-left">Dont have an account?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginMode(LoginMode.SIGN_UP);
+                      setUsername("");
+                      setPassword("");
+                    }}
+                    className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
+                  >
+                    Create an account{<ArrowRight size={18} />}
+                  </button>
                 </div>
-                <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
-                  Login
-                </Button>
-              </form>
-              <div className="text-sm flex justify-between mt-10 border py-2 px-3 rounded-md">
-                <span className="text-left">Dont have an account?</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginMode(LoginMode.SIGN_UP);
-                    setUsername("");
-                    setPassword("");
-                  }}
-                  className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
-                >
-                  Create an account{<ArrowRight size={18} />}
-                </button>
               </div>
+            </Desktop>
+            <Mobile>
+              <p>Hello</p>
+            </Mobile>
             </div>
           )}
           {loginMode == LoginMode.SIGN_UP && (
