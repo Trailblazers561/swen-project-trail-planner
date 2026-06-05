@@ -143,8 +143,6 @@ const LandingPage = () => {
 
             if (trailIds.length === 0) return;
 
-            if (!selectedPreset) return;
-
             const response = await getHeatmapData(trailIds, startDate, endDate);
 
             if (!response.success) return;
