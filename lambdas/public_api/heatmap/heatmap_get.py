@@ -1,5 +1,5 @@
-import calendar
 import json
+import math
 from datetime import datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -8,7 +8,7 @@ from boto3.dynamodb.conditions import Key
 
 from helper_functions import device_trail_log_day_table, device_trail_table, convert_decimals, cors_headers
 
-time_frames = {"day": 1, "week": 7, "fortnight": 14, "month": -1}
+algorithms = ("absolute", "relative")
 
 def get_heatmap_data(event, context):
     try:
@@ -17,86 +17,34 @@ def get_heatmap_data(event, context):
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
         trail_id_list = multi_params.get('trail_id')
-        time_frame = single_params.get("time_frame")
+        start_time = single_params.get("start_time")
+        end_time = single_params.get("end_time")
+        algorithm = single_params.get("algorithm", "absolute")
 
         if trail_id_list is None: raise ValueError("Missing required field(s): trail_id")
         if not all(id.isdigit() for id in trail_id_list): raise ValueError("Invalid trail_id_list format")
         trail_id_list_decimals = [Decimal(id) for id in trail_id_list]
 
-        if not time_frame: raise ValueError("Missing required field: time_frame")
-        if time_frame not in time_frames: raise ValueError("Invalid time_frame format")
+        if not start_time: raise ValueError("Missing required field: start_time")
+        if not end_time: raise ValueError("Missing required field: end_time")
 
-        print(f"Attempting to retrieve heatmap data for trails [{trail_id_list_decimals}], with time frame [{time_frame}]")
+        if algorithm not in algorithms: raise ValueError("Invalid algorithm format")
 
-        end_time = datetime.now().astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
-        if time_frame == "month":
-            if end_time.month == 1:
-                year = end_time.year - 1
-                month = 12
-            else:
-                year = end_time.year
-                month = end_time.month - 1
-            start_time = end_time.replace(year=year, month=month, day=max(end_time.day, calendar.monthrange(year, month)[1]))
-        else:
-            start_time = end_time - timedelta(days=time_frames[time_frame])
+        print(f"Attempting to retrieve heatmap data for trails [{trail_id_list_decimals}], from [{start_time}] to [{end_time}] with algorithm [{algorithm}]")
 
-        device_trail_ids = []
-        device_trail_cache = {}
+        start_time = datetime.fromisoformat(start_time).astimezone(ZoneInfo("America/New_York"))
+        end_time = datetime.fromisoformat(end_time).astimezone(ZoneInfo("America/New_York"))
 
-        # get all relevant devicetrail ids from trail ids
-        rows = []
-        for trail_id in trail_id_list_decimals:
-            rows.extend(device_trail_table.query(
-                IndexName="trail-index",
-                KeyConditionExpression=Key("trail_id").eq(trail_id)
-            ).get("Items", []))
+        # Add a day to end_time (since we subtract 1 from the timestamp this won't add a real day's data)
+        end_time = (end_time + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # cache device-trail-devicetrail relations
-        for row in rows:
-            if "id" in row:
-                device_trail_id = int(row["id"])
-                device_trail_ids.append(device_trail_id)
-                device_trail_cache[device_trail_id] = {
-                    "device_id": int(row["device_id"]) if "device_id" in row else "",
-                    "trail_id": int(row["trail_id"]) if "trail_id" in row else "",
-                }
+        trail_counts = retrieve_trail_data(trail_id_list_decimals, int(start_time.timestamp()), int(end_time.timestamp()))
 
-        # fetch relevant device logs from table in timestamp bounds
-        device_log_rows = []
-        for device_trail_id in device_trail_ids:
-            rows = device_trail_log_day_table.query(
-                KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(Decimal(start_time.timestamp()), Decimal(end_time.timestamp() -1))
-            ).get("Items", [])
-            device_log_rows.extend(rows)
-
-        device_log_rows = convert_decimals(device_log_rows)
-
-        # append rows with trail/device ids from cache
-        trail_counts = {int(id): None for id in trail_id_list_decimals}
-        trail_counts[0] = 0
-        for row in device_log_rows:
-            id = device_trail_cache[row["device_trail_id"]].get("trail_id", 0)
-            if not trail_counts.get(id):
-                trail_counts[id] = 0
-            trail_counts[id] += row.get("count", 0)
-
-        days = (end_time - start_time).days
-        trail_intensities = {}
-        for id, count in trail_counts.items():
-            if count == None:
-                trail_intensities[id] = None
-                continue
-            average = count / days
-            if average <= 19:
-                trail_intensities[id] = -2
-            elif average <= 34:
-                trail_intensities[id] = -1
-            elif average <= 49:
-                trail_intensities[id] = 0
-            elif average <= 74:
-                trail_intensities[id] = 1
-            else:
-                trail_intensities[id] = 2
+        match algorithm:
+            case "relative":
+                trail_intensities = get_relative_intensities(trail_counts, trail_id_list_decimals, start_time, end_time)
+            case _: #absolute
+                trail_intensities = get_absolute_intensities(trail_counts, trail_id_list_decimals, start_time, end_time)
 
         print(f"Heatmap data successfully retrieved")
         return {
@@ -118,3 +66,104 @@ def get_heatmap_data(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
+
+def retrieve_trail_data(trail_id_list_decimals, start_timestamp, end_timestamp):
+    device_trail_ids = []
+    device_trail_cache = {}
+
+    # get all relevant devicetrail ids from trail ids
+    rows = []
+    for trail_id in trail_id_list_decimals:
+        rows.extend(device_trail_table.query(
+            IndexName="trail-index",
+            KeyConditionExpression=Key("trail_id").eq(trail_id)
+        ).get("Items", []))
+
+    # cache device-trail-devicetrail relations
+    for row in rows:
+        if "id" in row:
+            device_trail_id = int(row["id"])
+            device_trail_ids.append(device_trail_id)
+            device_trail_cache[device_trail_id] = {
+                "device_id": int(row["device_id"]) if "device_id" in row else "",
+                "trail_id": int(row["trail_id"]) if "trail_id" in row else "",
+            }
+
+    # fetch relevant device logs from table in timestamp bounds
+    device_log_rows = []
+    for device_trail_id in device_trail_ids:
+        rows = device_trail_log_day_table.query(
+            KeyConditionExpression=Key("device_trail_id").eq(device_trail_id) & Key("start").between(start_timestamp, end_timestamp -1)
+        ).get("Items", [])
+        device_log_rows.extend(rows)
+
+    device_log_rows = convert_decimals(device_log_rows)
+
+    # append rows with trail/device ids from cache
+    trail_counts = {int(id): None for id in trail_id_list_decimals}
+    trail_counts[0] = 0
+    for row in device_log_rows:
+        id = device_trail_cache[row["device_trail_id"]].get("trail_id", 0)
+        if not trail_counts.get(id):
+            trail_counts[id] = 0
+        trail_counts[id] += row.get("count", 0)
+
+    return trail_counts
+
+# In Development (Needs to be updated to not hardcode trail ids)
+def get_relative_intensities(trail_counts, trail_id_list_decimals, start_time, end_time):
+    trail_hikers = {
+        1: (90, 20),
+        2: (50, 12),
+        3: (40, 10),
+        4: (35, 9),
+        5: (30, 8),
+        6: (25, 6),
+        7: (20, 5),
+        8: (20, 7),
+        9: (15, 5),
+        10: (15, 8)
+    }
+
+    days = (end_time - start_time).days
+    adapted_hikers = {trail: (data[0], data[1] / math.sqrt(days)) for trail, data in trail_hikers.items()}
+
+    trail_intensities = {}
+
+    for id in trail_id_list_decimals:
+        if trail_counts[id] == None:
+            trail_intensities[int(id)] = None
+            continue
+        average = trail_counts[id] / days
+        id = int(id)
+        data = adapted_hikers.get(id, (34, 9 / math.sqrt(days)))
+        intensity = (average - data[0]) / data[1]
+        if intensity < -2: intensity = -2
+        if intensity > 2: intensity = 2
+        trail_intensities[id] = intensity
+
+    return trail_intensities
+
+# In Development (Needs to be updated to use different absolute ranges)
+def get_absolute_intensities(trail_counts, trail_id_list_decimals, start_time, end_time):
+    trail_intensities = {}
+    days = (end_time - start_time).days
+
+    for id in trail_id_list_decimals:
+        if trail_counts[id] == None:
+            trail_intensities[int(id)] = None
+            continue
+        average = trail_counts[id] / days
+        id = int(id)
+        if average <= 19:
+            trail_intensities[id] = -2
+        elif average <= 34:
+            trail_intensities[id] = -1
+        elif average <= 49:
+            trail_intensities[id] = 0
+        elif average <= 74:
+            trail_intensities[id] = 1
+        else:
+            trail_intensities[id] = 2
+
+    return trail_intensities

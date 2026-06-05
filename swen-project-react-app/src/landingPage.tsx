@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
-import { TimeFrame } from "./lib/apiTypes";
+import moment from "moment-timezone";
 import {
     Select,
     SelectContent,
@@ -49,39 +49,37 @@ const LandingPage = () => {
 
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
-    const [selectedPreset, setSelectedPreset] = useState<TimeFrame | null>(TimeFrame.Month);
+    const [selectedPreset, setSelectedPreset] = useState("month");
 
     const applyPreset = (preset: string) => {
-        const end = new Date();
-        const start = new Date();
-        let presetValue = null;
-        
+        const endMoment = moment.tz("America/New_York").startOf("day");
+        let startMoment: moment.Moment | undefined;
+
         switch (preset) {
             case "day":
-                presetValue = TimeFrame.Day;
-                start.setHours(0, 0, 0, 0);
+                startMoment = endMoment.clone().subtract(1, "day");
                 break;
 
             case "week":
-                presetValue = TimeFrame.Week;
-                start.setDate(end.getDate() - 7);
+                startMoment = endMoment.clone().subtract(1, "week");
                 break;
 
-            case "fortnight":
-                presetValue = TimeFrame.Fortnight;
-                start.setDate(end.getDate() - 14);
+            case "2weeks":
+                startMoment = endMoment.clone().subtract(2, "weeks");
                 break;
 
             case "month":
-                presetValue = TimeFrame.Month;
-                start.setMonth(end.getMonth() - 1);
+                startMoment = endMoment.clone().subtract(1, "month");
                 break;
 
         }
 
-        setSelectedPreset(presetValue);
-        setStartDate(start);
-        setEndDate(end);
+        if (!startMoment) return;
+
+        endMoment.subtract(1, "day");
+        setSelectedPreset(preset);
+        setStartDate(startMoment.toDate());
+        setEndDate(endMoment.toDate());
     };
 
     useEffect(() => {
@@ -92,6 +90,7 @@ const LandingPage = () => {
                     const trailData = await res.json;
                     setTrails(trailData);
 
+                    // I think it makes more sense to just apply the month preset here since that is the dropdown default.
                     const dates = trailData
                         .map((t: any) => Number(t.date_activated))
                         .filter(Boolean);
@@ -99,9 +98,9 @@ const LandingPage = () => {
                     if (dates.length > 0) {
                         const earliest = new Date(Math.min(...dates) * 1000);
 
-                    setStartDate(earliest);
-                    setEndDate(new Date());
-                }
+                        setStartDate(earliest);
+                        setEndDate(new Date());
+                    }
 
                 } else {
                     console.warn("Trail metadata not available");
@@ -131,7 +130,7 @@ const LandingPage = () => {
                     Number.isFinite(trail.longitude)
             ),
         [trails]
-        );
+    );
 
     useEffect(() => { 
     async function fetchTrailUsage() {
@@ -146,7 +145,7 @@ const LandingPage = () => {
 
             if (!selectedPreset) return;
 
-            const response = await getHeatmapData(trailIds, selectedPreset);
+            const response = await getHeatmapData(trailIds, startDate, endDate);
 
             if (!response.success) return;
 
@@ -199,18 +198,12 @@ const LandingPage = () => {
         }
     };
 
-    //Calculates relative business. Will be changed in the future
-    const days = useMemo(() => {
-        if (!startDate || !endDate) {
-            return 1;
-        }
-        
-        return Math.max(
-            1,
-            (endDate.getTime() - startDate.getTime()) /
-            (1000 * 60 * 60 * 24)
-        );
-    }, [startDate, endDate]);
+    // Returns the start of the given date in the America/New_York timezone
+    function getDateStart(date: Date) {
+        const userISO = moment(date).tz("UTC").format("YYYY-MM-DD");
+        const newYorkOffset = moment(date).tz("America/New_York").format("Z");
+        return new Date(`${userISO}T00:00:00${newYorkOffset}`);
+    }
 
     return (
 
@@ -225,7 +218,7 @@ const LandingPage = () => {
 
                     <div className="flex justify-center">
                         <Select
-                            value={selectedPreset ?? ""}
+                            value={selectedPreset}
                             onValueChange={(value) => applyPreset(value)}
                         >
                         <SelectContent className="z-[10000]" />
@@ -236,7 +229,7 @@ const LandingPage = () => {
                         <SelectContent className="z-[10000]">
                             <SelectItem value="day">Yesterday</SelectItem>
                             <SelectItem value="week">Last Week</SelectItem>
-                            <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
+                            <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
                             <SelectItem value="month">Last Month</SelectItem>
                         </SelectContent>
                     </Select>
@@ -250,8 +243,8 @@ const LandingPage = () => {
                         ? startDate.toISOString().split("T")[0] : ""
                         }
                         onChange={(e) => {
-                            setSelectedPreset(null);
-                            setStartDate(new Date(e.target.value));
+                            setSelectedPreset("custom");
+                            setStartDate(getDateStart(new Date(e.target.value)));
                         }}
                         className="border rounded px-2 py-1 bg-white"
                     />
@@ -263,8 +256,8 @@ const LandingPage = () => {
                             ? endDate.toISOString().split("T")[0] : ""
                         } 
                         onChange={(e) => {
-                            setSelectedPreset(null);
-                            setEndDate(new Date(e.target.value));
+                            setSelectedPreset("custom");
+                            setEndDate(getDateStart(new Date(e.target.value)));
                         }}
                         className="border rounded px-2 py-1 bg-white"
                     />
