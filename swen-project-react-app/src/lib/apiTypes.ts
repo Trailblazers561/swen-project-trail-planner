@@ -22,9 +22,7 @@ export const GranularityText: Record<Granularity, string> = {
   [Granularity.Year]: "Yearly"
 };
 
-export enum TimeFrame {
-  Day = "day",
-  Week = "week",
-  Fortnight = "fortnight",
-  Month = "month"
+export enum HeatmapAlgorithm {
+  Absolute = "absolute",
+  Relative = "relative"
 }
