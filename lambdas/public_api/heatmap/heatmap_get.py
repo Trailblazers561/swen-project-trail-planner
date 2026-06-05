@@ -149,21 +149,25 @@ def get_absolute_intensities(trail_counts, trail_id_list_decimals, start_time, e
     trail_intensities = {}
     days = (end_time - start_time).days
 
+    def convert_range(value, old_range_min, old_range_max, new_range_min, new_range_max):
+        return new_range_min + (((value - old_range_min) * (new_range_max - new_range_min))/(old_range_max - old_range_min))
+
     for id in trail_id_list_decimals:
         if trail_counts[id] == None:
             trail_intensities[int(id)] = None
             continue
         average = trail_counts[id] / days
         id = int(id)
+
         if average <= 19:
-            trail_intensities[id] = -2
+            trail_intensities[id] = max(convert_range(average, 0, 19, -2, -1.55), -2)
         elif average <= 34:
-            trail_intensities[id] = -1
+            trail_intensities[id] = convert_range(average, 20, 34, -1.45, -0.55)
         elif average <= 49:
-            trail_intensities[id] = 0
+            trail_intensities[id] = convert_range(average, 35, 49, -0.45, 0.45)
         elif average <= 74:
-            trail_intensities[id] = 1
+            trail_intensities[id] = convert_range(average, 50, 74, 0.55, 1.45)
         else:
-            trail_intensities[id] = 2
+            trail_intensities[id] = min(convert_range(average, 75, 95, 1.55, 2), 2)
 
     return trail_intensities
