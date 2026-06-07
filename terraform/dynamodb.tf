@@ -213,10 +213,10 @@ resource "aws_dynamodb_table" "device_log_table" {
   /*
     count: number (int)
     battery: number (percentage)
-    firmware: string
-    rssi: number (int)
-    rsrp: number (int)
-    rsrq: number (int)
+    firmware_version: string
+    rssi: number (int, dBm)
+    rsrp: number (int, dBm)
+    rsrq: number (int, dB)
   */
 }
 
