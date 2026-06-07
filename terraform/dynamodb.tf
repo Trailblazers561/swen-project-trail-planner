@@ -195,7 +195,34 @@ resource "aws_dynamodb_table" "device_trail_log_month_table" {
   */
 }
 
-# TABLE 9: Errors
+# TABLE 9: DeviceLog
+resource "aws_dynamodb_table" "device_log_table" {
+  name           = "${var.deploy_env}_trailcount_device_log_table"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_id"
+  range_key    = "time"
+
+  attribute {
+    name = "device_id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "time"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+    battery: number (percentage)
+    firmware: string
+    rssi: number (int)
+    rsrp: number (int)
+    rsrq: number (int)
+  */
+}
+
+# TABLE 10: Errors
 resource "aws_dynamodb_table" "error_table" {
   name           = "${var.deploy_env}_trailcount_error_table"
   billing_mode   = "PAY_PER_REQUEST"
@@ -260,6 +287,7 @@ locals {
       ]
     }
   ]
+  device_log_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_logs.csv"))
   error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
 }
 
@@ -325,6 +353,27 @@ resource "aws_dynamodb_table_item" "area_items" {
     trail_ids  = { "L" = [for id in each.value.trail_ids : { "N" = id }] }
   })
 }
+
+# INSERT TEST DATA INTO DeviceLog
+resource "aws_dynamodb_table_item" "device_log_items" {
+  for_each = { for idx, item in local.device_log_sample_data : idx => item }
+
+  table_name = aws_dynamodb_table.device_log_table.name
+  hash_key   = aws_dynamodb_table.device_log_table.hash_key
+  range_key  = aws_dynamodb_table.device_log_table.range_key
+
+  item = jsonencode({
+    device_id  = { "N" = each.value.device_id }
+    time = { "N" = each.value.time }
+    count = { "N" = each.value.count }
+    battery = { "N" = each.value.battery }
+    firmware = { "S" = each.value.firmware }
+    rssi = { "N" = each.value.rssi }
+    rsrp = { "N" = each.value.rsrp }
+    rsrq = { "N" = each.value.rsrq }
+  })
+}
+
 
 # INSERT TEST DATA INTO Error
 resource "aws_dynamodb_table_item" "error_items" {
