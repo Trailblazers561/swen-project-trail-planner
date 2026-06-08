@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
-import { Granularity } from "./lib/apiTypes";
+import moment from "moment-timezone";
 import {
     Select,
     SelectContent,
@@ -36,7 +36,7 @@ const LandingPage = () => {
         popupAnchor: [1, -36],
     });
 
-    const { getTrailMetadata, getTrailLogs } = TrailData();
+    const { getTrailMetadata, getHeatmapData } = TrailData();
 
     const [trails, setTrails] = useState<any[]>([]);
     const [trailUsage] = useState<Record<number, number>>({}); 
@@ -52,27 +52,34 @@ const LandingPage = () => {
     const [selectedPreset, setSelectedPreset] = useState("month");
 
     const applyPreset = (preset: string) => {
-    const end = new Date();
-    const start = new Date();
-    
-    switch (preset) {
-        case "today":
-            start.setHours(0, 0, 0, 0);
-            break;
+        const endMoment = moment.tz("America/New_York").startOf("day");
+        let startMoment: moment.Moment | undefined;
 
-        case "2weeks":
-            start.setDate(end.getDate() - 14);
-            break;
+        switch (preset) {
+            case "day":
+                startMoment = endMoment.clone().subtract(1, "day");
+                break;
 
-        case "month":
-            start.setMonth(end.getMonth() - 1);
-            break;
+            case "week":
+                startMoment = endMoment.clone().subtract(1, "week");
+                break;
 
-    }
+            case "2weeks":
+                startMoment = endMoment.clone().subtract(2, "weeks");
+                break;
 
-    setSelectedPreset(preset);
-    setStartDate(start);
-    setEndDate(end);
+            case "month":
+                startMoment = endMoment.clone().subtract(1, "month");
+                break;
+
+        }
+
+        if (!startMoment) return;
+
+        endMoment.subtract(1, "day");
+        setSelectedPreset(preset);
+        setStartDate(startMoment.toDate());
+        setEndDate(endMoment.toDate());
     };
 
     useEffect(() => {
@@ -83,6 +90,7 @@ const LandingPage = () => {
                     const trailData = await res.json;
                     setTrails(trailData);
 
+                    // I think it makes more sense to just apply the month preset here since that is the dropdown default.
                     const dates = trailData
                         .map((t: any) => Number(t.date_activated))
                         .filter(Boolean);
@@ -90,9 +98,9 @@ const LandingPage = () => {
                     if (dates.length > 0) {
                         const earliest = new Date(Math.min(...dates) * 1000);
 
-                    setStartDate(earliest);
-                    setEndDate(new Date());
-                }
+                        setStartDate(earliest);
+                        setEndDate(new Date());
+                    }
 
                 } else {
                     console.warn("Trail metadata not available");
@@ -122,13 +130,12 @@ const LandingPage = () => {
                     Number.isFinite(trail.longitude)
             ),
         [trails]
-        );
+    );
 
     useEffect(() => { 
     async function fetchTrailUsage() {
         try {
             setLoadingUsage(true);
-
 
             if (!startDate || !endDate) return;
 
@@ -136,28 +143,13 @@ const LandingPage = () => {
 
             if (trailIds.length === 0) return;
 
-            const response = await getTrailLogs(
-                trailIds,
-                startDate,
-                endDate,
-                Granularity.Day
-            );
+            const response = await getHeatmapData(trailIds, startDate, endDate);
 
             if (!response.success) return;
 
-            const logs = await response.json;
+            const data = await response.json;
 
-            const usageMap: Record<number, number> = {};
-
-            logs.forEach((log: any) => {
-                if (!usageMap[log.trail_id]) {
-                    usageMap[log.trail_id] = 0;
-                }
-
-                usageMap[log.trail_id] += log.count;
-            });
-
-            setDisplayedUsage(usageMap);
+            setDisplayedUsage(data);
 
         } catch (err) {
             console.error("Failed to fetch trail usage:", err);
@@ -172,7 +164,7 @@ const LandingPage = () => {
     }, [parsedTrails, startDate, endDate]);
 
 
-    const getTrailColor = (trailId: number, days: number) => {
+    const getTrailColor = (trailId: number) => {
 
         if (loadingUsage) {
             const existingUsage = trailUsage[trailId];
@@ -182,23 +174,21 @@ const LandingPage = () => {
             }
         }
 
-        const usage = displayedUsage[trailId];
+        const intensity = displayedUsage[trailId];
 
-        if (usage === undefined || days <= 0) return "gray";
-
-        const avg = usage / days;
+        if (intensity === undefined || intensity === null) return "gray";
 
         switch (true) {
-            case avg < 20:
+            case intensity <= .2:
                 return "#3b82f6";
 
-            case avg < 35:
+            case intensity <= .4:
                 return "#22c55e";
 
-            case avg < 50:
+            case intensity <= .6:
                 return "#eab308";
 
-            case avg < 75:
+            case intensity <= .8:
                 return "#f97316";
 
             default:
@@ -206,18 +196,12 @@ const LandingPage = () => {
         }
     };
 
-    //Calculates relative business. Will be changed in the future
-    const days = useMemo(() => {
-        if (!startDate || !endDate) {
-            return 1;
-        }
-        
-        return Math.max(
-            1,
-            (endDate.getTime() - startDate.getTime()) /
-            (1000 * 60 * 60 * 24)
-        );
-    }, [startDate, endDate]);
+    // Returns the start of the given date in the America/New_York timezone
+    function getDateStart(date: Date) {
+        const userISO = moment(date).tz("UTC").format("YYYY-MM-DD");
+        const newYorkOffset = moment(date).tz("America/New_York").format("Z");
+        return new Date(`${userISO}T00:00:00${newYorkOffset}`);
+    }
 
     return (
 
@@ -241,7 +225,8 @@ const LandingPage = () => {
                         </SelectTrigger>
 
                         <SelectContent className="z-[10000]">
-                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="day">Yesterday</SelectItem>
+                            <SelectItem value="week">Last Week</SelectItem>
                             <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
                             <SelectItem value="month">Last Month</SelectItem>
                         </SelectContent>
@@ -257,7 +242,7 @@ const LandingPage = () => {
                         }
                         onChange={(e) => {
                             setSelectedPreset("custom");
-                            setStartDate(new Date(e.target.value));
+                            setStartDate(getDateStart(new Date(e.target.value)));
                         }}
                         className="border rounded px-2 py-1 bg-white"
                     />
@@ -270,7 +255,7 @@ const LandingPage = () => {
                         } 
                         onChange={(e) => {
                             setSelectedPreset("custom");
-                            setEndDate(new Date(e.target.value));
+                            setEndDate(getDateStart(new Date(e.target.value)));
                         }}
                         className="border rounded px-2 py-1 bg-white"
                     />
@@ -357,7 +342,7 @@ const LandingPage = () => {
                     <Marker
                         key={trail.id}
                         position={[trail.latitude, trail.longitude]}
-                        icon={createTrailIcon(getTrailColor(trail.id, days))}
+                        icon={createTrailIcon(getTrailColor(trail.id))}
                     >
                         <Popup>
                             <div

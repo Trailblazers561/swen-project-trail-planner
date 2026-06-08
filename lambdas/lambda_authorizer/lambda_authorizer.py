@@ -26,6 +26,7 @@ PERMISSIONS = {
     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/heatmap", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/areas", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
