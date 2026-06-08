@@ -110,6 +110,9 @@ def retrieve_trail_data(trail_id_list_decimals, start_timestamp, end_timestamp):
 
     return trail_counts
 
+def convert_range(value, old_range_min, old_range_max, new_range_min, new_range_max):
+    return new_range_min + (((value - old_range_min) * (new_range_max - new_range_min))/(old_range_max - old_range_min))
+
 # In Development (Needs to be updated to not hardcode trail ids)
 def get_relative_intensities(trail_counts, trail_id_list_decimals, start_time, end_time):
     trail_hikers = {
@@ -140,7 +143,7 @@ def get_relative_intensities(trail_counts, trail_id_list_decimals, start_time, e
         intensity = (average - data[0]) / data[1]
         if intensity < -2: intensity = -2
         if intensity > 2: intensity = 2
-        trail_intensities[id] = intensity
+        trail_intensities[id] = convert_range(intensity, -2, 2, 0, 1)
 
     return trail_intensities
 
@@ -149,8 +152,6 @@ def get_absolute_intensities(trail_counts, trail_id_list_decimals, start_time, e
     trail_intensities = {}
     days = (end_time - start_time).days
 
-    def convert_range(value, old_range_min, old_range_max, new_range_min, new_range_max):
-        return new_range_min + (((value - old_range_min) * (new_range_max - new_range_min))/(old_range_max - old_range_min))
 
     for id in trail_id_list_decimals:
         if trail_counts[id] == None:
@@ -160,14 +161,14 @@ def get_absolute_intensities(trail_counts, trail_id_list_decimals, start_time, e
         id = int(id)
 
         if average <= 19:
-            trail_intensities[id] = max(convert_range(average, 0, 19, -2, -1.55), -2)
+            trail_intensities[id] = max(convert_range(average, 0, 19, 0, .195), 0)
         elif average <= 34:
-            trail_intensities[id] = convert_range(average, 20, 34, -1.45, -0.55)
+            trail_intensities[id] = convert_range(average, 20, 34, .205, .395)
         elif average <= 49:
-            trail_intensities[id] = convert_range(average, 35, 49, -0.45, 0.45)
+            trail_intensities[id] = convert_range(average, 35, 49, .405, .595)
         elif average <= 74:
-            trail_intensities[id] = convert_range(average, 50, 74, 0.55, 1.45)
+            trail_intensities[id] = convert_range(average, 50, 74, .605, .795)
         else:
-            trail_intensities[id] = min(convert_range(average, 75, 95, 1.55, 2), 2)
+            trail_intensities[id] = min(convert_range(average, 75, 95, .805, 1), 1)
 
     return trail_intensities

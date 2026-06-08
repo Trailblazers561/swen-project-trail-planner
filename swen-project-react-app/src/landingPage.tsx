@@ -179,16 +179,16 @@ const LandingPage = () => {
         if (intensity === undefined || intensity === null) return "gray";
 
         switch (true) {
-            case intensity <= -1.5:
+            case intensity <= .2:
                 return "#3b82f6";
 
-            case intensity <= -0.5:
+            case intensity <= .4:
                 return "#22c55e";
 
-            case intensity <= 0.5:
+            case intensity <= .6:
                 return "#eab308";
 
-            case intensity <= 1.5:
+            case intensity <= .8:
                 return "#f97316";
 
             default:
