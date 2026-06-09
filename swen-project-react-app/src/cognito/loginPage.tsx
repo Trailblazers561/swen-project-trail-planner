@@ -269,11 +269,11 @@ const LoginPage = () => {
   }
 
   const Desktop = ({children}: DeviceType) => {
-    const isDesktop = useMediaQuery({ minWidth: 992 })
+    const isDesktop = useMediaQuery({ minWidth: 1024 })
     return isDesktop ? children : null
   }
   const Mobile = ({children}: DeviceType) => {
-    const isMobile = useMediaQuery({maxWidth: 500})
+    const isMobile = useMediaQuery({maxWidth: 1023})
     return isMobile ? children: null
   }
 
@@ -308,113 +308,218 @@ const LoginPage = () => {
 
       {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
       {loading && (<div className="fixed right-0 top-0 h-screen w-5/16  bg-black/40 z-499"></div>)}
-      <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
-        <div className="flex w-full max-w-4xl items-start" id="loginForm">
+      <div>
+        <div>
           {loginMode == LoginMode.SIGN_IN && (
             <div>
-            <Desktop>
-              <div className="flex-1 px-10 pt-6 h-124">
-                <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
-                <p className="text-gray-500 mb-6">Sign in to your account</p>
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  {loginError !== null && (
-                    <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
-                      <div className="mt-0.5">
-                        <CircleAlert size={30} />
-                      </div>
-                      <div className="text-left">
-                        <span className="text-lg font-semibold mb-1">There was a problem</span>
-                        {loginError === LoginError.USER_NOT_FOUND ? (
-                          <p className="text-sm text-red-700">
-                            No account was found with the specified username or email
-                          </p>
-                        ) : loginError === LoginError.NOT_AUTHORIZED ? (
-                          <p className="text-sm text-red-700">
-                            Incorrect username/email or password
-                          </p>
-                        ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
-                          <>
-                            <p className="text-sm text-red-700">
-                              Please verify your email before logging in
-                            </p>
+              <Desktop>
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
+                      <p className="text-gray-500 mb-6">Sign in to your account</p>
+                      <form onSubmit={handleSignIn} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-lg font-semibold mb-1">There was a problem</span>
+                              {loginError === LoginError.USER_NOT_FOUND ? (
+                                <p className="text-sm text-red-700">
+                                  No account was found with the specified username or email
+                                </p>
+                              ) : loginError === LoginError.NOT_AUTHORIZED ? (
+                                <p className="text-sm text-red-700">
+                                  Incorrect username/email or password
+                                </p>
+                              ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
+                                <>
+                                  <p className="text-sm text-red-700">
+                                    Please verify your email before logging in
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
+                                    className="text-sm hover:underline cursor-pointer"
+                                  >
+                                    Resend code?
+                                  </button>
+                                </>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username or Email"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                          data-testid="username-input"
+                        />
+                        <div>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                              required
+                              data-testid="password-input"
+                            />
+                            <span
+                              onMouseLeave={() => setShowPassword(false)}
+                              onMouseDown={() => setShowPassword(true)}
+                              onMouseUp={() => setShowPassword(false)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </span>
+                          </div>
+                          <div className="text-right text-sm">
                             <button
                               type="button"
-                              onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
-                              className="text-sm hover:underline cursor-pointer"
+                              onClick={() => setLoginMode(LoginMode.FORGOT_PASSWORD)}
+                              className="text-dark-yellow-green hover:underline cursor-pointer"
                             >
-                              Resend code?
+                              Forgot password?
                             </button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-red-700">
-                            An error has occured
-                          </p>
-                        )}
+                          </div>
+                        </div>
+                        <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
+                          Login
+                        </Button>
+                      </form>
+                      <div className="text-sm flex justify-between mt-10 border py-2 px-3 rounded-md">
+                        <span className="text-left">Dont have an account?</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginMode(LoginMode.SIGN_UP);
+                            setUsername("");
+                            setPassword("");
+                          }}
+                          className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
+                        >
+                          Create an account{<ArrowRight size={18} />}
+                        </button>
                       </div>
                     </div>
-                  )}
-                  <input
-                    type="text"
-                    placeholder="Username or Email"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                    data-testid="username-input"
-                  />
-                  <div>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                        required
-                        data-testid="password-input"
-                      />
-                      <span
-                        onMouseLeave={() => setShowPassword(false)}
-                        onMouseDown={() => setShowPassword(true)}
-                        onMouseUp={() => setShowPassword(false)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                      </span>
-                    </div>
-                    <div className="text-right text-sm">
-                      <button
-                        type="button"
-                        onClick={() => setLoginMode(LoginMode.FORGOT_PASSWORD)}
-                        className="text-dark-yellow-green hover:underline cursor-pointer"
-                      >
-                        Forgot password?
-                      </button>
+                  </div>
+                </div>
+              </Desktop>
+              <Mobile>
+                <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
+                      <p className="text-gray-500 mb-6">Sign in to your account</p>
+                      <form onSubmit={handleSignIn} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800" data-testid="sign-in-error">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-lg font-semibold mb-1">There was a problem</span>
+                              {loginError === LoginError.USER_NOT_FOUND ? (
+                                <p className="text-sm text-red-700">
+                                  No account was found with the specified username or email
+                                </p>
+                              ) : loginError === LoginError.NOT_AUTHORIZED ? (
+                                <p className="text-sm text-red-700">
+                                  Incorrect username/email or password
+                                </p>
+                              ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
+                                <>
+                                  <p className="text-sm text-red-700">
+                                    Please verify your email before logging in
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setLoginMode(LoginMode.RESEND_CODE)}
+                                    className="text-sm hover:underline cursor-pointer"
+                                  >
+                                    Resend code?
+                                  </button>
+                                </>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username or Email"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                          data-testid="username-input"
+                        />
+                        <div>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                              required
+                              data-testid="password-input"
+                            />
+                            <span
+                              onMouseLeave={() => setShowPassword(false)}
+                              onMouseDown={() => setShowPassword(true)}
+                              onMouseUp={() => setShowPassword(false)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </span>
+                          </div>
+                          <div className="text-right text-sm">
+                            <button
+                              type="button"
+                              onClick={() => setLoginMode(LoginMode.FORGOT_PASSWORD)}
+                              className="text-dark-yellow-green hover:underline cursor-pointer"
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
+                        </div>
+                        <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
+                          Login
+                        </Button>
+                      </form>
+                      <div className="text-sm flex justify-between mt-10 border py-2 px-3 rounded-md">
+                        <span className="text-left">Dont have an account?</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginMode(LoginMode.SIGN_UP);
+                            setUsername("");
+                            setPassword("");
+                          }}
+                          className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
+                        >
+                          Create an account{<ArrowRight size={18} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <Button type="submit" variant="primary" className="w-full" data-testid="login-button">
-                    Login
-                  </Button>
-                </form>
-                <div className="text-sm flex justify-between mt-10 border py-2 px-3 rounded-md">
-                  <span className="text-left">Dont have an account?</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginMode(LoginMode.SIGN_UP);
-                      setUsername("");
-                      setPassword("");
-                    }}
-                    className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
-                  >
-                    Create an account{<ArrowRight size={18} />}
-                  </button>
                 </div>
-              </div>
-            </Desktop>
-            <Mobile>
-              <p>Hello</p>
-            </Mobile>
+              </Mobile>
             </div>
           )}
           {loginMode == LoginMode.SIGN_UP && (
