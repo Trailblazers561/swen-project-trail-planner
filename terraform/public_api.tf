@@ -102,6 +102,10 @@ locals {
         file = "users/users_post.py"
         handler = "users_post.change_user_group"
       }
+      DELETE = {
+        file = "users/users_delete.py"
+        handler = "users_delete.ban_user"
+      }
     }
   }
 

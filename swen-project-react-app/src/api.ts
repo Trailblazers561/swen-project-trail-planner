@@ -301,7 +301,7 @@ export function TrailData() {
   }
 
   /**
-   * Updates cognito users role
+   * Updates cognito user's role
    * @param targetUsername - Username for the user that will be updated
    * @param targetUserRole - UserRole to set the given user to
    */
@@ -312,6 +312,20 @@ export function TrailData() {
       body: JSON.stringify({
         target_username: targetUsername,
         target_user_role: targetUserRole
+      }),
+    });
+  }
+
+  /**
+   * Bans cognito user
+   * @param targetUsername - Username for the user that will be banned
+   */
+  async function banUser(targetUsername: string) {
+    return await request(`${API_URL}/users`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        target_username: targetUsername
       }),
     });
   }
@@ -335,6 +349,7 @@ export function TrailData() {
     importCSV,
     getUsers,
     updateUserRole,
+    banUser,
   };
 }
 
