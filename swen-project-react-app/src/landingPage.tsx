@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/templates/button";
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet.heat";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useMemo } from "react";
 import { TrailData } from "./api";
@@ -144,7 +145,6 @@ const LandingPage = () => {
             if (trailIds.length === 0) return;
 
             const response = await getHeatmapData(trailIds, startDate, endDate);
-
             if (!response.success) return;
 
             const data = await response.json;
@@ -202,6 +202,39 @@ const LandingPage = () => {
         const newYorkOffset = moment(date).tz("America/New_York").format("Z");
         return new Date(`${userISO}T00:00:00${newYorkOffset}`);
     }
+
+    function HeatmapLayer({trails, heatmapData}: {trails: any[]; heatmapData: Record<number, number> }) {
+        const map = useMap();
+
+        useEffect(() => {
+            const heatPoints = trails.filter((trail) => heatmapData[trail.id] != null)
+            .map((trail) => [
+                trail.latitude,
+                trail.longitude,
+                heatmapData[trail.id] as number,
+            ]);
+
+            const heatLayer = (L as any).heatLayer(heatPoints, {
+                radius: 40,
+                blur: 30,
+                maxZoom: 8,
+                max: 1.0,
+                gradient: {
+                    0.2: "#3b82f6",
+                    0.4: "#22c55e",
+                    0.6: "#eab308",
+                    0.8: "#f97316",
+                    1.0: "#ef4444",
+                },
+            });
+            heatLayer.addTo(map);
+            return() => {
+                map.removeLayer(heatLayer);
+            };
+        }, [map, trails, heatmapData]);
+        return null;
+    }
+
 
     return (
 
@@ -336,6 +369,9 @@ const LandingPage = () => {
                 <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
                 />
+
+                <HeatmapLayer trails={parsedTrails} heatmapData={displayedUsage} />
+
                 <ZoomControl position="bottomright" />
 
                 {parsedTrails.map((trail) => (
