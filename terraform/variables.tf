@@ -25,10 +25,10 @@ locals {
 
 locals {
   use_domain = !local.local_run && !local.test_run
-  domain = "adirondackwilderness.org"
-  cloudfront_sub_domain = "trailblazers-${var.deploy_env}"
-  api_sub_domain = "trailblazers-api-${var.deploy_env}"
-  verification_email = local.local_run ? var.local_user_email : "TrailCount@trailcount-auth.${local.domain}"
+  domain = "trailcount.io"
+  cloudfront_sub_domain = "${var.deploy_env}"
+  api_sub_domain = "public-api-${var.deploy_env}"
+  verification_email = local.local_run ? var.local_user_email : "TrailCount@auth${local.domain}"
 }
 
 // Will get populated from github actions and stored in the repo, not populated in a local run
