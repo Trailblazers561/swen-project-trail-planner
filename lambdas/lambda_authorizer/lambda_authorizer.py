@@ -39,6 +39,7 @@ PERMISSIONS = {
     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/users", "GET"): [ROOT_ADMIN, ADMIN],
     ("/users", "POST"): [ROOT_ADMIN, ADMIN],
+    ("/users", "DELETE"): [ROOT_ADMIN, ADMIN],
 }
 
 # Download public keys when lambda is created (code is outside handler)
@@ -65,7 +66,7 @@ def handler(event, context):
         else:
             claims = {}
             users_groups = [GUEST]
-        context = {"caller_role": max([groups_simplified[group] for group in users_groups], key=lambda x: group_values[x], default="guest")}
+        context = {"caller_role": max([groups_simplified[group] for group in users_groups if group in groups_simplified], key=lambda x: group_values[x], default="guest")}
 
         allowed_groups = PERMISSIONS.get((resource, http_method), [ROOT_ADMIN])
         # If requesting user is in any of the groups that have permission to call the endpoint

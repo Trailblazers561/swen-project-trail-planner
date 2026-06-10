@@ -28,7 +28,8 @@ enum LoginMode {
 enum LoginError {
   UNKNOWN_ERROR, // Unknown what went wrong
   USER_NOT_FOUND, // User does not exist
-  NOT_AUTHORIZED, // Incorrect username or password
+  INVALID_CREDENTIALS, // Incorrect username or password
+  USER_BANNED, // User is banned
   USER_NOT_CONFIRMED, // User is not confirmed
   USERNAME_EXISTS, // User already exists
   EMAIL_EXISTS, // Email already exists with verified user
@@ -87,7 +88,11 @@ const LoginPage = () => {
       if (error instanceof UserNotFoundException) {
         setLoginError(LoginError.USER_NOT_FOUND);
       } else if (error instanceof NotAuthorizedException) {
-        setLoginError(LoginError.NOT_AUTHORIZED);
+        // Banned users and invalid credentials use the same error type for some reason
+        if (error["message"] === "User is disabled.")
+          setLoginError(LoginError.USER_BANNED);
+        else
+          setLoginError(LoginError.INVALID_CREDENTIALS);
       } else if (error instanceof UserNotConfirmedException) {
         setLoginError(LoginError.USER_NOT_CONFIRMED);
       } else {
@@ -296,9 +301,13 @@ const LoginPage = () => {
                         <p className="text-sm text-red-700">
                           No account was found with the specified username or email
                         </p>
-                      ) : loginError === LoginError.NOT_AUTHORIZED ? (
+                      ) : loginError === LoginError.INVALID_CREDENTIALS ? (
                         <p className="text-sm text-red-700">
                           Incorrect username/email or password
+                        </p>
+                      ) : loginError === LoginError.USER_BANNED ? (
+                        <p className="text-sm text-red-700">
+                          This account is banned. If you believe this is a mistake please contact your administrator.
                         </p>
                       ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
                         <>
