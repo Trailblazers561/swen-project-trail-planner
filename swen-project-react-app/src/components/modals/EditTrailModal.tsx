@@ -347,7 +347,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
                     disabled={loading || deleting}
-                    className="delete-button"
+                    className="delete-button font-medium h-9 flex items-center"
                     data-testid="delete-button"
                   >
                     Retire Trail
@@ -389,7 +389,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
               </div>
-              <div className="modal-footer">
+              <div className="flex justify-between modal-footer">
                 <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
                   Cancel
                 </button>
