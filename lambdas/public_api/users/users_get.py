@@ -35,12 +35,12 @@ def get_users(event, context):
         for user in users:
             if user["UserStatus"] != "CONFIRMED":
                 continue
-            user_formatted = {"username": user["Username"]}
+            user_formatted = {"username": user["Username"], "banned": not user["Enabled"]}
             for attribute in user["Attributes"]:
                 if attribute["Name"] in attribute_names.keys():
                     user_formatted[attribute_names[attribute["Name"]]] = attribute["Value"]
             groups = cognito.admin_list_groups_for_user(Username=user["Username"], UserPoolId=COGNITO_USER_POOL_ID)
-            user_formatted["role"] = max([group["GroupName"] for group in groups["Groups"]], key=lambda x: user_groups[x], default="guest")
+            user_formatted["role"] = max([group["GroupName"] for group in groups["Groups"] if group["GroupName"] in user_groups], key=lambda x: user_groups[x], default="guest")
             users_formatted.append(user_formatted)
 
         print(f"User information successfully retrieved: {users_formatted[:3]}")

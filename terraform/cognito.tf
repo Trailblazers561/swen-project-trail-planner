@@ -73,6 +73,13 @@ resource "aws_cognito_user_group" "default_user_group" {
   precedence   = 6
 }
 
+resource "aws_cognito_user_group" "banned_group" {
+  name         = "banned"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Banned user group, managed by Terraform"
+  precedence   = 10
+}
+
 # Create Predefined Users
 resource "aws_cognito_user" "users" {
   for_each = local.users
