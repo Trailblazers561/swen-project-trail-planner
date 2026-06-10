@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp, confirmSignUp, resendConfirmationCode, forgotPassword, confirmForgotPassword } from "./authService";
 import React from "react";
-import MediaQuery from "react-responsive";
 import { useMediaQuery } from "react-responsive";
 import { Button } from "@/components/templates/button";
 import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight, LoaderCircle } from "lucide-react";
@@ -16,7 +15,6 @@ import {
   CodeMismatchException,
   ExpiredCodeException,
   InvalidParameterException,
-  DeviceType$,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 enum LoginMode {
@@ -264,7 +262,7 @@ const LoginPage = () => {
         resendPasswordCode();
   }, [resentCode]);
 
-  type DeviceType = {
+  /*type DeviceType = {
     children: React.ReactNode;
   }
 
@@ -275,11 +273,16 @@ const LoginPage = () => {
   const Mobile = ({children}: DeviceType) => {
     const isMobile = useMediaQuery({maxWidth: 1023})
     return isMobile ? children: null
-  }
+  }*/
+
+  //When isDesktop is true, elements formatted for desktops are shown
+  const isDesktop = useMediaQuery({minWidth: 1024}) //Screens wider than 1024 pixels are treated as desktops
+  //When isMobile is true, elements formatted for mobile devices are shown
+  const isMobile = useMediaQuery({maxWidth: 1023}) //Screens thinner than 1023 pixels are treated as mobile devices
 
   return (
     <div className="flex h-screen">
-      <Desktop>
+      {isDesktop && (
         <div
           className="fixed left-0 top-0 h-screen w-11/16 bg-cover bg-center"
           style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
@@ -291,8 +294,8 @@ const LoginPage = () => {
             className="absolute top-8 left-1/2 w-56 md:w-64 -translate-x-1/2"
           />
         </div>
-      </Desktop>
-      <Mobile>
+      )}
+      {isMobile && (
         <div
           className="fixed left-0 top-0 h-5/16 w-screen bg-cover bg-center"
           style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
@@ -304,15 +307,14 @@ const LoginPage = () => {
             className="absolute top-8 left-1/2 max-h-10/16 max-w-10/16 md:w-64 -translate-x-1/2"
           />
         </div>
-      </Mobile>
+      )}
 
       {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
       {loading && (<div className="fixed right-0 top-0 h-screen w-5/16  bg-black/40 z-499"></div>)}
-      <div>
-        <div>
+      
           {loginMode == LoginMode.SIGN_IN && (
             <div>
-              <Desktop>
+              {isDesktop && (
                 <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
                   <div className="flex w-full max-w-4xl items-start" id="loginForm">
                     <div className="flex-1 px-10 pt-6 h-124">
@@ -415,8 +417,8 @@ const LoginPage = () => {
                     </div>
                   </div>
                 </div>
-              </Desktop>
-              <Mobile>
+              )}
+              {isMobile && (
                 <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
                   <div className="flex w-full max-w-4xl items-start" id="loginForm">
                     <div className="flex-1 px-10 pt-6 h-124">
@@ -519,398 +521,843 @@ const LoginPage = () => {
                     </div>
                   </div>
                 </div>
-              </Mobile>
+              )}
             </div>
           )}
           {loginMode == LoginMode.SIGN_UP && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Get Started</h2>
-              <p className="text-gray-500 mb-6">Register an account</p>
-              <form onSubmit={handleSignUp} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {loginError === LoginError.USERNAME_EXISTS ? (
-                        <p className="text-sm text-red-700">
-                          Enterd username is already taken
-                        </p>
-                      ) : loginError === LoginError.EMAIL_EXISTS ? (
-                        <p className="text-sm text-red-700">
-                          Enterd email is already taken
-                        </p>
-                      ) : loginError === LoginError.PASSWORD_MISMATCH ? (
-                        <p className="text-sm text-red-700">
-                          Entered passwords do not match
-                        </p>
-                      ) : loginError === LoginError.PASSWORD_SHORT ? (
-                        <p className="text-sm text-red-700">
-                          Password must be a minimum of six characters
-                        </p>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
+            <div>
+              {isDesktop && (
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Get Started</h2>
+                      <p className="text-gray-500 mb-6">Register an account</p>
+                      <form onSubmit={handleSignUp} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.USERNAME_EXISTS ? (
+                                <p className="text-sm text-red-700">
+                                  Enterd username is already taken
+                                </p>
+                              ) : loginError === LoginError.EMAIL_EXISTS ? (
+                                <p className="text-sm text-red-700">
+                                  Enterd email is already taken
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Entered passwords do not match
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_SHORT ? (
+                                <p className="text-sm text-red-700">
+                                  Password must be a minimum of six characters
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <span
+                            onMouseLeave={() => setShowPassword(false)}
+                            onMouseDown={() => setShowPassword(true)}
+                            onMouseUp={() => setShowPassword(false)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                          </span>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button className="w-full" variant="primary">
+                          Sign Up
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
-                  <span
-                    onMouseLeave={() => setShowPassword(false)}
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                  </span>
                 </div>
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <Button className="w-full" variant="primary">
-                  Sign Up
-                </Button>
-                <div className="text-left ">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode(LoginMode.SIGN_IN)}
-                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
-                  >
-                    {<Undo2 size={18} />}Sign In
-                  </button>
+              )}
+              {isMobile && (
+                <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Get Started</h2>
+                      <p className="text-gray-500 mb-6">Register an account</p>
+                      <form onSubmit={handleSignUp} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.USERNAME_EXISTS ? (
+                                <p className="text-sm text-red-700">
+                                  Enterd username is already taken
+                                </p>
+                              ) : loginError === LoginError.EMAIL_EXISTS ? (
+                                <p className="text-sm text-red-700">
+                                  Enterd email is already taken
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Entered passwords do not match
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_SHORT ? (
+                                <p className="text-sm text-red-700">
+                                  Password must be a minimum of six characters
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <span
+                            onMouseLeave={() => setShowPassword(false)}
+                            onMouseDown={() => setShowPassword(true)}
+                            onMouseUp={() => setShowPassword(false)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                          </span>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button className="w-full" variant="primary">
+                          Sign Up
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
                 </div>
-              </form>
+              )}
             </div>
           )}
           {loginMode == LoginMode.CONFIRM_ACCOUNT && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Confirm Account</h2>
-              <p className="text-gray-500 mb-6">To verify your email, we've sent a code to {email}</p>
-              <form onSubmit={handleConfirmAccount} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {loginError === LoginError.CODE_MISMATCH ? (
-                        <p className="text-sm text-red-700">
-                          Provided code is incorrect
-                        </p>
-                      ) : loginError === LoginError.EXPIRED_CODE ? (
-                        <p className="text-sm text-red-700">
-                          Provided code is expired, please request a new one
-                        </p>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Code"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
-                  <div className="flex justify-between text-sm mt-0.5">
-                    <div className="flex items-center gap-1 text-green-700">
-                      {resentCode && (
-                        <>
-                          <CircleCheck size={15} />
-                          <h3 className="">
-                            A new code has been sent</h3>
-                        </>
-                      )}
-                    </div>
-                    <div className="text-right text-sm">
-                      <button
-                        type="button"
-                        onClick={() => setResentCode(true)}
-                        className="text-dark-yellow-green hover:underline cursor-pointer"
-                      >
-                        Resend code
-                      </button>
+            <div>
+              {isDesktop && (
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Confirm Account</h2>
+                      <p className="text-gray-500 mb-6">To verify your email, we've sent a code to {email}</p>
+                      <form onSubmit={handleConfirmAccount} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.CODE_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is incorrect
+                                </p>
+                              ) : loginError === LoginError.EXPIRED_CODE ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is expired, please request a new one
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <div className="flex justify-between text-sm mt-0.5">
+                            <div className="flex items-center gap-1 text-green-700">
+                              {resentCode && (
+                                <>
+                                  <CircleCheck size={15} />
+                                  <h3 className="">
+                                    A new code has been sent</h3>
+                                </>
+                              )}
+                            </div>
+                            <div className="text-right text-sm">
+                              <button
+                                type="button"
+                                onClick={() => setResentCode(true)}
+                                className="text-dark-yellow-green hover:underline cursor-pointer"
+                              >
+                                Resend code
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <Button className="w-full" variant="primary">
+                          Confirm Account
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_UP)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign Up
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
                 </div>
-                <Button className="w-full" variant="primary">
-                  Confirm Account
-                </Button>
-                <div className="text-left ">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode(LoginMode.SIGN_UP)}
-                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
-                  >
-                    {<Undo2 size={18} />}Sign Up
-                  </button>
+              )}
+              {isMobile && (
+                <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Confirm Account</h2>
+                      <p className="text-gray-500 mb-6">To verify your email, we've sent a code to {email}</p>
+                      <form onSubmit={handleConfirmAccount} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.CODE_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is incorrect
+                                </p>
+                              ) : loginError === LoginError.EXPIRED_CODE ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is expired, please request a new one
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <div className="flex justify-between text-sm mt-0.5">
+                            <div className="flex items-center gap-1 text-green-700">
+                              {resentCode && (
+                                <>
+                                  <CircleCheck size={15} />
+                                  <h3 className="">
+                                    A new code has been sent</h3>
+                                </>
+                              )}
+                            </div>
+                            <div className="text-right text-sm">
+                              <button
+                                type="button"
+                                onClick={() => setResentCode(true)}
+                                className="text-dark-yellow-green hover:underline cursor-pointer"
+                              >
+                                Resend code
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <Button className="w-full" variant="primary">
+                          Confirm Account
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_UP)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign Up
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
                 </div>
-              </form>
+              )}
             </div>
           )}
           {loginMode == LoginMode.FORGOT_PASSWORD && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
-              <p className="text-gray-500 mb-6">Enter the username or email associated with your account</p>
+            <div>
+              {isDesktop && (
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
+                      <p className="text-gray-500 mb-6">Enter the username or email associated with your account</p>
 
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {loginError === LoginError.USER_NOT_FOUND ? (
-                        <p className="text-sm text-red-700">
-                          No account was found with the specified username or email
-                        </p>
-                      ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
-                        <>
-                          <p className="text-sm text-red-700">
-                            Please verify your email before resetting your password
-                          </p>
+                      <form onSubmit={handleForgotPassword} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.USER_NOT_FOUND ? (
+                                <p className="text-sm text-red-700">
+                                  No account was found with the specified username or email
+                                </p>
+                              ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
+                                <>
+                                  <p className="text-sm text-red-700">
+                                    Please verify your email before resetting your password
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setUsername("");
+                                      setLoginMode(LoginMode.RESEND_CODE);
+                                    }}
+                                    className="text-sm hover:underline cursor-pointer"
+                                  >
+                                    Resend code?
+                                  </button>
+                                </>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username or Email"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button type="submit" variant="primary" className="w-full">
+                          Continue
+                        </Button>
+                        <div className="text-left ">
                           <button
                             type="button"
-                            onClick={() => {
-                              setUsername("");
-                              setLoginMode(LoginMode.RESEND_CODE);
-                            }}
-                            className="text-sm hover:underline cursor-pointer"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
                           >
-                            Resend code?
+                            {<Undo2 size={18} />}Sign In
                           </button>
-                        </>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
+                        </div>
+                      </form>
                     </div>
                   </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Username or Email"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <Button type="submit" variant="primary" className="w-full">
-                  Continue
-                </Button>
-                <div className="text-left ">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode(LoginMode.SIGN_IN)}
-                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
-                  >
-                    {<Undo2 size={18} />}Sign In
-                  </button>
                 </div>
-              </form>
+              )}
+              {isMobile && (
+                <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
+                      <p className="text-gray-500 mb-6">Enter the username or email associated with your account</p>
+
+                      <form onSubmit={handleForgotPassword} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.USER_NOT_FOUND ? (
+                                <p className="text-sm text-red-700">
+                                  No account was found with the specified username or email
+                                </p>
+                              ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
+                                <>
+                                  <p className="text-sm text-red-700">
+                                    Please verify your email before resetting your password
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setUsername("");
+                                      setLoginMode(LoginMode.RESEND_CODE);
+                                    }}
+                                    className="text-sm hover:underline cursor-pointer"
+                                  >
+                                    Resend code?
+                                  </button>
+                                </>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username or Email"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button type="submit" variant="primary" className="w-full">
+                          Continue
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {loginMode == LoginMode.RESET_PASSWORD && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
-              <p className="text-gray-500 mb-6">To reset your password, we've sent a code to {destinationEmail}</p>
+            <div>
+              {isDesktop && (
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
+                      <p className="text-gray-500 mb-6">To reset your password, we've sent a code to {destinationEmail}</p>
 
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {loginError === LoginError.CODE_MISMATCH ? (
-                        <p className="text-sm text-red-700">
-                          Provided code is incorrect
-                        </p>
-                      ) : loginError === LoginError.EXPIRED_CODE ? (
-                        <p className="text-sm text-red-700">
-                          Provided code is expired, please request a new one
-                        </p>
-                      ) : loginError === LoginError.PASSWORD_MISMATCH ? (
-                        <p className="text-sm text-red-700">
-                          Entered passwords do not match
-                        </p>
-                      ) : loginError === LoginError.PASSWORD_SHORT ? (
-                        <p className="text-sm text-red-700">
-                          Password must be a minimum of six characters
-                        </p>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
+                      <form onSubmit={handleResetPassword} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.CODE_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is incorrect
+                                </p>
+                              ) : loginError === LoginError.EXPIRED_CODE ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is expired, please request a new one
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Entered passwords do not match
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_SHORT ? (
+                                <p className="text-sm text-red-700">
+                                  Password must be a minimum of six characters
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <div className="flex justify-between text-sm mt-0.5">
+                            <div className="flex items-center gap-1 text-green-700">
+                              {resentCode && (
+                                <>
+                                  <CircleCheck size={15} />
+                                  <h3 className="">
+                                    A new code has been sent</h3>
+                                </>
+                              )}
+                            </div>
+                            <div className="text-right text-sm">
+                              <button
+                                type="button"
+                                onClick={() => setResentCode(true)}
+                                className="text-dark-yellow-green hover:underline cursor-pointer"
+                              >
+                                Resend code
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <span
+                            onMouseLeave={() => setShowPassword(false)}
+                            onMouseDown={() => setShowPassword(true)}
+                            onMouseUp={() => setShowPassword(false)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                          </span>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button type="submit" variant="primary" className="w-full">
+                          Reset Password
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
-                )}
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Code"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
-                  <div className="flex justify-between text-sm mt-0.5">
-                    <div className="flex items-center gap-1 text-green-700">
-                      {resentCode && (
-                        <>
-                          <CircleCheck size={15} />
-                          <h3 className="">
-                            A new code has been sent</h3>
-                        </>
-                      )}
-                    </div>
-                    <div className="text-right text-sm">
-                      <button
-                        type="button"
-                        onClick={() => setResentCode(true)}
-                        className="text-dark-yellow-green hover:underline cursor-pointer"
-                      >
-                        Resend code
-                      </button>
+                </div>
+              )}
+              {isMobile && (
+                <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
+                      <p className="text-gray-500 mb-6">To reset your password, we've sent a code to {destinationEmail}</p>
+
+                      <form onSubmit={handleResetPassword} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {loginError === LoginError.CODE_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is incorrect
+                                </p>
+                              ) : loginError === LoginError.EXPIRED_CODE ? (
+                                <p className="text-sm text-red-700">
+                                  Provided code is expired, please request a new one
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_MISMATCH ? (
+                                <p className="text-sm text-red-700">
+                                  Entered passwords do not match
+                                </p>
+                              ) : loginError === LoginError.PASSWORD_SHORT ? (
+                                <p className="text-sm text-red-700">
+                                  Password must be a minimum of six characters
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <div className="flex justify-between text-sm mt-0.5">
+                            <div className="flex items-center gap-1 text-green-700">
+                              {resentCode && (
+                                <>
+                                  <CircleCheck size={15} />
+                                  <h3 className="">
+                                    A new code has been sent</h3>
+                                </>
+                              )}
+                            </div>
+                            <div className="text-right text-sm">
+                              <button
+                                type="button"
+                                onClick={() => setResentCode(true)}
+                                className="text-dark-yellow-green hover:underline cursor-pointer"
+                              >
+                                Resend code
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                          />
+                          <span
+                            onMouseLeave={() => setShowPassword(false)}
+                            onMouseDown={() => setShowPassword(true)}
+                            onMouseUp={() => setShowPassword(false)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                          </span>
+                        </div>
+                        <input
+                          type="password"
+                          placeholder="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button type="submit" variant="primary" className="w-full">
+                          Reset Password
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
                 </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
-                  <span
-                    onMouseLeave={() => setShowPassword(false)}
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  >
-                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                  </span>
-                </div>
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <Button type="submit" variant="primary" className="w-full">
-                  Reset Password
-                </Button>
-                <div className="text-left ">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode(LoginMode.SIGN_IN)}
-                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
-                  >
-                    {<Undo2 size={18} />}Sign In
-                  </button>
-                </div>
-              </form>
+              )}
             </div>
           )}
           {loginMode == LoginMode.RESEND_CODE && (
-            <div className="flex-1 px-10 pt-6 h-124">
-              <h2 className="text-2xl font-semibold mb-2">Resend Code</h2>
-              <p className="text-gray-500 mb-6">Enter the username associated with your account</p>
-              <form onSubmit={handleResendCode} className="space-y-4">
-                {loginError !== null && (
-                  <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
-                    <div className="mt-0.5">
-                      <CircleAlert size={30} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
-                      {/* Update this to whatever errors actually get thrown for resend code auth */}
-                      {loginError === LoginError.USER_NOT_FOUND ? (
-                        <p className="text-sm text-red-700">
-                          No account was found with the specified username
-                        </p>
-                      ) : (
-                        <p className="text-sm text-red-700">
-                          An error has occured
-                        </p>
-                      )}
+            <div>
+              {isDesktop && (
+                <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+                  <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                    <div className="flex-1 px-10 pt-6 h-124">
+                      <h2 className="text-2xl font-semibold mb-2">Resend Code</h2>
+                      <p className="text-gray-500 mb-6">Enter the username associated with your account</p>
+                      <form onSubmit={handleResendCode} className="space-y-4">
+                        {loginError !== null && (
+                          <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                            <div className="mt-0.5">
+                              <CircleAlert size={30} />
+                            </div>
+                            <div className="text-left">
+                              <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                              {/* Update this to whatever errors actually get thrown for resend code auth */}
+                              {loginError === LoginError.USER_NOT_FOUND ? (
+                                <p className="text-sm text-red-700">
+                                  No account was found with the specified username
+                                </p>
+                              ) : (
+                                <p className="text-sm text-red-700">
+                                  An error has occured
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          placeholder="Username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                          required
+                        />
+                        <Button type="submit" variant="primary" className="w-full">
+                          Resend Code
+                        </Button>
+                        <div className="text-left ">
+                          <button
+                            type="button"
+                            onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                            className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                          >
+                            {<Undo2 size={18} />}Sign In
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
-                )}
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
-                <Button type="submit" variant="primary" className="w-full">
-                  Resend Code
-                </Button>
-                <div className="text-left ">
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode(LoginMode.SIGN_IN)}
-                    className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
-                  >
-                    {<Undo2 size={18} />}Sign In
-                  </button>
                 </div>
-              </form>
-            </div>
+              )}
+            {isMobile && (
+              <div className="fixed top-5/16 h-11/16 w-screen flex items-center justify-center">
+                <div className="flex w-full max-w-4xl items-start" id="loginForm">
+                  <div className="flex-1 px-10 pt-6 h-124">
+                    <h2 className="text-2xl font-semibold mb-2">Resend Code</h2>
+                    <p className="text-gray-500 mb-6">Enter the username associated with your account</p>
+                    <form onSubmit={handleResendCode} className="space-y-4">
+                      {loginError !== null && (
+                        <div className="flex items-center gap-3 rounded-lg border border-red-800 bg-red-50 p-4 text-red-800">
+                          <div className="mt-0.5">
+                            <CircleAlert size={30} />
+                          </div>
+                          <div className="text-left">
+                            <h3 className="text-lg font-semibold mb-1">There was a problem</h3>
+                            {/* Update this to whatever errors actually get thrown for resend code auth */}
+                            {loginError === LoginError.USER_NOT_FOUND ? (
+                              <p className="text-sm text-red-700">
+                                No account was found with the specified username
+                              </p>
+                            ) : (
+                              <p className="text-sm text-red-700">
+                                An error has occured
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        type="text"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                      />
+                      <Button type="submit" variant="primary" className="w-full">
+                        Resend Code
+                      </Button>
+                      <div className="text-left ">
+                        <button
+                          type="button"
+                          onClick={() => setLoginMode(LoginMode.SIGN_IN)}
+                          className="text-sm flex text-dark hover:underline cursor-pointer gap-1 items-center"
+                        >
+                          {<Undo2 size={18} />}Sign In
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+                    
           )}
         </div>
-      </div>
-    </div>
   );
 };
 
