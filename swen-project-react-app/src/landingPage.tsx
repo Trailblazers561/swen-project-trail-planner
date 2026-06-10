@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/templates/button";
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.heat";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useMemo } from "react";
+import { LoaderCircle } from "lucide-react";
 import { TrailData } from "./api";
 import moment from "moment-timezone";
 import {
@@ -22,6 +23,8 @@ const LandingPage = () => {
     const [showLegend, setShowLegend] = useState(false);
 
     const [displayedUsage, setDisplayedUsage] = useState<Record<number, number>>({});
+
+    const [zoom, setZoom] = useState(8);
 
     const createTrailIcon = (color: string) =>
     L.divIcon({
@@ -196,6 +199,16 @@ const LandingPage = () => {
         }
     };
 
+    function ZoomWatcher({ setZoom }: { setZoom: (zoom: number) => void }) {
+        useMapEvents({
+            zoomend: (event) => {
+                setZoom(event.target.getZoom());
+            },
+        });
+
+        return null;
+    }
+
     // Returns the start of the given date in the America/New_York timezone
     function getDateStart(date: Date) {
         const userISO = moment(date).tz("UTC").format("YYYY-MM-DD");
@@ -257,7 +270,7 @@ const LandingPage = () => {
                             <SelectValue/>
                         </SelectTrigger>
 
-                        <SelectContent className="z-[10000]">
+                        <SelectContent className="z-[10000]" position="popper" side="bottom" sideOffset={4}>
                             <SelectItem value="day">Yesterday</SelectItem>
                             <SelectItem value="week">Last Week</SelectItem>
                             <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
@@ -354,7 +367,15 @@ const LandingPage = () => {
 
                 </div>
             </div>
-                
+            {loadingUsage && zoom >= 9 && (
+                <div className="absolute inset-0 z-[9998] flex items-center justify-center pointer-events-none">
+                    <LoaderCircle
+                        size={80}
+                        strokeWidth={2}
+                        className="animate-spin text-navbar"
+                    />
+                </div>
+            )}
             <MapContainer
                 center={[44.02, -73.82]} 
                 zoom={8}
@@ -366,6 +387,9 @@ const LandingPage = () => {
                 maxBounds={parkBounds}
                 maxBoundsViscosity={0.8}
             >
+
+            <ZoomWatcher setZoom={setZoom} />
+
                 <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
                 />
@@ -374,7 +398,7 @@ const LandingPage = () => {
 
                 <ZoomControl position="bottomright" />
 
-                {parsedTrails.map((trail) => (
+                {zoom >= 9 && parsedTrails.map((trail) => (
                     <Marker
                         key={trail.id}
                         position={[trail.latitude, trail.longitude]}
