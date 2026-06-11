@@ -117,7 +117,7 @@ resource "aws_api_gateway_integration_response" "registration_options_integratio
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"     = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"     = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,POST,PUT,DELETE,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"      = "'*'"
     "method.response.header.Access-Control-Allow-Credentials" = "'true'"
   }
@@ -180,6 +180,24 @@ resource "aws_api_gateway_integration" "registration_delete_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.delete_registration.invoke_arn
+}
+
+# PUT /registration
+resource "aws_api_gateway_method" "registration_edit" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.registration.id
+  http_method   = "PUT"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "registration_edit_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.registration.id
+  http_method             = aws_api_gateway_method.registration_edit.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.edit_registration.invoke_arn
 }
 
 # /devices Resource (plural - for device POST requests)
@@ -1067,6 +1085,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.registration_get_integration.uri,
       aws_api_gateway_integration.registration_post_integration.uri,
       aws_api_gateway_integration.registration_delete_integration.uri,
+      aws_api_gateway_integration.registration_edit_integration.uri,
       aws_api_gateway_integration.block_put_integration.uri,
       aws_api_gateway_integration.archive_put_integration.uri,
 
@@ -1105,6 +1124,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.registration_post.authorization,
       aws_api_gateway_method.registration_get.authorization,
       aws_api_gateway_method.registration_delete.authorization,
+      aws_api_gateway_method.registration_edit.authorization,
       aws_api_gateway_method.block_put.authorization,
       aws_api_gateway_method.block_options.authorization,
       aws_api_gateway_method.archive_put.authorization,
@@ -1140,6 +1160,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.registration_get_integration,
     aws_api_gateway_integration.registration_post_integration,
     aws_api_gateway_integration.registration_delete_integration,
+    aws_api_gateway_integration.registration_edit_integration,
     aws_api_gateway_integration.block_options_integration,
     aws_api_gateway_integration.archive_options_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
