@@ -26,6 +26,7 @@ resource "aws_dynamodb_table" "device_table" {
     date_manufactured: number (UNIX timestamp)
     date_retired: number (UNIX timestamp)
     is_blocked: boolean
+    is_archived: boolean
   */
 }
 
