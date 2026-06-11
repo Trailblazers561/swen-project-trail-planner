@@ -485,6 +485,10 @@ def upload_device_data(event, context):
         if is_device_blocked(device_name=name):
             raise ValueError(f"Device [{name}] is blocked and cannot upload data")
 
+        # assume device isn't archived in our system
+        if is_device_archived(device_name=name):
+            raise ValueError(f"Device [{name}] is archived and cannot upload data")
+
         firmware_version = body.get("firmware_version")
         data_points = body.get("data")
         battery = body.get("battery")
