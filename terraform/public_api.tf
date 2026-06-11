@@ -56,11 +56,42 @@ locals {
         handler = "devices_put.upload_device_data"
       }
     }
+    block = {
+      PUT = {
+        file = "block/block_put.py"
+        handler = "block_put.set_device_blocked"
+      }
+    }
+    archive = {
+      PUT = {
+        file = "archive/archive_put.py"
+        handler = "archive_put.set_device_archived"
+      }
+    }
     heatmap = {
       GET = {
         file = "heatmap/heatmap_get.py"
         handler = "heatmap_get.get_heatmap_data"
         timeout = 10
+      }
+    }
+    registration = {
+      GET = {
+        file = "registration/registration_get.py"
+        handler = "registration_get.get_registrations"
+        timeout = 10
+      }
+      POST = {
+        file = "registration/registration_post.py"
+        handler = "registration_post.pre_register_device"
+      }
+      PUT = {
+        file = "registration/registration_put.py"
+        handler = "registration_put.edit_registration"
+      }
+      DELETE = {
+        file = "registration/registration_delete.py"
+        handler = "registration_delete.delete_registration"
       }
     }
     trail_data = {
@@ -260,6 +291,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
 
   environment {
     variables = {
+      REGISTRATION_TABLE = aws_dynamodb_table.registration_table.name
       DEVICE_TRAIL_LOG_HOUR_TABLE = aws_dynamodb_table.device_trail_log_hour_table.name
       DEVICE_TRAIL_LOG_DAY_TABLE = aws_dynamodb_table.device_trail_log_day_table.name
       DEVICE_TRAIL_LOG_WEEK_TABLE = aws_dynamodb_table.device_trail_log_week_table.name
