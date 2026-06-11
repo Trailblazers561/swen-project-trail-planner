@@ -354,6 +354,83 @@ resource "aws_api_gateway_integration" "block_put_integration" {
   uri                     = aws_lambda_function.set_device_blocked.invoke_arn
 }
 
+# PUT /devices/archive
+resource "aws_api_gateway_resource" "archive" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_resource.devices.id
+  path_part   = "archive"
+}
+
+# CORS (OPTIONS) for /devices/archive
+resource "aws_api_gateway_method" "archive_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.archive.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "archive_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.archive.id
+  http_method = aws_api_gateway_method.archive_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "archive_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.archive.id
+  http_method = aws_api_gateway_method.archive_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "archive_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.archive.id
+  http_method = aws_api_gateway_method.archive_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.archive_options_integration,
+    aws_api_gateway_method_response.archive_options_response
+  ]
+}
+
+# PUT /devices/archive -> Lambda: set_device_archived
+resource "aws_api_gateway_method" "archive_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.archive.id
+  http_method   = "PUT"
+  authorization = local.gateway_method_authorization
+  authorizer_id = aws_api_gateway_authorizer.lambda_authorizer.id
+}
+
+resource "aws_api_gateway_integration" "archive_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.archive.id
+  http_method             = aws_api_gateway_method.archive_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.set_device_archived.invoke_arn
+}
+
 # POST /trail_data -> Lambda: upload_trail_data
 resource "aws_api_gateway_method" "trail_data_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
@@ -990,6 +1067,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.registration_get_integration.uri,
       aws_api_gateway_integration.registration_post_integration.uri,
       aws_api_gateway_integration.registration_delete_integration.uri,
+      aws_api_gateway_integration.block_put_integration.uri,
+      aws_api_gateway_integration.archive_put_integration.uri,
 
 
       # Authorizer Stuff
@@ -1028,6 +1107,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.registration_delete.authorization,
       aws_api_gateway_method.block_put.authorization,
       aws_api_gateway_method.block_options.authorization,
+      aws_api_gateway_method.archive_put.authorization,
+      aws_api_gateway_method.archive_options.authorization,
 
       # Permissions
       aws_lambda_permission.allow_apigateway_all_functions
@@ -1060,6 +1141,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.registration_post_integration,
     aws_api_gateway_integration.registration_delete_integration,
     aws_api_gateway_integration.block_options_integration,
+    aws_api_gateway_integration.archive_options_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
     aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
@@ -1070,6 +1152,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.users_options_integration_response,
     aws_api_gateway_integration_response.registration_options_integration_response,
     aws_api_gateway_integration_response.block_options_integration_response,
+    aws_api_gateway_integration_response.archive_options_integration_response,
   ]
 }
 

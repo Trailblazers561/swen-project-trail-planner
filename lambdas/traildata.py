@@ -10,6 +10,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
+secrets_client = boto3.client("secretsmanager")
 
 # Table references
 registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_Registration"))
@@ -1322,8 +1323,6 @@ def pre_register_device(event, context):
         if device_serial is None:
             raise ValueError("Missing required field: device_serial")
 
-        secrets_client = boto3.client("secretsmanager")
-
         # make sure a device with our given name doesn't already exist. not a 100% guaranteed check as a user
         # could screw up the name, but this does a reasonably good job at it. if it does we'll pair with that instead.
         existing = device_table.query(
@@ -1333,20 +1332,7 @@ def pre_register_device(event, context):
         ).get("Items", [])
 
         if existing:
-            # tie into what's already there
-            new_device_id = int(existing[0]["id"])
-
-            # if the secret is different go update that
-            try:
-                secrets_client.update_secret(
-                    SecretId=device_name,
-                    SecretString=json.dumps({"device_name": device_name, "device_ser_no": device_serial})
-                )
-            except secrets_client.exceptions.ResourceNotFoundException:
-                secrets_client.create_secret(
-                    Name=device_name,
-                    SecretString=json.dumps({"device_name": device_name, "device_ser_no": device_serial})
-                )
+            raise ValueError("Device with this name already exists, delete the device first or use the existing one")
         else:
             # normal operation
             new_device_id = get_next_device_id()
@@ -1355,6 +1341,7 @@ def pre_register_device(event, context):
                 "id": new_device_id,
                 "name": device_name,
                 "is_blocked": False,
+                "is_archived": False,
             })
 
             secrets_client.create_secret(
@@ -1365,22 +1352,23 @@ def pre_register_device(event, context):
                 })
             )
 
-        new_registration_id = get_next_registration_id()
+            new_registration_id = get_next_registration_id()
 
-        registration_table.put_item(Item={
-            "registration_id": new_registration_id,
-            "device_id": new_device_id,
-        })
-
-        return {
-            "statusCode": 200,
-            "headers": cors_headers(),
-            "body": json.dumps({
-                "message": "Device registered successfully",
+            registration_table.put_item(Item={
+                "registration_id": new_registration_id,
                 "device_id": new_device_id,
-                "registration_id": new_registration_id
+                "date_registered": -1,
             })
-        }
+
+            return {
+                "statusCode": 200,
+                "headers": cors_headers(),
+                "body": json.dumps({
+                    "message": "Device registered successfully",
+                    "device_id": new_device_id,
+                    "registration_id": new_registration_id
+                })
+            }
     except ValueError as e:
         print(e)
         return {
@@ -1420,11 +1408,11 @@ def get_registrations(event, context):
 
         # join results to device table pieces
         results = []
-        for device in registered_devices:
-            device_id = int(device.get("device_id", 0))
+        for registration in registered_devices:
+            device_id = int(registration.get("device_id", 0))
             device_resp = device_table.get_item(Key={"id": device_id})
-            device = device_resp.get("Item", {})
-            results.append({**convert_decimals(device), "device": convert_decimals(device)})
+            device_info = device_resp.get("Item", {})
+            results.append({**convert_decimals(registration), "device": convert_decimals(device_info)})
 
         return {
             "statusCode": 200,
@@ -1473,6 +1461,43 @@ def delete_registration(event, context):
 
         print(f"Attempting to delete registration entry with registration_id [{registration_id}]")
 
+        response = registration_table.get_item(Key={"registration_id": int(registration_id)})
+        item = response.get("Item")
+        if not item:
+            print("Registration id not found")
+            return {
+                "statusCode": 404,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Registration not found"})
+            }
+
+        if item.get("date_registered") != -1:
+            print("Tried to delete active device")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Cannot delete a registration attached to a connected device, try retiring instead"})
+            }
+
+        device_id = item.get("device_id")
+        response = device_table.get_item(Key={"id": int(device_id)})
+        item = response.get("Item")
+
+        if not item:
+            print("Device id linked to provided registration entry not found")
+            return {
+                "statusCode": 404,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device id liked to registration entry not found"})
+            }
+
+        device_name = item.get("name")
+
+        secrets_client.delete_secret(
+            SecretId=device_name,
+            ForceDeleteWithoutRecovery=True
+        )
+        device_table.delete_item(Key={"id": int(device_id)})
         registration_table.delete_item(Key={"registration_id": int(registration_id)})
 
         print("Successfully deleted registration")
@@ -1528,6 +1553,15 @@ def set_device_blocked(event, context):
                 "body": json.dumps({"error": "Missing required field: is_blocked"})
             }
 
+        response = device_table.get_item(Key={"id": int(device_id)})
+        if not response.get("Item"):
+            print("Device id not found")
+            return {
+                "statusCode": 404,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device id not present in table"})
+            }
+
         device_table.update_item(
             Key={"id": int(device_id)},
             UpdateExpression="SET is_blocked = :val",
@@ -1576,3 +1610,93 @@ def is_device_blocked(device_id=None, device_name=None) -> bool:
         raise ValueError(f"Device not found")
 
     return bool(item.get("is_blocked", False))
+
+
+def set_device_archived(event, context):
+    """
+    Sets the archive status for a device
+    Expects: { "device_id": int, "is_archived": bool }
+    """
+    try:
+        print(event)
+        body = event.get("body", {})
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        device_id = body.get("device_id")
+        is_archived = body.get("is_archived")
+
+        if device_id is None:
+            print("Missing required field: device_id")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: device_id"})
+            }
+
+        if is_archived is None:
+            print("Missing required field: is_archived")
+            return {
+                "statusCode": 400,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Missing required field: is_archived"})
+            }
+
+        response = device_table.get_item(Key={"id": int(device_id)})
+        if not response.get("Item"):
+            print("Device id not found")
+            return {
+                "statusCode": 404,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device id not present in table"})
+            }
+
+        device_table.update_item(
+            Key={"id": int(device_id)},
+            UpdateExpression="SET is_archived = :val",
+            ExpressionAttributeValues={":val": is_archived}
+        )
+        return {
+            "statusCode": 200,
+            "headers": cors_headers(),
+            "body": json.dumps({"message": f"Device {device_id} is_archived set to {is_archived}"})
+        }
+
+    except ValueError as e:
+        print(e)
+        return {
+            "statusCode": 400,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"{str(e)}"})
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "headers": cors_headers(),
+            "body": json.dumps({"error": f"Internal server error: {str(e)}"})
+        }
+
+
+def is_device_archived(device_id=None, device_name=None) -> bool:
+    """
+    Slapped together check for the is blocked value in device. If a device is archived, we're ignoring any data from it.
+    Maybe some more features, dont know
+    """
+    if device_id is not None:
+        response = device_table.get_item(Key={"id": int(device_id)})
+        item = response.get("Item")
+    elif device_name is not None:
+        items = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(device_name),
+            Limit=1
+        ).get("Items", [])
+        item = items[0] if items else None
+    else:
+        raise ValueError("Must provide either device_id or device_name")
+
+    if not item:
+        raise ValueError(f"Device not found")
+
+    return bool(item.get("is_archived", False))
