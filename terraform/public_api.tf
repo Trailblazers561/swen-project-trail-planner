@@ -15,7 +15,7 @@ locals {
       }
       DELETE = {
         file = "areas/areas_delete.py"
-        handler = "areas_delete.delete_area"
+        handler = "areas_delete.retire_area"
       }
     }
     csv = {
@@ -98,9 +98,9 @@ locals {
         handler = "users_get.get_users"
         timeout = 10
       }
-      POST = {
-        file = "users/users_post.py"
-        handler = "users_post.change_user_group"
+      PUT = {
+        file = "users/users_put.py"
+        handler = "users_put.change_user_group"
       }
       DELETE = {
         file = "users/users_delete.py"

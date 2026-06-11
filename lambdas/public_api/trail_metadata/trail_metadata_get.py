@@ -7,8 +7,10 @@ from helper_functions import dynamodb, trail_table, convert_decimals, cors_heade
 def get_trail_metadata(event, context):
     try:
         print(event)
+        single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
+        retired = "retired" in single_params
         trail_id_list = multi_params.get("trail_id")
         if trail_id_list is not None and not all(id.isdigit() for id in trail_id_list):
             raise ValueError("Invalid trail_id_list format")
@@ -25,8 +27,11 @@ def get_trail_metadata(event, context):
                     }
                 )["Responses"].get(trail_table.name, [])
                 items.extend(response)
-        else:   
-            items = trail_table.scan(FilterExpression=Attr("date_retired").not_exists()).get("Items", [])
+        else:
+            if retired:
+                items = trail_table.scan(FilterExpression=Attr("date_retired").exists()).get("Items", [])
+            else:
+                items = trail_table.scan(FilterExpression=Attr("date_retired").not_exists()).get("Items", [])
 
         print(f"Successfully found trail metadata [{items[:3]}]")
         return {
