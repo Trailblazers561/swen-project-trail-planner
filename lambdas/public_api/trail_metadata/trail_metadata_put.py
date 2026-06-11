@@ -53,9 +53,14 @@ def update_trail_metadata(event, context):
             if update_expressions:
                 trail_table.update_item(
                     Key={"id": trail_id},
-                    UpdateExpression=f"SET {', '.join(update_expressions)}",
+                    UpdateExpression=f"SET {', '.join(update_expressions)} REMOVE date_retired",
                     ExpressionAttributeNames=expression_names,
                     ExpressionAttributeValues=expression_values
+                )
+            else:
+                trail_table.update_item(
+                    Key={"id": trail_id},
+                    UpdateExpression="REMOVE date_retired"
                 )
         except Exception as e:
             print(e)

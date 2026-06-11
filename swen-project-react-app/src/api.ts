@@ -7,11 +7,14 @@ export function TrailData() {
   /**
    * Get trail metadata (names, IDs, notes, etc.) 
    * @param trailIdList - Optional list of trail ids of trails to retrieve
+   * @param retired - Optional bool to retrieve retired trails or unretired trails
    */
-  async function getTrailMetadata(trailIdList?: number[]) {
+  async function getTrailMetadata(trailIdList?: number[], retired?: boolean) {
     const queries: string[] = []
     if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
+    if (retired)
+      queries.push("retired");
     const queryString = queries.length ? `?${queries.join("&")}` : "";
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
@@ -22,11 +25,14 @@ export function TrailData() {
   /**
    * Get areas
    * @param areaList - Optional list of area names of areas to retrieve
+   * @param retired - Optional bool to retrieve retired trails or unretired trails
    */
-  async function getAreaMetadata(areaList?: string[]) {
+  async function getAreaMetadata(areaList?: string[], retired?: boolean) {
     const queries: string[] = []
     if (areaList)
       areaList.forEach(area => {queries.push(`name=${encodeURIComponent(area)}`)})
+    if (retired)
+      queries.push("retired");
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/areas${queryString}`, {
@@ -175,13 +181,15 @@ export function TrailData() {
   /**
    * Retires a trail and all associated data
    * @param trailId - The ID of the trail to retire
+   * @param dateRetired - Optional date to set when it was retired
    */
-  async function retireTrail(trailId: number) {
+  async function retireTrail(trailId: number, dateRetired?: Date) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
+        date_retired: dateRetired?.toISOString()
       }),
     });
   }
@@ -221,15 +229,15 @@ export function TrailData() {
   }
 
   /**
-   * Delete a area
-   * @param areaName - The name of the area to delete
+   * Retire an area
+   * @param areaName - The name of the area to retire
    */
-  async function deleteArea(areaName: string) {
+  async function retireArea(areaName: string) {
     return await request(`${API_URL}/areas`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
-        name: areaName,
+        name: areaName
       }),
     });
   }
@@ -307,7 +315,7 @@ export function TrailData() {
    */
   async function updateUserRole(targetUsername: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
-      method: "POST",
+      method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
         target_username: targetUsername,
@@ -344,7 +352,7 @@ export function TrailData() {
     retireTrail,
     createArea,
     updateArea,
-    deleteArea,
+    retireArea,
     exportCSV,
     importCSV,
     getUsers,
