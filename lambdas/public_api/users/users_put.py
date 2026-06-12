@@ -42,7 +42,7 @@ def change_user_group(event, context):
 
         end_target_groups = [group for group in user_groups.keys() if user_groups[group] <= user_groups[target_user_role]]
         current_target_users_groups = cognito.admin_list_groups_for_user(Username=target_username, UserPoolId=COGNITO_USER_POOL_ID)["Groups"]
-        current_target_user_role = max([group["GroupName"] for group in current_target_users_groups], key=lambda x: user_groups[x], default="guest")
+        current_target_user_role = max([group["GroupName"] for group in current_target_users_groups if group["GroupName"] in user_groups], key=lambda x: user_groups[x], default="user")
         if user_groups[current_target_user_role] >= user_groups[caller_role]:
             raise PermissionError("Invalid permissions to set user to specified target_user_role")
         for group in current_target_users_groups:
