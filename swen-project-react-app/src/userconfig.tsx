@@ -8,7 +8,7 @@ interface User {
     username: string;
     email: string;
     role: Role;
-    banned: boolean;
+    banned: boolean
 }
 
 export const stringToEnum: Record<string, number> = {
@@ -67,7 +67,7 @@ const Privileges = () => {
                     <div>Loading...</div>
                 ) : (
                     <div className="pt-4 m-4">
-                        <UserDataTable data={userListData} onRefresh={loadUsers}/>
+                        <UserDataTable data={userListData} onRefresh={loadUsers} />
                     </div>
                 )}
             </div>
