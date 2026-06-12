@@ -50,16 +50,6 @@ const Privileges = () => {
         }
     };
 
-    const handleRoleUpdated = (username: string, newRole: Role) => {
-        setUserListData(prev =>
-            prev.map(user =>
-                user.username === username
-                    ? { ...user, role: newRole }
-                    : user
-            )
-        );
-    };
-
     useEffect(() => {
         loadUsers();
     }, []);
@@ -77,7 +67,7 @@ const Privileges = () => {
                     <div>Loading...</div>
                 ) : (
                     <div className="pt-4 m-4">
-                        <UserDataTable data={userListData} onRoleUpdated={handleRoleUpdated} />
+                        <UserDataTable data={userListData} onRefresh={loadUsers}/>
                     </div>
                 )}
             </div>
