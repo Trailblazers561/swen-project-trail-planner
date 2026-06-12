@@ -8,6 +8,7 @@ interface User {
     username: string;
     email: string;
     role: Role;
+    banned: boolean;
 }
 
 export const stringToEnum: Record<string, number> = {
@@ -40,6 +41,7 @@ const Privileges = () => {
                         username: user.username,
                         email: user.email,
                         role: stringToEnum[user.role],
+                        banned: user.banned
                     }))
                 );
             }
