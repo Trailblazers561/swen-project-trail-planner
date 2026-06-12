@@ -18,85 +18,6 @@ interface Props {
     onRefresh: () => Promise<void>;
 }
 
-<<<<<<< HEAD
-=======
-const updateUserRole = async (option: string, row: UserRow, onRefresh: () => Promise<void>) => {
-    const isPromote = option === "promote";
-    const isDemote = option === "demote";
-    const { updateUserRole } = TrailData();
-
-    try {
-        let newRole: Role = row.role;
-
-        if (isPromote && newRole < Role.Root) {
-            newRole = newRole + 1;
-        }
-
-        if (isDemote && newRole > Role.User) {
-            newRole = newRole - 1;
-        }
-
-        const roleForApi = roleMap[newRole];
-
-        const response = await updateUserRole(row.username, roleForApi);
-        console.log(response.json);
-        if (response.success) {
-            await onRefresh();
-            console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);
-        }
-    } catch (error) {
-        console.error("Error updating role: ", error);
-    }
-};
-
-const banUser = async (username: string, onRefresh: () => Promise<void>) => {
-    const confirmed = window.confirm(
-        `Are you sure you want to ban ${username}?`
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    const { banUser } = TrailData();
-
-    try {
-        const response = await banUser(username);
-        console.log(response.json);
-
-        if (response.success) {
-            console.log(`Successfully banned user ${username}`);
-            await onRefresh();
-        }
-    } catch (error) {
-        console.error("Error banning user:", error);
-    }
-};
-
-const unbanUser = async (username: string, onRefresh: () => Promise<void>) => {
-    await onRefresh();
-    const confirmed = window.confirm(
-        `Are you sure you want to unban ${username}?`
-    );
-
-    if (!confirmed) {
-        return;
-    }
-
-    const { updateUserRole } = TrailData();
-
-    try {
-        const response = await updateUserRole(username, roleMap[Role.User]);
-        console.log(response.json);
-        if (response.success) {
-            console.log(`Successfully unbanned user ${username}`);
-        }
-    } catch (error) {
-        console.error("Error unbanning user:", error);
-    }
-};
-
->>>>>>> 6525f5a (Banning and unbanning fixed + refresh bug fixes)
 const customStyles = {
     table: {
         style: {
@@ -140,11 +61,7 @@ const roleDisplayMap: Record<string | number, string> = {
     [Role.Root]: "Root Admin",
 };
 
-<<<<<<< HEAD
 const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
-=======
-const UserDataTable: React.FC<Props> = ({ data, onRefresh}) => {
->>>>>>> 6525f5a (Banning and unbanning fixed + refresh bug fixes)
 
     const { currentRole, username } = useAuth();
     const [loadingUsage, setLoadingUsage] = useState(false);
@@ -279,23 +196,15 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh}) => {
                         <Button
                             onClick={() => { updateUserRole("demote", row, onRefresh); }}
                             disabled={row.username === username || row.role === Role.User || row.role === Role.Root}
-<<<<<<< HEAD
                             className="bg-red-500 hover:bg-red-600 text-white p-2"
                             title="Demote"
-=======
-                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-1"
->>>>>>> 6525f5a (Banning and unbanning fixed + refresh bug fixes)
                         >
                             <ArrowDown size={18} />
                         </Button>
                         {row.banned ? (
                             <Button
                                 onClick={() => unbanUser(row.username, onRefresh)}
-<<<<<<< HEAD
                                 className="bg-blue-700 hover:bg-blue-600 text-white p-2"
-=======
-                                className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1"
->>>>>>> 6525f5a (Banning and unbanning fixed + refresh bug fixes)
                                 disabled={row.role === Role.Root || row.role === currentRole}
                                 title="Unban"
                             >
@@ -304,11 +213,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh}) => {
                         ) : (
                             <Button
                                 onClick={() => banUser(row.username, onRefresh)}
-<<<<<<< HEAD
                                 className="bg-red-700 hover:bg-red-600 text-white p-2"
-=======
-                                className="bg-red-700 hover:bg-red-600 text-white px-2 py-1"
->>>>>>> 6525f5a (Banning and unbanning fixed + refresh bug fixes)
                                 disabled={row.role === Role.Root || row.role === currentRole}
                                 title="Ban"
                             >
