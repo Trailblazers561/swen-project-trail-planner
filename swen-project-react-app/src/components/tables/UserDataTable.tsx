@@ -9,6 +9,7 @@ interface UserRow {
     username: string;
     email: string;
     role: Role;
+    banned: boolean;
 }
 
 interface Props {
@@ -34,15 +35,59 @@ const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (user
 
         const roleForApi = roleMap[newRole];
 
-        console.log(row.username);
         const response = await updateUserRole(row.username, roleForApi);
-        console.log(response.json);
+
         if (response.success) {
             onRoleUpdated(row.username, newRole);
             console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);
         }
     } catch (error) {
-        console.error("Error updating role:", error);
+        console.error("Error updating role: ", error);
+    }
+};
+
+const banUser = async (username: string) => {
+    const confirmed = window.confirm(
+        `Are you sure you want to ban ${username}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const { banUser } = TrailData();
+
+    try {
+        const response = await banUser(username);
+        console.log(response.json);
+
+        if (response.success) {
+            console.log(`Successfully banned user ${username}`);
+        }
+    } catch (error) {
+        console.error("Error banning user:", error);
+    }
+};
+
+const unbanUser = async (username: string) => {
+    const confirmed = window.confirm(
+        `Are you sure you want to unban ${username}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const { updateUserRole } = TrailData();
+
+    try {
+        const response = await updateUserRole(username, roleMap[Role.User]);
+        console.log(response.json);
+        if (response.success) {
+            console.log(`Successfully unbanned user ${username}`);
+        }
+    } catch (error) {
+        console.error("Error unbanning user:", error);
     }
 };
 
@@ -102,7 +147,14 @@ const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
         },
         {
             name: "Role",
-            selector: (row) => roleDisplayMap[row.role] ?? String(row.role),
+            selector: (row) =>
+            row.role == null ? "None" : (roleDisplayMap[row.role] ?? "None"),
+            sortable: true,
+            center: true,
+        },
+        {
+            name: "Banned?",
+            selector: (row) => row.banned ? "Yes" : "No",
             sortable: true,
             center: true,
         },
@@ -134,6 +186,24 @@ const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
                         >
                             Demote
                         </Button>
+                        {row.banned ? (
+                            <Button
+                                onClick={() => unbanUser(row.username)}
+                                className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1"
+                                disabled={row.role === Role.Root || row.role === currentRole}
+                            >
+                                Unban
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => banUser(row.username)}
+                                className="bg-red-700 hover:bg-red-600 text-white px-2 py-1"
+                                disabled={row.role === Role.Root || row.role === currentRole}
+                            >
+                                Ban
+                            </Button>
+                        )}
+
                     </div>
                 );
             }
