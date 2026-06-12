@@ -126,7 +126,7 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
       }
 
       setSuccess(isCreateMode ? 'Area created successfully!'
-        : `Area ${retiredAreaSelected ? "enabled" : "updated"} successfully!`);
+        : `Area ${retiredAreaSelected ? "reactivated" : "updated"} successfully!`);
       setTimeout(() => {
         onUpdate();
         onClose();
@@ -322,7 +322,7 @@ const EditAreaModal: React.FC<EditAreaModalProps> = ({
           <div className="modal-footer">
             {retiredAreaSelected ? (
               <Button variant="primary" disabled={loading || retiring} data-testid="confirm-button">
-                Enable Area
+                Reactivate Area
               </Button>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
