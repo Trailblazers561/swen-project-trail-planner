@@ -14,10 +14,10 @@ interface UserRow {
 
 interface Props {
     data: UserRow[];
-    onRoleUpdated: (username: string, newRole: Role) => void;
+    onRefresh: () => Promise<void>;
 }
 
-const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (username: string, newRole: Role) => void) => {
+const updateUserRole = async (option: string, row: UserRow, onRefresh: () => Promise<void>) => {
     const isPromote = option === "promote";
     const isDemote = option === "demote";
     const { updateUserRole } = TrailData();
@@ -36,9 +36,9 @@ const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (user
         const roleForApi = roleMap[newRole];
 
         const response = await updateUserRole(row.username, roleForApi);
-
+        console.log(response.json);
         if (response.success) {
-            onRoleUpdated(row.username, newRole);
+            await onRefresh();
             console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);
         }
     } catch (error) {
@@ -46,7 +46,7 @@ const updateUserRole = async (option: string, row: UserRow, onRoleUpdated: (user
     }
 };
 
-const banUser = async (username: string) => {
+const banUser = async (username: string, onRefresh: () => Promise<void>) => {
     const confirmed = window.confirm(
         `Are you sure you want to ban ${username}?`
     );
@@ -63,13 +63,15 @@ const banUser = async (username: string) => {
 
         if (response.success) {
             console.log(`Successfully banned user ${username}`);
+            await onRefresh();
         }
     } catch (error) {
         console.error("Error banning user:", error);
     }
 };
 
-const unbanUser = async (username: string) => {
+const unbanUser = async (username: string, onRefresh: () => Promise<void>) => {
+    await onRefresh();
     const confirmed = window.confirm(
         `Are you sure you want to unban ${username}?`
     );
@@ -134,7 +136,7 @@ const roleDisplayMap: Record<string | number, string> = {
     [Role.Root]: "Root Admin",
 };
 
-const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
+const UserDataTable: React.FC<Props> = ({ data, onRefresh}) => {
 
     const { currentRole, username } = useAuth();
 
@@ -173,22 +175,22 @@ const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
                 return (
                     <div>
                         <Button
-                            onClick={() => { updateUserRole("promote", row, onRoleUpdated); }}
+                            onClick={() => { updateUserRole("promote", row, onRefresh); }}
                             disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin)}
                             className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 mr-2"
                         >
                             Promote
                         </Button>
                         <Button
-                            onClick={() => { updateUserRole("demote", row, onRoleUpdated); }}
-                            disabled={row.username === username || row.role === Role.User}
+                            onClick={() => { updateUserRole("demote", row, onRefresh); }}
+                            disabled={row.username === username || row.role === Role.User || row.role === Role.Root}
                             className="bg-red-500 hover:bg-red-600 text-white px-2 py-1"
                         >
                             Demote
                         </Button>
                         {row.banned ? (
                             <Button
-                                onClick={() => unbanUser(row.username)}
+                                onClick={() => unbanUser(row.username, onRefresh)}
                                 className="bg-blue-700 hover:bg-blue-600 text-white px-2 py-1"
                                 disabled={row.role === Role.Root || row.role === currentRole}
                             >
@@ -196,7 +198,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRoleUpdated, }) => {
                             </Button>
                         ) : (
                             <Button
-                                onClick={() => banUser(row.username)}
+                                onClick={() => banUser(row.username, onRefresh)}
                                 className="bg-red-700 hover:bg-red-600 text-white px-2 py-1"
                                 disabled={row.role === Role.Root || row.role === currentRole}
                             >
