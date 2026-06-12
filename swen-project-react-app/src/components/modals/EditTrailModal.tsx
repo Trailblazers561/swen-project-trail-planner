@@ -191,7 +191,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         );
 
         if (response.success) {
-          setSuccess(`Trail ${retiredTrailSelected ? "enabled" : "updated"} successfully!`);
+          setSuccess(`Trail ${retiredTrailSelected ? "reactivated" : "updated"} successfully!`);
           setTimeout(() => {
             onUpdate();
             onClose();
@@ -380,7 +380,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
           <div className="modal-footer">
             {retiredTrailSelected ? (
                   <Button variant="primary" disabled={loading || retiring} data-testid="confirm-button">
-                    Enable Trail
+                    Reactivate Trail
                   </Button>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
