@@ -23,18 +23,11 @@ def edit_registration(event, context):
 
         if registration_id is None:
             print("Missing required field: registration_id")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: registration_id"})
-            }
+            raise ValueError("Missing required field: registration_id")
+
         if device_serial is None and device_name is None:
             print("Missing required field: device_name or device_serial, one of the two must be present")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "One of either device_name or device_serial must be present"})
-            }
+            raise ValueError("One of either device_name or device_serial must be present")
 
         print(f"Attempting to update registration entry with registration_id [{registration_id}]")
 
@@ -50,11 +43,7 @@ def edit_registration(event, context):
 
         if int(item.get("date_registered")) != -1:
             print("Tried to edit active device")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Cannot edit a registration attached to a connected device, create a new device instead"})
-            }
+            raise ValueError("Cannot edit a registration attached to a connected device, create a new device instead")
 
         device_id = item.get("device_id")
         response = device_table.get_item(Key={"id": int(device_id)})
