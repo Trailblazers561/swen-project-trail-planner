@@ -18,19 +18,11 @@ def set_device_blocked(event, context):
 
         if device_id is None:
             print("Missing required field: device_id")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: device_id"})
-            }
+            raise ValueError("Missing required field: device_id")
 
         if is_blocked is None:
             print("Missing required field: is_blocked")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: is_blocked"})
-            }
+            raise ValueError("Missing required field: is_blocked")
 
         response = device_table.get_item(Key={"id": int(device_id)})
         if not response.get("Item"):

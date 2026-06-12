@@ -18,11 +18,7 @@ def delete_registration(event, context):
 
         if registration_id is None:
             print("Missing required field: registration_id")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Missing required field: registration_id"})
-            }
+            raise ValueError("Missing required field: registration_id")
 
         print(f"Attempting to delete registration entry with registration_id [{registration_id}]")
 
@@ -38,11 +34,7 @@ def delete_registration(event, context):
 
         if int(item.get("date_registered")) != -1:
             print("Tried to delete active device")
-            return {
-                "statusCode": 400,
-                "headers": cors_headers(),
-                "body": json.dumps({"error": "Cannot delete a registration attached to a connected device, try retiring instead"})
-            }
+            raise ValueError("Cannot delete a registration attached to a connected device, try retiring instead")
 
         device_id = item.get("device_id")
         response = device_table.get_item(Key={"id": int(device_id)})
