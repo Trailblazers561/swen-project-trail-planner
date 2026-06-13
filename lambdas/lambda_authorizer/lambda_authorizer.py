@@ -26,6 +26,8 @@ PERMISSIONS = {
     ("/device_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/block", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/archive", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/heatmap", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
@@ -40,6 +42,10 @@ PERMISSIONS = {
     ("/users", "GET"): [ROOT_ADMIN, ADMIN],
     ("/users", "POST"): [ROOT_ADMIN, ADMIN],
     ("/users", "DELETE"): [ROOT_ADMIN, ADMIN],
+    ("/registration", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
 }
 
 # Download public keys when lambda is created (code is outside handler)
