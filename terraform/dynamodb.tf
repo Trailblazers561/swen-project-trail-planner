@@ -219,7 +219,7 @@ resource "aws_dynamodb_table" "error_table" {
 
 # TABLE 10: Registration
 resource "aws_dynamodb_table" "registration_table" {
-  name         = "${var.deploy_env}_Registration"
+  name         = "${var.deploy_env}_trailcount_registration_table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "registration_id"
 
