@@ -49,7 +49,7 @@ locals {
     devices = {
       POST = {
         file = "devices/devices_post.py"
-        handler = "devices_post.register_device"
+        handler = "devices_post.upload_device_info"
       }
       PUT = {
         file = "devices/devices_put.py"
