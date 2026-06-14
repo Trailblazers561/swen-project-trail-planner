@@ -27,8 +27,11 @@ user_data = <<-EOF
 set -e
 yum update -y --skip-broken
 yum install -y docker amazon-ecr-credential-helper --skip-broken
+yum install -y amazon-ssm-agent --skip-broken
 service docker start
 systemctl enable docker
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
 usermod -aG docker ec2-user
 
 # make docker use ecr credential helper
