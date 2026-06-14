@@ -56,6 +56,12 @@ locals {
         handler = "devices_put.upload_device_data"
       }
     }
+    device_management = {
+      GET = {
+        file = "device_management/device_management_get.py"
+        handler = "device_management_get.get_device_management"
+      }
+    }
     trail_data = {
       GET = {
         file = "trail_data/trail_data_get.py"
