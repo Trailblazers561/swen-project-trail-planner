@@ -113,7 +113,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   const [device, setDevice] = useState<Device | null>(null);
   const [deviceLogs, setDeviceLogs] = useState<DeviceLog[]>([]);
   const [trails, setTrails] = useState<Trail[]>([]);
-  const [currentAction, setCurrentAction] = useState<DeviceAction  | null>(deviceId === 0 ? DeviceAction.CREATE_DEVICE : null);
+  const [currentAction, setCurrentAction] = useState<DeviceAction  | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -137,6 +137,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setDeviceSerial("");
     setSelectedTrailId(0);
     setNotes("");
+    setCurrentAction(null);
   }
 
   const loadData = async () => {
@@ -176,6 +177,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           setError("Error loading data");
           console.error("Error loading data");
         }
+      } else {
+        setCurrentAction(DeviceAction.CREATE_DEVICE);
       }
     } catch (err) {
       console.error('Error loading data:', err);
