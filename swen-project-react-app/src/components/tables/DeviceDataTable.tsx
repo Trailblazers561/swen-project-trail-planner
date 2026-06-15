@@ -2,10 +2,10 @@ import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 
 interface DeviceRow {
-  name: number;
-  current_trail_id: string;
-  weekly_count: number;
-  firmware:string;
+  name: string;
+  id: number;
+  weeklyCount: number;
+  firmware_version:string;
   batteryStatus: number | null;
   lastUpdated: string | null;
 }
@@ -24,13 +24,13 @@ const columns: TableColumn<DeviceRow>[] = [
   },
     {
     name: "Associated Trail",
-    selector: (row) => row.current_trail_id,
+    selector: (row) => row.id,
     sortable: true,
     grow: 2,
   },
   {
     name: "Weekly Count",
-    selector: (row) => row.weekly_count,
+    selector: (row) => row.weeklyCount,
     sortable: true,
     center: true,
   },
