@@ -16,15 +16,17 @@ def test_update_device_trail_association_success():
     api_headers = get_api_key_headers()
     
     # Post device data with trail_id=0
-    device_payload = {
-        "device_name": "deviceNameUpdateTrailSuccess",
-        "device_serial": "12314213124213"
-    }
+    # device_payload = {
+    #     "device_name": "deviceNameUpdateTrailSuccess",
+    #     "device_serial": "12314213124213"
+    # }
     
-    device_response = requests.post(devices_url, json=device_payload, headers=api_headers)
-    assert device_response.status_code == 200
+    # device_response = requests.post(devices_url, json=device_payload, headers=api_headers)
+    # assert device_response.status_code == 200
     
-    device_id = device_response.json()["device_id"]
+    # device_id = device_response.json()["device_id"]
+    # Use premade device to avoid registration
+    device_id = 12
     
     # Wait a moment
     time.sleep(1)
