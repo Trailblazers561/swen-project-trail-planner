@@ -1,5 +1,9 @@
 import json
-from helper_functions import device_table, cors_headers
+from datetime import datetime
+
+from boto3.dynamodb.conditions import Key
+
+from helper_functions import device_table, device_trail_table, cors_headers
 
 
 def set_device_archived(event, context):
@@ -38,6 +42,23 @@ def set_device_archived(event, context):
             UpdateExpression="SET is_archived = :val",
             ExpressionAttributeValues={":val": is_archived}
         )
+
+        if is_archived:
+            # get all relevant devicetrail ids for this trail
+            date_removed = int(datetime.now().timestamp())
+            response = device_trail_table.query(
+                KeyConditionExpression=Key("device_id").eq(device_id)
+            )
+            device_trail_items = response.get("Items", [])
+
+            for device_trail_item in device_trail_items:
+                if not device_trail_item["date_removed"]:
+                    device_trail_table.update_item(
+                        Key={"device_id": device_trail_item["device_id"], "date_installed": device_trail_item["date_installed"]},
+                        UpdateExpression="SET date_removed = :date_removed",
+                        ExpressionAttributeValues={":date_removed": date_removed}
+                    )
+
         return {
             "statusCode": 200,
             "headers": cors_headers(),

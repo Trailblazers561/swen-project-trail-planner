@@ -58,7 +58,7 @@ interface ActionsDropdownProps {
 
 function ActionsDropdown({currentAction, device, setCurrentAction}: ActionsDropdownProps) {
   const actionList: DeviceAction[] = [];
-  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.current_trail_id !== 0)
+  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.current_trail_id && device.current_trail_id !== 0)
     actionList.push(DeviceAction.VIEW_LOGS);
   if (currentAction !== DeviceAction.ASSOCIATE_TRAIL)
     actionList.push(DeviceAction.ASSOCIATE_TRAIL);
@@ -122,7 +122,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { getDeviceMetadata, getDeviceLogs, getTrailMetadata } = TrailData();
+  const { getDeviceMetadata, getDeviceLogs, getTrailMetadata, createDevice, updateRegistration, deleteRegistration, updateDeviceTrailAssociation, archiveDevice, blockDevice } = TrailData();
 
   const [deviceName, setDeviceName] = useState("");
   const [deviceSerial, setDeviceSerial] = useState("");
@@ -145,6 +145,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
 //     }
 //   }, [selectedDevice])
 
+  const refreshVariables = async () => {
+    setDeviceName("");
+    setDeviceSerial("");
+    setSelectedTrailId(0);
+    setNotes("");
+  }
+
   const loadData = async () => {
     try {
       if (deviceId !== 0) { 
@@ -156,15 +163,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           const deviceData: Device[] = await deviceResponse.json;
           const deviceLogData = await deviceLogResponse.json;
           const trailsData = await trailsResponse.json;
-          console.log("dataa", deviceData);
+
           if (deviceData.length) {
             setDevice(deviceData.length ? deviceData[0] : null);
             setDeviceName(deviceData[0].name);
             setSelectedTrailId(deviceData[0].current_trail_id ?? 0);
             setNotes(deviceData[0].notes ?? "")
 
-            console.log("devss", deviceData[0].date_registered, !deviceData[0]?.date_registered, deviceData[0]?.date_registered === -1)
-            console.log(deviceData[0]);
             if (deviceData[0]?.is_blocked) {
               setCurrentAction(DeviceAction.UNBLOCK_DEVICE);
             } else if (deviceData[0]?.is_archived) {
@@ -187,47 +192,212 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setLoading(false);
   };
 
+  const handleDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!device || !device.registration_id) {
+      setError('Unable to determine registration id');
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    try {
+      const response = await deleteRegistration(device.registration_id);
+
+      if (response.success) {
+        setSuccess('Registration deleted successfully!');
+        setTimeout(() => {
+          onUpdate();
+          onClose();
+          setShowDeleteConfirm(false);
+          setSuccess(null);
+        }, 1500);
+      } else {
+        const errorData = await response.json;
+        setError(errorData.error || 'Failed to delete registration');
+      }
+    } catch (err) {
+      setError('An error occurred while deleting the registration');
+      console.error(err);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
-    // e.preventDefault();
-    // if (!selectedDevice) {
-    //   setError("Please select a device");
-    //   return;
-    // }
+    e.preventDefault();
+  
+    setLoading(true);
+    setError(null);
+  
+    try {
+      if (currentAction === DeviceAction.CREATE_DEVICE) {
+        if (!deviceName) {
+          setError('Device name is required');
+          return;
+        }
+        if (!deviceSerial) {
+          setError('Device serial is required');
+          return;
+        }
 
-    // const device = devices.find(d => d.id === selectedDevice);
-    // if (device?.current_trail_id === selectedTrail) {
-    //   if (selectedTrail)
-    //     setError("Device is already associated with this trail");
-    //   else
-    //     setError("Device is already not associated with a trail");
-    //   return;
-    // }
+        const response = await createDevice(deviceName, deviceSerial);
 
-    // setLoading(true);
-    // setError(null);
+        if (response.success) {
+          setSuccess('Device created successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to create device');
+        }
+      } else if (currentAction === DeviceAction.SETUP_DEVICE) {
+        if (!deviceName) {
+          setError('Device name is required');
+          return;
+        }
+        if (deviceName === device?.name && !deviceSerial) {
+          setError('New device name or new device serial is required');
+          return;
+        }
+        if (!device?.registration_id) {
+          setError("Device registration not found.");
+          return;
+        }
 
-    // try {
-    //   const response = await updateDeviceTrailAssociation(selectedDevice, selectedTrail);
+        const response = await updateRegistration(
+          device?.registration_id,
+          deviceName === device?.name ? undefined : deviceName,
+          deviceSerial !== "" ? deviceSerial : undefined
+        );
 
-    //   if (response.success) {
-    //     setSuccess('Device associated successfully!');
-    //     setTimeout(() => {
-    //       onUpdate();
-    //       onClose();
-    //       setSelectedDevice(0);
-    //       setSelectedTrail(0);
-    //       setSuccess(null);
-    //     }, 1500);
-    //   } else {
-    //     const errorData = await response.json;
-    //     setError(errorData.error || 'Failed to associate device');
-    //   }
-    // } catch (err) {
-    //   setError('An error occurred while associating the device');
-    //   console.error(err);
-    // } finally {
-    //   setLoading(false);
-    // }
+        if (response.success) {
+          setSuccess('Device updated successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to update device');
+        }
+      } else if (currentAction === DeviceAction.ASSOCIATE_TRAIL) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        if (selectedTrailId === device?.current_trail_id) {
+          setError('This is the current association.');
+          return;
+        }
+        const response = await updateDeviceTrailAssociation(device?.id, selectedTrailId);
+
+        if (response.success) {
+          setSuccess('Device trail association created successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to update device trail association');
+        }
+      } else if (currentAction === DeviceAction.EDIT_INFORMATION) {
+        setError("This feature is not yet implemented, sorry!");
+      } else if (currentAction === DeviceAction.ARCHIVE_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        const response = await archiveDevice(device?.id, true);
+
+        if (response.success) {
+          setSuccess('Device archived successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to archive device');
+        }
+      } else if (currentAction === DeviceAction.BLOCK_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        const response = await blockDevice(device?.id, true);
+
+        if (response.success) {
+          setSuccess('Device blocked successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to block device');
+        }
+      } else if (currentAction === DeviceAction.UNARCHIVE_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        const response = await archiveDevice(device?.id, false);
+
+        if (response.success) {
+          setSuccess('Device unarchived successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to unarchive device');
+        }
+      } else if (currentAction === DeviceAction.UNBLOCK_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        const response = await blockDevice(device?.id, false);
+
+        if (response.success) {
+          setSuccess('Device unblocked successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to unblock device');
+        }
+      }
+
+    } catch (err) {
+      setError('An error occurred when submitting');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTrailName = (trailId: number) => {
@@ -244,7 +414,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             <div className="flex flex-col text-left">
                 <div className="font-primary text-white font-semibold text-xl">{deviceId === 0 ? "Create Device" : "Manage Device"}</div>
                 {deviceId !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Device ID: {deviceId}</div>)}
-                {device && device?.current_trail_id !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Current Trail: {getTrailName(device?.current_trail_id ?? 0)}</div>)}
+                {device && device?.current_trail_id && device?.current_trail_id !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Current Trail: {getTrailName(device?.current_trail_id ?? 0)}</div>)}
             </div>
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
@@ -282,25 +452,23 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               <div className="flex flex-col items-center">
                 <span className="font-bold text-xl mb-5">Please perform device setup process to associate this device.</span>
                 <div className="form-group w-150">
-                  <label htmlFor="device-name">Device Name: <span style={{ color: 'red' }}>*</span></label>
+                  <label htmlFor="device-name">Device Name:</label>
                   <input
                     id="device-name"
                     type="text"
                     value={deviceName}
                     onChange={(e) => setDeviceName(e.target.value)}
-                    required
                     placeholder="Enter device name"
                     autoComplete="off"
                   />
                 </div>
                 <div className="form-group w-150">
-                  <label htmlFor="device-serial">Device Serial: <span style={{ color: 'red' }}>*</span></label>
+                  <label htmlFor="device-serial">Device Serial:</label>
                   <input
                     id="device-serial"
                     type="text"
                     value={deviceSerial}
                     onChange={(e) => setDeviceSerial(e.target.value)}
-                    required
                     placeholder="Enter device serial"
                     autoComplete="off"
                   />
@@ -338,18 +506,6 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
                 <div className="form-group w-150 m-auto">
-                  <label htmlFor="device-name">Device Name: <span style={{ color: 'red' }}>*</span></label>
-                  <input
-                    id="device-name"
-                    type="text"
-                    value={deviceName}
-                    onChange={(e) => setDeviceName(e.target.value)}
-                    required
-                    placeholder="Enter device name"
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="form-group w-150 m-auto">
                   <label htmlFor="notes">Notes (optional):</label>
                   <textarea
                     id="notes"
@@ -365,7 +521,33 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               </div>
             )}
             {currentAction === DeviceAction.ARCHIVE_DEVICE && (
-              
+              <div className="w-full flex flex-col justify-center">
+                <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
+                <span className="font-bold text-xl mb-5">Are you sure you want to archive this device?</span>
+                {device && device.current_trail_id && (<span className="text-lg mb-5">This will remove the association with the current trail.</span>)}
+                <span className="text-lg mb-5">The device will no longer be able to upload data.</span>
+              </div>
+            )}
+            {currentAction === DeviceAction.BLOCK_DEVICE && (
+              <div className="w-full flex flex-col justify-center">
+                <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
+                <span className="font-bold text-xl mb-5">Are you sure you want to block this device?</span>
+                {device && device.current_trail_id && (<span className="text-lg mb-5">This will remove the association with the current trail.</span>)}
+                <span className="text-lg mb-5">The device will no longer be able to upload data.</span>
+                <span className="text-red-500 text-lg mb-5">Only block this device if you have lost access to the device.</span>
+              </div>
+            )}
+            {currentAction === DeviceAction.UNARCHIVE_DEVICE && (
+              <div className="w-full flex flex-col justify-center">
+                <span className="font-bold text-xl mb-5">This device is currently archived.</span>
+                <span className="text-lg mb-5">Unarchive this device to perform device actions.</span>
+              </div>
+            )}
+            {currentAction === DeviceAction.UNBLOCK_DEVICE && (
+              <div className="w-full flex flex-col justify-center">
+                <span className="font-bold text-xl mb-5">This device is currently blocked.</span>
+                <span className="text-lg mb-5">Unblock this device to perform device actions.</span>
+              </div>
             )}
 
             {error && <div className="error-message">{error}</div>}
@@ -410,7 +592,76 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               </Button>
             </div>
           )}
+          {currentAction === DeviceAction.ARCHIVE_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="delete" disabled={loading}>
+                {loading ? 'Archiving...' : 'Archive Device'}
+              </Button>
+            </div>
+          )}
+          {currentAction === DeviceAction.BLOCK_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="delete" disabled={loading}>
+                {loading ? 'Blocking...' : 'Block Device'}
+              </Button>
+            </div>
+          )}
+          {currentAction === DeviceAction.UNARCHIVE_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="primary" disabled={loading}>
+                {loading ? 'Unarchiving...' : 'Unarchive Device'}
+              </Button>
+            </div>
+          )}
+          {currentAction === DeviceAction.UNBLOCK_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="primary" disabled={loading}>
+                {loading ? 'Unblocking...' : 'Unblock Device'}
+              </Button>
+            </div>
+          )}
         </form>
+
+        {showDeleteConfirm && (
+          <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
+            <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Confirm Delete</h2>
+                <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <p style={{ marginBottom: '15px', color: '#333' }}>
+                  <strong style={{ color: '#dc3545' }}>Warning:</strong> This action cannot be undone.
+                </p>
+                <p style={{ marginBottom: '15px', color: '#333' }}>
+                  Deleting this device will permanently remove:
+                </p>
+                <ul style={{ marginLeft: '20px', marginBottom: '15px', color: '#333' }}>
+                  <li>The device and any current registration information</li>
+                </ul>
+                <p style={{ fontWeight: 'bold', color: '#dc3545', fontSize: '16px' }}>
+                  Are you sure you want to delete "{device?.name}"?
+                </p>
+                {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
+              </div>
+              <div className="modal-footer">
+                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="delete-button"
+                  data-testid="confirm-delete"
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete Device'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
