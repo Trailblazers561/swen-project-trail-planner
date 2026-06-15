@@ -307,7 +307,7 @@ export function TrailData() {
    */
   async function updateUserRole(targetUsername: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
-      method: "POST",
+      method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
         target_username: targetUsername,
