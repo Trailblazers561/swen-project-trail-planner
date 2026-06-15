@@ -4,7 +4,6 @@ import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import LandingPage from "./landingPage";
 import Test from './Test';
-import { AuthProvider } from './Context';
 import Privileges from './userconfig';
 import { Role, useAuth } from "@/Context";
 import Navbar from './components/Navbar';

@@ -28,7 +28,7 @@ def ban_user(event, context):
             raise ValueError(f"User with username [{target_username}] not found")
 
         current_target_users_groups = cognito.admin_list_groups_for_user(Username=target_username, UserPoolId=COGNITO_USER_POOL_ID)["Groups"]
-        current_target_user_role = max([group["GroupName"] for group in current_target_users_groups], key=lambda x: user_groups[x], default="guest")
+        current_target_user_role = max([group["GroupName"] for group in current_target_users_groups if group["GroupName"] in user_groups], key=lambda x: user_groups[x], default="user")
         if user_groups[current_target_user_role] >= user_groups[caller_role]:
             raise PermissionError(f"Invalid permissions to ban user with role [{current_target_user_role}] as a [{caller_role}]")
 
