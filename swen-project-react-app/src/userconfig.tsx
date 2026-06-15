@@ -12,6 +12,7 @@ interface User {
 }
 
 export const stringToEnum: Record<string, number> = {
+    "guest": 0,
     "user": 1,
     "trail_manager": 2,
     "admin": 3,
@@ -33,9 +34,7 @@ const Privileges = () => {
             if (response.success) {
                 const data: User[] = await response.json;
 
-
                 console.log("Users:", data);
-                console.log(typeof data[0].role, data[0].role);
                 
                 if(currentRole == null) {
                     return;
