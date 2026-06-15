@@ -146,7 +146,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           getDeviceMetadata([deviceId]), getDeviceLogs([deviceId], 5), getTrailMetadata()
         ])
 
-        if (deviceResponse.success && deviceLogResponse.success) {
+        if (deviceResponse.success && deviceLogResponse.success && trailsResponse.success) {
           const deviceData: Device[] = await deviceResponse.json;
           const deviceLogData = await deviceLogResponse.json;
           const trailsData = await trailsResponse.json;
@@ -171,6 +171,9 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           }
           setDeviceLogs(deviceLogData);
           setTrails(trailsData);
+        } else {
+          setCurrentAction(null);
+          console.error("Error loading data");
         }
       }
     } catch (err) {
