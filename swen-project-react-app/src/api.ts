@@ -73,6 +73,25 @@ export function TrailData() {
   }
 
   /**
+   * Get device logs for specific devices
+   * @param deviceIdList array of device ids of devices to retrieve data for
+   * @param limit Optional limit number of logs to retrieve for each device, defautls to -5
+   */
+  async function getDeviceLogs(deviceIdList: number[], limit?: number) {
+    const queries: string[] = []
+    deviceIdList.forEach(id => {queries.push(`device_id=${id}`)})
+    if (limit)
+      queries.push(`limit=${limit}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    const url = `${API_URL}/device_management${queryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
    * Update trail metadata (name and/or area)
    * @param trailId - The ID of the trail to update
    * @param trailName - new name for the trail
@@ -303,6 +322,7 @@ export function TrailData() {
     getAreaMetadata,
     getDeviceMetadata,
     getTrailLogs,
+    getDeviceLogs,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,

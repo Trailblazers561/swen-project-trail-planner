@@ -26,6 +26,10 @@
   max-width: 800px;
 }
 
+.modal-content-extra-large {
+  max-width: 1200px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
