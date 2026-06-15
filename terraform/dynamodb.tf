@@ -244,7 +244,7 @@ resource "aws_dynamodb_table" "error_table" {
   */
 }
 
-# TABLE 10: Registration
+# TABLE 11: Registration
 resource "aws_dynamodb_table" "registration_table" {
   name         = "${var.deploy_env}_trailcount_registration_table"
   billing_mode = "PAY_PER_REQUEST"
@@ -289,6 +289,7 @@ locals {
   ]
   device_log_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_logs.csv"))
   error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
+  registration_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/registrations.csv"))
 }
 
 # INSERT TEST DATA INTO Device
@@ -374,7 +375,6 @@ resource "aws_dynamodb_table_item" "device_log_items" {
   })
 }
 
-
 # INSERT TEST DATA INTO Error
 resource "aws_dynamodb_table_item" "error_items" {
   for_each = { for idx, item in local.error_sample_data : idx => item }
@@ -387,5 +387,21 @@ resource "aws_dynamodb_table_item" "error_items" {
     id  = { "N" = each.value.id }
     time = { "N" = each.value.time }
     error = { "S" = each.value.error }
+  })
+}
+
+# INSERT TEST DATA INTO Registration
+resource "aws_dynamodb_table_item" "registration_items" {
+  for_each = { for idx, item in local.registration_sample_data : idx => item }
+
+  table_name = aws_dynamodb_table.registration_table.name
+  hash_key   = aws_dynamodb_table.registration_table.hash_key
+  range_key  = aws_dynamodb_table.registration_table.range_key
+
+  item = jsonencode({
+    registration_id  = { "N" = each.value.registration_id }
+    device_id  = { "N" = each.value.device_id }
+    date_registered = { "N" = each.value.date_registered }
+    cert_time_to_live = { "N" = each.value.cert_time_to_live }
   })
 }

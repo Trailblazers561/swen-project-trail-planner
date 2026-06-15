@@ -28,9 +28,9 @@ def get_device_management(event, context):
         items = []
         for device_id in device_id_list_decimals:
             if limit == -1:
-                response = device_log_table.query(KeyConditionExpression=Key("device_id").eq(device_id)).get("Items", [])
+                response = device_log_table.query(KeyConditionExpression=Key("device_id").eq(device_id), ScanIndexForward=False).get("Items", [])
             else:
-                response = device_log_table.query(KeyConditionExpression=Key("device_id").eq(device_id), Limit=limit).get("Items", [])
+                response = device_log_table.query(KeyConditionExpression=Key("device_id").eq(device_id), Limit=limit, ScanIndexForward=False).get("Items", [])
             items.extend(response)
 
         print(f"Successfully retrieved device logs [{items[:3]}]")
