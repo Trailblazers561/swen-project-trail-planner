@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import dynamodb, device_trail_log_day_table, device_table, device_trail_table, convert_decimals, cors_headers
+from helper_functions import dynamodb, device_trail_log_day_table, device_table, device_trail_table, registration_table, convert_decimals, cors_headers
 
 def get_device_metadata(event, context):
     try:
@@ -51,6 +51,14 @@ def get_device_metadata(event, context):
                 if day_result:
                     item["battery"] = day_result[0]["battery"]
                     item["last_updated"] = day_result[0]["start"]
+
+            registration_result = registration_table.query(
+                IndexName="device-index",
+                KeyConditionExpression=Key("device_id").eq(item["id"])
+            ).get("Items", [])
+            if registration_result:
+                item["registration_id"] = registration_result[0]["registration_id"]
+                item["date_registered"] = registration_result[0]["date_registered"]
 
         print(f"Successfully appended device metadata [{items[:3]}]")
         return {
