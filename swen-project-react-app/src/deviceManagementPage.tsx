@@ -4,6 +4,7 @@ import DeviceDataTable from "./components/tables/DeviceDataTable";
 import { Granularity } from "./lib/apiTypes";
 import DeviceModal from "./components/modals/DeviceModal";
 import type { DeviceRow } from "./components/tables/DeviceDataTable";
+import { Button } from "./components/templates/button.tsx";
 
 // turn getDeviceMetadata into a dictionary
 
@@ -133,8 +134,17 @@ const DeviceManagementPage = () => {
 
     return (
         <div className="flex flex-col">
-            <div className="w-full bg-[var(--color-button-secondary)]">
+            <div className="w-full bg-[var(--color-button-secondary)] flex justify-between items-center">
                 <div className="font-semibold text-2xl p-2 ml-2 text-left"> Device Management </div>
+                <Button
+                    variant="primary"
+                    onClick={() => {
+                        setSelectedDevice(null);   // 🔥
+                        setIsModalOpen(true);      // 🔥
+                    }}
+                >
+                    + Create Device
+                </Button>
             </div>
 
             <div className="p-4">
