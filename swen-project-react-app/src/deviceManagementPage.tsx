@@ -114,8 +114,8 @@ const DeviceManagementPage = () => {
                     weeklyCount: info ? info.count : 0,   // bug, retrieve from new api endpoint
                     firmware_version: device.firmware_version,
                     batteryStatus: device ? device.battery : 0,
-                    lastUpdated: device
-                    ? new Date(device.lastUpdated * 1000).toLocaleDateString("en-US")
+                    lastUpdated: device.last_updated
+                    ? new Date(device.last_updated * 1000).toLocaleDateString("en-US")
                     : null,
                 };
             });
