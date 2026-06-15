@@ -3,7 +3,7 @@ import { TrailData } from "./api";
 import DeviceDataTable from "./components/tables/DeviceDataTable";
 
 interface Device {
-    device_id: number;
+    name: number;
     current_trail_id: string;
     weekly_count: number;
     firmware: string;

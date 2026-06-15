@@ -2,7 +2,7 @@ import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 
 interface DeviceRow {
-  device_id: number;
+  name: number;
   current_trail_id: string;
   weekly_count: number;
   firmware:string;
@@ -17,8 +17,8 @@ interface Props {
 
 const columns: TableColumn<DeviceRow>[] = [
   {
-    name: "Device ID",
-    selector: (row) => row.device_id,
+    name: "Device Name",
+    selector: (row) => row.name,
     sortable: true,
     center: true,
   },
