@@ -160,7 +160,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           if (deviceData.length) {
             setDevice(deviceData.length ? deviceData[0] : null);
             setDeviceName(deviceData[0].name);
-            setSelectedTrailId(deviceData[0]?.current_trail_id ?? 0);
+            setSelectedTrailId(deviceData[0].current_trail_id ?? 0);
+            setNotes(deviceData[0].notes ?? "")
 
             console.log("devss", deviceData[0].date_registered, !deviceData[0]?.date_registered, deviceData[0]?.date_registered === -1)
             console.log(deviceData[0]);
@@ -362,6 +363,9 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                   />
                 </div>
               </div>
+            )}
+            {currentAction === DeviceAction.ARCHIVE_DEVICE && (
+              
             )}
 
             {error && <div className="error-message">{error}</div>}
