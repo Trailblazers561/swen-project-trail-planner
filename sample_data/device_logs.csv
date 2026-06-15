@@ -1,4 +1,4 @@
-device_id,time,count,battery,firmware,rssi,rsrp,rsrq
+device_id,time,count,battery,firmware_version,rssi,rsrp,rsrq
 1,1774929600,45,69,1.0.0,-50,-70,-10
 2,1774929600,20,68,1.0.0,-50,-70,-10
 3,1774929600,30,73,1.0.0,-50,-70,-10
