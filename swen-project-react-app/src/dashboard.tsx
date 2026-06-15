@@ -1049,10 +1049,19 @@ const dashboard = () => {
                         </div>
                     </div>
                 </div>
-                <div className="w-full pb-8 bg-gray-50">
+                <div className="w-full bg-gray-50">
                     <div className="w-full border-t border-gray-200">
                         {viewMode === "graph" ? (
-                        <div className="w-full h-[65vh] min-h-[400px]" data-testid="outer-dashboard-graph" data-graph-updating={graphUpdating}>
+                        <div className="relative w-full h-[65vh] min-h-[400px]" data-testid="outer-dashboard-graph" data-graph-updating={graphUpdating}>
+                            {graphUpdating  && (
+                                <div className="absolute h-full w-full bg-black/40 z-10">
+                                    <Loader2
+                                        size={80}
+                                        strokeWidth={2}
+                                        className="absolute left-1/2 -translate-x-1/2 top-1/4 z-10 animate-spin text-navbar"
+                                    />
+                                </div>
+                            )}
                             <Plot 
                                 className="w-full h-full"
                                 config={{ displayModeBar: false, responsive: true }}

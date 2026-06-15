@@ -27,7 +27,7 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain" {
-  domain       = "${var.deploy_env}-trailcount-user-confirmation"
+  domain       = "${var.deploy_env}-trailcount-user-confirmation-${random_integer.random_suffix.result}"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
