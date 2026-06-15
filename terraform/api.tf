@@ -1049,6 +1049,83 @@ resource "aws_api_gateway_integration" "users_post_integration" {
   uri                     = aws_lambda_function.change_user_group.invoke_arn
 }
 
+# /renew Resource
+resource "aws_api_gateway_resource" "renew" {
+  path_part   = "renew"
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.api.id
+}
+
+# CORS (OPTIONS) for /renew
+resource "aws_api_gateway_method" "renew_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.renew.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "renew_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.renew.id
+  http_method = aws_api_gateway_method.renew_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "renew_options_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.renew.id
+  http_method = aws_api_gateway_method.renew_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = true
+    "method.response.header.Access-Control-Allow-Methods"      = true
+    "method.response.header.Access-Control-Allow-Origin"       = true
+    "method.response.header.Access-Control-Allow-Credentials"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "renew_options_integration_response" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.renew.id
+  http_method = aws_api_gateway_method.renew_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Methods"      = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
+  }
+
+  depends_on = [
+    aws_api_gateway_integration.devices_options_integration,
+    aws_api_gateway_method_response.devices_options_response
+  ]
+}
+
+# PUT /renew -> Lambda: renew_certificate
+resource "aws_api_gateway_method" "renew_put" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.renew.id
+  http_method   = "PUT"
+  authorization = "NONE"
+  api_key_required = true
+}
+
+resource "aws_api_gateway_integration" "renew_put_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.renew.id
+  http_method             = aws_api_gateway_method.renew_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.renew_registration.invoke_arn
+}
+
 # Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   name = "${var.deploy_env}_LambdaAuthorizer"
@@ -1129,6 +1206,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.block_options.authorization,
       aws_api_gateway_method.archive_put.authorization,
       aws_api_gateway_method.archive_options.authorization,
+      aws_api_gateway_method.renew_put.authorization,
 
       # Permissions
       aws_lambda_permission.allow_apigateway_all_functions
@@ -1174,6 +1252,8 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.registration_options_integration_response,
     aws_api_gateway_integration_response.block_options_integration_response,
     aws_api_gateway_integration_response.archive_options_integration_response,
+    aws_api_gateway_integration_response.renew_options_integration_response,
+    aws_api_gateway_integration_response.re,
   ]
 }
 

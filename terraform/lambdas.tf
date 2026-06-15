@@ -10,6 +10,12 @@ data "archive_file" "register_device_zip" {
   output_path = "${path.module}/${local.lambda_code_directory}/zips/register_device.zip"
 }
 
+data "archive_file" "renew_registration_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/renew_registration.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/renew_registration.zip"
+}
+
 resource "aws_lambda_function" "set_device_blocked" {
   function_name = "${var.deploy_env}_traildata_set_device_blocked"
   role          = aws_iam_role.lambda_iam_role.arn
@@ -210,6 +216,7 @@ resource "aws_lambda_function" "register_device" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      CSR_S3_BUCKET       = aws_s3_bucket.csr_bucket.bucket
     }
   }
 }
@@ -457,6 +464,29 @@ resource "aws_lambda_function" "delete_trail_group" {
   }
 }
 
+resource "aws_lambda_function" "renew_registration" {
+  function_name = "${var.deploy_env}_renew_registration"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "renew_registration_renew_certificate"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/renew_registration.zip"
+  code_sha256 = data.archive_file.renew_registration_zip.output_base64sha256
+
+  environment {
+    variables = {
+      REGISTRATION_TABLE = aws_dynamodb_table.registration_table.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+    }
+  }
+}
+
 # Map of function names to Lambda function resources
 locals {
   api_lambda_functions = {
@@ -484,6 +514,7 @@ locals {
     "traildata_edit_registration"  = aws_lambda_function.edit_registration
     "traildata_set_device_blocked"   = aws_lambda_function.set_device_blocked
     "traildata_set_device_archived"   = aws_lambda_function.set_device_archived
+    "renew_registration" = aws_lambda_function.renew_registration
   }
 }
 

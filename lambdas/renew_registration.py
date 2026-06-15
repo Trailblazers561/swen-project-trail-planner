@@ -1,41 +1,36 @@
-import base64
-import hashlib
-import hmac
-import json
 import os
-import time
-import uuid
-
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes
-from jwcrypto import jwk, jwt
 import boto3
 import requests
+import base64
+import json
+import time
+import hashlib
+import uuid
+
+from jwcrypto import jwk, jwt
 from boto3.dynamodb.conditions import Key
 from cryptography.hazmat.primitives.serialization import Encoding
-from cryptography.x509 import load_pem_x509_csr
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.keywrap import aes_key_unwrap
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.x509 import load_pem_x509_csr
 from cryptography.hazmat.backends import default_backend
+
 
 CA_URL = os.environ.get("CERTIFICATE_AUTHORITY_URL")
 CA_CERT_PATH = "tmp/root_ca.crt"
-CA_INTR_CERT_PATH = "tmp/intr_ca.crt"
-TIMESTAMP_WINDOW = 120  # 2 min buffer from packet send time to parse time
 
 dynamodb = boto3.resource('dynamodb')
 secrets_client = boto3.client("secretsmanager")
 registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_Registration"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
-s3_client = boto3.client('s3')
-s3_bucket = os.environ.get("CSR_S3_BUCKET")
 
 
 def cors_headers():
     return {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Methods": "PUT",
         "Access-Control-Allow-Headers": "Content-Type,Authorization"
     }
 
@@ -53,21 +48,6 @@ def get_root_ca_cert():
         with open(CA_CERT_PATH, "w") as f:
             f.write(response["SecretString"])
     return CA_CERT_PATH
-
-
-def get_inter_ca_cert():
-    """
-    Get the intermediate ca certificate from secrets manager, and saves it locally at
-    tmp/intr_ca.crt
-    :return: path to the intermediate ca file
-    """
-    if not os.path.exists(CA_INTR_CERT_PATH):
-        os.makedirs("tmp", exist_ok=True)
-        sm = boto3.client("secretsmanager")
-        response = sm.get_secret_value(SecretId="cert-auth/intermediate-ca-cert")
-        with open(CA_INTR_CERT_PATH, "w") as f:
-            f.write(response["SecretString"])
-    return CA_INTR_CERT_PATH
 
 
 def b64d(s):
@@ -214,24 +194,7 @@ def check_ca_health():
     return response.json()
 
 
-def register_device(event, context):
-    """
-    Main register device function. Takes in a packet of {{device_name, timestamp, csr}, hash}. All fields are required.
-    device_name is the name of the device to register that should match with the device table entry/secrets manager key.
-    timestamp is the device's time that it sends the value at. The timestamp must be within 2 minutes of the time it gets
-    parsed by the server. The certificate signing request is sent to the certificate authority to generate a new certificate for.
-    The hash is the object comprised of the previous 3 values, hashed against the device serial number. This is calcualted
-    and checked locally in the function.
-
-    If any of the above do not match(any values not present, device name not in device table, timestamp out of accepted range,
-    hash doesn't match), the packet is dropped. If the device is blocked or archived, packet is dropped. Once the validation
-    is complete, a one-time-token is generated, and the csr is sent to the certificate authority with the token attached.
-
-    The CA will return a certificate if the certificate signing request goes through properly.
-    :param event:
-    :param context:
-    :return: Certificate
-    """
+def renew_certificate(event, context):
     try:
         print("Registering device...")
         print("Checking CA status...")
@@ -244,22 +207,6 @@ def register_device(event, context):
         device_name = body.get("device_name")
         if not device_name:
             raise ValueError("Device name not provided")
-        timestamp = body.get("timestamp")
-        if not timestamp:
-            raise ValueError("Timestamp not provided")
-        csr = body.get("csr")
-        if not csr:
-            raise ValueError("CSR not provided")
-        provided_hmac = body.get("hmac")
-        if not provided_hmac:
-            raise ValueError("HMAC hash not provided")
-
-        # time between submission too late? reject packet
-        time_now = int(time.time())
-        time_delta = abs(time_now - int(timestamp))
-        if time_delta > TIMESTAMP_WINDOW:
-            raise ValueError(
-                f"Packet timestamp outside accepted window of {TIMESTAMP_WINDOW}, ensure device connectivity is working properly")
 
         # device name provided not in table? drop packet
         response = device_table.query(
@@ -272,21 +219,12 @@ def register_device(event, context):
             raise ValueError("Device name not found, try registering the device before connecting")
         item = items[0]
 
-        reg_response = registration_table.query(
-            IndexName="device-index",
-            KeyConditionExpression=Key("device_id").eq(int(item.get("id")))
-        )
-        reg_items = reg_response.get("Items", [])
-
-        if not reg_items:
-            raise ValueError("Device not found in registration, try registering the device before connecting")
-
         # Reject blocked devices
         if item.get("is_blocked"):
             return {
                 "statusCode": 403,
                 "headers": cors_headers(),
-                "body": json.dumps({"error": "Device is blocked. Registration rejected."})
+                "body": json.dumps({"error": "Device is blocked. Renewal rejected."})
             }
 
         # Reject archived devices
@@ -294,7 +232,7 @@ def register_device(event, context):
             return {
                 "statusCode": 403,
                 "headers": cors_headers(),
-                "body": json.dumps({"error": "Device is archived. Registration rejected."})
+                "body": json.dumps({"error": "Device is archived. Renewal rejected."})
             }
 
         device_serial = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])[
@@ -304,14 +242,7 @@ def register_device(event, context):
         if not device_serial:
             raise ValueError("Device Serial not found, ensure the device is properly registered before connecting")
 
-        # provided hash signature doesnt match self-computed hash? drop packet
-        plaintext_string = f"{device_name}:{timestamp}:{csr}".encode()
-        encoding = hmac.new(device_serial.encode(), plaintext_string, hashlib.sha512).hexdigest()
-        if not hmac.compare_digest(provided_hmac, encoding):
-            raise ValueError("HMAC hash does not match, ensure device serial number is accurate")
 
-        # at this point we're sure the sender is the actual device and not someone spoofing it.
-        # time to fire off the certificate
         one_time_token = gen_one_time_token(csr, device_name)
 
         response = requests.post(
@@ -324,30 +255,8 @@ def register_device(event, context):
         )
 
         response.raise_for_status()
-
-        # successful certificate request at this point
         data = response.json()
         certificate = {"certificate": data["crt"]}
-
-        os.makedirs(f"tmp/{device_name}", exist_ok=True)
-
-        csr_path = f"/tmp/{device_name}.csr"
-        with open(csr_path, "w") as f:
-            f.write(csr)
-        s3_client.upload_file(csr_path, s3_bucket, f"{device_name}/device.csr")
-
-        cert = x509.load_pem_x509_certificate(data["crt"].encode())
-        time_to_live = int(cert.not_valid_after_utc.timestamp())
-
-        registration_table.update_item(
-            Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
-            ExpressionAttributeValues={
-                ":dr": int(time.time()),
-                ":tl": time_to_live
-            }
-        )
-
         return {
             "statusCode": 200,
             "headers": cors_headers(),
