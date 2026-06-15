@@ -86,7 +86,6 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
             const roleForApi = roleMap[newRole];
 
             const response = await updateUserRole(row.username, roleForApi);
-            console.log(response.json);
             if (response.success) {
                 await onRefresh();
                 console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);

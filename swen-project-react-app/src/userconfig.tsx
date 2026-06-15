@@ -33,8 +33,6 @@ const Privileges = () => {
             
             if (response.success) {
                 const data: User[] = await response.json;
-
-                console.log("Users:", data);
                 
                 if(currentRole == null) {
                     return;
