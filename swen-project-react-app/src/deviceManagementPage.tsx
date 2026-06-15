@@ -109,7 +109,7 @@ const DeviceManagementPage = () => {
 
                 return {
                     name: device.name,
-                    id: device.device.id,
+                    id: device.id,
                     trailName: device.current_trail_id ? getTrailName(device.current_trail_id) : null,
                     weeklyCount: info ? info.count : 0,   // bug, retrieve from new api endpoint
                     firmware_version: device.firmware_version,
