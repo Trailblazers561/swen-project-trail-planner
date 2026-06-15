@@ -1,10 +1,10 @@
 import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 
-interface DeviceRow {
+export interface DeviceRow {
   name: string;
   id: number;
-  trailName: string;
+  trailName: string | null;
   weeklyCount: number;
   firmware_version:string;
   batteryStatus: number | null;
@@ -14,6 +14,7 @@ interface DeviceRow {
 interface Props {
   data: DeviceRow[];
   loading: boolean;
+  onRowClick?: (device: DeviceRow) => void;
 }
 
 const columns: TableColumn<DeviceRow>[] = [
@@ -120,25 +121,27 @@ const customStyles = {
   },
 };
 
-const DeviceDataTable: React.FC<Props> = ({ data, loading }) => {
+const DeviceDataTable: React.FC<Props> = ({ data, loading, onRowClick }) => {
   return (
     <div className="bg-gray-50 shadow-md" data-testid="device-status-table">
       <DataTable
         columns={columns}
         data={data}
         progressPending={loading}
-        pagination = {true}
+        pagination={true}
         striped
         responsive
         customStyles={customStyles}
+        pointerOnHover
+        highlightOnHover
+        onRowClicked={onRowClick}
         noDataComponent={
           <div className="py-6 text-gray-500">
-            No trails found.
+            No devices found.
           </div>
         }
       />
     </div>
   );
 };
-
 export default DeviceDataTable;

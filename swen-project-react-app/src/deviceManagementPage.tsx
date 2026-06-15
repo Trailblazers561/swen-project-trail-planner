@@ -2,16 +2,8 @@ import { useState, useEffect } from "react";
 import { TrailData } from "./api";
 import DeviceDataTable from "./components/tables/DeviceDataTable";
 import { Granularity } from "./lib/apiTypes";
-
-interface Device {
-    name: string;
-    id: number;
-    trailName: string;
-    weeklyCount: number;
-    firmware_version: string;
-    batteryStatus: number;
-    lastUpdated: string | null;
-}
+import DeviceModal from "./components/modals/DeviceModal";
+import type { DeviceRow } from "./components/tables/DeviceDataTable";
 
 // turn getDeviceMetadata into a dictionary
 
@@ -19,14 +11,20 @@ interface Device {
 
 
 const DeviceManagementPage = () => {
+    const [selectedDevice, setSelectedDevice] = useState<DeviceRow | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleRowClick = (device: DeviceRow) => {
+        setSelectedDevice(device);
+        setIsModalOpen(true);
+    };
+
     const [loading, setLoading] = useState(true);
-    const [devices, setDevices] = useState<Device[]>([]);
+    const [devices, setDevices] = useState<DeviceRow[]>([]);
     const [trails, setTrails] = useState<{ id: number; name: string }[]>([]);
-
+    
     const { getDeviceMetadata, getTrailLogs, getTrailMetadata } = TrailData();
-
-
-
+    
     const loadDevices = async () => {
         try {
             setLoading(true);
@@ -104,7 +102,7 @@ const DeviceManagementPage = () => {
                 trailInformation.set(trailId, current);
             });
             
-            const devices: Device[] = metadata.map((device: any) => {
+            const devices: DeviceRow[] = metadata.map((device: any) => {
                 const info = trailInformation.get(device.current_trail_id);
 
                 return {
@@ -146,10 +144,16 @@ const DeviceManagementPage = () => {
                     <div>No devices found</div>
                 ) : (
                     <div className="pt-4 m-4">
-                        <DeviceDataTable data={devices} loading={false} />
+                        <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
                     </div>
                 )}
-            </div>
+            </div> 
+            <DeviceModal
+                isOpen={isModalOpen}
+                deviceId={selectedDevice?.id ?? 0}
+                onClose={() => setIsModalOpen(false)}
+                onUpdate={loadDevices}
+            />
         </div>
     );
 }
