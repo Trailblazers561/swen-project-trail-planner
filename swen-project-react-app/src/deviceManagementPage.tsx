@@ -25,10 +25,7 @@ const DeviceManagementPage = () => {
 
     const { getDeviceMetadata, getTrailLogs, getTrailMetadata } = TrailData();
 
-    const getTrailName = (trailId: number) => {
-    const trail = trails.find(t => t.id === trailId);
-    return trail ? trail.name : `Trail ${trailId}`;
-    };
+
 
     const loadDevices = async () => {
         try {
@@ -47,9 +44,15 @@ const DeviceManagementPage = () => {
             
             const trailMetadataResponse = await getTrailMetadata();
 
+            let trails:{ id: number; name: string }[] = [];
+            const getTrailName = (trailId: number) => {
+                const trail = trails.find(t => t.id === trailId);
+                return trail ? trail.name : `Trail ${trailId}`;
+                };
             if (trailMetadataResponse.success) {
                 const trailData = await trailMetadataResponse.json;
                 setTrails(trailData);
+                trails = trailData;
             }
             
             const trailIds = metadata.map((d: any) => d.id);
