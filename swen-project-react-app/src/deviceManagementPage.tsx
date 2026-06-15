@@ -72,37 +72,26 @@ const DeviceManagementPage = () => {
 
             const logs = await logsResponse.json;
 
-            const trailInformation = new Map<
+            const deviceInformation = new Map<
                 number,
-                { count: number; battery: number; lastUpdated: number }
+                { count: number; }
             >();
 
             logs.forEach((log: any) => {
-                const trailId = log.trail_id;
+                const deviceId = log.device_id;
 
                 const current =
-                    trailInformation.get(trailId) || {
-                        count: 0,
-                        battery: 0,
-                        lastUpdated: 0,
+                deviceInformation.get(deviceId) || {
+                        count: 0
                     };
 
                 current.count += log.count;
 
-                if (log.start > current.lastUpdated) {
-                    current.battery = log.battery;
-                }
-
-                current.lastUpdated = Math.max(
-                    current.lastUpdated,
-                    log.start
-                );
-
-                trailInformation.set(trailId, current);
+                deviceInformation.set(deviceId, current);
             });
             
             const devices: DeviceRow[] = metadata.map((device: any) => {
-                const info = trailInformation.get(device.current_trail_id);
+                const info = deviceInformation.get(device.id);
 
                 return {
                     name: device.name,
