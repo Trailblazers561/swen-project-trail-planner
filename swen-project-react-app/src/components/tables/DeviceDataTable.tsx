@@ -20,11 +20,12 @@ const columns: TableColumn<DeviceRow>[] = [
   {
     name: "Device Name",
     selector: (row) => row.name,
-    sortable: false,
+    sortable: true,
     center: true,
   },
     {
     name: "Associated Trail",
+    sortable: true,
     // selector: (row) => row.trailName,
     cell: (row) => {
         if(row.trailName == null)
@@ -32,7 +33,8 @@ const columns: TableColumn<DeviceRow>[] = [
         else
             return <span>{row.trailName}</span>;
     },
-    sortable: false,
+    sortFunction: (a, b) =>
+    (a.trailName ?? "").localeCompare(b.trailName ?? ""),
     center: true,
   },
   {
@@ -43,7 +45,6 @@ const columns: TableColumn<DeviceRow>[] = [
   },
   {
     name: "Battery Status",
-    sortable: false,
     center: true,
     cell: (row) => {
       if (row.batteryStatus == null)
