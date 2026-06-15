@@ -26,7 +26,6 @@ const columns: TableColumn<DeviceRow>[] = [
     {
     name: "Associated Trail",
     sortable: true,
-    // selector: (row) => row.trailName,
     cell: (row) => {
         if(row.trailName == null)
             return <span className="text-gray-400">Unassociated</span>;
