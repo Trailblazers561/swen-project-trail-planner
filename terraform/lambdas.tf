@@ -4,6 +4,12 @@ data "archive_file" "traildata_zip" {
   output_path = "${path.module}/${local.lambda_code_directory}/zips/traildata.zip"
 }
 
+data "archive_file" "register_device_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/register_device.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/register_device.zip"
+}
+
 resource "aws_lambda_function" "set_device_blocked" {
   function_name = "${var.deploy_env}_traildata_set_device_blocked"
   role          = aws_iam_role.lambda_iam_role.arn
@@ -153,6 +159,37 @@ resource "aws_lambda_function" "pre_register_device" {
     subnet_ids = [aws_subnet.private_subnet.id]
   }
 }
+
+resource "aws_lambda_function" "device_cert_registration" {
+  function_name = "${var.deploy_env}_traildata_device_registration"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "register_device.register_device"
+  runtime       = "python3.12"
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/register_device.zip"
+  code_sha256 = data.archive_file.register_device_zip.output_base64sha256
+  timeout = 10
+
+  environment {
+    variables = {
+      REGISTRATION_TABLE = aws_dynamodb_table.registration_table.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE      = aws_dynamodb_table.device_trail_log_month_table.name
+      TRAIL_TABLE = aws_dynamodb_table.trail_table.name
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      CERTIFICATE_AUTHORITY_URL = "https://${aws_instance.ca_instance.private_ip}:9000"
+    }
+  }
+
+  vpc_config {
+    security_group_ids = [aws_security_group.lambda_sg.id]
+    subnet_ids = [aws_subnet.private_subnet.id]
+  }
+}
+
 
 resource "aws_lambda_function" "register_device" {
   function_name = "${var.deploy_env}_traildata_register_device"

@@ -78,15 +78,15 @@ This is ran once and once only upon successful completion.
 - Hash is used to create the final object of {{device id, current unix timestamp, CSR}, hash}
 - Device performs basic TLS handshake on registration API endpoint
   - Device's stored root certificate is used to verify connection
-- Device sends GET request to specific API registration endpoint
+- Device sends POST request to specific API registration endpoint
   - Request contains the final object generated in prior steps
   - endpoint must be configured to accept barebones TLS request and uses the root cert on the server end
-  - serverside GET functionality defined later on in this document
+  - serverside POST functionality defined later on in this document
 - Request returns a certificate unique to the device in .pem format
   - Device stores this securely
 - Device parses certificate for the expiration date and stores this value long term
 
-#### Serverside GET Functionality
+#### Serverside POST Functionality
 
 - Packet recieved from device
 - Hash the {device id, current unix timestamp, CSR} against the device serial number(retrieved from AWS secrets manager) using HMAC-SHA-512

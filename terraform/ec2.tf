@@ -28,6 +28,7 @@ set -e
 yum update -y --skip-broken
 yum install -y docker amazon-ecr-credential-helper --skip-broken
 yum install -y amazon-ssm-agent --skip-broken
+yum install -y python3-pip --skip-broken
 service docker start
 systemctl enable docker
 systemctl enable amazon-ssm-agent
@@ -120,19 +121,41 @@ if aws secretsmanager describe-secret --secret-id "cert-auth/root-ca-cert" --reg
   chown -R 1000:1000 /opt/ca_instance
 
 else
+  # wipe any data that may be there from a taint->apply on the ec2 instance
+  rm -rf /opt/ca_instance/*
+  chown -R 1000:1000 /opt/ca_instance
 
   # generate passwords
   openssl rand -base64 32 > /opt/ca_instance/password
   chmod 644 /opt/ca_instance/password
   openssl rand -base64 32 > /opt/ca_instance/intermediate_password
   chmod 644 /opt/ca_instance/intermediate_password
-  chown -R 1000:1000 /opt/ca_instance
-
 
   # initialize step-ca
   docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "YourOrg CA" --dns "localhost" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
   # change intermediate key password
-  docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
+  docker run --rm -e TERM=dumb -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
+
+python3 <<'PY'
+import json
+
+path = "/opt/ca_instance/config/ca.json"
+
+with open(path, "r") as f:
+    cfg = json.load(f)
+
+for p in cfg["authority"]["provisioners"]:
+    if p["name"] == "device-provisioner":
+        p["claims"] = {
+            "minTLSCertDuration": "5m",
+            "defaultTLSCertDuration": "720h",
+            "maxTLSCertDuration": "2160h"
+        }
+
+with open(path, "w") as f:
+    json.dump(cfg, f, indent=2)
+
+PY
 
   # back up to secrets manager
   secret_put() {
