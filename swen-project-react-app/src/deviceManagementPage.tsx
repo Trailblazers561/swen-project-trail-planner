@@ -113,9 +113,9 @@ const DeviceManagementPage = () => {
                     trailName: getTrailName(device.current_trail_id),
                     weeklyCount: info ? info.count : 0,
                     firmware_version: device.firmware_version,
-                    batteryStatus: info ? info.battery : 0,
-                    lastUpdated: info
-                    ? new Date(info.lastUpdated * 1000).toLocaleDateString("en-US")
+                    batteryStatus: device ? device.battery : 0,
+                    lastUpdated: device
+                    ? new Date(device.lastUpdated * 1000).toLocaleDateString("en-US")
                     : null,
                 };
             });
