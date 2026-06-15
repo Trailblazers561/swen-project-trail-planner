@@ -9,6 +9,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuGro
 
 interface Device {
   id: number;
+  name: string;
+  registration_id?: number;
+  date_registered?: number;
   notes?: string;
   date_manufactured?: number;
   date_retired?: number;
@@ -16,7 +19,7 @@ interface Device {
   battery?: number;
   firmware_version?: string;
   is_blocked?: boolean;
-  is_retired?: boolean;
+  is_archived?: boolean;
 }
 
 interface DeviceLog {
@@ -150,20 +153,28 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
         ])
 
         if (deviceResponse.success && deviceLogResponse.success) {
-          const deviceData = await deviceResponse.json;
+          const deviceData: Device[] = await deviceResponse.json;
           const deviceLogData = await deviceLogResponse.json;
           const trailsData = await trailsResponse.json;
-
+          console.log("dataa", deviceData);
           if (deviceData.length) {
             setDevice(deviceData.length ? deviceData[0] : null);
             setDeviceName(deviceData[0].name);
-            setSelectedTrailId(deviceData[0]?.current_trail_id)
+            setSelectedTrailId(deviceData[0]?.current_trail_id ?? 0);
 
-            // if (deviceData[0]?.) { // Device not setup
-            //   setCurrentAction(DeviceAction.SETUP_DEVICE);
-            // } else if (true) { // Trail Not associated
-            //   setCurrentAction(DeviceAction.ASSOCIATE_TRAIL);
-            // }
+            console.log("devss", deviceData[0].date_registered, !deviceData[0]?.date_registered, deviceData[0]?.date_registered === -1)
+            console.log(deviceData[0]);
+            if (deviceData[0]?.is_blocked) {
+              setCurrentAction(DeviceAction.UNBLOCK_DEVICE);
+            } else if (deviceData[0]?.is_archived) {
+              setCurrentAction(DeviceAction.UNARCHIVE_DEVICE);
+            } else if (!deviceData[0]?.date_registered || deviceData[0]?.date_registered === -1) {
+              setCurrentAction(DeviceAction.SETUP_DEVICE);
+            } else if (!deviceData[0]?.current_trail_id || deviceData[0]?.current_trail_id === 0) {
+              setCurrentAction(DeviceAction.ASSOCIATE_TRAIL);
+            } else {
+              setCurrentAction(DeviceAction.VIEW_LOGS);
+            }
           }
           setDeviceLogs(deviceLogData);
           setTrails(trailsData);
@@ -220,7 +231,6 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
 
   const getTrailName = (trailId: number) => {
     const trail = trails.find(t => t.id === trailId);
-    console.log("TRL", trail);
     return trail ? trail.name : `Trail ${trailId}`;
   };
 
