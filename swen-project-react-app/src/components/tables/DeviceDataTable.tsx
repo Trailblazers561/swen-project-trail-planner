@@ -4,6 +4,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 interface DeviceRow {
   name: string;
   id: number;
+  trailName: string;
   weeklyCount: number;
   firmware_version:string;
   batteryStatus: number | null;
@@ -24,7 +25,7 @@ const columns: TableColumn<DeviceRow>[] = [
   },
     {
     name: "Associated Trail",
-    selector: (row) => row.id,
+    selector: (row) => row.trailName,
     sortable: true,
     grow: 2,
   },
