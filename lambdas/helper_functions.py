@@ -6,16 +6,18 @@ import os
 from boto3.dynamodb.conditions import Key, Attr
 
 dynamodb = boto3.resource('dynamodb')
+secrets_client = boto3.client("secretsmanager")
 
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_hour_table"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_day_table"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_week_table"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_month_table"))
+device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_log_hour_table"))
+device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_log_day_table"))
+device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_log_week_table"))
+device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_log_month_table"))
 trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
 device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
 area_table = dynamodb.Table(os.environ.get("AREA_TABLE", "local_trailcount_area_table"))
 device_log_table = dynamodb.Table(os.environ.get("DEVICE_LOG_TABLE", "local_trailcount_device_log_table"))
+registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_trailcount_registration_table"))
 
 table_time_map = {
     "hour":  device_trail_log_hour_table,
@@ -62,6 +64,24 @@ def timestamp_conversion(timestamp, time_increment):
     elif time_increment == "month":
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
+
+def get_next_registration_id() -> int:
+    print("Retrieving next registration_id")
+    # Get all existing registrations to find next available ID
+    try:
+        resp = registration_table.scan()
+        existing_registrations = resp.get("Items", [])
+        if existing_registrations:
+            existing_ids = [int(r.get("registration_id", 0)) for r in existing_registrations]
+            new_registration_id = max(existing_ids, default=0) + 1
+        else:
+            new_registration_id = 1
+    except Exception as e:
+        print(f"Error finding max registration_id, starting with 1. Exception: {e}")
+        # If scan fails, start with ID 1
+        new_registration_id = 1
+
+    return new_registration_id
 
 def get_next_trail_id() -> int:
     print("Retrieving next trail_id")
@@ -140,6 +160,53 @@ def get_device_trail_id(device_id, trail_id=None):
     if not items:
         raise ValueError(f"No device trail association with device id {device_id}, trail_id={trail_id} found")
     return int(items[0]["id"]), int(items[0]["trail_id"])  # just return the ids, dont need all that
+
+
+def is_device_blocked(device_id=None, device_name=None) -> bool:
+    """
+    Slapped together check for the is blocked value in device. If a device is blocked, we're ignoring any data from it.
+    """
+    if device_id is not None:
+        response = device_table.get_item(Key={"id": int(device_id)})
+        item = response.get("Item")
+    elif device_name is not None:
+        items = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(device_name),
+            Limit=1
+        ).get("Items", [])
+        item = items[0] if items else None
+    else:
+        raise ValueError("Must provide either device_id or device_name")
+
+    if not item:
+        raise ValueError(f"Device not found")
+
+    return bool(item.get("is_blocked", False))
+
+
+def is_device_archived(device_id=None, device_name=None) -> bool:
+    """
+    Slapped together check for the is blocked value in device. If a device is archived, we're ignoring any data from it.
+    Maybe some more features, dont know
+    """
+    if device_id is not None:
+        response = device_table.get_item(Key={"id": int(device_id)})
+        item = response.get("Item")
+    elif device_name is not None:
+        items = device_table.query(
+            IndexName="name-index",
+            KeyConditionExpression=Key("name").eq(device_name),
+            Limit=1
+        ).get("Items", [])
+        item = items[0] if items else None
+    else:
+        raise ValueError("Must provide either device_id or device_name")
+
+    if not item:
+        raise ValueError(f"Device not found")
+
+    return bool(item.get("is_archived", False))
 
 
 def cors_headers():

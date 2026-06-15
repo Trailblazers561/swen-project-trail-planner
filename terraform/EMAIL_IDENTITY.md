@@ -6,7 +6,7 @@ This guide talks about the custom SES identity used to send emails with AWS. The
 
 1. Navigate to `Amazon SES`in the AWS console
 2. Create an identity and select `domain`
-3. Enter appropriate domain/subdomain ie. `trailcount-auth.adirondackwilderness.org`
+3. Enter appropriate domain/subdomain ie. `trailcount-auth.trailcount.io`
 4. Leave the following selects unchecked: `Assign a default configuration set` and `Assign to a tenant`
 5. Check `Use a custom MAIL FROM domain`
    - Enter mail from domain ie. `mail`
@@ -15,30 +15,31 @@ This guide talks about the custom SES identity used to send emails with AWS. The
    - Select `RSA_2048_BIT` for `DKIM signing key length`
    - Uncheck `Publish DNS records to Route53` `Enabled` as we don't use Route53
 7. Create identity
-8. You will now need to verify all of the different "things" in your chosen domain registrar
+8. You will now need to verify all of the different records in your chosen domain registrar
 
 ## Squarespace Setup
 
- - AWS will provide you with each DNS record you need to create in Squarespace custom DNS records
+ - AWS will provide you with each DNS record you need to create in Squarespace custom DNS records, expand these sections to show them
  - There will likely be three `CNAME` records for `DomainKeys Identified Mail (DKIM)`
  - There will likely be one `MX` record and one `TXT` record for `Custom MAIL FROM domain`
  - There will likely be one `TXT` record for `Domain-based Message Authentication, Reporting, and Conformance (DMARC)`
  - For `CNAME` records 
    - Select `CNAME` for type
-   - Enter the specified subdomain in the name field (omitting `.adirondackwilderness.org`)
+   - Enter the specified subdomain in the name field **(omitting `.trailcount.io`)**
    - Leave TTL as the default (`4 hrs`)
    - Enter the value provided by aws in the data section
  - For `MX` records
    - Select `MX` for type
-   - Enter the specified subdomain in the name field (omitting `.adirondackwilderness.org`)
+   - Enter the specified subdomain in the name field **(omitting `.trailcount.io`)**
+   - The aws value displays both priority and data, seperated by a space. These are seperate values.
    - Enter the first number in the AWS value in the priority section (ie. `10`)
    - Leave TTL as the default (`4 hrs`)
    - Enter the second part in the AWS value in the data section
  - For `TXT` records
    - Select `TXT` for type
-   - Enter the specified subdomain in the name field (omitting `.adirondackwilderness.org`)
+   - Enter the specified subdomain in the name field **(omitting `.trailcount.io`)**
    - Leave TTL as the default (`4 hrs`)
-   - Enter the specified value in the data section (omitting quotation marks)
+   - Enter the specified value in the data section **(omitting quotation marks)**
  - AWS will automatically verifiy the identity if everything is setup correctly
 
 ## Repository Variable

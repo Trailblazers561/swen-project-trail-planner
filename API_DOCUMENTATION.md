@@ -16,7 +16,7 @@ terraform output api_gateway_url
 
 The public API also uses a custom domain for the main environments. The format is:
 ```
-https://trailblazers-public-api-<deploy_env>.adirondackwilderness.org
+https://trailblazers-public-api-<deploy_env>.trailcount.io
 ```
 
 ## Authentication
