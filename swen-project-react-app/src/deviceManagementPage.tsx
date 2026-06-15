@@ -135,7 +135,18 @@ const DeviceManagementPage = () => {
     return (
         <div className="flex flex-col">
             <div className="w-full bg-[var(--color-button-secondary)] flex justify-between items-center">
-                <div className="font-semibold text-2xl p-2 ml-2 text-left"> Device Management </div>
+                    <div className="font-semibold text-2xl p-2 ml-2 text-left"> Device Management </div>
+            </div>
+                {loading ? (
+                    <div>Loading...</div>
+                ) : devices.length === 0 ? (
+                    <div>No devices found</div>
+                ) : (
+                    <div className="m-4">
+                        <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
+                    </div>
+                )}
+            <div className="flex justify-end px-4 py-3 ">
                 <Button
                     variant="primary"
                     onClick={() => {
@@ -143,21 +154,9 @@ const DeviceManagementPage = () => {
                         setIsModalOpen(true);      // 🔥
                     }}
                 >
-                    + Create Device
+                    Create Device
                 </Button>
             </div>
-
-            <div className="p-4">
-                {loading ? (
-                    <div>Loading...</div>
-                ) : devices.length === 0 ? (
-                    <div>No devices found</div>
-                ) : (
-                    <div className="pt-4 m-4">
-                        <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
-                    </div>
-                )}
-            </div> 
             <DeviceModal
                 isOpen={isModalOpen}
                 deviceId={selectedDevice?.id ?? 0}
