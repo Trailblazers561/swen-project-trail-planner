@@ -1,4 +1,5 @@
 import json
+
 from helper_functions import convert_decimals, cors_headers, dynamodb, device_log_table
 
 def get_device_management(event, context):
@@ -9,7 +10,6 @@ def get_device_management(event, context):
         device_id_list = multi_params.get('device_id')
         if device_id_list is not None and not all(id.isdigit() for id in device_id_list):
             raise ValueError("Invalid device_id_list format")
-        
         print(f"Retrieving device management information for device_id_list [{device_id_list}]")
         if device_id_list:
             items = []
@@ -30,7 +30,6 @@ def get_device_management(event, context):
             "headers": cors_headers(),
             "body": json.dumps(convert_decimals(items))
         }
-
 
     except ValueError as e:
         print(e)
