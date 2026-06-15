@@ -21,7 +21,7 @@ const columns: TableColumn<DeviceRow>[] = [
     name: "Device Name",
     selector: (row) => row.name,
     sortable: true,
-    center: true,
+    grow: 2,
   },
     {
     name: "Associated Trail",
