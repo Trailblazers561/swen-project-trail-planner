@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
-import { Role } from "./Context";
+import { Role, useAuth } from "./Context";
 
 interface User {
     user_id: string;
@@ -24,19 +24,27 @@ const Privileges = () => {
 
     const { getUsers } = TrailData();
 
+    const {currentRole} = useAuth();
+
     const loadUsers = async () => {
         try {
             const response = await getUsers();
-
+            
             if (response.success) {
                 const data: User[] = await response.json;
 
-                console.log("Users:", data);
 
-                setUsers(data.map((user) => user.username));
+                console.log("Users:", data);
+                console.log(typeof data[0].role, data[0].role);
+                
+                if(currentRole == null) {
+                    return;
+                }
+
+                setUsers(data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => user.username));
 
                 setUserListData(
-                    data.map((user) => ({
+                    data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => ({
                         user_id: user.user_id,
                         username: user.username,
                         email: user.email,
