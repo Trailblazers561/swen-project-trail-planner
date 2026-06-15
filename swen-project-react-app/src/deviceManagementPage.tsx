@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import { TrailData } from "./api";
-import TrailDataTable from "./components/tables/TrailDataTable";
+import DeviceDataTable from "./components/tables/DeviceDataTable";
 
 interface Device {
     device_id: number;
-    associated_trail: string;
-    weekly_count: string;
+    current_trail_id: string;
+    weekly_count: number;
     firmware: string;
-    battery: number;
-    last_call_in: number;
+    batteryStatus: number;
+    lastUpdated: string | null;
 }
 
+// turn getDeviceMetadata into a dictionary
+
+// the last call in is a timestamp, we need to convert it to a date
+
 const DeviceManagementPage = () => {
-    const [devices, setDevices] = useState<Device[]>([]);
+    const [devices, setDevices] = useState<Array<Device>>([]);
 
     const { getDeviceMetadata } = TrailData();
 
@@ -46,7 +50,7 @@ const DeviceManagementPage = () => {
                     <div>Loading...</div>
                 ) : (
                     <div className="pt-4 m-4">
-                        {/* <TrailDataTable data={devices} /> */}
+                        <DeviceDataTable data={devices} loading={false} />
                     </div>
                 )}
             </div>
