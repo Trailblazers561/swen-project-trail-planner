@@ -6,6 +6,7 @@ import os
 import time
 import uuid
 
+from cryptography.hazmat.primitives import hashes
 from jwcrypto import jwk, jwt
 import boto3
 import requests
@@ -16,7 +17,6 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.keywrap import aes_key_unwrap
 from cryptography.hazmat.backends import default_backend
-from cryptography.x509.verification import PolicyBuilder, Store
 
 CA_URL = os.environ.get("CERTIFICATE_AUTHORITY_URL")
 CA_CERT_PATH = "tmp/root_ca.crt"
