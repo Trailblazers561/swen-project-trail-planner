@@ -40,7 +40,7 @@ PERMISSIONS = {
     ("/trail_metadata", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/users", "GET"): [ROOT_ADMIN, ADMIN],
-    ("/users", "POST"): [ROOT_ADMIN, ADMIN],
+    ("/users", "PUT"): [ROOT_ADMIN, ADMIN],
     ("/users", "DELETE"): [ROOT_ADMIN, ADMIN],
     ("/registration", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/registration", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],

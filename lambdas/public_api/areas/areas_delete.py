@@ -4,9 +4,9 @@ from boto3.dynamodb.conditions import Key
 
 from helper_functions import area_table, cors_headers
 
-def delete_area(event, context):
+def retire_area(event, context):
     """
-    Deletes an area
+    Retires an area
     Expects: { "name": string }
     """
     try:
@@ -19,20 +19,20 @@ def delete_area(event, context):
 
         if name is None: raise ValueError("Missing required field: name")
 
-        print(f"Attempting to delete area with name [{name}")
+        print(f"Attempting to retire area with name [{name}]")
         area_exists = area_table.query(
             KeyConditionExpression=Key("name").eq(name),
             Limit=1
         )["Items"]
         if not area_exists: raise ValueError(f"Cannot find area with name [{name}]")
 
-        area_table.delete_item(Key={"name": name})
+        area_table.put_item(Item={"name": name, "trail_ids": [], "retired": True})
 
-        print("Successfully deleted area")
+        print("Successfully retired area")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
-            "body": json.dumps({"message": "Area deleted successfully"})
+            "body": json.dumps({"message": "Area retired successfully"})
         }
     except ValueError as e:
         print(e)

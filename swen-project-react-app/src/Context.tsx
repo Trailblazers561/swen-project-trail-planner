@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { UserRole } from "./lib/apiTypes";
 
 export enum Role {
+    Guest = 0,
     User = 1,
     Manager = 2,
     Admin = 3,
