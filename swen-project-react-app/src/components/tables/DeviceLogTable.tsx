@@ -103,7 +103,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     },
   },
   {
-    name: <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device..." />,
+    name: <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />,
     center: true,
     cell: (row) => {
       if (row.rssi === null)
@@ -127,7 +127,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     },
   },
   {
-    name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower..." />,
+    name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower." />,
     center: true,
     cell: (row) => {
       if (row.rsrp === null)
@@ -151,7 +151,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     },
   },
   {
-    name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal...." />,
+    name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />,
     center: true,
     cell: (row) => {
       if (row.rsrq === null)
