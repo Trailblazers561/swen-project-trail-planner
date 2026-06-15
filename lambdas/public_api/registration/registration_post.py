@@ -41,13 +41,6 @@ def pre_register_device(event, context):
             # normal operation
             new_device_id = get_next_device_id()
 
-            device_table.put_item(Item={
-                "id": new_device_id,
-                "name": device_name,
-                "is_blocked": False,
-                "is_archived": False,
-            })
-
             secrets_client.create_secret(
                 Name=device_name,
                 SecretString=json.dumps({
@@ -55,6 +48,13 @@ def pre_register_device(event, context):
                     "device_ser_no": device_serial
                 })
             )
+
+            device_table.put_item(Item={
+                "id": new_device_id,
+                "name": device_name,
+                "is_blocked": False,
+                "is_archived": False,
+            })
 
             new_registration_id = get_next_registration_id()
 
