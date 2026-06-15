@@ -337,7 +337,7 @@ resource "aws_dynamodb_table_item" "device_log_items" {
     time = { "N" = each.value.time }
     count = { "N" = each.value.count }
     battery = { "N" = each.value.battery }
-    firmware = { "S" = each.value.firmware }
+    firmware_version = { "S" = each.value.firmware_version }
     rssi = { "N" = each.value.rssi }
     rsrp = { "N" = each.value.rsrp }
     rsrq = { "N" = each.value.rsrq }
