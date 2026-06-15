@@ -4,7 +4,7 @@ import './Modal.css';
 import { Button } from '../templates/button';
 import DeviceLogTable from "../tables/DeviceLogTable";
 import { EllipsisVertical } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "../templates/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "../templates/dropdown-menu"
 
 
 interface Device {
@@ -114,9 +114,6 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   const [deviceLogs, setDeviceLogs] = useState<DeviceLog[]>([]);
   const [trails, setTrails] = useState<Trail[]>([]);
   const [currentAction, setCurrentAction] = useState<DeviceAction  | null>(deviceId === 0 ? DeviceAction.CREATE_DEVICE : null);
-//   const [trails, setTrails] = useState<Trail[]>([]);
-//   const [selectedDevice, setSelectedDevice] = useState<number>(0);
-//   const [selectedTrail, setSelectedTrail] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -134,16 +131,6 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
       loadData();
     }
   }, [isOpen]);
-
-//   useEffect(() => {
-//     if (selectedDevice) {
-//       const device = devices.find(d => d.id === selectedDevice);
-//       if (device?.current_trail_id)
-//         setSelectedTrail(device?.current_trail_id);
-//       else
-//         setSelectedTrail(0);
-//     }
-//   }, [selectedDevice])
 
   const refreshVariables = async () => {
     setDeviceName("");
@@ -624,7 +611,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
 
         {showDeleteConfirm && (
           <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
-            <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content max-w-200!" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Confirm Delete</h2>
                 <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>×</button>
@@ -645,7 +632,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
               </div>
-              <div className="modal-footer">
+              <div className="modal-popup-footer">
                 <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
                   Cancel
                 </button>
