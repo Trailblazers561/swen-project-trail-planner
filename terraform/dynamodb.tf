@@ -25,6 +25,8 @@ resource "aws_dynamodb_table" "device_table" {
     firmware_version: string
     date_manufactured: number (UNIX timestamp)
     date_retired: number (UNIX timestamp)
+    is_blocked: boolean
+    is_archived: boolean
   */
 }
 
@@ -212,6 +214,34 @@ resource "aws_dynamodb_table" "error_table" {
 
   /*
     error: string
+  */
+}
+
+# TABLE 10: Registration
+resource "aws_dynamodb_table" "registration_table" {
+  name         = "${var.deploy_env}_trailcount_registration_table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "registration_id"
+
+  attribute {
+    name = "registration_id"
+    type = "N"
+  }
+
+    attribute {
+    name = "device_id"
+    type = "N"
+  }
+
+    global_secondary_index {
+    name            = "device-index"
+    hash_key        = "device_id"
+    projection_type = "ALL"
+  }
+
+  /*
+    date_registered: number (UNIX timestamp)
+    cert_time_to_live: number (int, seconds)
   */
 }
 
