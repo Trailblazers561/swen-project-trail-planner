@@ -79,6 +79,25 @@ export function TrailData() {
   }
 
   /**
+   * Get device logs for specific devices
+   * @param deviceIdList array of device ids of devices to retrieve data for
+   * @param limit Optional limit number of logs to retrieve for each device, defautls to -5
+   */
+  async function getDeviceLogs(deviceIdList: number[], limit?: number) {
+    const queries: string[] = []
+    deviceIdList.forEach(id => {queries.push(`device_id=${id}`)})
+    if (limit)
+      queries.push(`limit=${limit}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    const url = `${API_URL}/device_management${queryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
    * Get device logs for specific trails between two dates
    * @param trailIdList array of trail ids of trails to retrieve data for
    * @param startDate ISO format date for earliest date to retrieve
@@ -145,6 +164,86 @@ export function TrailData() {
       method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify(payload),
+    });
+  }
+
+  /**
+   * Creates a device
+   * @param deviceName - The name of the device to create
+   * @param deviceSerial - The serial of the device to create
+   */
+  async function createDevice(deviceName: string, deviceSerial: string) {
+    return await request(`${API_URL}/registration`, {
+      method: "POST",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_name: deviceName,
+        device_serial: deviceSerial
+      }),
+    });
+  }
+
+  /**
+   * Updates a device
+   * @param registrationId - The registration id to update
+   * @param deviceName - Optional The name of the device to update
+   * @param deviceSerial - Optional The serial of the device to update
+   */
+  async function updateRegistration(registrationId: number, deviceName?: string, deviceSerial?: string) {
+    return await request(`${API_URL}/registration`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        registration_id: registrationId,
+        device_name: deviceName,
+        device_serial: deviceSerial
+      }),
+    });
+  }
+
+  /**
+   * Updates a device
+   * @param registrationId - The registration id to update
+   */
+  async function deleteRegistration(registrationId: number) {
+    return await request(`${API_URL}/registration`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        registration_id: registrationId
+      }),
+    });
+  }
+
+  /**
+   * Archives/Unarchives a device
+   * @param deviceId - The device id to archive
+   * @param isArchived - Whether or not to archive a device
+   */
+  async function archiveDevice(deviceId: number, isArchived: boolean) {
+    return await request(`${API_URL}/archive`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_id: deviceId,
+        is_archived: isArchived
+      }),
+    });
+  }
+
+  /**
+   * Blocks/Unblocks a device
+   * @param deviceId - The device id to archive
+   * @param isBlocked - Whether or not to archive a device
+   */
+  async function blockDevice(deviceId: number, isBlocked: boolean) {
+    return await request(`${API_URL}/block`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_id: deviceId,
+        is_blocked: isBlocked
+      }),
     });
   }
 
@@ -344,7 +443,13 @@ export function TrailData() {
     getTrailMetadata,
     getAreaMetadata,
     getDeviceMetadata,
+    createDevice,
+    updateRegistration,
+    deleteRegistration,
+    archiveDevice,
+    blockDevice,
     getTrailLogs,
+    getDeviceLogs,
     getHeatmapData,
     updateTrailMetadata,
     createTrail,

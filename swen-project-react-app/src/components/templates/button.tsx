@@ -18,6 +18,8 @@ const buttonVariants = cva(
           "bg-button-secondary text-secondary-foreground hover:bg-button-secondary-hover",
         outline:
           "border border-input bg-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        delete:
+          "bg-[#dc3545] text-white hover:bg-[#c82333]",
         // link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

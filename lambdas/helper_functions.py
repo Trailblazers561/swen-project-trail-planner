@@ -16,7 +16,8 @@ trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_tra
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
 device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
 area_table = dynamodb.Table(os.environ.get("AREA_TABLE", "local_trailcount_area_table"))
-registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_Registration"))
+device_log_table = dynamodb.Table(os.environ.get("DEVICE_LOG_TABLE", "local_trailcount_device_log_table"))
+registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_trailcount_registration_table"))
 
 table_time_map = {
     "hour":  device_trail_log_hour_table,

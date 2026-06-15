@@ -4,6 +4,7 @@ import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
 import LandingPage from "./landingPage";
 import Test from './Test';
+import DeviceManagementPage from './deviceManagementPage';
 import Privileges from './userconfig';
 import { Role, useAuth } from "@/Context";
 import Navbar from './components/Navbar';
@@ -23,6 +24,7 @@ function App() {
                     <Route path="/home" element={<LandingPage />} />
                     <Route path="/dashboard" element={<DashBoard />} />
                     <Route path="/test" element={<Test />} />
+                    <Route path="/devices" element={<DeviceManagementPage />} />
                     <Route path="/privileges" 
                     element={(currentRole === Role.Admin || currentRole === Role.Root) ? <Privileges /> : <Navigate replace to="/login" />} 
                     />
