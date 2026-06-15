@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TrailData } from '../../api';
 import './Modal.css';
 import { Button } from '../templates/button';
+import { LoaderCircle } from "lucide-react";
 
 interface Device {
   id: number;
@@ -29,6 +30,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { getDeviceMetadata, getTrailMetadata, updateDeviceTrailAssociation } = TrailData();
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,11 +59,13 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
         const devicesData = await devicesResponse.json;
         const trailsData = await trailsResponse.json;
 
+        setDataLoaded(true);
         setDevices(devicesData);
         setTrails(trailsData);
       }
     } catch (err) {
       console.error('Error loading data:', err);
+      setDataLoaded(true);
     }
   };
 
@@ -131,7 +135,13 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
             <div className="device-sections">
               <div className="device-section">
                 <h3>Needs to be Paired (trail_id = 0)</h3>
-                {unpairedDevices.length === 0 ? (
+                {!dataLoaded ? (
+                  <LoaderCircle
+                      size={50}
+                      strokeWidth={2}
+                      className="m-auto animate-spin text-navbar"
+                  />
+                ) : unpairedDevices.length === 0 ? (
                   <p className="no-devices">No unpaired devices</p>
                 ) : (
                   <div className="device-list">
@@ -156,7 +166,13 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
 
               <div className="device-section">
                 <h3>Already Paired</h3>
-                {pairedDevices.length === 0 ? (
+                {!dataLoaded ? (
+                  <LoaderCircle
+                      size={50}
+                      strokeWidth={2}
+                      className="m-auto animate-spin text-navbar"
+                  />
+                ) : pairedDevices.length === 0 ? (
                   <p className="no-devices">No paired devices</p>
                 ) : (
                   <div className="device-list">
@@ -183,7 +199,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
               </div>
             </div>
 
-            {selectedDevice && (
+            {selectedDevice !== 0 && (
               <div className="form-group">
                 <label htmlFor="trail-select">Select Trail:</label>
                 <select

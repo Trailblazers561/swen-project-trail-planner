@@ -1,12 +1,16 @@
 import json
 
+from boto3.dynamodb.conditions import Attr
+
 from helper_functions import dynamodb, area_table, convert_decimals, cors_headers
 
 def get_areas(event, context):
     try:
         print(event)
+        single_params = event.get("queryStringParameters", {}) or {}
         multi_params = event.get("multiValueQueryStringParameters", {}) or {}
 
+        retired = "retired" in single_params
         area_list = multi_params.get("name")
 
         print(f"Retrieving areas for area_list [{area_list}]")
@@ -20,8 +24,11 @@ def get_areas(event, context):
                     }
                 )["Responses"].get(area_table.name, [])
                 items.extend(response)
-        else:   
-            items = area_table.scan().get("Items", [])
+        else:
+            if retired:
+                items = area_table.scan(FilterExpression=Attr("retired").exists()).get("Items", [])
+            else:
+                items = area_table.scan(FilterExpression=Attr("retired").not_exists()).get("Items", [])
 
         print(f"Successfully found areas [{items[:3]}]")
         return {

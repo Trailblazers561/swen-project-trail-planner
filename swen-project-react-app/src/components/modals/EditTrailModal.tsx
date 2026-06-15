@@ -35,14 +35,17 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   const [selectedArea, setSelectedArea] = useState<string>('');
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [retiring, setRetiring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { getAreaMetadata, updateTrailMetadata, createTrail, retireTrail } = TrailData();
+  const [showRetireConfirm, setShowRetireConfirm] = useState(false);
+  const [retiredTrails, setRetiredTrails] = useState<Trail[]>([]);
+  const [retiredTrailSelected, setRetiredTrailSelected] = useState(false);
+  const { getAreaMetadata, updateTrailMetadata, createTrail, retireTrail, getTrailMetadata } = TrailData();
 
   useEffect(() => {
     if (isOpen) {
+      loadRetiredTrails();
       loadAreas();
       if (isCreateMode) {
         // Create mode - reset everything
@@ -52,6 +55,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         setLatitude(0);
         setLongitude(0);
         setSelectedArea('');
+        setRetiredTrailSelected(false);
       } else if (propTrail) {
         // Edit mode with specific trail
         setSelectedTrailId(propTrail.id);
@@ -59,6 +63,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         setNotes('');
         setLatitude(0);
         setLongitude(0);
+        setRetiredTrailSelected(false);
       } else {
         // Edit mode - allow selection
         setSelectedTrailId(0);
@@ -66,6 +71,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         setNotes('');
         setLatitude(0);
         setLongitude(0);
+        setRetiredTrailSelected(false);
       }
     }
   }, [isOpen, propTrail, isCreateMode]);
@@ -87,9 +93,27 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         } else {
           setSelectedArea('');
         }
+      } else {
+        setTrailName("");
+        setNotes("");
+        setLatitude(0);
+        setLongitude(0);
+        setSelectedArea("");
       }
     }
-  }, [selectedTrailId, availableTrails, areas]);
+  }, [selectedTrailId, availableTrails, areas, retiredTrails]);
+
+  const loadRetiredTrails = async () => {
+    try {
+      const response = await getTrailMetadata(undefined, true);
+      if (response.success) {
+        const retiredTrails = await response.json;
+        setRetiredTrails(retiredTrails);
+      }
+    } catch (err) {
+      console.error('Error loading retired trails:', err);
+    }
+  };
 
   const loadAreas = async () => {
     try {
@@ -114,7 +138,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!trailName || trailName.trim() === '') {
+    if (!retiredTrailSelected && (!trailName || trailName.trim() === '')) {
       setError('Trail name is required');
       return;
     }
@@ -167,7 +191,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
         );
 
         if (response.success) {
-          setSuccess('Trail updated successfully!');
+          setSuccess(`Trail ${retiredTrailSelected ? "reactivated" : "updated"} successfully!`);
           setTimeout(() => {
             onUpdate();
             onClose();
@@ -186,13 +210,13 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
     }
   };
 
-  const handleDelete = async () => {
+  const handleRetire = async () => {
     if (!selectedTrailId) {
       setError('Please select a trail');
       return;
     }
 
-    setDeleting(true);
+    setRetiring(true);
     setError(null);
 
     try {
@@ -200,10 +224,10 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
 
       if (response.success) {
         setSuccess('Trail retired successfully!');
+        setShowRetireConfirm(false);
         setTimeout(() => {
           onUpdate();
           onClose();
-          setShowDeleteConfirm(false);
           setSuccess(null);
         }, 1500);
       } else {
@@ -214,7 +238,7 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
       setError('An error occurred while retiring the trail');
       console.error(err);
     } finally {
-      setDeleting(false);
+      setRetiring(false);
     }
   };
 
@@ -235,19 +259,33 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 <select
                   id="trail-select"
                   value={selectedTrailId}
-                  onChange={(e) => setSelectedTrailId(Number(e.target.value))}
+                  onChange={(e) => {
+                    setSelectedTrailId(Number(e.target.value));
+                    setRetiredTrailSelected(retiredTrails.some(trail => trail.id === Number(e.target.value)));
+                  }}
                   required
                 >
-                  <option value={0}>Select a trail</option>
-                  {availableTrails.map((trail) => (
-                    <option key={trail.id} value={trail.id}>
-                      {trail.name} (ID: {trail.id})
-                    </option>
-                  ))}
+                  <option hidden value={0}>Select a trail</option>
+                  <optgroup label="Active Trails">
+                    {availableTrails.map((trail) => (
+                      <option key={trail.id} value={trail.id}>
+                        {trail.name} (ID: {trail.id})
+                      </option>
+                    ))}
+                  </optgroup>
+                  {retiredTrails.length !== 0 &&
+                    <optgroup label="Retired Trails">
+                      {retiredTrails.map((trail) => (
+                        <option key={trail.id} value={trail.id}>
+                          {trail.name} (ID: {trail.id})
+                        </option>
+                      ))}
+                    </optgroup>
+                  }
                 </select>
               </div>
             )}
-            {(isCreateMode || selectedTrailId > 0) && (
+            {!retiredTrailSelected && (isCreateMode || selectedTrailId > 0) && (
               <>
                 <div className="form-group">
                   <label htmlFor="trail-name">Trail Name: {isCreateMode && <span style={{ color: 'red' }}>*</span>}</label>
@@ -340,42 +378,45 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
             {success && <div className="success-message">{success}</div>}
           </div>
           <div className="modal-footer">
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <div>
-                {!isCreateMode && selectedTrailId > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={loading || deleting}
-                    className="delete-button"
-                    data-testid="delete-button"
-                  >
-                    Retire Trail
-                  </button>
-                )}
+            {retiredTrailSelected ? (
+                  <Button variant="primary" disabled={loading || retiring} data-testid="confirm-button">
+                    Reactivate Trail
+                  </Button>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <div>
+                  {!isCreateMode && selectedTrailId > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRetireConfirm(true)}
+                      disabled={loading || retiring}
+                      className="delete-button font-medium h-9 flex items-center"
+                      data-testid="delete-button"
+                    >
+                      Retire Trail
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Button variant="primary" disabled={loading || retiring} data-testid="confirm-button">
+                    {loading ? (isCreateMode ? 'Creating...' : 'Updating...') : (isCreateMode ? 'Create Trail' : 'Update Trail')}
+                  </Button>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Button variant="primary" disabled={loading || deleting} data-testid="confirm-button">
-                  {loading ? (isCreateMode ? 'Creating...' : 'Updating...') : (isCreateMode ? 'Create Trail' : 'Update Trail')}
-                </Button>
-              </div>
-            </div>
+            )}
           </div>
         </form>
 
-        {showDeleteConfirm && (
-          <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowDeleteConfirm(false)}>
+        {showRetireConfirm && (
+          <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowRetireConfirm(false)}>
             <div className="modal-content" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Confirm Retire</h2>
-                <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>×</button>
+                <button className="modal-close" onClick={() => setShowRetireConfirm(false)}>×</button>
               </div>
               <div className="modal-body">
                 <p style={{ marginBottom: '15px', color: '#333' }}>
-                  <strong style={{ color: '#dc3545' }}>Warning:</strong> This action cannot be undone.
-                </p>
-                <p style={{ marginBottom: '15px', color: '#333' }}>
-                  Retiring this trail will permanently remove:
+                  Retiring this trail will remove:
                 </p>
                 <ul style={{ marginLeft: '20px', marginBottom: '15px', color: '#333' }}>
                   <li>The trail from regular trail metadata retrieval</li>
@@ -389,18 +430,18 @@ const EditTrailModal: React.FC<EditTrailModalProps> = ({ isOpen, onClose, trail:
                 {error && <div className="error-message">{error}</div>}
                 {success && <div className="success-message">{success}</div>}
               </div>
-              <div className="modal-footer">
-                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting || success !== null} data-testid="cancel-delete">
+              <div className="modal-popup-footer">
+                <button type="button" onClick={() => setShowRetireConfirm(false)} disabled={retiring || success !== null} data-testid="cancel-delete">
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
+                  onClick={handleRetire}
+                  disabled={retiring}
                   className="delete-button"
                   data-testid="confirm-delete"
                 >
-                  {deleting ? 'Deleting...' : 'Yes, Retire Trail'}
+                  {retiring ? 'Retiring...' : 'Yes, Retire Trail'}
                 </button>
               </div>
             </div>
