@@ -22,7 +22,6 @@ const DeviceManagementPage = () => {
 
     const [loading, setLoading] = useState(true);
     const [devices, setDevices] = useState<DeviceRow[]>([]);
-    const [trails, setTrails] = useState<{ id: number; name: string }[]>([]);
     
     const { getDeviceMetadata, getTrailLogs, getTrailMetadata } = TrailData();
     
@@ -50,7 +49,6 @@ const DeviceManagementPage = () => {
                 };
             if (trailMetadataResponse.success) {
                 const trailData = await trailMetadataResponse.json;
-                setTrails(trailData);
                 trails = trailData;
             }
             
@@ -134,7 +132,7 @@ const DeviceManagementPage = () => {
 
     return (
         <div className="flex flex-col">
-            <div className="w-full bg-[var(--color-button-secondary)] flex justify-between items-center">
+            <div className="w-full bg-button-secondary flex justify-between items-center">
                     <div className="font-semibold text-2xl p-2 ml-2 text-left"> Device Management </div>
             </div>
                 {loading ? (
@@ -142,21 +140,20 @@ const DeviceManagementPage = () => {
                 ) : devices.length === 0 ? (
                     <div>No devices found</div>
                 ) : (
-                    <div className="m-4">
+                    <div className="m-4 mb-0">
                         <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
+                        <Button
+                        className="absolute bottom-3.5 left-6"
+                            variant="primary"
+                            onClick={() => {
+                                setSelectedDevice(null);   // 🔥
+                                setIsModalOpen(true);      // 🔥
+                            }}
+                        >
+                            Create Device
+                        </Button>
                     </div>
                 )}
-            <div className="flex justify-end px-4 py-3 ">
-                <Button
-                    variant="primary"
-                    onClick={() => {
-                        setSelectedDevice(null);   // 🔥
-                        setIsModalOpen(true);      // 🔥
-                    }}
-                >
-                    Create Device
-                </Button>
-            </div>
             <DeviceModal
                 isOpen={isModalOpen}
                 deviceId={selectedDevice?.id ?? 0}
