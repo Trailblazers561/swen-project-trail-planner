@@ -173,6 +173,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           setTrails(trailsData);
         } else {
           setCurrentAction(null);
+          setError("Error loading data");
           console.error("Error loading data");
         }
       }
