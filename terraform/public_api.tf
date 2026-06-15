@@ -56,6 +56,12 @@ locals {
         handler = "devices_put.upload_device_data"
       }
     }
+    device_management = {
+      GET = {
+        file = "device_management/device_management_get.py"
+        handler = "device_management_get.get_device_management"
+      }
+    }
     block = {
       PUT = {
         file = "block/block_put.py"
@@ -302,6 +308,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
       AREA_TABLE = aws_dynamodb_table.area_table.name
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
+      DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
     }
   }
 }

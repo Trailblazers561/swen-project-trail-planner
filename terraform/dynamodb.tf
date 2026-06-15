@@ -195,7 +195,34 @@ resource "aws_dynamodb_table" "device_trail_log_month_table" {
   */
 }
 
-# TABLE 9: Errors
+# TABLE 9: DeviceLog
+resource "aws_dynamodb_table" "device_log_table" {
+  name           = "${var.deploy_env}_trailcount_device_log_table"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "device_id"
+  range_key    = "time"
+
+  attribute {
+    name = "device_id"
+    type = "N" // FK
+  }
+
+  attribute {
+    name = "time"
+    type = "N" // number (UNIX timestamp)
+  }
+
+  /*
+    count: number (int)
+    battery: number (percentage)
+    firmware_version: string
+    rssi: number (int, dBm)
+    rsrp: number (int, dBm)
+    rsrq: number (int, dB)
+  */
+}
+
+# TABLE 10: Errors
 resource "aws_dynamodb_table" "error_table" {
   name           = "${var.deploy_env}_trailcount_error_table"
   billing_mode   = "PAY_PER_REQUEST"
@@ -217,7 +244,7 @@ resource "aws_dynamodb_table" "error_table" {
   */
 }
 
-# TABLE 10: Registration
+# TABLE 11: Registration
 resource "aws_dynamodb_table" "registration_table" {
   name         = "${var.deploy_env}_trailcount_registration_table"
   billing_mode = "PAY_PER_REQUEST"
@@ -260,7 +287,9 @@ locals {
       ]
     }
   ]
+  device_log_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_logs.csv"))
   error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
+  registration_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/registrations.csv"))
 }
 
 # INSERT TEST DATA INTO Device
@@ -326,6 +355,26 @@ resource "aws_dynamodb_table_item" "area_items" {
   })
 }
 
+# INSERT TEST DATA INTO DeviceLog
+resource "aws_dynamodb_table_item" "device_log_items" {
+  for_each = { for idx, item in local.device_log_sample_data : idx => item }
+
+  table_name = aws_dynamodb_table.device_log_table.name
+  hash_key   = aws_dynamodb_table.device_log_table.hash_key
+  range_key  = aws_dynamodb_table.device_log_table.range_key
+
+  item = jsonencode({
+    device_id  = { "N" = each.value.device_id }
+    time = { "N" = each.value.time }
+    count = { "N" = each.value.count }
+    battery = { "N" = each.value.battery }
+    firmware_version = { "S" = each.value.firmware_version }
+    rssi = { "N" = each.value.rssi }
+    rsrp = { "N" = each.value.rsrp }
+    rsrq = { "N" = each.value.rsrq }
+  })
+}
+
 # INSERT TEST DATA INTO Error
 resource "aws_dynamodb_table_item" "error_items" {
   for_each = { for idx, item in local.error_sample_data : idx => item }
@@ -338,5 +387,21 @@ resource "aws_dynamodb_table_item" "error_items" {
     id  = { "N" = each.value.id }
     time = { "N" = each.value.time }
     error = { "S" = each.value.error }
+  })
+}
+
+# INSERT TEST DATA INTO Registration
+resource "aws_dynamodb_table_item" "registration_items" {
+  for_each = { for idx, item in local.registration_sample_data : idx => item }
+
+  table_name = aws_dynamodb_table.registration_table.name
+  hash_key   = aws_dynamodb_table.registration_table.hash_key
+  range_key  = aws_dynamodb_table.registration_table.range_key
+
+  item = jsonencode({
+    registration_id  = { "N" = each.value.registration_id }
+    device_id  = { "N" = each.value.device_id }
+    date_registered = { "N" = each.value.date_registered }
+    cert_time_to_live = { "N" = each.value.cert_time_to_live }
   })
 }
