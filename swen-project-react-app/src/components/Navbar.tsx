@@ -15,7 +15,7 @@ function Navbar() {
                 <div className="flex items-center gap-15 ml-auto">  
                     <Link to="/home">Home</Link>
                     <Link to="/dashboard">Dashboard</Link>
-                    <Link to="/devices">Device Management</Link>
+                    {(currentRole === Role.Manager || currentRole === Role.Admin || currentRole === Role.Root) && <Link to="/devices">Device Management</Link>}
                     {(currentRole === Role.Admin || currentRole === Role.Root) && <Link to="/privileges">Privileges</Link>}
                     <div className="profile-info text-right justify-end flex items-center gap-2">
                         {currentRole !== null ? (

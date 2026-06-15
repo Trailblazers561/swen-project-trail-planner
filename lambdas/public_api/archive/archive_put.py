@@ -52,7 +52,7 @@ def set_device_archived(event, context):
             device_trail_items = response.get("Items", [])
 
             for device_trail_item in device_trail_items:
-                if not device_trail_item["date_removed"]:
+                if not device_trail_item.get("date_removed"):
                     device_trail_table.update_item(
                         Key={"device_id": device_trail_item["device_id"], "date_installed": device_trail_item["date_installed"]},
                         UpdateExpression="SET date_removed = :date_removed",
