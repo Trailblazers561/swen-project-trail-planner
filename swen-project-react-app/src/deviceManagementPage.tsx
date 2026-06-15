@@ -1,23 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrailData } from "./api";
 import TrailDataTable from "./components/tables/TrailDataTable";
 
 interface Device {
-    device_id: string;
+    device_id: number;
     associated_trail: string;
     weekly_count: string;
     firmware: string;
-    battery: string;
-    last_call_in: string;
+    battery: number;
+    last_call_in: number;
 }
 
-
-
 const DeviceManagementPage = () => {
-    const [devices, setDevices] = useState<Device[]>([]);    
-    const [DeviceListData, setDeviceListData] = useState<Array<Device>>([]);
+    const [devices, setDevices] = useState<Device[]>([]);
 
-    const { getDeviceMetadata } = TrailData()
+    const { getDeviceMetadata } = TrailData();
 
     const loadDevices = async () => {
         try {
@@ -28,24 +25,15 @@ const DeviceManagementPage = () => {
 
                 console.log("Devices:", data);
 
-                setDevices(data.map((device) => device.device_id));
-
-                setDeviceListData(
-                    data.map((device) => ({
-                        device_id: device.device_id,
-                        associated_trail: device.associated_trail,
-                        weekly_count: device.weekly_count,
-                        firmware: device.firmware,
-                        battery: device.battery,
-                        last_call_in: device.last_call_in,
-                    }))
-                );
+                setDevices(data);
             }
         } catch (error) {
             console.error("Error loading users:", error);
         }
     };
-    
+
+    useEffect(() => {loadDevices();}, []);
+
     return (
         <div className="flex flex-col">
 
@@ -58,7 +46,7 @@ const DeviceManagementPage = () => {
                     <div>Loading...</div>
                 ) : (
                     <div className="pt-4 m-4">
-                        <TrailDataTable data={DeviceListData} />
+                        {/* <TrailDataTable data={devices} /> */}
                     </div>
                 )}
             </div>
