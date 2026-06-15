@@ -49,7 +49,7 @@ locals {
     devices = {
       POST = {
         file = "devices/devices_post.py"
-        handler = "devices_post.register_device"
+        handler = "devices_post.upload_device_info"
       }
       PUT = {
         file = "devices/devices_put.py"
@@ -60,6 +60,44 @@ locals {
       GET = {
         file = "device_management/device_management_get.py"
         handler = "device_management_get.get_device_management"
+      }
+    }
+    block = {
+      PUT = {
+        file = "block/block_put.py"
+        handler = "block_put.set_device_blocked"
+      }
+    }
+    archive = {
+      PUT = {
+        file = "archive/archive_put.py"
+        handler = "archive_put.set_device_archived"
+      }
+    }
+    heatmap = {
+      GET = {
+        file = "heatmap/heatmap_get.py"
+        handler = "heatmap_get.get_heatmap_data"
+        timeout = 10
+      }
+    }
+    registration = {
+      GET = {
+        file = "registration/registration_get.py"
+        handler = "registration_get.get_registrations"
+        timeout = 10
+      }
+      POST = {
+        file = "registration/registration_post.py"
+        handler = "registration_post.pre_register_device"
+      }
+      PUT = {
+        file = "registration/registration_put.py"
+        handler = "registration_put.edit_registration"
+      }
+      DELETE = {
+        file = "registration/registration_delete.py"
+        handler = "registration_delete.delete_registration"
       }
     }
     trail_data = {
@@ -100,6 +138,10 @@ locals {
       POST = {
         file = "users/users_post.py"
         handler = "users_post.change_user_group"
+      }
+      DELETE = {
+        file = "users/users_delete.py"
+        handler = "users_delete.ban_user"
       }
     }
   }
@@ -255,6 +297,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
 
   environment {
     variables = {
+      REGISTRATION_TABLE = aws_dynamodb_table.registration_table.name
       DEVICE_TRAIL_LOG_HOUR_TABLE = aws_dynamodb_table.device_trail_log_hour_table.name
       DEVICE_TRAIL_LOG_DAY_TABLE = aws_dynamodb_table.device_trail_log_day_table.name
       DEVICE_TRAIL_LOG_WEEK_TABLE = aws_dynamodb_table.device_trail_log_week_table.name
@@ -265,6 +308,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
       AREA_TABLE = aws_dynamodb_table.area_table.name
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
+      DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
     }
   }

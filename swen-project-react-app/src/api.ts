@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { UserRole, Granularity } from "./lib/apiTypes";
+import { UserRole, Granularity, HeatmapAlgorithm } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
 import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
 
@@ -85,6 +85,26 @@ export function TrailData() {
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     const url = `${API_URL}/device_management${queryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
+   * Get device logs for specific trails between two dates
+   * @param trailIdList array of trail ids of trails to retrieve data for
+   * @param startDate ISO format date for earliest date to retrieve
+   * @param endDate ISO format date for earliest date to retrieve
+   * @param heatmapAlgorithm Optional HeatmapAlgorithm for which algorithm to use, defaults to absolute
+   */
+  async function getHeatmapData(trailIdList: number[], startDate: Date, endDate: Date, heatmapAlgorithm?: HeatmapAlgorithm) {
+    const trailIdQueries: string[] = []
+    trailIdList.forEach(id => {trailIdQueries.push(`trail_id=${id}`)})
+    const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
+    const algorithmQueryString = heatmapAlgorithm ? `&algorithm=${heatmapAlgorithm}` : "";
+
+    const url = `${API_URL}/heatmap?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}${algorithmQueryString}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: await authHeaders(),
@@ -300,7 +320,7 @@ export function TrailData() {
   }
 
   /**
-   * Updates cognito users role
+   * Updates cognito user's role
    * @param targetUsername - Username for the user that will be updated
    * @param targetUserRole - UserRole to set the given user to
    */
@@ -315,6 +335,20 @@ export function TrailData() {
     });
   }
 
+  /**
+   * Bans cognito user
+   * @param targetUsername - Username for the user that will be banned
+   */
+  async function banUser(targetUsername: string) {
+    return await request(`${API_URL}/users`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        target_username: targetUsername
+      }),
+    });
+  }
+
 
 
   return {
@@ -323,6 +357,7 @@ export function TrailData() {
     getDeviceMetadata,
     getTrailLogs,
     getDeviceLogs,
+    getHeatmapData,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
@@ -334,6 +369,7 @@ export function TrailData() {
     importCSV,
     getUsers,
     updateUserRole,
+    banUser,
   };
 }
 

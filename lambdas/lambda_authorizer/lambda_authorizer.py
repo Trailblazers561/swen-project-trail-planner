@@ -27,6 +27,9 @@ PERMISSIONS = {
     ("/devices", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/devices", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/device_management", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/block", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/archive", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/heatmap", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
     ("/trail_data", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/areas", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER, USER, GUEST],
@@ -39,6 +42,11 @@ PERMISSIONS = {
     ("/trail_metadata", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
     ("/users", "GET"): [ROOT_ADMIN, ADMIN],
     ("/users", "POST"): [ROOT_ADMIN, ADMIN],
+    ("/users", "DELETE"): [ROOT_ADMIN, ADMIN],
+    ("/registration", "GET"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "POST"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "PUT"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
+    ("/registration", "DELETE"): [ROOT_ADMIN, ADMIN, TRAIL_MANAGER],
 }
 
 # Download public keys when lambda is created (code is outside handler)
@@ -65,7 +73,7 @@ def handler(event, context):
         else:
             claims = {}
             users_groups = [GUEST]
-        context = {"caller_role": max([groups_simplified[group] for group in users_groups], key=lambda x: group_values[x], default="guest")}
+        context = {"caller_role": max([groups_simplified[group] for group in users_groups if group in groups_simplified], key=lambda x: group_values[x], default="guest")}
 
         allowed_groups = PERMISSIONS.get((resource, http_method), [ROOT_ADMIN])
         # If requesting user is in any of the groups that have permission to call the endpoint
