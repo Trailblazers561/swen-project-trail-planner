@@ -230,7 +230,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
     return (
         <div className="bg-gray-50 shadow-md" data-testid="trail-user-table">
             {loadingUsage && (
-                <div className="absolute inset-0 z-[9998] flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 z-[9998] flex items-center justify-center bg-black/20">
                     <LoaderCircle
                         size={80}
                         strokeWidth={2}
