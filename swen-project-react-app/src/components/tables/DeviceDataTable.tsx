@@ -20,14 +20,20 @@ const columns: TableColumn<DeviceRow>[] = [
   {
     name: "Device Name",
     selector: (row) => row.name,
-    sortable: true,
+    sortable: false,
     center: true,
   },
     {
     name: "Associated Trail",
-    selector: (row) => row.trailName,
-    sortable: true,
-    grow: 2,
+    // selector: (row) => row.trailName,
+    cell: (row) => {
+        if(row.trailName == null)
+            return <span className="text-gray-400">Unassociated</span>;
+        else
+            return <span>{row.trailName}</span>;
+    },
+    sortable: false,
+    center: true,
   },
   {
     name: "Weekly Count",
@@ -37,7 +43,7 @@ const columns: TableColumn<DeviceRow>[] = [
   },
   {
     name: "Battery Status",
-    sortable: true,
+    sortable: false,
     center: true,
     cell: (row) => {
       if (row.batteryStatus == null)
@@ -114,9 +120,9 @@ const customStyles = {
   },
 };
 
-const TrailDataTable: React.FC<Props> = ({ data, loading }) => {
+const DeviceDataTable: React.FC<Props> = ({ data, loading }) => {
   return (
-    <div className="bg-gray-50 shadow-md" data-testid="trail-status-table">
+    <div className="bg-gray-50 shadow-md" data-testid="device-status-table">
       <DataTable
         columns={columns}
         data={data}
@@ -135,4 +141,4 @@ const TrailDataTable: React.FC<Props> = ({ data, loading }) => {
   );
 };
 
-export default TrailDataTable;
+export default DeviceDataTable;
