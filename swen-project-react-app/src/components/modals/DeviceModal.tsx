@@ -129,10 +129,14 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   useEffect(() => {
     if (isOpen) {
       loadData();
+    } else {
+      refreshVariables();
     }
   }, [isOpen]);
 
   const refreshVariables = async () => {
+    setDevice(null);
+    setDeviceLogs([]);
     setDeviceName("");
     setDeviceSerial("");
     setSelectedTrailId(0);
