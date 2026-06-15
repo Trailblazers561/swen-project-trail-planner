@@ -19,7 +19,6 @@ Before deploying with CloudFront and Route53, ensure you have:
 
 1. **AWS Account** with appropriate permissions
 2. **Domain Name** (if using custom domain)
-3. **SSL Certificate** in AWS Certificate Manager (ACM) - **must be in us-east-1 region** for CloudFront
 
 ## Variables Configuration
 
@@ -39,7 +38,7 @@ acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1
   # Wheter or not to use a custom domain
   use_domain = !local.local_run && !local.test_run
   # The Root Domain
-  domain = "adirondackwilderness.org"
+  domain = "trailcount.io"
   # The Sub Domain To Prefix The Domain With
   sub_domain = "trailblazers-${var.deploy_env}"
 ```
@@ -55,10 +54,10 @@ bucket_name = "trailcount-bucket"
 
 The following information **should** be changed and can be found in `variables.tf` under the `users` `local`:
 ```hcl
-  root_admin = { username = "CHANGE ME",    password = "CHANGE ME", email = "CHANGE ME" }
-    admin = { username = "CHANGE ME",    password = "CHANGE ME", email = "CHANGE ME" }
-    trail_manager = { username = "CHANGE ME", password = "CHANGE ME", email = "CHANGE ME" }
-    user = { username = "CHANGE ME",   password = "CHANGE ME",  email = "CHANGE ME" }
+  root_admin = { username = "root_admin", password = "password", email = "root_admin@gmail.com" }
+  admin = { username = "admin", password = "password", email = "admin@gmail.com" }
+  trail_manager = { username = "trail_manager", password = "password", email = "trail_manager@gmail.com" }
+  user = { username = "user", password = "password",  email = "user@gmail.com" }
 ```
 
 ## Step-by-Step Deployment
@@ -67,22 +66,25 @@ The following information **should** be changed and can be found in `variables.t
 
 1. Go to AWS Certificate Manager (ACM) in the **us-east-1** region
 2. Request a public certificate
-3. Enter your domain names with specific subdomain, in this case it is all the subdomains for our environments (`trailblazers-tst.adirondackwilderness.org`, `trailblazers-uat.adirondackwilderness.org`, `trailblazers-prod.adirondackwilderness.org`)
-4. Leave Disable Export
-4. Choose DNS validation
-6. Leave `RSA 2048` Key alogrith
-5. Complete validation (add DNS records to your domain)
+    1. Enter your domain name with a wildcard subdomain so we only need one certificate that coveres everything (`*.trailcount.io`)
+    2. Leave Disable Export
+    3. Choose DNS validation
+    4. Leave `RSA 2048` Key alogrith
+    5. Create the certificate
+3. Complete validation (add DNS records to your domain)
     1.  Open the domain registrar (In our case squarespace)
     2. Navigate to DNS -> DNS Settings
-    3. Repeat the following steps for each domain
+    3. Repeat the following steps for each domain (If you didn't use a wildcard, otherwise just do them once)
        1. Add a record under `Custom records`
        2. Enter in type: `CNAME`
-       3. Enter in name: CNAME name from the AWS certificate (remove the domain from the end of what AWS provides ex. `.adirondackwilderness.org.`)
+       3. Enter in name: **CNAME name** from the AWS certificate **(omitting the domain name, ie. `.trailcount.io.`)**
        4. Priority will be `-` and TTL can be left at `4 hrs`
-       5. Enter in alias data: CNAME value from AWS certificate
+       5. Enter in alias data: **CNAME value** from AWS certificate
        6. Click save, and leave these DNS on squarespace even after the certificate is validated (works for certificate renewal)
-6. Wait for AWS to Issue the certificate, this should take ~5 minutes
-6. Copy the Certificate ARN
+4. Wait for AWS to Issue the certificate, this should take ~5 minutes
+5. Copy the `Amazon Resource Name (ARN)` from the aws console of the created certificate
+6. Go to the repository and navigate to Settings -> Secrets and variables -> Actions -> Variables
+7. Update the `DOMAIN_CERTIFICATE_ARN` variable to the new ARN
 
 **Important:** CloudFront requires certificates to be in the **us-east-1** region, even if your other resources are in different regions.
 
@@ -104,7 +106,7 @@ After `terraform apply` completes:
  -  Navigate to DNS -> DNS Settings
  - Add a record under `Custom records`
  - Enter in type: `CNAME`
- - Enter in name: `trailblazers-<DEPLOY_ENV>`
+ - Enter in name: `<DEPLOY_ENV>`
  - Priority will be `-` and TTL can be left at `4 hrs`
  - Enter in alias data: `website_url` from the apply
  - Wait for DNS propagation (can take up to 48 hours, usually much faster)
