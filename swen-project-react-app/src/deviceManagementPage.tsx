@@ -5,11 +5,7 @@ import { Granularity } from "./lib/apiTypes";
 import DeviceModal from "./components/modals/DeviceModal";
 import type { DeviceRow } from "./components/tables/DeviceDataTable";
 import { Button } from "./components/templates/button.tsx";
-
-// turn getDeviceMetadata into a dictionary
-
-// the last call in is a timestamp, we need to convert it to a date
-
+import moment from "moment-timezone";
 
 const DeviceManagementPage = () => {
     const [selectedDevice, setSelectedDevice] = useState<DeviceRow | null>(null);
@@ -54,9 +50,8 @@ const DeviceManagementPage = () => {
             
             const trailIds = metadata.map((d: any) => d.id);
 
-            const today = new Date();
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(today.getDate() - 7);
+            const today = moment().tz("America/New_York").startOf("day").subtract(1, "second").toDate();
+            const oneWeekAgo = moment().tz("America/New_York").startOf("day").subtract(7, "days").toDate();
 
             const logsResponse = await getTrailLogs(
                 trailIds,
