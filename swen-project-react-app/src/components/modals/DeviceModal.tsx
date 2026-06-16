@@ -3,7 +3,7 @@ import { TrailData } from '../../api';
 import './Modal.css';
 import { Button } from '../templates/button';
 import DeviceLogTable from "../tables/DeviceLogTable";
-import { EllipsisVertical } from "lucide-react"
+import { EllipsisVertical, LoaderCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "../templates/dropdown-menu"
 
 
@@ -115,6 +115,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   const [trails, setTrails] = useState<Trail[]>([]);
   const [currentAction, setCurrentAction] = useState<DeviceAction  | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +143,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setSelectedTrailId(0);
     setNotes("");
     setCurrentAction(null);
+    setLoading(true);
   }
 
   const loadData = async () => {
@@ -186,8 +188,9 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
       }
     } catch (err) {
       console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleDelete = async (e: React.FormEvent) => {
@@ -227,7 +230,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
   
     try {
@@ -394,7 +397,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
       setError('An error occurred when submitting');
       console.error(err);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -417,7 +420,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="modal-body min-h-50 relative">
             {currentAction === DeviceAction.CREATE_DEVICE && (
               <div className="flex flex-col items-center">
                 <div className="form-group w-150">
@@ -548,13 +551,20 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               </div>
             )}
 
+            {loading && (
+              <LoaderCircle
+                size={80}
+                strokeWidth={2}
+                className="absolute left-1/2 -translate-x-1/2 top-1/4 z-10000000 animate-spin text-navbar"
+              />
+            )}
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
           </div>
           {currentAction === DeviceAction.CREATE_DEVICE && (
             <div className="modal-footer">
-              <Button variant="primary" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Device'}
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Creating...' : 'Create Device'}
               </Button>
             </div>
           )}
@@ -564,57 +574,57 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  disabled={loading || deleting}
+                  disabled={submitting || deleting}
                   className="delete-button font-medium h-9 flex items-center"
                   data-testid="delete-button"
                 >
                   Delete Device
                 </button>
-                <Button variant="primary" disabled={loading} data-testid="confirm-button">
-                  {loading ? 'Updating...' :'Update Device'}
+                <Button variant="primary" disabled={submitting} data-testid="confirm-button">
+                  {submitting ? 'Updating...' :'Update Device'}
                 </Button>
               </div>
             </div>
           )}
           {currentAction === DeviceAction.ASSOCIATE_TRAIL && (
             <div className="modal-footer">
-              <Button variant="primary" disabled={loading}>
-                {loading ? 'Associating...' : 'Associate Device'}
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Associating...' : 'Associate Device'}
               </Button>
             </div>
           )}
           {currentAction === DeviceAction.EDIT_INFORMATION && (
             <div className="modal-footer">
-              <Button variant="primary" disabled={loading}>
-                {loading ? 'Updating...' : 'Update Device'}
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Updating...' : 'Update Device'}
               </Button>
             </div>
           )}
           {currentAction === DeviceAction.ARCHIVE_DEVICE && (
             <div className="modal-footer">
-              <Button variant="delete" disabled={loading}>
-                {loading ? 'Archiving...' : 'Archive Device'}
+              <Button variant="delete" disabled={submitting}>
+                {submitting ? 'Archiving...' : 'Archive Device'}
               </Button>
             </div>
           )}
           {currentAction === DeviceAction.BLOCK_DEVICE && (
             <div className="modal-footer">
-              <Button variant="delete" disabled={loading}>
-                {loading ? 'Blocking...' : 'Block Device'}
+              <Button variant="delete" disabled={submitting}>
+                {submitting ? 'Blocking...' : 'Block Device'}
               </Button>
             </div>
           )}
           {currentAction === DeviceAction.UNARCHIVE_DEVICE && (
             <div className="modal-footer">
-              <Button variant="primary" disabled={loading}>
-                {loading ? 'Unarchiving...' : 'Unarchive Device'}
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Unarchiving...' : 'Unarchive Device'}
               </Button>
             </div>
           )}
           {currentAction === DeviceAction.UNBLOCK_DEVICE && (
             <div className="modal-footer">
-              <Button variant="primary" disabled={loading}>
-                {loading ? 'Unblocking...' : 'Unblock Device'}
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Unblocking...' : 'Unblock Device'}
               </Button>
             </div>
           )}

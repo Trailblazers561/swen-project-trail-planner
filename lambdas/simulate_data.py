@@ -55,7 +55,7 @@ hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40
 def simulate_data(event, context):
     print(event)
     # Retrieve Timestamp for start of day (EST) when lambda was called
-    today = datetime.fromisoformat(event["time"][:10]).replace(tzinfo=ZoneInfo("America/New_York"))
+    today = datetime.fromisoformat(event["time"]).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
     timestamp = int(today.timestamp())
 
     trail_list = trail_table.scan(FilterExpression=Attr("name").is_in(list(trail_hikers.keys())))["Items"]
