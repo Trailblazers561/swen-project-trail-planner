@@ -2,12 +2,16 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
+from boto3.dynamodb.conditions import Key
+
 from helper_functions import device_table, cors_headers, get_next_device_id
 
-def register_device(event, context):
+
+def upload_device_info(event, context):
     """
     Handle POST requests from devices to /devices/ endpoint
-    Registers a device to the database, must be called before uploading device data
+    Turns the stubbed device table entry into a more fleshed out version. Devices can call this when they're registered
+    as a tester to ensure they're actually connected. The server can pick this up and the device can see the 200 response.
     Expects: { "name": str, "firmware_version": str, "date_manufactured": str (ISO date) }
     Optional: { "notes": str}
     """
@@ -25,30 +29,47 @@ def register_device(event, context):
         date_manufactured = body.get("date_manufactured")
         notes = body.get("notes")
 
-        if name is None: raise ValueError("Missing required field: name")
-        if firmware_version is None: raise ValueError("Missing required field: firmware_version")
-        if date_manufactured is None: raise ValueError("Missing required field: date_manufactured")
+        if name is None:
+            raise ValueError("Missing required field: name")
+        if firmware_version is None:
+            raise ValueError("Missing required field: firmware_version")
+        if date_manufactured is None:
+            raise ValueError("Missing required field: date_manufactured")
+
+        response = device_table.query(IndexName="name-index", KeyConditionExpression=Key("name").eq(name), Limit=1).get(
+            "Items", [])
+        if not response:
+            print("Device name linked to device table entry not found")
+            return {
+                "statusCode": 404,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device id liked to registration entry not found"})
+            }
+        device_id = response[0].get("id")
 
         date_manufactured = Decimal(datetime.fromisoformat(date_manufactured).timestamp())
-        print(f"Attempting to register device with name [{name}], firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
+        print(
+            f"Attempting to update device data- firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
 
-        id = get_next_device_id()
+        update_values = "SET firmware_version = :fv, date_manufactured = :dm"
+        expression_values = {":fv": firmware_version, ":dm": date_manufactured}
 
-        item = {
-            "id": id,
-            "name": name,
-            "firmware_version": firmware_version,
-            "date_manufactured": date_manufactured
-        }
         if notes:
-            item["notes"] = notes
-        device_table.put_item(Item=item)
-        print(f"Successfully added device with id [{id}]")
+            update_values += ", notes = :notes"
+            expression_values[":notes"] = notes
+
+        device_table.update_item(
+            Key={"id": int(device_id)},
+            UpdateExpression=update_values,
+            ExpressionAttributeValues=expression_values
+        )
+
+        print(f"Successfully updated device with id [{device_id}]")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
             "body": json.dumps({
-                "message": "Device created successfully",
+                "message": "Device info updated successfully",
                 "device_id": id
             })
         }

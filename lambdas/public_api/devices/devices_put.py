@@ -4,7 +4,10 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, device_table, cors_headers, get_device_trail_id, timestamp_conversion
+from helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
+    device_trail_log_month_table, device_table, cors_headers, get_device_trail_id, timestamp_conversion, \
+    is_device_blocked, is_device_archived
+
 
 def upload_device_data(event, context):
     """
@@ -29,6 +32,14 @@ def upload_device_data(event, context):
 
         name = body.get("name")
         if not name: raise ValueError("Missing required field: name")
+
+        # assume device isn't blocked by our system
+        if is_device_blocked(device_name=name):
+            raise ValueError(f"Device [{name}] is blocked and cannot upload data")
+
+        # assume device isn't archived in our system
+        if is_device_archived(device_name=name):
+            raise ValueError(f"Device [{name}] is archived and cannot upload data")
 
         firmware_version = body.get("firmware_version")
         data_points = body.get("data")

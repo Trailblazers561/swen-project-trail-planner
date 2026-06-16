@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { UserRole, Granularity } from "./lib/apiTypes";
+import { UserRole, Granularity, HeatmapAlgorithm } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
 import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
 
@@ -7,11 +7,14 @@ export function TrailData() {
   /**
    * Get trail metadata (names, IDs, notes, etc.) 
    * @param trailIdList - Optional list of trail ids of trails to retrieve
+   * @param retired - Optional bool to retrieve retired trails or unretired trails
    */
-  async function getTrailMetadata(trailIdList?: number[]) {
+  async function getTrailMetadata(trailIdList?: number[], retired?: boolean) {
     const queries: string[] = []
     if (trailIdList)
       trailIdList.forEach(id => {queries.push(`trail_id=${id}`)})
+    if (retired)
+      queries.push("retired");
     const queryString = queries.length ? `?${queries.join("&")}` : "";
     return await request(`${API_URL}/trail_metadata${queryString}`, {
       method: "GET",
@@ -22,11 +25,14 @@ export function TrailData() {
   /**
    * Get areas
    * @param areaList - Optional list of area names of areas to retrieve
+   * @param retired - Optional bool to retrieve retired trails or unretired trails
    */
-  async function getAreaMetadata(areaList?: string[]) {
+  async function getAreaMetadata(areaList?: string[], retired?: boolean) {
     const queries: string[] = []
     if (areaList)
       areaList.forEach(area => {queries.push(`name=${encodeURIComponent(area)}`)})
+    if (retired)
+      queries.push("retired");
     const queryString = queries.length ? `?${queries.join("&")}` : "";
 
     return await request(`${API_URL}/areas${queryString}`, {
@@ -66,6 +72,45 @@ export function TrailData() {
     if (granularity == Granularity.Year) granularity = Granularity.Month;
 
     const url = `${API_URL}/trail_data?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}&granularity=${granularity}${trailIdQueryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
+   * Get device logs for specific devices
+   * @param deviceIdList array of device ids of devices to retrieve data for
+   * @param limit Optional limit number of logs to retrieve for each device, defautls to -5
+   */
+  async function getDeviceLogs(deviceIdList: number[], limit?: number) {
+    const queries: string[] = []
+    deviceIdList.forEach(id => {queries.push(`device_id=${id}`)})
+    if (limit)
+      queries.push(`limit=${limit}`)
+    const queryString = queries.length ? `?${queries.join("&")}` : "";
+
+    const url = `${API_URL}/device_management${queryString}`;
+    return await request(url, {
+      method: "GET",
+      headers: await authHeaders(),
+    });
+  }
+
+  /**
+   * Get device logs for specific trails between two dates
+   * @param trailIdList array of trail ids of trails to retrieve data for
+   * @param startDate ISO format date for earliest date to retrieve
+   * @param endDate ISO format date for earliest date to retrieve
+   * @param heatmapAlgorithm Optional HeatmapAlgorithm for which algorithm to use, defaults to absolute
+   */
+  async function getHeatmapData(trailIdList: number[], startDate: Date, endDate: Date, heatmapAlgorithm?: HeatmapAlgorithm) {
+    const trailIdQueries: string[] = []
+    trailIdList.forEach(id => {trailIdQueries.push(`trail_id=${id}`)})
+    const trailIdQueryString = trailIdQueries.length ? `&${trailIdQueries.join("&")}` : "";
+    const algorithmQueryString = heatmapAlgorithm ? `&algorithm=${heatmapAlgorithm}` : "";
+
+    const url = `${API_URL}/heatmap?start_time=${startDate.toISOString()}&end_time=${endDate.toISOString()}${algorithmQueryString}${trailIdQueryString}`;
     return await request(url, {
       method: "GET",
       headers: await authHeaders(),
@@ -123,6 +168,86 @@ export function TrailData() {
   }
 
   /**
+   * Creates a device
+   * @param deviceName - The name of the device to create
+   * @param deviceSerial - The serial of the device to create
+   */
+  async function createDevice(deviceName: string, deviceSerial: string) {
+    return await request(`${API_URL}/registration`, {
+      method: "POST",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_name: deviceName,
+        device_serial: deviceSerial
+      }),
+    });
+  }
+
+  /**
+   * Updates a device
+   * @param registrationId - The registration id to update
+   * @param deviceName - Optional The name of the device to update
+   * @param deviceSerial - Optional The serial of the device to update
+   */
+  async function updateRegistration(registrationId: number, deviceName?: string, deviceSerial?: string) {
+    return await request(`${API_URL}/registration`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        registration_id: registrationId,
+        device_name: deviceName,
+        device_serial: deviceSerial
+      }),
+    });
+  }
+
+  /**
+   * Updates a device
+   * @param registrationId - The registration id to update
+   */
+  async function deleteRegistration(registrationId: number) {
+    return await request(`${API_URL}/registration`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        registration_id: registrationId
+      }),
+    });
+  }
+
+  /**
+   * Archives/Unarchives a device
+   * @param deviceId - The device id to archive
+   * @param isArchived - Whether or not to archive a device
+   */
+  async function archiveDevice(deviceId: number, isArchived: boolean) {
+    return await request(`${API_URL}/archive`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_id: deviceId,
+        is_archived: isArchived
+      }),
+    });
+  }
+
+  /**
+   * Blocks/Unblocks a device
+   * @param deviceId - The device id to archive
+   * @param isBlocked - Whether or not to archive a device
+   */
+  async function blockDevice(deviceId: number, isBlocked: boolean) {
+    return await request(`${API_URL}/block`, {
+      method: "PUT",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        device_id: deviceId,
+        is_blocked: isBlocked
+      }),
+    });
+  }
+
+  /**
    * Create a new trail
    * @param trailName - The name of the trail to create
    * @param area - Optional area name to assign the trail to
@@ -155,13 +280,15 @@ export function TrailData() {
   /**
    * Retires a trail and all associated data
    * @param trailId - The ID of the trail to retire
+   * @param dateRetired - Optional date to set when it was retired
    */
-  async function retireTrail(trailId: number) {
+  async function retireTrail(trailId: number, dateRetired?: Date) {
     return await request(`${API_URL}/trail_metadata`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
         trail_id: trailId,
+        date_retired: dateRetired?.toISOString()
       }),
     });
   }
@@ -201,15 +328,15 @@ export function TrailData() {
   }
 
   /**
-   * Delete a area
-   * @param areaName - The name of the area to delete
+   * Retire an area
+   * @param areaName - The name of the area to retire
    */
-  async function deleteArea(areaName: string) {
+  async function retireArea(areaName: string) {
     return await request(`${API_URL}/areas`, {
       method: "DELETE",
       headers: await authHeaders(),
       body: JSON.stringify({
-        name: areaName,
+        name: areaName
       }),
     });
   }
@@ -281,17 +408,31 @@ export function TrailData() {
   }
 
   /**
-   * Updates cognito users role
+   * Updates cognito user's role
    * @param targetUsername - Username for the user that will be updated
    * @param targetUserRole - UserRole to set the given user to
    */
   async function updateUserRole(targetUsername: string, targetUserRole: UserRole) {
     return await request(`${API_URL}/users`, {
-      method: "POST",
+      method: "PUT",
       headers: await authHeaders(),
       body: JSON.stringify({
         target_username: targetUsername,
         target_user_role: targetUserRole
+      }),
+    });
+  }
+
+  /**
+   * Bans cognito user
+   * @param targetUsername - Username for the user that will be banned
+   */
+  async function banUser(targetUsername: string) {
+    return await request(`${API_URL}/users`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+      body: JSON.stringify({
+        target_username: targetUsername
       }),
     });
   }
@@ -302,18 +443,26 @@ export function TrailData() {
     getTrailMetadata,
     getAreaMetadata,
     getDeviceMetadata,
+    createDevice,
+    updateRegistration,
+    deleteRegistration,
+    archiveDevice,
+    blockDevice,
     getTrailLogs,
+    getDeviceLogs,
+    getHeatmapData,
     updateTrailMetadata,
     createTrail,
     updateDeviceTrailAssociation,
     retireTrail,
     createArea,
     updateArea,
-    deleteArea,
+    retireArea,
     exportCSV,
     importCSV,
     getUsers,
     updateUserRole,
+    banUser,
   };
 }
 

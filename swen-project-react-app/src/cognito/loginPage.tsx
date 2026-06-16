@@ -28,7 +28,8 @@ enum LoginMode {
 enum LoginError {
   UNKNOWN_ERROR, // Unknown what went wrong
   USER_NOT_FOUND, // User does not exist
-  NOT_AUTHORIZED, // Incorrect username or password
+  INVALID_CREDENTIALS, // Incorrect username or password
+  USER_BANNED, // User is banned
   USER_NOT_CONFIRMED, // User is not confirmed
   USERNAME_EXISTS, // User already exists
   EMAIL_EXISTS, // Email already exists with verified user
@@ -87,7 +88,11 @@ const LoginPage = () => {
       if (error instanceof UserNotFoundException) {
         setLoginError(LoginError.USER_NOT_FOUND);
       } else if (error instanceof NotAuthorizedException) {
-        setLoginError(LoginError.NOT_AUTHORIZED);
+        // Banned users and invalid credentials use the same error type for some reason
+        if (error["message"] === "User is disabled.")
+          setLoginError(LoginError.USER_BANNED);
+        else
+          setLoginError(LoginError.INVALID_CREDENTIALS);
       } else if (error instanceof UserNotConfirmedException) {
         setLoginError(LoginError.USER_NOT_CONFIRMED);
       } else {
@@ -262,26 +267,27 @@ const LoginPage = () => {
   }, [resentCode]);
 
   return (
-    <div className="flex h-screen">
+    <><meta name="viewport" content="width=device-width, initial-scale=1.0" /><div className="flex h-screen">
 
       <div
-        className="fixed left-0 top-0 h-screen w-11/16 bg-cover bg-center"
-        style={{ backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')" }}
+          className="fixed left-0 top-0 h-5/16 lg:h-screen w-screen lg:w-11/16 bg-cover bg-center"
+          style={{backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')"}}
       >
         <div className="absolute inset-0 bg-black/20" />
         <img
           src="/AWA-logo.png"
           alt="Logo"
-          className="absolute top-8 left-1/2 w-56 md:w-64 -translate-x-1/2"
-        />
+          className="absolute top-8 left-1/2 max-lg:max-h-10/16 max-lg:max-w-10/16 lg:w-56 md:w-64 -translate-x-1/2"/>
       </div>
 
-      {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
-      {loading && (<div className="fixed right-0 top-0 h-screen w-5/16  bg-black/40 z-499"></div>)}
-      <div className="fixed right-0 top-0 h-screen w-5/16 flex items-center justify-center">
+      {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-1/2 lg:left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
+      {loading && (<div className="fixed right-0 top-0 h-screen w-screen lg:w-5/16  bg-black/40 z-499"></div>)}
+
+      <div className="fixed lg:right-0 top-5/16 lg:top-0 h-11/16 lg:h-screen w-screen lg:w-5/16 flex items-center justify-center">
         <div className="flex w-full max-w-4xl items-start" id="loginForm">
+
           {loginMode == LoginMode.SIGN_IN && (
-            <div className="flex-1 px-10 pt-6 h-124">
+            <div className="flex-1 px-10 pt-6 h-120">
               <h2 className="text-2xl font-semibold mb-2">Welcome Back</h2>
               <p className="text-gray-500 mb-6">Sign in to your account</p>
               <form onSubmit={handleSignIn} className="space-y-4">
@@ -296,9 +302,13 @@ const LoginPage = () => {
                         <p className="text-sm text-red-700">
                           No account was found with the specified username or email
                         </p>
-                      ) : loginError === LoginError.NOT_AUTHORIZED ? (
+                      ) : loginError === LoginError.INVALID_CREDENTIALS ? (
                         <p className="text-sm text-red-700">
                           Incorrect username/email or password
+                        </p>
+                      ) : loginError === LoginError.USER_BANNED ? (
+                        <p className="text-sm text-red-700">
+                          This account is banned. If you believe this is a mistake please contact your administrator.
                         </p>
                       ) : loginError === LoginError.USER_NOT_CONFIRMED ? (
                         <>
@@ -326,10 +336,9 @@ const LoginPage = () => {
                   placeholder="Username or Email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 shrink-1"
                   required
-                  data-testid="username-input"
-                />
+                  data-testid="username-input" />
                 <div>
                   <div className="relative">
                     <input
@@ -339,12 +348,9 @@ const LoginPage = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2"
                       required
-                      data-testid="password-input"
-                    />
+                      data-testid="password-input" />
                     <span
-                      onMouseLeave={() => setShowPassword(false)}
-                      onMouseDown={() => setShowPassword(true)}
-                      onMouseUp={() => setShowPassword(false)}
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -372,7 +378,7 @@ const LoginPage = () => {
                     setLoginMode(LoginMode.SIGN_UP);
                     setUsername("");
                     setPassword("");
-                  }}
+                  } }
                   className="flex text-dark-yellow-green hover:underline cursor-pointer  items-center text-right"
                 >
                   Create an account{<ArrowRight size={18} />}
@@ -422,16 +428,14 @@ const LoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <input
                   type="email"
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -439,12 +443,9 @@ const LoginPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
+                    required />
                   <span
-                    onMouseLeave={() => setShowPassword(false)}
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
                     {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -456,8 +457,7 @@ const LoginPage = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <Button className="w-full" variant="primary">
                   Sign Up
                 </Button>
@@ -508,8 +508,7 @@ const LoginPage = () => {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
+                    required />
                   <div className="flex justify-between text-sm mt-0.5">
                     <div className="flex items-center gap-1 text-green-700">
                       {resentCode && (
@@ -546,7 +545,7 @@ const LoginPage = () => {
               </form>
             </div>
           )}
-          {loginMode == LoginMode.FORGOT_PASSWORD && (
+          {loginMode == LoginMode.FORGOT_PASSWORD && (       
             <div className="flex-1 px-10 pt-6 h-124">
               <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
               <p className="text-gray-500 mb-6">Enter the username or email associated with your account</p>
@@ -573,7 +572,7 @@ const LoginPage = () => {
                             onClick={() => {
                               setUsername("");
                               setLoginMode(LoginMode.RESEND_CODE);
-                            }}
+                            } }
                             className="text-sm hover:underline cursor-pointer"
                           >
                             Resend code?
@@ -593,8 +592,7 @@ const LoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <Button type="submit" variant="primary" className="w-full">
                   Continue
                 </Button>
@@ -654,8 +652,7 @@ const LoginPage = () => {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
+                    required />
                   <div className="flex justify-between text-sm mt-0.5">
                     <div className="flex items-center gap-1 text-green-700">
                       {resentCode && (
@@ -684,12 +681,9 @@ const LoginPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    required
-                  />
+                    required />
                   <span
-                    onMouseLeave={() => setShowPassword(false)}
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
                     {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -701,8 +695,7 @@ const LoginPage = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <Button type="submit" variant="primary" className="w-full">
                   Reset Password
                 </Button>
@@ -718,7 +711,7 @@ const LoginPage = () => {
               </form>
             </div>
           )}
-          {loginMode == LoginMode.RESEND_CODE && (
+          {loginMode == LoginMode.RESEND_CODE && (      
             <div className="flex-1 px-10 pt-6 h-124">
               <h2 className="text-2xl font-semibold mb-2">Resend Code</h2>
               <p className="text-gray-500 mb-6">Enter the username associated with your account</p>
@@ -749,8 +742,7 @@ const LoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  required
-                />
+                  required />
                 <Button type="submit" variant="primary" className="w-full">
                   Resend Code
                 </Button>
@@ -768,7 +760,7 @@ const LoginPage = () => {
           )}
         </div>
       </div>
-    </div>
+    </div></>
   );
 };
 

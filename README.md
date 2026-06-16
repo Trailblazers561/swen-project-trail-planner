@@ -106,8 +106,8 @@ See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed 
 ### Optional Variables
 
 - `use_domain`: Enable custom domain (set whenever not `local` or `test` run)
-- `domain`: Root domain name (e.g., `adirondackwilderness.org`)
-- `sub`: Subdomain (e.g., `trailblazers-tst` for `trailblazers-tst.adirondackwilderness.org`)
+- `domain`: Root domain name (e.g., `trailcount.io`)
+- `sub`: Subdomain (e.g., `tst` for `tst.trailcount.io`)
 - `acm_certificate_arn`: SSL certificate ARN (required if `use_domain = true`)
 - `ses_identity_arn`: SES identity ARN (required if `local_run = false`)
 - `local_user_email`: Email to send from (configured aws identity) (required if `local_run = true`)

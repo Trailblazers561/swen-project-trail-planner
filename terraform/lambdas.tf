@@ -15,6 +15,7 @@ resource "aws_lambda_function" "simulate_data" {
   timeout = 300
   environment {
     variables = {
+      REGISTRATION_TABLE = aws_dynamodb_table.registration_table.name
       DEVICE_TRAIL_LOG_HOUR_TABLE      = aws_dynamodb_table.device_trail_log_hour_table.name
       DEVICE_TRAIL_LOG_DAY_TABLE      = aws_dynamodb_table.device_trail_log_day_table.name
       DEVICE_TRAIL_LOG_WEEK_TABLE      = aws_dynamodb_table.device_trail_log_week_table.name
@@ -23,6 +24,7 @@ resource "aws_lambda_function" "simulate_data" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       AREA_TABLE    = aws_dynamodb_table.area_table.name
+      DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
     }
   }
 }

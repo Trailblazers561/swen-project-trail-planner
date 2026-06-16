@@ -19,6 +19,7 @@ log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", 
 trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
 device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
+device_log_table = dynamodb.Table(os.environ.get("DEVICE_LOG_TABLE", "local_trailcount_device_log_table"))
 
 # Trails to update, Name: [mean, std_dev]
 trail_hikers = {
@@ -54,7 +55,7 @@ hour_modifier = [m / 24 for m in [0.23, 0.18, 0.12, 0.12, 0.18, 0.47, 0.94, 1.40
 def simulate_data(event, context):
     print(event)
     # Retrieve Timestamp for start of day (EST) when lambda was called
-    today = datetime.fromisoformat(event["time"][:10]).replace(tzinfo=ZoneInfo("America/New_York"))
+    today = datetime.fromisoformat(event["time"]).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
     timestamp = int(today.timestamp())
 
     trail_list = trail_table.scan(FilterExpression=Attr("name").is_in(list(trail_hikers.keys())))["Items"]
@@ -72,7 +73,7 @@ def simulate_data(event, context):
             ScanIndexForward=False,
             Limit=1
         )["Items"]
-        device_trail_id = device_trail_exists[0]["id"] if device_trail_exists else create_device_trail(trail_id)
+        device_trail_id, device_id = device_trail_exists[0]["id"], device_trail_exists[0]["device_id"] if device_trail_exists else create_device_trail(trail_id)
 
         response = log_day_table.query(
             KeyConditionExpression=(
@@ -109,6 +110,8 @@ def simulate_data(event, context):
 
         month_timestamp = int((today.replace(day=1)).timestamp())
         log_month(device_trail_id, month_timestamp, hikers, battery)
+
+        log_log(device_id, hikers, battery)
 
 def create_trail(trail: str) -> int:
     print(f"Creating trail with name [{trail}]")
@@ -173,7 +176,7 @@ def create_device_trail(trail_id: int) -> int:
         "trail_id": trail_id,
         "notes": "device_trail auto created by simulate_data"
     })
-    return new_device_trail_id
+    return new_device_trail_id, new_device_id
 
 def log_hour(device_trail_id: int, start: int, count: int):
     print(f"Adding hour log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}]")
@@ -227,6 +230,46 @@ def log_month(device_trail_id: int, start: int, count: int, battery: int):
             ":battery": battery
         }
     )
+
+def log_log(device_id: int, count: int, battery: int):
+    device = device_table.get_item(Key={"id": device_id}).get("Item")
+
+    firmware = device.get("firmware_version", "")
+    time = int(datetime.now().timestamp())
+
+    ranges = {
+        "rssi": [(-65, -50), (-80, -66), (-95, -81)],
+        "rsrp": [(-85, -65), (-100, -86), (-115, -101)],
+        "rsrq": [(-7, -3), (-11, -8), (-14, -12)]
+    }
+    last = get_rndm()
+    rssi = random.randint(*ranges["rssi"][last])
+    last = get_rndm(last)
+    rsrp = random.randint(*ranges["rsrp"][last])
+    last = get_rndm(last)
+    rsrq = random.randint(*ranges["rsrq"][last])
+    
+    print(f"Adding device log for device_id [{device_id}] at time [{time}] with count [{count}], battery [{battery}], firmware [{firmware}], rssi [{rssi}], rsrp [{rsrp}], rsrq [{rsrq}]")
+    device_log_table.put_item(Item={
+        "device_id": device_id,
+        "time": time,
+        "count": count,
+        "battery": battery,
+        "firmware_version": firmware,
+        "rssi": rssi,
+        "rsrp": rsrp,
+        "rsrq": rsrq
+    })
+
+def get_rndm(last: int=0):
+    rndm = random.random()
+    if last == 0:
+        return 0 if rndm <= .6 else 1 if rndm <= .9 else 2
+    if last == 1:
+        return 0 if rndm <= .4 else 1 if rndm <= .8 else 2
+    if last == 2:
+        return 0 if rndm <= .1 else 1 if rndm <= .7 else 2
+    return 0
 
 forecast_multipliers = (("thunder", 0.3), ("snow", 0.4), ("rain", 0.6), ("showers", 0.6), ("cloud", 1.0), ("sun", 1.3), ("clear", 1.3))
 def get_forecast_multiplier(forecast):

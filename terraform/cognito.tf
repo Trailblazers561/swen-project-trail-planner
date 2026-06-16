@@ -27,7 +27,7 @@ resource "aws_cognito_user_pool" "user_pool" {
 }
 
 resource "aws_cognito_user_pool_domain" "user_pool_domain" {
-  domain       = "${var.deploy_env}-trailcount-user-confirmation"
+  domain       = "${var.deploy_env}-trailcount-user-confirmation-${random_integer.random_suffix.result}"
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
@@ -71,6 +71,13 @@ resource "aws_cognito_user_group" "default_user_group" {
   user_pool_id = aws_cognito_user_pool.user_pool.id
   description  = "Default User group, managed by Terraform"
   precedence   = 6
+}
+
+resource "aws_cognito_user_group" "banned_group" {
+  name         = "banned"
+  user_pool_id = aws_cognito_user_pool.user_pool.id
+  description  = "Banned user group, managed by Terraform"
+  precedence   = 10
 }
 
 # Create Predefined Users
