@@ -660,7 +660,7 @@ const dashboard = () => {
             (async () => {
                 try {
                     // Get last week's date range
-                    const today = moment().tz("America/New_York").startOf("day").toDate();
+                    const today = moment().tz("America/New_York").startOf("day").subtract(1, "second").toDate();
                     const oneWeekAgo = moment().tz("America/New_York").startOf("day").subtract(7, "days").toDate();
 
                     // Get all trail IDs
