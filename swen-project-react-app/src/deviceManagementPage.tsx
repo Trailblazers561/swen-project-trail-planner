@@ -129,10 +129,10 @@ const DeviceManagementPage = () => {
                 ) : devices.length === 0 ? (
                     <div>No devices found</div>
                 ) : (
-                    <div className="m-4 mb-0">
+                    <div className="m-4 mb-0 relative">
                         <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
                         <Button
-                        className="absolute bottom-3.5 left-6"
+                        className="absolute bottom-2 left-2"
                             variant="primary"
                             onClick={() => {
                                 setSelectedDevice(null);   // 🔥
