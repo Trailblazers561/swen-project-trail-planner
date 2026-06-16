@@ -108,6 +108,12 @@ const customStyles = {
     style: {
       fontSize: "15px",
       minHeight: "48px",
+      "&:nth-of-type(odd):hover": {
+        backgroundColor: "#e3e4e6",
+      },
+      "&:nth-of-type(even):hover": {
+        backgroundColor: "#f7f7f7",
+      },
     },
     stripedStyle: {
       backgroundColor: "#edeef0", 
