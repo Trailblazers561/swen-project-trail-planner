@@ -17,6 +17,7 @@ def load_test_data(env):
     trail_table = dynamodb.Table(f"{env}_trailcount_trail_table")
     device_table = dynamodb.Table(f"{env}_trailcount_device_table")
     device_trail_table = dynamodb.Table(f"{env}_trailcount_device_trail_table")
+    device_log_table = dynamodb.Table(f"{env}_trailcount_device_log_table")
     area_table = dynamodb.Table(f"{env}_trailcount_area_table")
 
     # Delete Table Items
@@ -35,8 +36,23 @@ def load_test_data(env):
                     "start": item["start"]
                 })
 
+    # Delete Log Data
+    response = device_log_table.scan()
+    data = response.get('Items')
+    
+    while 'LastEvaluatedKey' in response:
+        response = device_log_table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+        data.extend(response['Items'])
+
+    with device_log_table.batch_writer() as batch:
+        for item in data:
+            batch.delete_item(Key={
+                "device_id": item["device_id"],
+                "time": item["time"]
+            })
+
     # Load Hour Data
-    with open(Path(__file__).parent / "hours.csv") as f:
+    with open(Path(__file__).parent / "hour_logs.csv") as f:
         reader = csv.DictReader(f)
         with hour_table.batch_writer() as batch:
             for row in reader:
@@ -49,7 +65,7 @@ def load_test_data(env):
                 )
 
     # Load Day Data
-    with open(Path(__file__).parent / "days.csv") as f:
+    with open(Path(__file__).parent / "day_logs.csv") as f:
         reader = csv.DictReader(f)
         with day_table.batch_writer() as batch:
             for row in reader:
@@ -57,13 +73,12 @@ def load_test_data(env):
                     Item={
                         "device_trail_id": int(row["device_trail_id"]),
                         "start": int(row["start"]),
-                        "count": int(row["count"]),
-                        "battery": int(row["battery"]),
+                        "count": int(row["count"])
                     }
                 )
 
     # Load Week Data
-    with open(Path(__file__).parent / "weeks.csv") as f:
+    with open(Path(__file__).parent / "week_logs.csv") as f:
         reader = csv.DictReader(f)
         with week_table.batch_writer() as batch:
             for row in reader:
@@ -71,13 +86,12 @@ def load_test_data(env):
                     Item={
                         "device_trail_id": int(row["device_trail_id"]),
                         "start": int(row["start"]),
-                        "count": int(row["count"]),
-                        "battery": int(row["battery"]),
+                        "count": int(row["count"])
                     }
                 )
 
     # Load Month Data
-    with open(Path(__file__).parent / "months.csv") as f:
+    with open(Path(__file__).parent / "month_logs.csv") as f:
         reader = csv.DictReader(f)
         with month_table.batch_writer() as batch:
             for row in reader:
@@ -85,8 +99,25 @@ def load_test_data(env):
                     Item={
                         "device_trail_id": int(row["device_trail_id"]),
                         "start": int(row["start"]),
+                        "count": int(row["count"])
+                    }
+                )
+
+    # Load Log Data
+    with open(Path(__file__).parent / "device_logs.csv") as f:
+        reader = csv.DictReader(f)
+        with device_log_table.batch_writer() as batch:
+            for row in reader:
+                batch.put_item(
+                    Item={
+                        "device_id": int(row["device_id"]),
+                        "time": int(row["time"]),
                         "count": int(row["count"]),
                         "battery": int(row["battery"]),
+                        "firmware_version": row["device_id"],
+                        "rssi": int(row["rssi"]),
+                        "rsrp": int(row["rsrp"]),
+                        "rsrq": int(row["rsrq"]),
                     }
                 )
 
@@ -101,7 +132,25 @@ def load_test_data(env):
                         "device_trail_id": int(row["device_trail_id"]),
                         "start": int((current_midnight - timedelta(days=int(row["days_ago"]))).timestamp()),
                         "count": int(row["count"]),
+                    }
+                )
+
+    # Load Recent Log Data
+    with open(Path(__file__).parent / "logs_recent.csv") as f:
+        reader = csv.DictReader(f)
+        with device_log_table.batch_writer() as batch:
+            current_midnight = datetime.now().astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
+            for row in reader:
+                batch.put_item(
+                    Item={
+                        "device_id": int(row["device_id"]),
+                        "time": int((current_midnight - timedelta(days=int(row["days_ago"]))).timestamp()),
+                        "count": int(row["count"]),
                         "battery": int(row["battery"]),
+                        "firmware_version": row["device_id"],
+                        "rssi": int(row["rssi"]),
+                        "rsrp": int(row["rsrp"]),
+                        "rsrq": int(row["rsrq"]),
                     }
                 )
 
@@ -173,3 +222,4 @@ if __name__ == "__main__":
     parser.add_argument("--env", required=True)
     args = parser.parse_args()
     load_test_data(args.env)
+    # load_test_data("local")
