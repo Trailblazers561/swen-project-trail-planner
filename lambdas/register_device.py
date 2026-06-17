@@ -5,9 +5,11 @@ import json
 import os
 import time
 import uuid
+from datetime import datetime, timezone, timedelta
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
+from cryptography.x509.verification import PolicyBuilder, Store
 from jwcrypto import jwk, jwt
 import boto3
 import requests
@@ -29,7 +31,7 @@ secrets_client = boto3.client("secretsmanager")
 registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_Registration"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_Device"))
 s3_client = boto3.client('s3')
-s3_bucket = os.environ.get("CSR_S3_BUCKET")
+s3_bucket = os.environ.get("CSR_S3_BUCKET", "local-csr-bucket-31655593")
 
 
 def cors_headers():
@@ -314,11 +316,16 @@ def register_device(event, context):
         # time to fire off the certificate
         one_time_token = gen_one_time_token(csr, device_name)
 
+        # cert exp date(max, min and default configured in step-ca setup in the ec2 file)
+        # set to default for now(change later)
+        not_after = (datetime.now(timezone.utc) + timedelta(hours=720)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
         response = requests.post(
             f"{CA_URL}/1.0/sign",
             json={
                 "csr": csr,
                 "ott": one_time_token,
+                "notAfter": not_after,
             },
             verify=get_root_ca_cert()
         )
@@ -329,21 +336,19 @@ def register_device(event, context):
         data = response.json()
         certificate = {"certificate": data["crt"]}
 
-        os.makedirs(f"tmp/{device_name}", exist_ok=True)
-
-        csr_path = f"/tmp/{device_name}.csr"
-        with open(csr_path, "w") as f:
-            f.write(csr)
-        s3_client.upload_file(csr_path, s3_bucket, f"{device_name}/device.csr")
+        # upload csr for reuse later
+        s3_client.put_object(Body=csr, Bucket=s3_bucket, Key=f"{device_name}/device.pem")
 
         cert = x509.load_pem_x509_certificate(data["crt"].encode())
-        time_to_live = int(cert.not_valid_after_utc.timestamp())
+        time_now = int(time.time())
+        time_to_live = int(cert.not_valid_after_utc.timestamp()) - time_now
 
+        # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
             UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
             ExpressionAttributeValues={
-                ":dr": int(time.time()),
+                ":dr": time_now,
                 ":tl": time_to_live
             }
         )
@@ -368,3 +373,131 @@ def register_device(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
+
+
+if __name__ == "__main__":
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography import x509
+    from cryptography.x509.oid import NameOID
+    import hmac as hmac_lib
+
+    TEST_DEVICE_NAME = "test-device-001"
+    TEST_DEVICE_SERIAL = "test-serial-12345"
+    TEST_DEVICE_ID = 9999
+
+    print("Seeding Device table...")
+    device_table.put_item(Item={
+        "id": TEST_DEVICE_ID,
+        "name": TEST_DEVICE_NAME,
+        "notes": "test device",
+        "firmware_version": "1.0.0",
+        "date_manufactured": int(time.time()),
+        "is_blocked": False,
+        "is_archived": False
+    })
+
+    print("Seeding Registration table...")
+    registration_table.put_item(Item={
+        "registration_id": 9999,
+        "device_id": TEST_DEVICE_ID,
+    })
+
+    print("Seeding Secrets Manager...")
+    try:
+        secrets_client.create_secret(
+            Name=TEST_DEVICE_NAME,
+            SecretString=json.dumps({"device_ser_no": TEST_DEVICE_SERIAL})
+        )
+    except secrets_client.exceptions.ResourceExistsException:
+        secrets_client.put_secret_value(
+            SecretId=TEST_DEVICE_NAME,
+            SecretString=json.dumps({"device_ser_no": TEST_DEVICE_SERIAL})
+        )
+
+    print("Generating CSR...")
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    csr = (
+        x509.CertificateSigningRequestBuilder()
+        .subject_name(x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, TEST_DEVICE_NAME),
+        ]))
+        .sign(private_key, hashes.SHA256())
+    )
+    csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode()
+
+    timestamp = int(time.time())
+    plaintext = f"{TEST_DEVICE_NAME}:{timestamp}:{csr_pem}".encode()
+    valid_hmac = hmac_lib.new(TEST_DEVICE_SERIAL.encode(), plaintext, hashlib.sha512).hexdigest()
+
+    mock_event = {
+        "body": json.dumps({
+            "device_name": TEST_DEVICE_NAME,
+            "timestamp": timestamp,
+            "csr": csr_pem,
+            "hmac": valid_hmac
+        })
+    }
+
+    print("Firing registration request...")
+    result = register_device(mock_event, None)
+    print(json.dumps(json.loads(result["body"]), indent=2))
+
+    print("Saving certificate...")
+
+    os.makedirs("tmp", exist_ok=True)
+
+    json_output = json.loads(result["body"])
+    device_cert_pem = json_output["certificate"]
+
+    with open("tmp/device.crt", "w", encoding="utf-8") as f:
+        f.write(device_cert_pem)
+
+    print("Saved:")
+    print("  tmp/device.crt")
+
+    print("Validating certificate chain...")
+
+    device_cert = x509.load_pem_x509_certificate(
+        device_cert_pem.encode("utf-8")
+    )
+
+    root_ca_path = get_root_ca_cert()
+
+    with open(root_ca_path, "rb") as f:
+        root_ca_pem = f.read()
+
+    root_cert = x509.load_pem_x509_certificate(root_ca_pem)
+
+    intr_ca_path = get_inter_ca_cert()
+
+    with open(intr_ca_path, "rb") as f:
+        intr_ca_pem = f.read()
+
+    intr_cert = x509.load_pem_x509_certificate(intr_ca_pem)
+
+    store = Store([root_cert])
+
+    verifier = (
+        PolicyBuilder()
+        .store(store)
+        .build_client_verifier()
+    )
+
+    try:
+        verifier.verify(
+            leaf=device_cert,
+            intermediates=[intr_cert]
+        )
+
+        print("Certificate chain validation succeeded.")
+
+    except Exception as e:
+        print("Certificate chain validation FAILED:")
+        print(str(e))
+
+    print("Cleaning up...")
+    device_table.delete_item(Key={"id": TEST_DEVICE_ID})
+    registration_table.delete_item(Key={"registration_id": 9999})
+    secrets_client.delete_secret(SecretId=TEST_DEVICE_NAME, ForceDeleteWithoutRecovery=True)
+    print("Done.")

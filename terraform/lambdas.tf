@@ -156,13 +156,7 @@ resource "aws_lambda_function" "pre_register_device" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-      CERTIFICATE_AUTHORITY_URL = "https://${aws_instance.ca_instance.private_ip}:9000"
     }
-  }
-
-  vpc_config {
-    security_group_ids = [aws_security_group.lambda_sg.id]
-    subnet_ids = [aws_subnet.private_subnet.id]
   }
 }
 
@@ -467,7 +461,7 @@ resource "aws_lambda_function" "delete_trail_group" {
 resource "aws_lambda_function" "renew_registration" {
   function_name = "${var.deploy_env}_renew_registration"
   role          = aws_iam_role.lambda_iam_role.arn
-  handler       = "renew_registration_renew_certificate"
+  handler       = "renew_registration.renew_certificate"
   runtime       = "python3.12"
   filename      = "${path.module}/${local.lambda_code_directory}/zips/renew_registration.zip"
   code_sha256 = data.archive_file.renew_registration_zip.output_base64sha256
@@ -483,7 +477,13 @@ resource "aws_lambda_function" "renew_registration" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
+      CSR_S3_BUCKET = aws_s3_bucket.csr_bucket.bucket
+      CERTIFICATE_AUTHORITY_URL = "https://${aws_instance.ca_instance.private_ip}:9000"
     }
+  }
+  vpc_config {
+    security_group_ids = [aws_security_group.lambda_sg.id]
+    subnet_ids = [aws_subnet.private_subnet.id]
   }
 }
 

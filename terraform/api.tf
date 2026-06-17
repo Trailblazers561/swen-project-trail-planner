@@ -1103,8 +1103,8 @@ resource "aws_api_gateway_integration_response" "renew_options_integration_respo
   }
 
   depends_on = [
-    aws_api_gateway_integration.devices_options_integration,
-    aws_api_gateway_method_response.devices_options_response
+    aws_api_gateway_integration.renew_options_integration,
+    aws_api_gateway_method_response.renew_options_response
   ]
 }
 
@@ -1165,6 +1165,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.registration_edit_integration.uri,
       aws_api_gateway_integration.block_put_integration.uri,
       aws_api_gateway_integration.archive_put_integration.uri,
+      aws_api_gateway_integration.renew_put_integration.uri,
 
 
       # Authorizer Stuff
@@ -1253,7 +1254,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.block_options_integration_response,
     aws_api_gateway_integration_response.archive_options_integration_response,
     aws_api_gateway_integration_response.renew_options_integration_response,
-    aws_api_gateway_integration_response.re,
+    aws_api_gateway_integration.renew_put_integration,
   ]
 }
 
