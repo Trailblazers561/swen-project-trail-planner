@@ -210,7 +210,6 @@ resource "aws_lambda_function" "register_device" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-      CSR_S3_BUCKET       = aws_s3_bucket.csr_bucket.bucket
     }
   }
 }
@@ -477,7 +476,6 @@ resource "aws_lambda_function" "renew_registration" {
       DEVICE_TABLE = aws_dynamodb_table.device_table.name
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       TRAIL_GROUP_TABLE    = aws_dynamodb_table.trail_group_table.name
-      CSR_S3_BUCKET = aws_s3_bucket.csr_bucket.bucket
       CERTIFICATE_AUTHORITY_URL = "https://${aws_instance.ca_instance.private_ip}:9000"
     }
   }
