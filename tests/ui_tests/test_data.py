@@ -110,7 +110,7 @@ with open(Path(__file__).parent / "../../sample_data/test_device_trails.csv") as
         DEVICE_TRAIL_DEVICES[int(row["id"])] = DEVICES[int(row["device_id"])]
         DEVICES[int(row["device_id"])].current_trail = TRAILS[int(row["trail_id"])]
 
-with open(Path(__file__).parent / "../../sample_data/hours.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/hour_logs.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
@@ -118,7 +118,7 @@ with open(Path(__file__).parent / "../../sample_data/hours.csv") as f:
             HOUR_DATA[trail] = []
         HOUR_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
-with open(Path(__file__).parent / "../../sample_data/days.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/day_logs.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
@@ -126,7 +126,7 @@ with open(Path(__file__).parent / "../../sample_data/days.csv") as f:
             DAY_DATA[trail] = []
         DAY_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
-with open(Path(__file__).parent / "../../sample_data/weeks.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/week_logs.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]
@@ -134,7 +134,7 @@ with open(Path(__file__).parent / "../../sample_data/weeks.csv") as f:
             WEEK_DATA[trail] = []
         WEEK_DATA[trail].append({"start": int(row["start"]), "count": int(row["count"]), "battery": f"{int(row['battery'])}%", "recorded": True})
 
-with open(Path(__file__).parent / "../../sample_data/months.csv") as f:
+with open(Path(__file__).parent / "../../sample_data/month_logs.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
         trail = DEVICE_TRAIL_TRAILS[int(row["device_trail_id"])]

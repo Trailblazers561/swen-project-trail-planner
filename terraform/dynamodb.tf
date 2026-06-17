@@ -299,7 +299,6 @@ resource "aws_dynamodb_table_item" "device_items" {
     id = { "N" = each.value.id }
     name = { "S" = each.value.name }
     notes = { "S" = each.value.notes }
-    firmware_version = { "S" = each.value.firmware_version }
     date_manufactured = { "N" = each.value.date_manufactured }
   })
 }
