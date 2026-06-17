@@ -675,6 +675,11 @@ const dashboard = () => {
                         return;
                     }
 
+                    const deviceToBattery: Record<string, number> = {}
+                    deviceMetadataCache.forEach(device => {
+                        deviceToBattery[device.id] = device.battery;
+                    })
+
                     // Fetch weekly counts
                     const logsResponse = await getTrailLogs(
                         trailIds,
@@ -688,11 +693,11 @@ const dashboard = () => {
                     // Count logs per trail for the week
                     const trailInformation = new Map<number, {count: number, battery: number, lastUpdatedTimestamp: number}>();
 
-                    logs.forEach((log: { trail_id: number, device_id: number, count: number, battery: number, start: number}) => {
+                    logs.forEach((log: { trail_id: number, device_id: number, count: number, start: number}) => {
                         const trailId = log.trail_id;
                         const currentInformation = trailInformation.get(trailId) || {count: 0, battery: 0, lastUpdatedTimestamp: 0}
                         currentInformation.count += log.count;
-                        currentInformation.battery = log.battery;
+                        currentInformation.battery = deviceToBattery[log.device_id];
                         currentInformation.lastUpdatedTimestamp = log.start;
                         trailInformation.set(trailId, currentInformation);
                     });

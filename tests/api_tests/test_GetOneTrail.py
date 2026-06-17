@@ -37,4 +37,3 @@ def test_get_trail_data_filtered():
             assert "device_trail_id" in item
             assert "start" in item
             assert "count" in item
-            assert "battery" in item

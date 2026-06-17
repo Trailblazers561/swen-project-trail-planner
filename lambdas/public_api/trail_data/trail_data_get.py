@@ -96,9 +96,8 @@ def get_trail_data(event, context):
                     for result in start_results:
                         if result["device_trail_id"] in rows.keys():
                             rows[result["device_trail_id"]]["count"] += result["count"]
-                            rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"]}
                     device_log_rows.extend(rows.values())
 
         # Turn the extra ending days into a "partial" result
@@ -113,9 +112,8 @@ def get_trail_data(event, context):
                     for result in end_results:
                         if result["device_trail_id"] in rows.keys():
                             rows[result["device_trail_id"]]["count"] += result["count"]
-                            rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"]}
                     device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)
