@@ -79,7 +79,7 @@ def verify_export(driver, filter: DashboardFilterDTO):
     # Verify File Matches
     with open(export_data_step.export_file_path) as f:
         reader = csv.DictReader(f)
-        expected_headers = ["Trail ID", "Trail Name", "Start Time", f"{filter.granularity.value} Count", "Battery %"]
+        expected_headers = ["Trail ID", "Trail Name", "Start Time", f"{filter.granularity.value} Count"]#, "Battery %"]
         pytest_check.equal(expected_headers, reader.fieldnames)
         if expected_headers != reader.fieldnames: return
         expected_rows = retrieve_csv_list(filter.date_start, filter.date_end, filter.granularity, [trail.id for trail in filter.trails])

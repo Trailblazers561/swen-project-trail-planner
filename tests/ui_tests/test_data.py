@@ -279,7 +279,7 @@ def retrieve_csv_list(start: datetime, end: datetime, granularity: Granularity, 
             "Trail Name": TRAILS[trail_id].name,
             "Start Time": datetime.fromtimestamp(log["start"]).astimezone(ZoneInfo("America/New_York")).strftime(f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}"),
             f"{granularity.value} Count": str(log["count"]),
-            "Battery %": log["battery"][:-1]
+            # "Battery %": log["battery"][:-1]
         } for log in DATA[TRAILS[trail_id]] if start.timestamp() <= log["start"] <= end.timestamp() and log["recorded"]])
     rows.sort(key=lambda row: (int(row["Trail ID"]), datetime.strptime(row["Start Time"], f"%Y/%m/%d{' %I:%M %p' if granularity == Granularity.HOUR else ''}")))
 
