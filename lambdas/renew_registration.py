@@ -1,4 +1,6 @@
 import os
+from datetime import datetime, timezone, timedelta
+
 import boto3
 import requests
 import base64
@@ -7,6 +9,7 @@ import time
 import hashlib
 import uuid
 
+from cryptography import x509
 from jwcrypto import jwk, jwt
 from boto3.dynamodb.conditions import Key
 from cryptography.hazmat.primitives.serialization import Encoding
@@ -219,6 +222,15 @@ def renew_certificate(event, context):
             raise ValueError("Device name not found, try registering the device before connecting")
         item = items[0]
 
+        reg_response = registration_table.query(
+            IndexName="device-index",
+            KeyConditionExpression=Key("device_id").eq(int(item.get("id")))
+        )
+        reg_items = reg_response.get("Items", [])
+
+        if not reg_items:
+            raise ValueError("Device not found in registration, try registering the device before connecting")
+
         # Reject blocked devices
         if item.get("is_blocked"):
             return {
@@ -235,28 +247,53 @@ def renew_certificate(event, context):
                 "body": json.dumps({"error": "Device is archived. Renewal rejected."})
             }
 
-        device_serial = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])[
-            "device_ser_no"]
+        device_secrets = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
+        device_serial = device_secrets["device_ser_no"]
+        csr = device_secrets["csr"]
+
+        if not csr:
+            raise ValueError("No csr for the device present, try registering the device before attempting a renewal")
 
         # if the device is in device table, serial should be there guaranteed, this shouldn't fire
         if not device_serial:
             raise ValueError("Device Serial not found, ensure the device is properly registered before connecting")
 
-
         one_time_token = gen_one_time_token(csr, device_name)
+
+        # cert exp date(max, min and default configured in step-ca setup in the ec2 file)
+        # set to default for now(change later)
+        not_after = (datetime.now(timezone.utc) + timedelta(hours=720)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         response = requests.post(
             f"{CA_URL}/1.0/sign",
             json={
                 "csr": csr,
                 "ott": one_time_token,
+                "notAfter": not_after,
             },
             verify=get_root_ca_cert()
         )
 
         response.raise_for_status()
+
+        # successful certificate request at this point
         data = response.json()
         certificate = {"certificate": data["crt"]}
+
+        cert = x509.load_pem_x509_certificate(data["crt"].encode())
+        time_now = int(time.time())
+        time_to_live = int(cert.not_valid_after_utc.timestamp()) - time_now
+
+        # registration table functionality
+        registration_table.update_item(
+            Key={"registration_id": reg_items[0]["registration_id"]},
+            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
+            ExpressionAttributeValues={
+                ":dr": time_now,
+                ":tl": time_to_live
+            }
+        )
+
         return {
             "statusCode": 200,
             "headers": cors_headers(),
