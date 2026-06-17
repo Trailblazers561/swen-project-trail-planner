@@ -103,13 +103,13 @@ def simulate_data(event, context):
             log_hour(device_trail_id, hour_timestamp, count)
             hour_timestamp += 60 * 60
 
-        log_day(device_trail_id, timestamp, hikers, battery)
+        log_day(device_trail_id, timestamp, hikers)
 
         week_timestamp = int((today - timedelta(days=today.weekday())).timestamp())
-        log_week(device_trail_id, week_timestamp, hikers, battery)
+        log_week(device_trail_id, week_timestamp, hikers)
 
         month_timestamp = int((today.replace(day=1)).timestamp())
-        log_month(device_trail_id, month_timestamp, hikers, battery)
+        log_month(device_trail_id, month_timestamp, hikers)
 
         log_log(device_id, hikers, battery)
 
@@ -186,48 +186,43 @@ def log_hour(device_trail_id: int, start: int, count: int):
         "count": count
     })
 
-def log_day(device_trail_id: int, start: int, count: int, battery: int):
-    print(f"Adding day log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+def log_day(device_trail_id: int, start: int, count: int):
+    print(f"Adding day log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}]")
     log_day_table.put_item(Item={
         "device_trail_id": device_trail_id,
         "start": start,
-        "count": count,
-        "battery": battery
+        "count": count
     })
 
-def log_week(device_trail_id: int, start: int, count: int, battery: int):
-    print(f"Adding week log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+def log_week(device_trail_id: int, start: int, count: int):
+    print(f"Adding week log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}]")
     log_week_table.update_item(
         Key={
             "device_trail_id": device_trail_id,
             "start": start
         },
-        UpdateExpression="ADD #count :count SET #battery = :battery",
+        UpdateExpression="ADD #count :count",
         ExpressionAttributeNames={
-            "#count": "count",
-            "#battery": "battery"
+            "#count": "count"
         },
         ExpressionAttributeValues={
-            ":count": count,
-            ":battery": battery
+            ":count": count
         }
     )
 
-def log_month(device_trail_id: int, start: int, count: int, battery: int):
-    print(f"Adding month log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}] and battery [{battery}]")
+def log_month(device_trail_id: int, start: int, count: int):
+    print(f"Adding month log for device_trail_id [{device_trail_id}] at start [{start}] with count [{count}]")
     log_month_table.update_item(
         Key={
             "device_trail_id": device_trail_id,
             "start": start
         },
-        UpdateExpression="ADD #count :count SET #battery = :battery",
+        UpdateExpression="ADD #count :count",
         ExpressionAttributeNames={
-            "#count": "count",
-            "#battery": "battery"
+            "#count": "count"
         },
         ExpressionAttributeValues={
-            ":count": count,
-            ":battery": battery
+            ":count": count
         }
     )
 

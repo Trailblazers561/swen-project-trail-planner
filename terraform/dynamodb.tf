@@ -22,7 +22,6 @@ resource "aws_dynamodb_table" "device_table" {
 
   /*
     notes: string
-    firmware_version: string
     date_manufactured: number (UNIX timestamp)
     date_retired: number (UNIX timestamp)
     is_blocked: boolean
@@ -145,7 +144,6 @@ resource "aws_dynamodb_table" "device_trail_log_day_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
@@ -168,7 +166,6 @@ resource "aws_dynamodb_table" "device_trail_log_week_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
@@ -191,7 +188,6 @@ resource "aws_dynamodb_table" "device_trail_log_month_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
