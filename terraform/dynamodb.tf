@@ -22,7 +22,6 @@ resource "aws_dynamodb_table" "device_table" {
 
   /*
     notes: string
-    firmware_version: string
     date_manufactured: number (UNIX timestamp)
     date_retired: number (UNIX timestamp)
     is_blocked: boolean
@@ -145,7 +144,6 @@ resource "aws_dynamodb_table" "device_trail_log_day_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
@@ -168,7 +166,6 @@ resource "aws_dynamodb_table" "device_trail_log_week_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
@@ -191,7 +188,6 @@ resource "aws_dynamodb_table" "device_trail_log_month_table" {
 
   /*
     count: number (int)
-    battery: number (percentage)
   */
 }
 
@@ -287,7 +283,6 @@ locals {
       ]
     }
   ]
-  device_log_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_logs.csv"))
   error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
   registration_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/registrations.csv"))
 }
@@ -303,7 +298,6 @@ resource "aws_dynamodb_table_item" "device_items" {
     id = { "N" = each.value.id }
     name = { "S" = each.value.name }
     notes = { "S" = each.value.notes }
-    firmware_version = { "S" = each.value.firmware_version }
     date_manufactured = { "N" = each.value.date_manufactured }
   })
 }
@@ -352,26 +346,6 @@ resource "aws_dynamodb_table_item" "area_items" {
   item = jsonencode({
     name = { "S" = each.value.name }
     trail_ids  = { "L" = [for id in each.value.trail_ids : { "N" = id }] }
-  })
-}
-
-# INSERT TEST DATA INTO DeviceLog
-resource "aws_dynamodb_table_item" "device_log_items" {
-  for_each = { for idx, item in local.device_log_sample_data : idx => item }
-
-  table_name = aws_dynamodb_table.device_log_table.name
-  hash_key   = aws_dynamodb_table.device_log_table.hash_key
-  range_key  = aws_dynamodb_table.device_log_table.range_key
-
-  item = jsonencode({
-    device_id  = { "N" = each.value.device_id }
-    time = { "N" = each.value.time }
-    count = { "N" = each.value.count }
-    battery = { "N" = each.value.battery }
-    firmware_version = { "S" = each.value.firmware_version }
-    rssi = { "N" = each.value.rssi }
-    rsrp = { "N" = each.value.rsrp }
-    rsrq = { "N" = each.value.rsrq }
   })
 }
 

@@ -130,9 +130,9 @@ def upload_trail_data(event, context):
         trail_id = int(trail_id_raw)
 
         # Build data structures for day/week/month
-        daily_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
-        weekly_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
-        monthly_logs = defaultdict(lambda: {"count": 0, "latest_timestamp": 0, "battery": None})
+        daily_logs = defaultdict(lambda: {"count": 0})
+        weekly_logs = defaultdict(lambda: {"count": 0})
+        monthly_logs = defaultdict(lambda: {"count": 0})
         row_data: dict[tuple, dict] = {}
 
         # some input validation and loading data into a format we can load into table
@@ -140,7 +140,6 @@ def upload_trail_data(event, context):
             timestamp_raw = point.get("timestamp") or point.get("ts")
             device_id = point.get("device_id") or body.get("device_id")
             count = point.get("count") or body.get("count")
-            battery = point.get("battery", body.get("battery"))
 
             missing = []
             if timestamp_raw is None:
@@ -149,8 +148,6 @@ def upload_trail_data(event, context):
                 missing.append("device_id")
             if count is None:
                 missing.append("count")
-            if battery is None:
-                missing.append("battery")
 
             if missing:
                 raise ValueError(f"Missing required fields (data[{idx}]): {', '.join(missing)}")
@@ -164,10 +161,8 @@ def upload_trail_data(event, context):
                     "body": json.dumps({"error": f"Invalid timestamp format (data[{idx}])"})
                 }
 
-            battery = Decimal(str(battery)) if isinstance(battery, float) else battery
-
             timestamp_key = (device_id, timestamp)
-            row_data[timestamp_key] = {"count": count, "battery": battery}
+            row_data[timestamp_key] = {"count": count}
 
         device_trail_id_cache = {}
         for (device_id, hour_ts), data in row_data.items():
@@ -180,21 +175,10 @@ def upload_trail_data(event, context):
             current_week = (device_trail_id, timestamp_conversion(hour_ts, "week"))
             current_month = (device_trail_id, timestamp_conversion(hour_ts, "month"))
 
-            # populate counts/battery %s on the daily/weekly/monthly levels
+            # populate counts on the daily/weekly/monthly levels
             daily_logs[current_day]["count"] += data["count"]
-            if hour_ts > daily_logs[current_day]["latest_timestamp"] and data["battery"] is not None:
-                daily_logs[current_day]["battery"] = data["battery"]
-                daily_logs[current_day]["latest_timestamp"] = hour_ts
-
             weekly_logs[current_week]["count"] += data["count"]
-            if hour_ts > weekly_logs[current_week]["latest_timestamp"] and data["battery"] is not None:
-                weekly_logs[current_week]["battery"] = data["battery"]
-                weekly_logs[current_week]["latest_timestamp"] = hour_ts
-
             monthly_logs[current_month]["count"] += data["count"]
-            if hour_ts > monthly_logs[current_month]["latest_timestamp"] and data["battery"] is not None:
-                monthly_logs[current_month]["battery"] = data["battery"]
-                monthly_logs[current_month]["latest_timestamp"] = hour_ts
 
         # Send data to hour table
         with device_trail_log_hour_table.batch_writer() as batch:
@@ -212,8 +196,7 @@ def upload_trail_data(event, context):
                 batch.put_item(Item={
                     "device_trail_id": device_trail_id,
                     "start": day_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
+                    "count": data["count"]
                 })
         print(f"writing {len(daily_logs)} to day database")
 
@@ -223,8 +206,7 @@ def upload_trail_data(event, context):
                 batch.put_item(Item={
                     "device_trail_id": device_trail_id,
                     "start": week_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
+                    "count": data["count"]
                 })
         print(f"writing {len(weekly_logs)} to week database")
 
@@ -234,8 +216,7 @@ def upload_trail_data(event, context):
                 batch.put_item(Item={
                     "device_trail_id": device_trail_id,
                     "start": month_ts,
-                    "count": data["count"],
-                    "battery": data["battery"] if data["battery"] is not None else ""
+                    "count": data["count"]
                 })
         print(f"writing {len(monthly_logs)} to month database")
 
