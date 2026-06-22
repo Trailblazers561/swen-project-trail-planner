@@ -25,10 +25,10 @@ function App() {
                     <Route path="/dashboard" element={<DashBoard />} />
                     <Route path="/test" element={<Test />} />
                     <Route path="/devices" 
-                        element={(currentRole  && currentRole >= Role.Manager) ? <DeviceManagementPage /> : <Navigate replace to="/login" />} 
+                        element={(currentRole && currentRole >= Role.Manager) ? <DeviceManagementPage /> : <Navigate replace to="/login" />} 
                     />
                     <Route path="/privileges" 
-                        element={(currentRole != null && currentRole >= Role.Admin) ? <Privileges /> : <Navigate replace to="/login" />} 
+                        element={(currentRole && currentRole >= Role.Admin) ? <Privileges /> : <Navigate replace to="/login" />} 
                     />
                 </Route>
                 <Route path="/login" element={<LoginPage />} />

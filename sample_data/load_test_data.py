@@ -222,4 +222,3 @@ if __name__ == "__main__":
     parser.add_argument("--env", required=True)
     args = parser.parse_args()
     load_test_data(args.env)
-    # load_test_data("local")
