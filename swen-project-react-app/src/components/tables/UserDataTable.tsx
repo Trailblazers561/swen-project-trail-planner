@@ -4,6 +4,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 
 interface UserRow {
     user_id: string;
@@ -17,6 +18,19 @@ interface Props {
     data: UserRow[];
     onRefresh: () => Promise<void>;
 }
+
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+  const Desktop = ({children}: DeviceType) => {
+    const isDesktop = useMediaQuery({ minWidth: 992 })
+    return isDesktop ? children : null
+  }
+  const Mobile = ({children}: DeviceType) => {
+    const isMobile = useMediaQuery({maxWidth: 500})
+    return isMobile ? children: null
+  }
 
 const customStyles = {
     table: {
@@ -40,6 +54,42 @@ const customStyles = {
     rows: {
         style: {
             fontSize: "15px",
+            minHeight: "48px",
+        },
+        stripedStyle: {
+            backgroundColor: "#edeef0",
+        },
+    },
+    pagination: {
+        style: {
+            borderBottomLeftRadius: "0.75rem",
+            borderBottomRightRadius: "0.75rem",
+        },
+    },
+};
+
+const customStylesMobile = {
+    table: {
+        style: {
+            overflow: "hidden",
+        },
+    },
+    headRow: {
+        style: {
+            backgroundColor: "#C0D3D1",
+            minHeight: "52px",
+        },
+    },
+    headCells: {
+        style: {
+            fontWeight: 600,
+            fontSize: "12px",
+            letterSpacing: "0.05em",
+        },
+    },
+    rows: {
+        style: {
+            fontSize: "12px",
             minHeight: "48px",
         },
         stripedStyle: {
@@ -237,19 +287,36 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                     />
                 </div>
             )}
-            <DataTable
+            <Desktop>
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    pagination={true}
+                    striped
+                    responsive
+                    customStyles={customStyles}
+                    noDataComponent={
+                        <div className="py-6 text-gray-500">
+                            No users found.
+                        </div>
+                    }
+                />
+            </Desktop>
+            <Mobile>
+                <DataTable
                 columns={columns}
                 data={data}
                 pagination={true}
                 striped
                 responsive
-                customStyles={customStyles}
+                customStyles={customStylesMobile}
                 noDataComponent={
                     <div className="py-6 text-gray-500">
                         No users found.
                     </div>
                 }
-            />
+                />
+            </Mobile>
         </div>
     );
 };

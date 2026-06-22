@@ -60,23 +60,23 @@ const Privileges = () => {
     }, []);
 
     return (
-        <div className="flex flex-col">
+        <><meta name="viewport" content="width=device-width initial-scale=1.0" /><div className="flex flex-col">
 
             <div className="w-full bg-[var(--color-button-secondary)]">
                 <div className="font-semibold text-2xl p-2 ml-2 text-left"> User Configuration </div>
             </div>
 
             {/* Render users */}
-            <div className="p-4">
+            <div className="lg:p-4 p-2">
                 {users.length === 0 ? (
                     <div>Loading...</div>
                 ) : (
-                    <div className="pt-4 m-4">
+                    <div className="pt-4 lg:m-4">
                         <UserDataTable data={userListData} onRefresh={loadUsers} />
                     </div>
                 )}
             </div>
-        </div>
+        </div></>
     );
 };
 
