@@ -16,6 +16,7 @@ env:
   CONFIG_DIRECTORY: "./terraform"
   TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
   TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
 
 jobs:
   terraform-plan:

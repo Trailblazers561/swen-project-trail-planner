@@ -23,7 +23,7 @@ The tests require specific references to the resources that need to be tested. G
 In the event this doesn't reflect what you wan't, there is also a [setup_env.py](setup_env.py) file that when run will create a [.env](.env). It takes a *--env* parameter which should be *local* for a local run, or *tst* if hooked up to the sponsor's account. To look more at linking your local aws credentials to the sponsor account look at [README.md](../README.md). To run [setup_env.py](setup_env.py) run the following command from the `root` directory:
 
 ```bash
-python tests/setup_env.py --env <ENV_PREFIX>
+python tests/setup_env.py --env <ENV_PREFIX> --password <USER_PASSWORDS>
 ```
 
 ## Running Tests

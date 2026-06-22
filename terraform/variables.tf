@@ -12,9 +12,13 @@ locals {
   sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
 }
 
-// This can be changed later to not be defined here, but for now it's not less secure than before
+variable "user_passwords" {
+  type = string
+  default = ""
+}
+
 locals {
-  password = local.test_run ? "testPassword123!" : "password" # Sometimes google tells you your password has been found, this avoids that issue when testing
+  password = local.test_run ? "testPassword123!" : var.user_passwords # Sometimes google tells you your password has been found if it sucks, this avoids that issue when testing
   users = {
     root_admin = { email = "root_admin@gmail.com", password = local.password, groups=["root_admin", "admin", "trail_manager", "user"] }
     admin = { email = "admin@gmail.com", password = local.password, groups=["admin", "trail_manager", "user"] }
