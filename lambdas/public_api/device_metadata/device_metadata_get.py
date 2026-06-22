@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import dynamodb, device_trail_log_day_table, device_table, device_trail_table, registration_table, convert_decimals, cors_headers
+from helper_functions import dynamodb, device_table, device_log_table, device_trail_table, registration_table, convert_decimals, cors_headers
 
 def get_device_metadata(event, context):
     try:
@@ -43,22 +43,24 @@ def get_device_metadata(event, context):
             if len(device_trails_result):
                 if not device_trails_result[0].get("date_removed"):
                     item["current_trail_id"] = device_trails_result[0]["trail_id"]
-                day_result = device_trail_log_day_table.query(
-                    KeyConditionExpression=Key("device_trail_id").eq(device_trails_result[0]["id"]),
-                    ScanIndexForward=False,
-                    Limit=1
-                ).get("Items", [])
-                if day_result:
-                    item["battery"] = day_result[0]["battery"]
-                    item["last_updated"] = day_result[0]["start"]
 
             registration_result = registration_table.query(
                 IndexName="device-index",
-                KeyConditionExpression=Key("device_id").eq(item["id"])
+                KeyConditionExpression=Key("device_id").eq(item["id"]),
+                Limit=1
             ).get("Items", [])
             if registration_result:
                 item["registration_id"] = registration_result[0]["registration_id"]
                 item["date_registered"] = registration_result[0]["date_registered"]
+
+            device_log_result = device_log_table.query(
+                KeyConditionExpression=Key("device_id").eq(item["id"]),
+                Limit=1,
+                ScanIndexForward=False
+            ).get("Items", [])
+            if device_log_result:
+                item["battery"] = device_log_result[0]["battery"]
+                item["last_updated"] = device_log_result[0]["time"]
 
         print(f"Successfully appended device metadata [{items[:3]}]")
         return {
