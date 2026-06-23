@@ -22,5 +22,5 @@ resource "random_password" "admin_password" {
 
 locals {
   effective_device_api_key = var.manage_dns ? random_password.device_api_key[0].result : var.device_api_key
-  effective_admin_password = var.admin_password != null ? var.admin_password : random_password.admin_password[0]
+  effective_admin_password = var.admin_password == null ? random_password.admin_password[0].result : var.admin_password
 }
