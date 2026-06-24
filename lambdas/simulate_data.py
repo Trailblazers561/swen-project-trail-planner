@@ -75,11 +75,11 @@ def simulate_data(event, context):
         )["Items"]
         device_trail_id, device_id = device_trail_exists[0]["id"], device_trail_exists[0]["device_id"] if device_trail_exists else create_device_trail(trail_id)
 
-        response = log_day_table.query(
+        response = device_log_table.query(
             KeyConditionExpression=(
-                Key("device_trail_id").eq(device_trail_id) &
-                Key("start").eq(int((today - timedelta(days=1)).timestamp()))
+                Key("device_id").eq(device_id)
             ),
+            ScanIndexForward=False,
             Limit=1
         )
         battery = response["Items"][0]["battery"] if response["Count"] >= 1 else 100
