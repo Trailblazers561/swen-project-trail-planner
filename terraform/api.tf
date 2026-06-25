@@ -200,109 +200,14 @@ resource "aws_api_gateway_integration" "registration_edit_integration" {
   uri                     = aws_lambda_function.edit_registration.invoke_arn
 }
 
-# /devices Resource (plural - for device POST requests)
-resource "aws_api_gateway_resource" "devices" {
-  path_part   = "devices"
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  rest_api_id = aws_api_gateway_rest_api.api.id
-}
-
-# CORS (OPTIONS) for /devices
-resource "aws_api_gateway_method" "devices_options" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.devices.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "devices_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.devices.id
-  http_method = aws_api_gateway_method.devices_options.http_method
-  type        = "MOCK"
-
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_method_response" "devices_options_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.devices.id
-  http_method = aws_api_gateway_method.devices_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"      = true
-    "method.response.header.Access-Control-Allow-Methods"      = true
-    "method.response.header.Access-Control-Allow-Origin"       = true
-    "method.response.header.Access-Control-Allow-Credentials"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "devices_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.devices.id
-  http_method = aws_api_gateway_method.devices_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
-    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
-  }
-
-  depends_on = [
-    aws_api_gateway_integration.devices_options_integration,
-    aws_api_gateway_method_response.devices_options_response
-  ]
-}
-
-# PUT /devices -> Lambda: upload_device_data (requires API key, no lambda auth)
-resource "aws_api_gateway_method" "devices_put" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.devices.id
-  http_method   = "PUT"
-  authorization = "NONE"
-  api_key_required = true
-}
-
-resource "aws_api_gateway_integration" "devices_put_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.devices.id
-  http_method             = aws_api_gateway_method.devices_put.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.upload_device_data.invoke_arn
-}
-
-# POST /devices -> Lambda: register_device
-resource "aws_api_gateway_method" "devices_post" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.devices.id
-  http_method   = "POST"
-  authorization = "NONE"
-  api_key_required = true
-}
-
-resource "aws_api_gateway_integration" "devices_post_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.devices.id
-  http_method             = aws_api_gateway_method.devices_post.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.register_device.invoke_arn
-}
-
-# PUT /devices/block
+# PUT /block
 resource "aws_api_gateway_resource" "block" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_resource.devices.id
   path_part   = "block"
 }
 
-# CORS (OPTIONS) for /devices/block
+# CORS (OPTIONS) for /block
 resource "aws_api_gateway_method" "block_options" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.block.id
@@ -354,7 +259,7 @@ resource "aws_api_gateway_integration_response" "block_options_integration_respo
   ]
 }
 
-# PUT /devices/block -> Lambda: set_device_blocked
+# PUT /block -> Lambda: set_device_blocked
 resource "aws_api_gateway_method" "block_put" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.block.id
@@ -372,14 +277,14 @@ resource "aws_api_gateway_integration" "block_put_integration" {
   uri                     = aws_lambda_function.set_device_blocked.invoke_arn
 }
 
-# PUT /devices/archive
+# PUT /archive
 resource "aws_api_gateway_resource" "archive" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_resource.devices.id
   path_part   = "archive"
 }
 
-# CORS (OPTIONS) for /devices/archive
+# CORS (OPTIONS) for /archive
 resource "aws_api_gateway_method" "archive_options" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.archive.id
@@ -431,7 +336,7 @@ resource "aws_api_gateway_integration_response" "archive_options_integration_res
   ]
 }
 
-# PUT /devices/archive -> Lambda: set_device_archived
+# PUT /archive -> Lambda: set_device_archived
 resource "aws_api_gateway_method" "archive_put" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.archive.id
@@ -1049,83 +954,6 @@ resource "aws_api_gateway_integration" "users_post_integration" {
   uri                     = aws_lambda_function.change_user_group.invoke_arn
 }
 
-# /renew Resource
-resource "aws_api_gateway_resource" "renew" {
-  path_part   = "renew"
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  rest_api_id = aws_api_gateway_rest_api.api.id
-}
-
-# CORS (OPTIONS) for /renew
-resource "aws_api_gateway_method" "renew_options" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.renew.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "renew_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.renew.id
-  http_method = aws_api_gateway_method.renew_options.http_method
-  type        = "MOCK"
-
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_method_response" "renew_options_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.renew.id
-  http_method = aws_api_gateway_method.renew_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"      = true
-    "method.response.header.Access-Control-Allow-Methods"      = true
-    "method.response.header.Access-Control-Allow-Origin"       = true
-    "method.response.header.Access-Control-Allow-Credentials"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "renew_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.renew.id
-  http_method = aws_api_gateway_method.renew_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers"      = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Methods"      = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"       = "'*'"
-    "method.response.header.Access-Control-Allow-Credentials"  = "'true'"
-  }
-
-  depends_on = [
-    aws_api_gateway_integration.renew_options_integration,
-    aws_api_gateway_method_response.renew_options_response
-  ]
-}
-
-# PUT /renew -> Lambda: renew_certificate
-resource "aws_api_gateway_method" "renew_put" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.renew.id
-  http_method   = "PUT"
-  authorization = "NONE"
-  api_key_required = true
-}
-
-resource "aws_api_gateway_integration" "renew_put_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.renew.id
-  http_method             = aws_api_gateway_method.renew_put.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.renew_registration.invoke_arn
-}
-
 # Lambda Authorizer Authorizer
 resource "aws_api_gateway_authorizer" "lambda_authorizer" {
   name = "${var.deploy_env}_LambdaAuthorizer"
@@ -1144,8 +972,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       # Integrations
       aws_api_gateway_integration.trail_data_post_integration.uri,
       aws_api_gateway_integration.trail_data_get_integration.uri,
-      aws_api_gateway_integration.devices_put_integration.uri,
-      aws_api_gateway_integration.devices_post_integration.uri,
       aws_api_gateway_integration.trail_metadata_get_integration.uri,
       aws_api_gateway_integration.trail_metadata_post_integration.uri,
       aws_api_gateway_integration.trail_metadata_put_integration.uri,
@@ -1176,9 +1002,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.trail_data_options.authorization,
       aws_api_gateway_method.trail_data_post.authorization,
       aws_api_gateway_method.trail_data_get.authorization,
-      aws_api_gateway_method.devices_options.authorization,
-      aws_api_gateway_method.devices_put.authorization,
-      aws_api_gateway_method.devices_post.authorization,
       aws_api_gateway_method.trail_metadata_options.authorization,
       aws_api_gateway_method.trail_metadata_get.authorization,
       aws_api_gateway_method.trail_metadata_put.authorization,
@@ -1221,8 +1044,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [
     aws_api_gateway_integration.trail_data_post_integration,
     aws_api_gateway_integration.trail_data_get_integration,
-    aws_api_gateway_integration.devices_put_integration,
-    aws_api_gateway_integration.devices_post_integration,
     aws_api_gateway_integration.trail_metadata_get_integration,
     aws_api_gateway_integration.trail_metadata_post_integration,
     aws_api_gateway_integration.trail_metadata_put_integration,
@@ -1243,7 +1064,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration.block_options_integration,
     aws_api_gateway_integration.archive_options_integration,
     aws_api_gateway_integration_response.trail_data_options_integration_response,
-    aws_api_gateway_integration_response.devices_options_integration_response,
     aws_api_gateway_integration_response.trail_metadata_options_integration_response,
     aws_api_gateway_integration_response.device_metadata_options_integration_response,
     aws_api_gateway_integration_response.trail_groups_options_integration_response,

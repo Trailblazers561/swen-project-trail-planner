@@ -175,6 +175,13 @@ cp /opt/ca_instance/intermediate_password /opt/ca_instance/secrets/password
 chown 1000:1000 /opt/ca_instance/secrets/password
 chmod 644 /opt/ca_instance/secrets/password
 
+# upload root and intermediate certificates to truststore s3 bucket
+until aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/ > /dev/null 2>&1; do
+  echo "Waiting for S3 endpoint..."
+  sleep 10
+done
+aws s3 cp /opt/ca_instance/certs/root_ca.crt s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem
+
 # start step-ca
 docker run -d --name step-ca --restart always -v /opt/ca_instance:/home/step -p 9000:9000 ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}
 EOF

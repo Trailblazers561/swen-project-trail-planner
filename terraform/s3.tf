@@ -103,3 +103,13 @@ resource "aws_s3_bucket" "csv_bucket" {
 
   force_destroy = true
 }
+
+resource "aws_s3_bucket" "truststore_bucket" {
+  bucket = "${var.deploy_env}-truststore-bucket-${random_integer.random_suffix.result}"
+
+  tags = {
+    Name = "${var.deploy_env}-truststore-bucket"
+  }
+
+  force_destroy = true
+}

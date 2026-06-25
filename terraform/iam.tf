@@ -161,3 +161,19 @@ resource "aws_iam_instance_profile" "ca_instance_profile" {
   name = "${var.deploy_env}_ca_profile"
   role = aws_iam_role.ca_iam_role.name
 }
+
+data "aws_iam_policy_document" "ca_s3_policy" {
+  statement {
+    effect  = "Allow"
+    actions = ["s3:PutObject"]
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "ca_s3" {
+  name   = "${var.deploy_env}_ca_s3_policy"
+  role   = aws_iam_role.ca_iam_role.id
+  policy = data.aws_iam_policy_document.ca_s3_policy.json
+}
