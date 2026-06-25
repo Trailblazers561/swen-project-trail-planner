@@ -52,7 +52,14 @@ resource "null_resource" "nuke_enis" {
     command    = <<EOT
 import subprocess, json, time
 result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', 'Name=subnet-id,Values=${self.triggers.subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json'], capture_output=True, text=True)
+if not result.stdout.strip():
+    print("No ENIs found or AWS CLI error")
+    print("stderr:", result.stderr)
+    exit(0)
 enis = json.loads(result.stdout)
+if not enis:
+    print("No ENIs to delete")
+    exit(0)
 for eni in enis:
     for attempt in range(40):
         r = subprocess.run(['aws', 'ec2', 'delete-network-interface', '--network-interface-id', eni], capture_output=True, text=True)
