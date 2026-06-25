@@ -48,7 +48,7 @@ resource "null_resource" "nuke_enis" {
 
   provisioner "local-exec" {
     when       = destroy
-    interpreter = ["python", "-c"]
+    interpreter = ["python3", "-c"]
     command    = <<EOT
 import subprocess, json, time
 result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', 'Name=subnet-id,Values=${self.triggers.subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json'], capture_output=True, text=True)

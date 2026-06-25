@@ -71,10 +71,32 @@ resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {
   domain_name = aws_api_gateway_domain_name.device_api_domain[0].domain_name
 }
 
+resource "null_resource" "wait_for_truststore" {
+  triggers = {
+    instance_id = aws_instance.ca_instance.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for truststore.pem to appear in S3..."
+      for i in $(seq 1 40); do
+        aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem && echo "Found!" && exit 0
+        echo "Attempt $i/40, retrying in 30s..."
+        sleep 30
+      done
+      echo "Truststore never appeared, timing out"
+      exit 1
+    EOT
+  }
+
+  depends_on = [aws_instance.ca_instance]
+}
+
 resource "aws_api_gateway_stage" "device_api_stage" {
   deployment_id = aws_api_gateway_deployment.device_api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.device_api.id
   stage_name    = "${var.deploy_env}_trailcount_device_api_stage"
+  depends_on = [null_resource.wait_for_truststore]
 }
 
 # API Gateway Usage Plan

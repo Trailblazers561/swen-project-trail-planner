@@ -86,6 +86,13 @@ jobs:
         with:
           run: ${{ steps.apply-run.outputs.run_id }}
 
+      - name: Debug ECR Push Status
+        run: |
+          echo "=== ECR done file ==="
+          cat /tmp/ecr_done 2>/dev/null || echo "not written yet"
+          echo "=== ECR push log ==="
+          cat /tmp/ecr_push.log 2>/dev/null || echo "no log yet"
+
       - name: Wait for ECR Push
         run: |
           echo "Waiting for ECR push to complete"
