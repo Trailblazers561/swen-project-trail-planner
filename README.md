@@ -1,10 +1,10 @@
-# Trail Planner - Infrastructure README
+# Trail Count - Infrastructure README
 
-This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the Trail Planner infrastructure on AWS.
+This README provides instructions on how to set up and run Terraform with AWS CLI for provisioning the Trail Count infrastructure on AWS.
 
 ## Overview
 
-The Trail Planner infrastructure includes:
+The Trail Count infrastructure includes:
 - **React Frontend**: Hosted on S3 with optional CloudFront CDN
 - **API Gateway**: RESTful API with Cognito authentication
 - **Lambda Functions**: Serverless backend for trail data management
@@ -56,11 +56,7 @@ Edit `variables.tf` or create `terraform.tfvars` with your configuration:
 ```hcl
 # Basic configuration
 env = "local"
-bucket_name = "trailplanner-bucket"
-
-# For CloudFront deployment (see DEPLOYMENT_CLOUDFRONT_ROUTE53.md)
-has_cdn = false  # Set to true for production
-has_domain = false  # Set to true if using custom domain
+bucket_name = "trailcount-bucket"
 ```
 
 ### 4. Apply the Terraform Configuration
@@ -88,19 +84,7 @@ terraform output api_gateway_url
 terraform output route53_nameservers
 ```
 
-## Deployment Modes
-
-### Development/Testing Mode (Default)
-
-- Direct S3 website hosting
-- Public bucket access
-- No CDN
-- Fast deployment for testing
-
-**Configuration:**
-```hcl
-has_cdn = false
-```
+## Deployment Mode
 
 ### Production Mode (CloudFront)
 
@@ -110,13 +94,7 @@ has_cdn = false
 - Geographic restrictions
 - Optimized caching
 
-**Configuration:**
-```hcl
-has_cdn = true
-has_domain = false  # or true for custom domain
-```
-
-See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md) for detailed CloudFront/Route53 setup.
+See [DEPLOYMENT_CLOUDFRONT.md](terraform/DEPLOYMENT_CLOUDFRONT.md) for detailed CloudFront setup.
 
 ## Key Variables
 
@@ -127,12 +105,12 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 
 ### Optional Variables
 
-- `has_cdn`: Enable CloudFront CDN (default: `false`)
-- `has_domain`: Enable custom domain with Route53 (default: `false`)
-- `domain`: Root domain name (e.g., `example.com`)
-- `sub`: Subdomain (e.g., `adiron` for `adiron.example.com`)
-- `acm_certificate_arn`: SSL certificate ARN (required if `has_domain = true`)
-- `bucket_acl`: S3 bucket ACL (`private` for CloudFront, `public-read` for S3 website)
+- `use_domain`: Enable custom domain (set whenever not `local` or `test` run)
+- `domain`: Root domain name (e.g., `trailcount.io`)
+- `sub`: Subdomain (e.g., `tst` for `tst.trailcount.io`)
+- `acm_certificate_arn`: SSL certificate ARN (required if `use_domain = true`)
+- `ses_identity_arn`: SES identity ARN (required if `local_run = false`)
+- `local_user_email`: Email to send from (configured aws identity) (required if `local_run = true`)
 - `authorization_enabled`: Enable API Gateway authorization (default: `true`)
 - `users`: Users to create on startup. (default: [`root_admin`, `admin`, `trail_manager`, `user`])
 
@@ -148,23 +126,23 @@ See [DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.m
 
 - **API Gateway**: RESTful API endpoints
 - **Lambda Functions**: Serverless compute for:
-  - Trail data management [traildata.py](lambdas/traildata.py)
+  - Trail data management [public_api](lambdas/public_api)
   - Device data ingestion
   - Simulate trail data [simulate_data.py](lambdas/simulate_data.py)
-  - CSV handling [export_csv.py](lambdas/export_csv.py), [import_csv.py](lambdas/import_csv.py), [generage_csv_upload_url.py](lambdas/generage_csv_upload_url.py)
-  - User management [user_management.py](user_management.py)
+  - CSV handling [csv](lambdas/public_api/csv) [csv_url](lambdas/public_api/csv_url)
+  - User management [users](lambdas/public_api/users)
 - **Cognito User Pool**: User authentication
 - **Lambda Authorizer**: API authorization
 - **DynamoDB Tables**:
-  - `<env>_Device`: Devices and all device information
-  - `<env>_Trail`: Trails and all trail information
-  - `<env>_DeviceTrail`: Linking between devices and trails and all link information
-  - `<env>_TrailGroup`: Trail groups and trails within them
-  - `<env>_DeviceTrailLogHour`: Device trail logs for hourly granularity
-  - `<env>_DeviceTrailLogDay`: Device trail logs for daily granularity
-  - `<env>_DeviceTrailLogWeek`: Device trail logs for weekly granularity
-  - `<env>_DeviceTrailLogMonth`: Device trail logs for monthly granularity
-  - `<env>_Error`: Errors that have happened with the error, device, and time
+  - `<env>_device_table`: Devices and all device information
+  - `<env>_trail_table`: Trails and all trail information
+  - `<env>_device_trail_table`: Linking between devices and trails and all link information
+  - `<env>_area_table`: Areas and trails within them
+  - `<env>_device_trail_log_hour_table`: Device trail logs for hourly granularity
+  - `<env>_device_trail_log_day_table`: Device trail logs for daily granularity
+  - `<env>_device_trail_log_week_table`: Device trail logs for weekly granularity
+  - `<env>_device_trail_log_month_table`: Device trail logs for monthly granularity
+  - `<env>_error_table`: Errors that have happened with the error, device, and time
 
 ## Additional Commands
 

@@ -5,59 +5,58 @@ variable "deploy_env" {
 
 locals {
   local_run = var.deploy_env == "local"
+  test_run = var.deploy_env == "test"
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
+  sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
 }
 
-// This can be changed later to not be defined here, but for now it's not less secure than before
-variable "users" {
-  type = map(object({
-    username = string
-    password = string
-    email = string
-  }))
-  default = {
-    root_admin = { username = "root_admin@gmail.com",    password = "password", email = "root_admin@gmail.com" }
-    admin = { username = "admin@gmail.com",    password = "password", email = "admin@gmail.com" }
-    trail_manager = { username = "trail_manager@gmail.com", password = "password", email = "trail_manager@gmail.com" }
-    user = { username = "user@gmail.com",   password = "password",  email = "user@gmail.com" }
+variable "user_passwords" {
+  type = string
+  default = ""
+}
+
+locals {
+  password = local.test_run ? "testPassword123!" : var.user_passwords # Sometimes google tells you your password has been found if it sucks, this avoids that issue when testing
+  users = {
+    root_admin = { email = "root_admin@gmail.com", password = local.password, groups=["root_admin", "admin", "trail_manager", "user"] }
+    admin = { email = "admin@gmail.com", password = local.password, groups=["admin", "trail_manager", "user"] }
+    trail_manager = { email = "trail_manager@gmail.com", password = local.password, groups=["trail_manager", "user"] }
+    user = { email = "user@gmail.com", password = local.password, groups=["user"] }
   }
 }
 
-#root domain
-variable "domain" {
-  type    = string
-  default = "trailcount.io"
+locals {
+  use_domain = !local.local_run && !local.test_run
+  domain = "trailcount.io"
+  cloudfront_sub_domain = "${var.deploy_env}"
+  api_sub_domain = "public-api-${var.deploy_env}"
+  verification_email = local.local_run ? var.local_user_email : "TrailCount@auth.${local.domain}"
 }
 
-#sub domain
-variable "sub" {
-  type    = string
-  default = "sectest"
-}
-
-variable "has_domain" {
-  type    = bool
-  default = false
-}
-
-#If has domain is true this needs to have a value
+// Will get populated from github actions and stored in the repo, not populated in a local run
 variable "acm_certificate_arn" {
   type        = string
   default     = "arn:"
   description = "Domain certificate arn"
 }
 
-variable "bucket_name" {
-  type    = string
-  default = "trailplanner-bucket"
+// Will get populated from github actions and stored in the repo, should be overriden for a local run too
+variable "ses_identity_arn" {
+  type        = string
+  default     = "arn:"
+  description = "SES identity arn"
 }
 
-variable "bucket_acl" {
-  type        = string
-  default     = "private"
-  description = "Bucket ACL (Access Control Listing)"
+variable "local_user_email" {
+  type = string
+  default = "email@g.rit.edu"
+}
+
+variable "bucket_name" {
+  type    = string
+  default = "trailcount-bucket"
 }
 
 # Set to false to disable auth
@@ -69,12 +68,6 @@ variable "authorization_enabled" {
 locals {
   gateway_method_authorization = var.authorization_enabled ? "CUSTOM" : "NONE"
   gateway_authorizer_type = var.authorization_enabled ? "TOKEN" : "NONE"
-}
-
-# ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
-variable "has_cdn" {
-  type    = bool
-  default = true
 }
 
 resource "random_integer" "random_suffix" {

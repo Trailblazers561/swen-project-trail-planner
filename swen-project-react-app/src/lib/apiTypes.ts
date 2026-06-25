@@ -21,3 +21,8 @@ export const GranularityText: Record<Granularity, string> = {
   [Granularity.Month]: "Monthly",
   [Granularity.Year]: "Yearly"
 };
+
+export enum HeatmapAlgorithm {
+  Absolute = "absolute",
+  Relative = "relative"
+}

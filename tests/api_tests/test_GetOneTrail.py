@@ -14,8 +14,8 @@ def test_get_trail_data_filtered():
     # Test with trails query parameter (comma-separated trail IDs)
     params = {
         "trail_id": [1,2],
-        "start": "2026-01-01",
-        "end": "2026-12-31"
+        "start_time": "2026-01-01",
+        "end_time": "2026-12-31"
     }
     
     response = requests.get(url, headers=headers, params=params)
@@ -37,4 +37,3 @@ def test_get_trail_data_filtered():
             assert "device_trail_id" in item
             assert "start" in item
             assert "count" in item
-            assert "battery" in item

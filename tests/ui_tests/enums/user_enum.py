@@ -1,18 +1,21 @@
 from enum import Enum
 
-class User(Enum):
-    ROOT_ADMIN = ("root_admin@gmail.com", "root_admin")
-    ADMIN = ("admin@gmail.com", "admin")
-    TRAIL_MANAGER = ("trail_manager@gmail.com", "trail_manager")
-    USER = ("user@gmail.com", "user")
+from enums.user_role import UserRole
 
-    def __init__(self, email, username):
+class User(Enum):
+    ROOT_ADMIN = ("root_admin@gmail.com", "root_admin", UserRole.ROOT_ADMIN)
+    ADMIN = ("admin@gmail.com", "admin", UserRole.ADMIN)
+    TRAIL_MANAGER = ("trail_manager@gmail.com", "trail_manager", UserRole.TRAIL_MANAGER)
+    USER = ("user@gmail.com", "user", UserRole.USER)
+
+    def __init__(self, email, username, role):
         self.email = email
         self.username = username
+        self.role = role
         self.password = self.get_password()
 
     def get_password(self):
-        return "password" # can be updated to retrieve secretly when needed
+        return "testPassword123!" # can be updated to retrieve secretly when needed
 
     def __str__(self):
         return self.username

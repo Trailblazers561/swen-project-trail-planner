@@ -1,11 +1,9 @@
 locals {
-  s3_origin_id = var.has_domain ? "${var.sub}.${var.domain}" : "trailplannerS3Origin"
-  full_domain  = var.has_domain ? "${var.sub}.${var.domain}" : ""
+  s3_origin_id = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : "trailcountS3Origin"
+  full_domain  = local.use_domain ? "${local.cloudfront_sub_domain}.${local.domain}" : ""
 }
 
 resource "aws_cloudfront_origin_access_control" "s3_access" {
-  count = var.has_cdn ? 1 : 0
-
   name                              = "${var.deploy_env}_s3_access"
   description                       = "s3 origin access policy"
   origin_access_control_origin_type = "s3"
@@ -14,15 +12,13 @@ resource "aws_cloudfront_origin_access_control" "s3_access" {
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
-  count = var.has_cdn ? 1 : 0
-
   origin {
-    domain_name              = aws_s3_bucket.bucket.bucket_regional_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_control.s3_access[0].id
+    domain_name              = aws_s3_bucket.react_bucket.bucket_regional_domain_name
+    origin_access_control_id = aws_cloudfront_origin_access_control.s3_access.id
     origin_id                = local.s3_origin_id
   }
 
-  aliases = var.has_domain ? [local.full_domain] : []
+  aliases = local.use_domain ? [local.full_domain] : []
 
   enabled             = true
   is_ipv6_enabled     = true
@@ -113,25 +109,23 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   tags = {
-    Environment = "production"
+    Environment = "${var.deploy_env}"
   }
 
   #Sets up domain cert uses default cloudfront cert otherwise
   viewer_certificate {
-    acm_certificate_arn            = var.has_domain ? var.acm_certificate_arn : null
-    ssl_support_method             = var.has_domain ? "sni-only" : null
-    minimum_protocol_version       = var.has_domain ? "TLSv1.2_2021" : null
-    cloudfront_default_certificate = var.has_domain ? false : true
+    acm_certificate_arn            = local.use_domain ? var.acm_certificate_arn : null
+    ssl_support_method             = local.use_domain ? "sni-only" : null
+    minimum_protocol_version       = local.use_domain ? "TLSv1.2_2021" : null
+    cloudfront_default_certificate = local.use_domain ? false : true
   }
 
-  depends_on = [aws_s3_bucket.bucket, null_resource.deploy_react_app]
+  depends_on = [aws_s3_bucket.react_bucket]
 }
 
 #Allows cloudfront access to react app bucket. Otherwise cloudfront will not have access to content and therefore be unable to deliver site.
 resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
-  count = var.has_cdn ? 1 : 0
-
-  bucket = aws_s3_bucket.bucket.id
+  bucket = aws_s3_bucket.react_bucket.id
   policy = jsonencode({
     Version = "2008-10-17"
     Id      = "PolicyForCloudFrontPrivateContent"
@@ -143,10 +137,10 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
           Service = "cloudfront.amazonaws.com"
         }
         Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.bucket.arn}/*"
+        Resource = "${aws_s3_bucket.react_bucket.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution[0].arn
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
           }
         }
       }
@@ -157,9 +151,9 @@ resource "aws_s3_bucket_policy" "cloudfront_s3_bucket_policy" {
 }
 
 output "website_url" {
-  value = var.has_cdn ? "https://${var.has_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution[0].domain_name}" : "http://${aws_s3_bucket_website_configuration.website[0].website_endpoint}"
+  value = "https://${local.use_domain ? local.full_domain : aws_cloudfront_distribution.s3_distribution.domain_name}"
 }
 
 output "distribution_id" {
-  value = "${aws_cloudfront_distribution.s3_distribution[0].id}"
+  value = aws_cloudfront_distribution.s3_distribution.id
 }

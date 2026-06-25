@@ -1,4 +1,4 @@
-# Trail Planner API Documentation
+# Trail Count API Documentation
 
 ## Base URL
 
@@ -13,6 +13,11 @@ terraform output api_gateway_url
 ```
 
 ---
+
+The public API also uses a custom domain for the main environments. The format is:
+```
+https://trailblazers-public-api-<deploy_env>.trailcount.io
+```
 
 ## Authentication
 
@@ -41,7 +46,7 @@ Authorization: Bearer {cognito_jwt_token}
   - ```aws cognito-idp initiate-auth --region us-east-1 --auth-flow USER_PASSWORD_AUTH --client-id <CLIENT_ID> --auth-parameters USERNAME=<USERNAME>,PASSWORD=<PASSWORD>```
 
 ### 2. API Key Authentication
-The `/devices` endpoint requires an API key in the request header. This will eventually be changed to mTLS authentication.
+The `/devices` endpoint uses standard cognito authentication, not an API key. This will eventually be changed to mTLS authentication and put onto a different api.
 
 **Header Format:**
 ```
@@ -52,7 +57,7 @@ X-Api-Key: {aws_api_key}
 - Rate Limit: 50 requests per second
 - Burst Limit: 100 requests
 - Daily Quota: 10,000 requests per day
- > **Note**: The usage plan limits can be changed depending on needs in `api.tf` under `device_usage_plan`
+ > **Note**: The usage plan limits can be changed depending on needs in `public_api.tf` under `device_usage_plan`
 
 ---
 
@@ -282,8 +287,8 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "trail_name": "sample_name",
-  "trail_group": "sample_group",
+  "name": "sample_name",
+  "area_name": "sample_area",
   "notes": "sample_notes",
   "latitude": 43.0847,
   "longitude": 77.6715,
@@ -292,10 +297,10 @@ Content-Type: application/json
 ```
 
 **Required Fields:**
-- `trail_name` (string): Name of the trail to create. Can be updated later.
+- `name` (string): Name of the trail to create. Can be updated later.
 
 **Optional Fields:**
-- `trail_group` (string): Name of the trail group to put the new trail in. Can be updated later.
+- `area_name` (string): Name of the area to put the new trail in. Can be updated later.
 - `notes` (string): Notes associated with the given trail. Can be updated later.
 - `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
 - `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed. Can be updated later.
@@ -327,11 +332,11 @@ Content-Type: application/json
 ```json
 {
   "trail_id": 1,
-  "trail_name": "sample_name",
-  "trail_group": "sample_group",
-  "trail_notes": "sample_notes",
-  "trail_latitude": 43.0847,
-  "trail_longitude": 77.6715
+  "name": "sample_name",
+  "area_name": "sample_area",
+  "notes": "sample_notes",
+  "latitude": 43.0847,
+  "longitude": 77.6715
 }
 ```
 
@@ -339,11 +344,11 @@ Content-Type: application/json
 - `trail_id` (int): Id for the trail to update.
 
 **Optional Fields:**
-- `field` (string): Name of the trail.
-- `trail_group` (string): Name of the trail group to put the trail in.
+- `name` (string): Name of the trail.
+- `area_name` (string): Name of the area to put the trail in.
 - `notes` (string): Notes associated with the given trail.
-- `trail_latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed.
-- `trail_longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed.
+- `latitude` (float): Latitude coordinate for the head of the trail, or where the device would be placed.
+- `longitude` (float): Longitude coordinate for the head of the trail, or where the device would be placed.
 
 **Success Response (200 OK):**
 ```json
@@ -370,7 +375,7 @@ Content-Type: application/json
 ```json
 {
   "trail_id": 1,
-  "date": "2026-12-31"
+  "date_retired": "2026-12-31"
 }
 ```
 
@@ -378,7 +383,7 @@ Content-Type: application/json
 - `trail_id` (int): Id of the trail to retire.
 
 **Optional Fields:**
-- `date` (string): ISO format date for when to set the date_retired of the trail. Defaults to time of request.
+- `date_retired` (string): ISO format date for when to set the date_retired of the trail. Defaults to time of request.
 
 **Success Response (200 OK):**
 ```json
@@ -388,11 +393,11 @@ Content-Type: application/json
 ```
 
 
-### Get Trail Group Metadata
+### Get Area Metadata
 
-Retrieves metadata for the trail groups. This endpoint is designed for cloud-to-cloud communication.
+Retrieves metadata for the areas. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `GET /trail_groups`
+**Endpoint:** `GET /areas`
 
 **Authentication:** Cognito JWT Access Token (required)
 
@@ -403,7 +408,7 @@ Content-Type: application/json
 ```
 
 **Query Parameters:**
-- `trail_group` (optional, "int"): Specific trail group name to retrieve metadata from, can be specified multiple times eg. (?trail_group=Adirondack%20Park&trail_group=High%20Peaks%20Wilderness).
+- `area` (optional, "str"): Specific area name to retrieve metadata from, can be specified multiple times eg. (?area=Adirondack%20Park&area=High%20Peaks%20Wilderness).
 
 **Success Response (200 OK):**
 ```json
@@ -417,11 +422,11 @@ Content-Type: application/json
 }
 ```
 
-### Delete Trail Group
+### Delete Area
 
-Deletes the specified trail group. This endpoint is designed for cloud-to-cloud communication.
+Deletes the specified area. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `DELETE /trail_groups`
+**Endpoint:** `DELETE /areas`
 
 **Authentication:** Cognito JWT Access Token (required)
 
@@ -439,12 +444,12 @@ Content-Type: application/json
 ```
 
 **Required Fields:**
-- `name` (string): Name of the trail group to delete.
+- `name` (string): Name of the area to delete.
 
 **Success Response (200 OK):**
 ```json
 {
-  "message": "Trail group deleted successfully"
+  "message": "Area deleted successfully"
 }
 ```
 
@@ -465,8 +470,8 @@ Content-Type: application/json
 
 **Query Parameters:**
 - `trail_id` ("int"): Specific trail id to retrieve logs of, can be specified multiple times eg. (?trail_id=1&trail_id=2).
-- `start` (string): ISO format string for the earliest date to retrieve logs from.
-- `end` (string): ISO format string for the latest date to retrieve logs from.
+- `start_time` (string): ISO format string for the earliest date to retrieve logs from.
+- `end_time` (string): ISO format string for the latest date to retrieve logs from.
 - `granularity` (optional, string): Granularity of the logs to retrieve, defaults to _day_. Valid options are _hour_, _day_, _week_, and _month_.
 
 **Success Response (200 OK):**
@@ -541,8 +546,8 @@ Content-Type: application/json
 
 **Query Parameters:**
 - `trail_id` ("int"): Specific trail id to retrieve logs of, can be specified multiple times eg. (?trail_id=1&trail_id=2).
-- `start_date` (string): ISO format string for the earliest date to retrieve logs from.
-- `end_date` (string): ISO format string for the latest date to retrieve logs from.
+- `start_time` (string): ISO format string for the earliest date to retrieve logs from.
+- `end_time` (string): ISO format string for the latest date to retrieve logs from.
 - `granularity` (optional, string): Granularity of the logs to retrieve, defaults to _day_. Valid options are _hour_, _day_, _week_, and _month_.
 
 **Success Response (200 OK):**
@@ -587,7 +592,7 @@ Content-Type: application/json
 
 Retrieves a link that can be used to upload a csv file to. This endpoint is designed for cloud-to-cloud communication.
 
-**Endpoint:** `GET /csv/csv-url`
+**Endpoint:** `GET /csv-url`
 
 **Authentication:** Cognito JWT Access Token (required)
 
@@ -680,7 +685,7 @@ Content-Type: application/json
 - **Daily Quota:** 10,000 requests per day
 
 When rate limits are exceeded, you will receive a `429 Too Many Requests` response.
- > **Note**: The usage plan limits can be changed depending on needs in `api.tf` under `device_usage_plan`
+ > **Note**: The usage plan limits can be changed depending on needs in `public_api.tf` under `device_usage_plan`
 
 ### Cognito Authenticated Endpoints
 Rate limits are determined by AWS API Gateway default limits and your AWS account configuration.

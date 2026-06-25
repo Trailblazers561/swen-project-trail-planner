@@ -14,6 +14,9 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
   CONFIG_DIRECTORY: "./terraform"
+  TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
+  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
 
 jobs:
   terraform-plan:
@@ -54,10 +57,14 @@ jobs:
 
       - name: Setup Terraform Folder
         run: |
+          mkdir -p lambdas/layers/helper/python
+          cp lambdas/helper_functions.py lambdas/layers/helper/python
           mkdir -p terraform/lambdas
           cp -r lambdas/* terraform/lambdas/
           mkdir -p terraform/swen-project-react-app
           cp -r swen-project-react-app/* terraform/swen-project-react-app/
+          mkdir -p terraform/sample_data
+          cp -r sample_data/* terraform/sample_data/
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
@@ -92,7 +99,6 @@ jobs:
         id: ensure-npm-build
         run: |
           cd swen-project-react-app
-          python setup_env.py --env ${{ env.TF_VAR_deploy_env }}
           npm install
           npm run build
 

@@ -189,7 +189,7 @@ Use Cases
 
 \[/dashboard\]  
 ![][image4]  
-Not shown here are the dropdown menus for trail and trail group CRUD, as well as the popups that would appear when clicked.
+Not shown here are the dropdown menus for trail and area CRUD, as well as the popups that would appear when clicked.
 
 Use Cases:
 
@@ -219,16 +219,16 @@ Use Cases:
       1. Trail Name  
       2. Trail Location  
    3. Must be able to delete Trail  
-8. Trail Group CRUD  
-   1. Must be able to create trail group  
-      1. Group name  
-      2. Trails in group  
-         1. Should use a search tool rather than scroll view to add trails to the group  
-   2. Must be able to update trail group  
-      1. Group Name  
-      2. Trails in group  
+8. Area CRUD  
+   1. Must be able to create area  
+      1. Area name  
+      2. Trails in area  
+         1. Should use a search tool rather than scroll view to add trails to the area  
+   2. Must be able to update area  
+      1. A Name  
+      2. Trails in area  
          1. Same as above  
-   3. Must be able to delete trail group  
+   3. Must be able to delete area  
 9. Device CRUD  
    1. Must be able to connect/”create” a device  
       1. Manual "add device" function for adding offline devices to the persistence layer  

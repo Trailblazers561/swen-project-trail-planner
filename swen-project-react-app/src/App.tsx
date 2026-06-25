@@ -1,35 +1,39 @@
 import './App.css'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
-import ConfirmUserPage from "./cognito/confirmUserPage";
 import LandingPage from "./landingPage";
-import React from 'react';
 import Test from './Test';
+import DeviceManagementPage from './deviceManagementPage';
+import Privileges from './userconfig';
+import { Role, useAuth } from "@/Context";
+import Navbar from './components/Navbar';
 
 function App() {
-  const isAuthenticated = () => {
-    const accessToken = sessionStorage.getItem("accessToken");
-    return !!accessToken;
-  };
+    const { currentRole } = useAuth();
 
-  return (
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={<Navigate replace to="/home" />
-            }
-          />
-          <Route path="/home" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/confirm" element={<ConfirmUserPage />} />
-          <Route path="/dashboard" 
-            element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/login" />}
-          />
-          <Route path="/test" element={<Test />} />
-        </Routes>
-      </BrowserRouter>
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route element={<><Navbar/><Outlet/></>}>
+                    <Route
+                        path="/"
+                        element={<Navigate replace to="/home" />
+                        }
+                    />
+                    <Route path="/home" element={<LandingPage />} />
+                    <Route path="/dashboard" element={<DashBoard />} />
+                    <Route path="/test" element={<Test />} />
+                    <Route path="/devices" 
+                        element={(currentRole && currentRole >= Role.Manager) ? <DeviceManagementPage /> : <Navigate replace to="/login" />} 
+                    />
+                    <Route path="/privileges" 
+                        element={(currentRole && currentRole >= Role.Admin) ? <Privileges /> : <Navigate replace to="/login" />} 
+                    />
+                </Route>
+                <Route path="/login" element={<LoginPage />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

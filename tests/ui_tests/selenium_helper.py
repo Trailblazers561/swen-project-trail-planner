@@ -6,34 +6,45 @@ from selenium.webdriver import ActionChains
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException, NoSuchElementException, ElementNotInteractableException
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import os
 
-from ui_config import BASE_URL
+from ui_config import BASE_URL, LOCAL_RUN
 
-DEFAULT_WAIT = 2
-WEBSITE_ROOT = (By.XPATH, "//div[@id='loginForm']")
+DEFAULT_WAIT = 10
+WEBSITE_ROOT = (By.XPATH, "//div[@id='root']")
 
 class SeleniumHelper:
     def get_driver() -> webdriver.Chrome:
         service = Service(ChromeDriverManager().install())
 
         options = Options()
-        options.add_argument('--headless')
+
+        if not LOCAL_RUN:
+            options.add_argument('--headless')
+            options.add_argument("--window-size=1920,1080")
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         options.add_argument('--disable-extensions')
         options.add_argument('--start-maximized')
+        options.add_argument("--log-level=3")
         # Memory optimization
         options.add_argument('--disk-cache-size=1')
         options.add_argument('--media-cache-size=1')
-        options.add_argument('--incognito')
         options.add_argument('--remote-debugging-port=9222')
         options.add_argument('--aggressive-cache-discard')
 
+        prefs = {
+            "download.default_directory": os.path.abspath(os.path.join(os.path.dirname(__file__), "downloads")),
+            "download.prompt_for_download": False
+        }
+        options.add_experimental_option("prefs", prefs)
+
         driver = webdriver.Chrome(service=service, options=options)
-        driver.get(BASE_URL+"/login")
+        driver.get(BASE_URL)
         SeleniumHelper.wait_for_element_appear(driver, WEBSITE_ROOT, 30)
         return driver
 
@@ -58,23 +69,55 @@ class SeleniumHelper:
 
     def enter_text_to_element(driver: webdriver.Chrome, locator: tuple[str, str], text: str) -> None:
         print(f"Entering into element {locator} the text: {text}")
-        element = driver.find_element(*locator)
-        element.clear()
-        element.send_keys(text)
+        try:
+            element = driver.find_element(*locator)
+            element.clear()
+            element.send_keys(text)
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.clear()
+            element.send_keys(text)
 
     def retrieve_text_from_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
         print(f"Retrieving text from element {locator}")
-        element = driver.find_element(*locator)
-        return element.text
+        try:
+            element = driver.find_element(*locator)
+            return element.text
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            return element.text
+
+    def retrieve_text_from_elements(driver: webdriver.Chrome, locator: tuple[str, str]) -> str:
+        print(f"Retrieving text from elements {locator}")
+        try:
+            elements = driver.find_elements(*locator)
+            return [element.text for element in elements]
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            elements = driver.find_elements(*locator)
+            return [element.text for element in elements]
 
     def select_dropdown_option(driver: webdriver.Chrome, locator: tuple[str, str], option: str) -> None:
         print(f"Selecting element {locator} dropdown option {option}")
         element = driver.find_element(*locator)
         select = Select(element)
         try:
-            select.select_by_visible_text(option)
-        except:
-            select.select_by_value(option)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            try:
+                select.select_by_visible_text(option)
+            except:
+                select.select_by_value(option)
 
     def retrieve_dropdown_options(driver: webdriver.Chrome, locator: tuple[str, str]) -> list[str]:
         print(f"Retrieving element {locator} dropdown options")
@@ -84,8 +127,23 @@ class SeleniumHelper:
 
     def click_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> None:
         print(f"Clicking on element {locator}")
-        element = driver.find_element(*locator)
-        element.click()
+        try:
+            element = driver.find_element(*locator)
+            element.click()
+        except ElementClickInterceptedException:
+            print("Threw ElementClickInterceptedException, scrolling to center and trying again")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            element.click()
+        except StaleElementReferenceException:
+            print("Threw StaleElementReferenceException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.click()
+        except NoSuchElementException:
+            print("Threw NoSuchElementException, trying again")
+            SeleniumHelper.wait(1)
+            element = driver.find_element(*locator)
+            element.click()
 
     def hover_element(driver: webdriver.Chrome, locator: tuple[str, str]) -> None:
         print(f"Hovering over element {locator}")
@@ -97,6 +155,16 @@ class SeleniumHelper:
         print(f"Retrieving element {locator} attribute {attribute}")
         element = driver.find_element(*locator)
         return element.get_attribute(attribute)
+
+    def retrieve_element_style(driver: webdriver.Chrome, locator: tuple[str, str], style: str) -> str:
+        print(f"Retrieving element {locator} style {style}")
+        element = driver.find_element(*locator)
+        return element.value_of_css_property(style)
+
+    def retrieve_checkbox_selected(driver: webdriver.Chrome, locator: tuple[str, str]) -> bool:
+        print(f"Retrieving element {locator} selected")
+        element = driver.find_element(*locator)
+        return element.is_selected()
 
     def dismiss_alert(driver: webdriver.Chrome) -> str:
         print(f"Dismissing alert")
@@ -114,5 +182,3 @@ class SeleniumHelper:
 
     def wait(duration: float):
         time.sleep(duration)
-
-    
