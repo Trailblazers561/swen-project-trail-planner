@@ -19,7 +19,7 @@ resource "null_resource" "push_step_ca_image" {
   }
 
   provisioner "local-exec" {
-    interpreter = ["python", "-c"]
+    interpreter = ["python3", "-c"]
     command     = <<-EOT
 import subprocess, sys
 region = "${data.aws_region.current.name}"
