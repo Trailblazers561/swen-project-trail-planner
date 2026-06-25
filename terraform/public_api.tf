@@ -46,16 +46,6 @@ locals {
         handler = "device_metadata_put.update_device_trail_association"
       }
     }
-    devices = {
-      POST = {
-        file = "devices/devices_post.py"
-        handler = "devices_post.upload_device_info"
-      }
-      PUT = {
-        file = "devices/devices_put.py"
-        handler = "devices_put.upload_device_data"
-      }
-    }
     device_management = {
       GET = {
         file = "device_management/device_management_get.py"
