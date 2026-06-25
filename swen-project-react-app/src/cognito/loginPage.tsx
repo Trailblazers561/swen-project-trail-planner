@@ -4,7 +4,7 @@ import { signIn, signUp, confirmSignUp, resendConfirmationCode, forgotPassword, 
 import React from "react";
 import { Button } from "@/components/templates/button";
 import { Eye, EyeOff, CircleAlert, CircleCheck, Undo2, ArrowRight, LoaderCircle } from "lucide-react";
-import { useAuth } from "@/Context";
+import { useAuth } from "@/AuthContext";
 import {
   UserNotConfirmedException,
   UserNotFoundException,

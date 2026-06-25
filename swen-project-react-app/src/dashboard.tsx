@@ -25,7 +25,8 @@ import { Loader2, Check, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/templates/popover.tsx";
 import { fileOpen } from 'browser-fs-access';
 import { useSearchParams } from "react-router-dom";
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext.tsx";
+import { useDate } from "@/DateContext.tsx"
 import moment from "moment-timezone";
 
 interface Trail {
@@ -61,6 +62,7 @@ interface TrailListItem {
 const dashboard = () => {
 
     const { currentRole } = useAuth();
+    const { startDate, endDate, granularity, setStartDate, setEndDate, setGranularity } = useDate();
     const {
         getTrailLogs,
         getDeviceMetadata,
@@ -96,25 +98,11 @@ const dashboard = () => {
 
     const [graphLines, setGraphLines] = useState<Line[]>([]);
 
-    // Auto-select one year ago as start date
-    const [selectedDate, setSelectedDate] = useState<Date | null>(
-        (() => {
-            const now = new Date();
-            const lastYear = new Date(now);
-            lastYear.setFullYear(now.getFullYear() - 1);
-            return lastYear;
-        })()
-    );
-    const [selectedDateEnd, setSelectedDateEnd] = useState<Date | null>(
-        new Date()
-    );
-
-    const [range, setRange] = React.useState<DateRange | undefined>({ from: selectedDate ?? undefined, to: selectedDateEnd ?? undefined })
+    const [range, setRange] = useState<DateRange | undefined>({ from: startDate ?? undefined, to: endDate ?? undefined })
     const [searchParams, setSearchParams] = useSearchParams();
     const trailName = searchParams.get("trailName");
     const [trails, setTrails] = useState<string[]>(trailName ? [trailName] : []);
 
-    const [granularity, setGranularity] = useState<Granularity>(Granularity.Month);
     const [granularityOptions, setGranularityOptions] = useState<Granularity[]>([]);
     const [trailOptions, setTrailOptions] = useState<MultiSelectOption[] | MultiSelectGroup[]>([])
     const [areaOptions, setAreaOptions] = useState<MultiSelectOption[]>([])
@@ -144,8 +132,8 @@ const dashboard = () => {
         if (
             trailMetadata.length > 0 &&
             (trails.length === 0 || trails.length === 1) &&
-            selectedDate &&
-            selectedDateEnd &&
+            startDate &&
+            endDate &&
             !hasDefaulted
         ) {
             setHasDefaulted(true);
@@ -154,15 +142,15 @@ const dashboard = () => {
             setTimeout(() => {
                 if (granularity) {
                     getResponse(
-                        selectedDate,
-                        selectedDateEnd,
+                        startDate,
+                        endDate,
                         trails,
                         granularity
                     );
                 }
             }, 100);
         }
-    }, [trailMetadata, selectedDate, selectedDateEnd, granularity, hasDefaulted]);
+    }, [trailMetadata, startDate, endDate, granularity, hasDefaulted]);
 
     const loadTrailData = async () => {
         try {
@@ -227,17 +215,17 @@ const dashboard = () => {
 
         const trailList = trails.map(trail_name => trailMap[trail_name]);
 
-        if (selectedDate === null) {
+        if (startDate === null) {
             console.error("Error exporting: startDate must not be null");
             return;
         }
-        if (selectedDateEnd === null) {
+        if (endDate === null) {
             console.error("Error exporting: endDate must not be null");
             return;
         }
         
         try{
-            const response = await exportCSV(trailList, selectedDate, selectedDateEnd, granularity);
+            const response = await exportCSV(trailList, startDate, endDate, granularity);
             if (!response.success)
                 throw new Error("Failed to export");
 
@@ -275,11 +263,11 @@ const dashboard = () => {
         // Refresh graph - wait for state to update
         setTimeout(() => {
             const currentTrails = trails.length > 0 ? trails : [];
-            if (selectedDate && selectedDateEnd && granularity) {
+            if (startDate && endDate && granularity) {
                 if (trails.length === 0) {
                     setTrails(currentTrails);
                 }
-                getResponse(selectedDate, selectedDateEnd, currentTrails, granularity);
+                getResponse(startDate, endDate, currentTrails, granularity);
             }
         }, 500);
     };
@@ -318,12 +306,13 @@ const dashboard = () => {
         }
 
         setGranularityOptions(options);
-        setGranularity(options[0]);
+        if (!options.includes(granularity))
+            setGranularity(options[0]);
     }
 
     useEffect(() => {
-        updateGranularityOptions(selectedDate, selectedDateEnd);
-    }, [selectedDate, selectedDateEnd]);
+        updateGranularityOptions(startDate, endDate);
+    }, [startDate, endDate]);
 
     useEffect(() => {
         updateTrailsOptions();
@@ -337,10 +326,10 @@ const dashboard = () => {
     }, [areas])
 
     useEffect(() => {
-        if (selectedDate && selectedDateEnd && trails.length > 0 && granularity) {
-            getResponse(selectedDate, selectedDateEnd, trails, granularity);
+        if (startDate && endDate && trails.length > 0 && granularity) {
+            getResponse(startDate, endDate, trails, granularity);
         }
-    }, [selectedDate, selectedDateEnd, trails, granularity]);
+    }, [startDate, endDate, trails, granularity]);
 
     function getDateRanges(
         startDate: Date,
@@ -527,11 +516,11 @@ const dashboard = () => {
     }
 
     const handleStartDateChange = (startDate: Date | null) => {
-        setSelectedDate(startDate);
+        setStartDate(startDate);
     };
 
     const handleEndDateChange = (endDate: Date | null) => {
-        setSelectedDateEnd(endDate);
+        setEndDate(endDate);
     };
 
     const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -547,9 +536,8 @@ const dashboard = () => {
             timezoneRange.to = new Date(`${userISO}T23:00:00${newYorkOffset}`);
         }
 
-        setRange(range);
-        setSelectedDate(timezoneRange?.from ?? null);
-        setSelectedDateEnd(timezoneRange?.to ?? null);
+        setStartDate(timezoneRange?.from ?? null);
+        setEndDate(timezoneRange?.to ?? null);
         handleStartDateChange(timezoneRange?.from ?? null);
         handleEndDateChange(timezoneRange?.to ?? null);
 
@@ -557,6 +545,10 @@ const dashboard = () => {
 
         updateGranularityOptions(timezoneRange.from, timezoneRange.to);
     }
+
+    useEffect(() => {
+        setRange({from: startDate ?? undefined, to: endDate ?? undefined});
+    }, [startDate, endDate])
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
@@ -768,7 +760,7 @@ const dashboard = () => {
             paper_bgcolor: "white",
 
             xaxis: {
-                range: lines.length === 0 ? [selectedDate?.toISOString(), selectedDateEnd?.toISOString()] : undefined,
+                range: lines.length === 0 ? [startDate?.toISOString(), endDate?.toISOString()] : undefined,
                 type: "date",
                 title: {
                     text: "Date",
@@ -873,9 +865,9 @@ const dashboard = () => {
         const shapes: NonNullable<Layout["shapes"]> = [];
         let dates;
         if (!lines.length || !lines[0].startDates?.length) {
-            if (!selectedDate || !selectedDateEnd)
+            if (!startDate || !endDate)
                 return shapes;
-            dates = getDateRanges(selectedDate, selectedDateEnd, granularity).map(d => d.start.toISOString())
+            dates = getDateRanges(startDate, endDate, granularity).map(d => d.start.toISOString())
         } else {
             dates = lines[0].startDates.map(d => d.toISOString());
         }
@@ -917,7 +909,7 @@ const dashboard = () => {
                                         <SelectValue placeholder="Select an option" data-testid="selected-granularity-option"/>
                                     </SelectTrigger>
 
-                                    <SelectContent>
+                                    <SelectContent position="popper">
                                         <SelectGroup>
                                             {granularityOptions.map((option) => (
                                                 <SelectItem key={option} value={option} data-testid="granularity-option">

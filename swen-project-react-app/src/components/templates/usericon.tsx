@@ -2,7 +2,7 @@ import { Button } from "@/components/templates/button"
 import { User, LogOut, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator } from "./dropdown-menu"
 import { useNavigate } from "react-router-dom";
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext";
 
 export function UserIcon() {
     const { currentRole, clearAuth } = useAuth();

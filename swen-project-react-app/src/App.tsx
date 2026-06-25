@@ -6,7 +6,7 @@ import LandingPage from "./landingPage";
 import Test from './Test';
 import DeviceManagementPage from './deviceManagementPage';
 import Privileges from './userconfig';
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext";
 import Navbar from './components/Navbar';
 
 function App() {

@@ -1,4 +1,4 @@
-import { Role, roleMap, useAuth } from "@/Context";
+import { Role, roleMap, useAuth } from "@/AuthContext";
 import React, { useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { TrailData } from "@/api";
