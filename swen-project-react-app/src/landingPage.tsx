@@ -79,15 +79,12 @@ const LandingPage = () => {
             timezoneRange.to = new Date(`${userISO}T23:00:00${newYorkOffset}`);
         }
 
+        setRange(range);
         setStartDate(timezoneRange?.from ?? null);
         setEndDate(timezoneRange?.to ?? null);
         handleStartDateChange(timezoneRange?.from ?? null);
         handleEndDateChange(timezoneRange?.to ?? null);
     }
-
-    useEffect(() => {
-        setRange({from: startDate ?? undefined, to: endDate ?? undefined})
-    }, [startDate, endDate])
 
     useEffect(() => {
         async function fetchTrails() {

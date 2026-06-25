@@ -536,6 +536,7 @@ const dashboard = () => {
             timezoneRange.to = new Date(`${userISO}T23:00:00${newYorkOffset}`);
         }
 
+        setRange(range);
         setStartDate(timezoneRange?.from ?? null);
         setEndDate(timezoneRange?.to ?? null);
         handleStartDateChange(timezoneRange?.from ?? null);
@@ -545,10 +546,6 @@ const dashboard = () => {
 
         updateGranularityOptions(timezoneRange.from, timezoneRange.to);
     }
-
-    useEffect(() => {
-        setRange({from: startDate ?? undefined, to: endDate ?? undefined});
-    }, [startDate, endDate])
 
     const handleTrailChange = (selectedTrails: string[]) => {
         setTrails(selectedTrails);
