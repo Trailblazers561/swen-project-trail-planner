@@ -191,7 +191,7 @@ EOF
     Name = "${var.deploy_env}_ca_instance"
   }
 
-  depends_on = [null_resource.push_step_ca_image]
+  depends_on = [aws_ecr_repository.step_ca]
 
 }
 

@@ -65,6 +65,16 @@ jobs:
           mkdir -p terraform/sample_data
           cp -r sample_data/* terraform/sample_data/
 
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Start ECR Push Background Job
+        run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
+
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
         id: apply-upload
@@ -87,12 +97,13 @@ jobs:
           run: ${{ steps.apply-run.outputs.run_id }}
           comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+      - name: Wait for ECR Push
+        run: |
+          PID=$(cat /tmp/ecr_push.pid)
+          wait $PID
+          EXIT_CODE=$?
+          cat /tmp/ecr_push.log
+          exit $EXIT_CODE
 
       - name: Add React Files To React Bucket
         run: |
