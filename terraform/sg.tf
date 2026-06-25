@@ -51,7 +51,9 @@ resource "null_resource" "nuke_enis" {
     interpreter = ["python3", "-c"]
     command    = <<EOT
 import subprocess, json, time
-result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', 'Name=subnet-id,Values=${self.triggers.subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json'], capture_output=True, text=True)
+region = "${data.aws_region.current.name}"
+subnet_id = "${self.triggers.subnet_id}"
+result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', f'Name=subnet-id,Values={subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json', '--region', region], capture_output=True, text=True)
 if not result.stdout.strip():
     print("No ENIs found or AWS CLI error")
     print("stderr:", result.stderr)
@@ -62,7 +64,7 @@ if not enis:
     exit(0)
 for eni in enis:
     for attempt in range(40):
-        r = subprocess.run(['aws', 'ec2', 'delete-network-interface', '--network-interface-id', eni], capture_output=True, text=True)
+        r = subprocess.run(['aws', 'ec2', 'delete-network-interface', '--network-interface-id', eni, '--region', region], capture_output=True, text=True)
         if r.returncode == 0:
             break
         if 'currently in use' in r.stderr:
