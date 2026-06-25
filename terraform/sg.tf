@@ -44,6 +44,7 @@ resource "null_resource" "nuke_enis" {
   triggers = {
     subnet_id = aws_subnet.private_subnet.id
     sg_id     = aws_security_group.ca_sg.id
+    region    = data.aws_region.current.name
   }
 
   provisioner "local-exec" {
@@ -51,7 +52,7 @@ resource "null_resource" "nuke_enis" {
     interpreter = ["python3", "-c"]
     command    = <<EOT
 import subprocess, json, time
-region = "${data.aws_region.current.name}"
+region = "${self.triggers.region}"
 subnet_id = "${self.triggers.subnet_id}"
 result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', f'Name=subnet-id,Values={subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json', '--region', region], capture_output=True, text=True)
 if not result.stdout.strip():
