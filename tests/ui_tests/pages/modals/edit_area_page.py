@@ -26,6 +26,7 @@ class EditAreaPage:
 
     def select_area(self, area_name: str):
         SH.select_dropdown_option(area_name)
+        SH.wait(1)
 
     def set_area_information(self, area: AreaDTO):
         if area.name:

@@ -37,6 +37,7 @@ class EditTrailPage:
         if correct_option == None:
             raise NoSuchElementException(f"Cannot find option with trail_name [{trail_name}]")
         SH.select_dropdown_option(self.driver, self.trail_select, correct_option)
+        SH.wait(1)
 
     def set_trail_information(self, trail: TrailDTO):
         if trail.name:
