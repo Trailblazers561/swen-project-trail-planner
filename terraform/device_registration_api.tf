@@ -73,3 +73,21 @@ resource "aws_lambda_permission" "allow_registration_api_register_device" {
   principal = "apigateway.amazonaws.com"
   source_arn = "${aws_api_gateway_rest_api.registration_api.execution_arn}/*/*"
 }
+
+resource "aws_api_gateway_domain_name" "api_reg_domain" {
+  domain_name = "register${var.sub}.${var.domain}"
+  regional_certificate_arn = var.acm_certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  security_policy = "SecurityPolicy_TLS13_1_2_2021_06"
+  endpoint_access_mode = "STRICT"
+}
+
+resource "aws_api_gateway_base_path_mapping" "api_reg_mapping" {
+  api_id      = aws_api_gateway_rest_api.registration_api.id
+  stage_name  = aws_api_gateway_stage.registration_api_stage.stage_name
+  domain_name = aws_api_gateway_domain_name.api_reg_domain.domain_name
+}

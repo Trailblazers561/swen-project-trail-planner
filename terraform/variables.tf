@@ -28,13 +28,13 @@ variable "users" {
 #root domain
 variable "domain" {
   type    = string
-  default = "example.com"
+  default = "trailcount.io"
 }
 
 #sub domain
 variable "sub" {
   type    = string
-  default = "adiron"
+  default = "sectest"
 }
 
 variable "has_domain" {

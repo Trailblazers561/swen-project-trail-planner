@@ -203,7 +203,7 @@ resource "aws_api_gateway_integration" "registration_edit_integration" {
 # PUT /block
 resource "aws_api_gateway_resource" "block" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.devices.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   path_part   = "block"
 }
 
@@ -280,7 +280,7 @@ resource "aws_api_gateway_integration" "block_put_integration" {
 # PUT /archive
 resource "aws_api_gateway_resource" "archive" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.devices.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   path_part   = "archive"
 }
 
@@ -991,8 +991,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_integration.registration_edit_integration.uri,
       aws_api_gateway_integration.block_put_integration.uri,
       aws_api_gateway_integration.archive_put_integration.uri,
-      aws_api_gateway_integration.renew_put_integration.uri,
-
 
       # Authorizer Stuff
       aws_api_gateway_authorizer.lambda_authorizer.id,
@@ -1030,7 +1028,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
       aws_api_gateway_method.block_options.authorization,
       aws_api_gateway_method.archive_put.authorization,
       aws_api_gateway_method.archive_options.authorization,
-      aws_api_gateway_method.renew_put.authorization,
 
       # Permissions
       aws_lambda_permission.allow_apigateway_all_functions
@@ -1073,8 +1070,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
     aws_api_gateway_integration_response.registration_options_integration_response,
     aws_api_gateway_integration_response.block_options_integration_response,
     aws_api_gateway_integration_response.archive_options_integration_response,
-    aws_api_gateway_integration_response.renew_options_integration_response,
-    aws_api_gateway_integration.renew_put_integration,
+
   ]
 }
 
@@ -1186,4 +1182,22 @@ resource "aws_api_gateway_usage_plan_key" "device_usage_plan_key" {
 # Output
 output "api_gateway_url" {
   value = aws_api_gateway_stage.api_stage.invoke_url
+}
+
+resource "aws_api_gateway_domain_name" "api_main_domain" {
+  domain_name = "main${var.sub}.${var.domain}"
+  regional_certificate_arn = var.acm_certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  security_policy = "SecurityPolicy_TLS13_1_2_2021_06"
+  endpoint_access_mode = "STRICT"
+}
+
+resource "aws_api_gateway_base_path_mapping" "api_main_mapping" {
+  api_id      = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_stage.api_stage.stage_name
+  domain_name = aws_api_gateway_domain_name.api_main_domain.domain_name
 }

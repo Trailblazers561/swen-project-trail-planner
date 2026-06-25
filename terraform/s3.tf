@@ -113,3 +113,20 @@ resource "aws_s3_bucket" "truststore_bucket" {
 
   force_destroy = true
 }
+
+resource "aws_s3_bucket_policy" "truststore_policy" {
+  bucket = aws_s3_bucket.truststore_bucket.id
+  policy = jsonencode({
+Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.truststore_bucket.arn}/truststore.pem"
+      }
+    ]
+  })
+}

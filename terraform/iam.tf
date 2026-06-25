@@ -170,6 +170,14 @@ data "aws_iam_policy_document" "ca_s3_policy" {
       "arn:aws:s3:::${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem"
     ]
   }
+
+    statement {
+    effect  = "Allow"
+    actions = ["s3:ListBucket"]
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.truststore_bucket.bucket}"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "ca_s3" {
