@@ -99,11 +99,17 @@ jobs:
 
       - name: Wait for ECR Push
         run: |
-          PID=$(cat /tmp/ecr_push.pid)
-          wait $PID
-          EXIT_CODE=$?
+          echo "Waiting for ECR push to complete"
+          while [ ! -f /tmp/ecr_done ]; do
+            sleep 10
+          done
           cat /tmp/ecr_push.log
-          exit $EXIT_CODE
+          RESULT=$(cat /tmp/ecr_done)
+          if [ "$RESULT" != "success" ]; then
+            echo "ECR push failed: $RESULT"
+            exit 1
+          fi
+          echo "ECR push completed successfully"
 
       - name: Add React Files To React Bucket
         run: |
