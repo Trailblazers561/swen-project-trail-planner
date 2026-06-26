@@ -72,6 +72,16 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
+      - name: Debug ECR Push Start
+        run: |
+          sleep 5
+          echo "=== ECR push log so far ==="
+          cat /tmp/ecr_push.log 2>/dev/null || echo "log file does not exist"
+          echo "=== Background jobs ==="
+          jobs -l
+          echo "=== Processes ==="
+          ps aux | grep push_step_ca
+
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
         id: apply-run

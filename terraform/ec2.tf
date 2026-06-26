@@ -89,7 +89,7 @@ until aws ecr describe-repositories --region ${data.aws_region.current.name} > /
 done
 
 # pull step-ca image, inelegant retry loop to ensure the "other part" of the ecr endpoint is ready to go. 2 minutes and change should be sufficient.
-for i in 1 2 3 4 5; do
+for i in 1 2 3 4 5 6 7 8 9 10; do
   docker pull ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} && break
   echo "docker pull failed, attempt number $i, retrying in 30 secs"
   sleep 30
