@@ -1,5 +1,7 @@
 import boto3
 import time
+import subprocess
+import sys
 
 ecr = boto3.client('ecr')
 sts = boto3.client('sts')
