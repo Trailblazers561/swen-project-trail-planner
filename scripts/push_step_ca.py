@@ -2,9 +2,11 @@ import boto3
 import time
 import subprocess
 import sys
+import os
 
-ecr = boto3.client('ecr')
-sts = boto3.client('sts')
+region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+ecr = boto3.client('ecr', region_name=region)
+sts = boto3.client('sts', region_name=region)
 deploy_env = sys.argv[1]
 repo_name = f"{deploy_env}-step-ca"
 
@@ -18,7 +20,7 @@ try:
             response = ecr.describe_repositories(repositoryNames=[repo_name])
             print("ECR ready to go, pushing stepCA")
             break
-        except ecr.exceptions.ResourceNotFoundException:
+        except ecr.exceptions.RepositoryNotFoundException:
             print("No ECR found yet, waiting for 30s")
             time.sleep(30)
 
@@ -33,7 +35,7 @@ try:
     )
 
     subprocess.run(["docker", "pull", "smallstep/step-ca:latest"], check=True)
-    subprocess.run(["docker", "tag", f"{repo_url}:latest"], check=True)
+    subprocess.run(["docker", "tag", "smallstep/step-ca:latest", f"{repo_url}:latest"], check=True)
     subprocess.run(["docker", "push", f"{repo_url}:latest"], check=True)
 
     print(f"StepCA push to {repo_url}:latest successful")
