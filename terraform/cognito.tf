@@ -33,9 +33,14 @@ resource "aws_cognito_user_pool_client" "client" {
 resource "aws_cognito_user" "admin" {
   user_pool_id = aws_cognito_user_pool.user_pool.id
   username     = "admin@gmail.com"
-  password     = "REDACTED"
+  password     = local.effective_admin_password
   attributes = {
     email          = "admin@gmail.com"
     email_verified = true
   }
+}
+
+output "admin_password" {
+  value = local.effective_admin_password
+  sensitive = true
 }

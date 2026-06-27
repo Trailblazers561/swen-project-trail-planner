@@ -62,6 +62,13 @@ variable "device_api_key" {
   description = "API key value for the device endpoint. Null = AWS auto-generates (use for staging)."
 }
 
+variable "admin_password" {
+  type = string
+  sensitive = true
+  default = null
+  description = "The password for the admin account to use."
+}
+
 variable "env" {
   type        = string
   default     = ""
