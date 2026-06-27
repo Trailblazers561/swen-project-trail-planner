@@ -48,7 +48,6 @@ def write_values(env, password):
         file.write(f"CLOUDFRONT_URL=http://{retrieve_cloudfront_url(env)}\n")
         file.write(f"API_URL={retrieve_api_url(env)}\n")
         file.write(f"API_TOKEN={retrieve_token(env, password)}\n")
-        file.write(f"API_KEY={env}-trail-co-key-trail-trail-trail-trail\n")
         file.write(f"USER_PASSWORDS={password}\n")
         file.write(f"LOCAL_RUN={'true' if env == 'local' else 'false'}")
 
