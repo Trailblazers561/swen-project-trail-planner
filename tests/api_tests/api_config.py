@@ -15,9 +15,6 @@ BASE_URL = os.getenv("API_URL")
 # This token will expire - update it when needed
 COGNITO_TOKEN = os.getenv("API_TOKEN")
 
-# API Key for /devices endpoint
-API_KEY = os.getenv("API_KEY")
-
 # Headers for Cognito-authenticated requests
 def get_cognito_headers():
     return {
