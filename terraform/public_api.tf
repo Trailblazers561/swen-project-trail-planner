@@ -191,12 +191,6 @@ resource "aws_api_gateway_stage" "api_stage" {
   stage_name    = "${var.deploy_env}_trailcount_public_api_stage"
 }
 
-# API Key 
-resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.deploy_env} TrailCount Device API Key"
-  value = "REDACTED"
-}
-
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "public_api_usage_plan" {
   name = "${var.deploy_env} TrailCount Public API Usage Plan"
@@ -217,18 +211,6 @@ resource "aws_api_gateway_usage_plan" "public_api_usage_plan" {
   }
 
   depends_on = [aws_api_gateway_stage.api_stage]
-}
-
-# Associate API Key with Usage Plan (Will Get Removed With MTLS)
-resource "aws_api_gateway_usage_plan_key" "device_usage_plan_key" {
-  key_id        = aws_api_gateway_api_key.api_key.id
-  key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.public_api_usage_plan.id
-
-  depends_on = [
-    aws_api_gateway_api_key.api_key,
-    aws_api_gateway_usage_plan.public_api_usage_plan
-  ]
 }
 
 # Output
