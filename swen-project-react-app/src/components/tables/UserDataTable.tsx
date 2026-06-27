@@ -236,7 +236,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                     <div className="flex items-center gap-2">
                         <Button
                             onClick={() => { updateUserRole("promote", row, onRefresh); }}
-                            disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin)}
+                            disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin) || row.banned}
                             className="bg-green-500 hover:bg-green-600 text-white p-2"
                             title="Promote"
                         >
@@ -244,7 +244,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                         </Button>
                         <Button
                             onClick={() => { updateUserRole("demote", row, onRefresh); }}
-                            disabled={row.username === username || row.role === Role.User || row.role === Role.Root}
+                            disabled={row.username === username || row.role === Role.User || row.role === Role.Root || row.banned}
                             className="bg-red-500 hover:bg-red-600 text-white p-2"
                             title="Demote"
                         >

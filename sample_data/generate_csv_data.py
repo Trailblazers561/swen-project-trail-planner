@@ -2,7 +2,7 @@
 import csv
 import random
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from zoneinfo import ZoneInfo
 
 # This file is designed to generate csv data that gets loaded for testing. If the csv's already exist, no need to run this code.
@@ -37,9 +37,59 @@ trail_ids = {
     "Blueberry Trail": 10
 }
 
+def nth_weekday(year, month, weekday, n):
+    if n == -1:
+        next_month = date(year, month + 1, 1) if month != 12 else date(year + 1, 1, 1)
+        last_day = next_month - timedelta(days=1)
+        return last_day - timedelta(days=(last_day.weekday() - weekday) % 7)
+    else:
+        start_date = date(year, month, 1)
+        first_weekday = start_date + timedelta(days=(weekday - start_date.weekday()) % 7)
+        return first_weekday + timedelta(weeks=n-1)
+
+def get_holiday_multiplier(today):
+    holidays = [date(today.year, 1, 1), nth_weekday(today.year, 1, 0, 3), nth_weekday(today.year, 2, 0, 3), nth_weekday(today.year, 5, 0, -1), date(today.year, 6, 19), date(today.year, 7, 4), date(today.year, 7, 9), nth_weekday(today.year, 9, 0, 1), nth_weekday(today.year, 10, 0, 2), date(today.year, 10, 31), date(today.year, 11, 11), nth_weekday(today.year, 11, 0, 4), date(today.year, 12, 25)]
+    closest_holiday = 365
+
+    for holiday in holidays:
+        days_from_holiday = abs((today - holiday).days)
+        days_from_holiday = min(days_from_holiday, 365 - days_from_holiday)
+        if days_from_holiday < closest_holiday:
+            closest_holiday = days_from_holiday
+
+    holiday_dict = {0: 2.3, 1: 2.0, 2: 1.8, 3: 1.6, 4: 1.5}
+    return holiday_dict.get(closest_holiday, 1.0)
+
+def get_rndm(last: int=0):
+    rndm = random.random()
+    if last == 0:
+        return 0 if rndm <= .6 else 1 if rndm <= .9 else 2
+    if last == 1:
+        return 0 if rndm <= .4 else 1 if rndm <= .8 else 2
+    if last == 2:
+        return 0 if rndm <= .1 else 1 if rndm <= .7 else 2
+    return 0
+
+ranges = {
+    "rssi": [(-65, -50), (-80, -66), (-95, -81)],
+    "rsrp": [(-85, -65), (-100, -86), (-115, -101)],
+    "rsrq": [(-7, -3), (-11, -8), (-14, -12)]
+}
+
+def get_signals():
+    last = get_rndm()
+    rssi = random.randint(*ranges["rssi"][last])
+    last = get_rndm(last)
+    rsrp = random.randint(*ranges["rsrp"][last])
+    last = get_rndm(last)
+    rsrq = random.randint(*ranges["rsrq"][last])
+
+    return rssi, rsrp, rsrq
+
 hour_data = []
 full_hour_data = []
 day_data = []
+log_data = []
 
 # Generate Day and Hour Data
 for trail, stats in trails.items():
@@ -52,7 +102,7 @@ for trail, stats in trails.items():
     while (current_day <= end_day):
         if (battery > 1 and random.random() < 1/3):
             battery = battery - 1
-        hikers = max(int(random.normalvariate(*stats) * (sum(weekday_modifier.values()) / 7)), 0)
+        hikers = max(int(random.normalvariate(*stats) * weekday_modifier[current_day.weekday()] * get_holiday_multiplier(current_day.date())), 0)
         today_start_utc = current_day.astimezone(timezone.utc)
         tomorrow_start_utc = (current_day + timedelta(days=1)).astimezone(timezone.utc)
         today_hours = int((tomorrow_start_utc - today_start_utc).total_seconds() / 3600)
@@ -68,6 +118,7 @@ for trail, stats in trails.items():
             hour_timestamp += 60 * 60
 
         day_data.append([device_trail_id, int(current_day.timestamp()), hikers, battery])
+        log_data.append([device_trail_id, int((current_day + timedelta(days=1, minutes=1)).timestamp()), hikers, battery, "1.0.0", *get_signals()])
 
         current_day += timedelta(days=1)
 
@@ -102,32 +153,38 @@ month_data.extend(months.values())
 month_data.sort(key=lambda x: (x[0], x[1]))
 
 # Write data to csv files
-with open(Path(__file__).parent / "hour_data.csv", "w", newline='') as f:
+with open(Path(__file__).parent / "hour_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
     file.writerow(["device_trail_id", "start", "count", "battery"])
     for data in hour_data:
         file.writerow(data)
 
-with open(Path(__file__).parent / "full_hour_data.csv", "w", newline='') as f:
+with open(Path(__file__).parent / "full_hour_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
     file.writerow(["device_trail_id", "start", "count", "battery"])
     for data in full_hour_data:
         file.writerow(data)
 
-with open(Path(__file__).parent / "day_data.csv", "w", newline='') as f:
+with open(Path(__file__).parent / "day_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
     file.writerow(["device_trail_id", "start", "count", "battery"])
     for data in day_data:
         file.writerow(data)
 
-with open(Path(__file__).parent / "week_data.csv", "w", newline='') as f:
+with open(Path(__file__).parent / "week_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
     file.writerow(["device_trail_id", "start", "count", "battery"])
     for data in week_data:
         file.writerow(data)
 
-with open(Path(__file__).parent / "month_data.csv", "w", newline='') as f:
+with open(Path(__file__).parent / "month_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
     file.writerow(["device_trail_id", "start", "count", "battery"])
     for data in month_data:
+        file.writerow(data)
+
+with open(Path(__file__).parent / "device_logs.csv", "w", newline='') as f:
+    file = csv.writer(f)
+    file.writerow(["device_id", "time", "count", "battery", "firmware_version", "rssi", "rsrp", "rsrq"])
+    for data in log_data:
         file.writerow(data)
