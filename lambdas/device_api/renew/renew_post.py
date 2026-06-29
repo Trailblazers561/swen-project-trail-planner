@@ -27,6 +27,7 @@ def renew_certificate(event, context):
         response = device_table.query(
             IndexName="name-index",
             KeyConditionExpression=Key("name").eq(str(device_name)),
+            Limit=1
         )
         items = response.get("Items", [])
 
@@ -36,7 +37,8 @@ def renew_certificate(event, context):
 
         reg_response = registration_table.query(
             IndexName="device-index",
-            KeyConditionExpression=Key("device_id").eq(int(item.get("id")))
+            KeyConditionExpression=Key("device_id").eq(int(item.get("id"))),
+            Limit=1
         )
         reg_items = reg_response.get("Items", [])
 
