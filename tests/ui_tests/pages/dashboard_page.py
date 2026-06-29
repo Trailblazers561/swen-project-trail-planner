@@ -194,18 +194,22 @@ class DashboardPage:
     def click_add_trail(self) -> None:
         SH.click_element(self.driver, self.trail_options_button)
         SH.click_element(self.driver, self.add_trail_options_button)
+        SH.wait(1)
 
     def click_edit_trail(self) -> None:
         SH.click_element(self.driver, self.trail_options_button)
         SH.click_element(self.driver, self.edit_trail_options_button)
+        SH.wait(1)
 
     def click_add_area(self) -> None:
         SH.click_element(self.driver, self.area_options_button)
         SH.click_element(self.driver, self.add_area_options_button)
+        SH.wait(1)
 
     def click_edit_area(self) -> None:
         SH.click_element(self.driver, self.area_options_button)
         SH.click_element(self.driver, self.edit_area_options_button)
+        SH.wait(1)
 
     def retrieve_graph(self) -> GraphDTO:
         start_time = time.time()

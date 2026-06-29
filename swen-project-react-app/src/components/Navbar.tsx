@@ -1,6 +1,6 @@
 import { UserIcon } from "@/components/templates/usericon"
 import logo from "@/assets/images/awa-logo.png"
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext";
 import { Link } from "react-router-dom";
 import "./Navbar.css";
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
-import { Role, useAuth } from "./Context";
+import { Role, useAuth } from "./AuthContext";
 
 interface User {
     user_id: string;

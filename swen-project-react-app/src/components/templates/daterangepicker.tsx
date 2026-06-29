@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/templates/popover"
+import { subMonths } from "date-fns";
 
 type DatePickerWithRangeProps = {
   value?: DateRange
@@ -68,10 +69,10 @@ export function DatePickerWithRange({ value, onChange }: DatePickerWithRangeProp
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start" data-testid="calandar-popup">
+        <PopoverContent className="w-auto p-0 z-10000" align="start" data-testid="calandar-popup">
           <Calendar
             mode="range"
-            defaultMonth={date?.to ?? date?.from}
+            defaultMonth={subMonths((date?.to ?? date?.from ?? new Date()) , 1)}
             selected={date}
             onSelect={handleSelect}
             numberOfMonths={2}

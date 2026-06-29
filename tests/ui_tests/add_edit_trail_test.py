@@ -95,11 +95,11 @@ def add_edit_trail_test():
 
         pytest_check.is_false(trail_one in retrieve_deleted_trail_one_step.trails)
 
-        # Verify Trail Not In Edit Trail Dropdown
+        # Verify Trail Still In Edit Trail Dropdown (As Retired)
         retrieve_edit_trail_trails_step = RetrieveEditTrailTrailsStep(driver)
         retrieve_edit_trail_trails_step.run()
 
-        pytest_check.is_false(trail_one in retrieve_edit_trail_trails_step.trails)
+        pytest_check.is_true(trail_one in retrieve_edit_trail_trails_step.trails)
 
         # Create Trail With Area
         trail_two = TrailDTO("Add Edit Trail Two", area_name=AREAS[3].name)

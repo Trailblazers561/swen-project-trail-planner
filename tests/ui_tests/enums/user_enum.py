@@ -1,6 +1,7 @@
 from enum import Enum
 
 from enums.user_role import UserRole
+from ui_config import USER_PASSWORDS
 
 class User(Enum):
     ROOT_ADMIN = ("root_admin@gmail.com", "root_admin", UserRole.ROOT_ADMIN)
@@ -15,7 +16,7 @@ class User(Enum):
         self.password = self.get_password()
 
     def get_password(self):
-        return "testPassword123!" # can be updated to retrieve secretly when needed
+        return USER_PASSWORDS
 
     def __str__(self):
         return self.username

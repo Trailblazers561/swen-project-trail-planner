@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { UserRole, Granularity, HeatmapAlgorithm } from "./lib/apiTypes";
 import {refreshTokens} from "./cognito/authService";
-import { isAuthenticated, isTokenExpired, getToken } from "@/Context";
+import { isAuthenticated, isTokenExpired, getToken } from "@/AuthContext";
 
 export function TrailData() {
   /**
