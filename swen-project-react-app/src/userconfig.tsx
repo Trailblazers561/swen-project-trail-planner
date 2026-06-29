@@ -38,15 +38,38 @@ type DeviceType = {
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
     const [userListData, setUserListData] = useState<Array<User>>([]);
-    const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+    const [selectedUser, setSelectedUser] = useState<Array<UserRow>>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { getUsers } = TrailData();
 
     const {currentRole} = useAuth();
 
-    const handleRowClick = (user: UserRow) => {
-        setSelectedUser(user);
+    const modalHandler = () => {
+        if (selectedUser.length == 0) {
+            setIsModalOpen(false)
+        }
+        else {
+            setIsModalOpen(true)
+        }
     }
+
+    const handleRowClick = (user: UserRow) => {
+        setSelectedUser([user]);
+        modalHandler();
+
+        console.log("User: ", user);
+        console.log("Selected User Array: ", selectedUser); //For some reason, selectedUser isn't updated until after this function concludes
+        
+    }
+
+    const handleModalClose = () => {
+        setSelectedUser([]);
+        modalHandler(); //does not use updated selectedUser for some reason
+
+        console.log("Selected User Array: ", selectedUser);
+    }
+    
 
     const loadUsers = async () => {
         try {
@@ -80,6 +103,8 @@ const Privileges = () => {
         loadUsers();
     }, []);
 
+    console.log(selectedUser);
+
     return (
         <><meta name="viewport" content="width=device-width initial-scale=1.0" /><div className="flex flex-col">
 
@@ -97,9 +122,9 @@ const Privileges = () => {
                     </div>
                 )}
             </div>
-            <Mobile>
-                <AccountDataTable data={userListData}/>
-            </Mobile>
+            {isModalOpen && <Mobile>
+                <AccountDataTable data={selectedUser} onClose={handleModalClose}/>
+            </Mobile>}
         </div></>
     );
 };

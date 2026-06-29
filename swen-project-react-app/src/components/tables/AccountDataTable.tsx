@@ -3,6 +3,7 @@ import DataTable, { TableColumn } from "react-data-table-component";{}
 
 interface Props {
     data: UserRow[];
+    onClose?: () => void;
     //loading: boolean;
 }
 
@@ -15,7 +16,7 @@ const columns: TableColumn<UserRow>[] = [
         }
 ] 
 
-const AccountDataTable: React.FC<Props> = ({ data }) => {
+const AccountDataTable: React.FC<Props> = ({ data, onClose }) => {
 
     // interface usernameRow {
     //     text: string;
@@ -25,7 +26,8 @@ const AccountDataTable: React.FC<Props> = ({ data }) => {
     // const usernamerow = usernameRow
 
     return(
-        <div className="bg-gray-50 shadow-md modal-overlay" data-testid="device-log-table">
+        <div className="bg-gray-50 shadow-md modal-overlay w-screen h-screen" data-testid="device-log-table">
+            <button className="modal-close" onClick={onClose}>x</button>
             <DataTable
             columns = {columns}
             data = {data}
