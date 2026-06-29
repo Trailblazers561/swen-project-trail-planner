@@ -53,11 +53,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tests/requirements.txt
           python -m pip install --no-compile --no-binary :all: -r lambdas/lambda_authorizer/requirements.txt -t lambdas/layers/auth_reqs/python
+          mkdir -p lambdas/layers/helper/python/helper
+          cp lambdas/helper/helper_functions.py lambdas/layers/helper/python/helper
+          python -m pip install --no-compile --only-binary=:all: --implementation cp --platform manylinux2014_x86_64 -r lambdas/helper/requirements.txt -t lambdas/layers/helper/python 
 
       - name: Setup Terraform Folder
         run: |
-          mkdir -p lambdas/helper/layers/helper/python
-          cp lambdas/helper_functions.py lambdas/layers/helper/python
           mkdir -p terraform/lambdas
           cp -r lambdas/* terraform/lambdas/
           mkdir -p terraform/swen-project-react-app

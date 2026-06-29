@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from helper_functions import csv_bucket, s3_client, cors_headers
+from helper.helper_functions import csv_bucket, s3_client, cors_headers
 
 def generate_url(event, context):
     """

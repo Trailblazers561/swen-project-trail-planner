@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import registration_table, device_table, cors_headers, get_next_device_id, secrets_client, \
+from helper.helper_functions import registration_table, device_table, cors_headers, get_next_device_id, secrets_client, \
     get_next_registration_id
 
 

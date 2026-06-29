@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_table, cors_headers, get_next_device_id
+from helper.helper_functions import device_table, cors_headers
 
 
 def upload_device_info(event, context):

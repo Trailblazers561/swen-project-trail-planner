@@ -62,6 +62,12 @@ resource "aws_api_gateway_domain_name" "device_api_domain" {
 
   security_policy = "TLS_1_2"
   endpoint_access_mode = "STRICT"
+
+  lifecycle {
+    ignore_changes = [
+      endpoint_access_mode,
+    ]
+  }
 }
 
 resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {

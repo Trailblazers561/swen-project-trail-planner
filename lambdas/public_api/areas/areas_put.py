@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import area_table, cors_headers
+from helper.helper_functions import area_table, cors_headers
 
 def update_area(event, context):
     """

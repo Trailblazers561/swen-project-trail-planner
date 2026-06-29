@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import csv_bucket, dynamodb, s3_client, table_time_map, trail_table, device_trail_table, convert_decimals, cors_headers
+from helper.helper_functions import csv_bucket, dynamodb, s3_client, table_time_map, trail_table, device_trail_table, convert_decimals, cors_headers
 
 fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly", "year": "Yearly"}
 

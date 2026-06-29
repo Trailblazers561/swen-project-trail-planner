@@ -223,11 +223,11 @@ resource "null_resource" "helper_layer_setup" {
   count = local.local_run ? 1 : 0
 
   triggers = {
-    shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/helper_functions.py")
+    shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/helper/helper_functions.py")
   }
 
   provisioner "local-exec" {
-    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python) && copy /Y ${path.module}\\..\\lambdas\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper_functions.py && python -m pip install --no-compile --no-binary :all: -r ${path.module}\\lambdas\\layers\\requirements.txt -t ${path.module}\\lambdas\\layers\\helper\\python"
+    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper) && copy /Y ${path.module}\\..\\lambdas\\helper\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper\\helper_functions.py && python -m pip install --no-compile --only-binary=:all:  --implementation cp --platform manylinux2014_x86_64 --upgrade -r ${path.module}\\..\\lambdas\\helper\\requirements.txt -t ${path.module}\\..\\lambdas\\layers\\helper\\python"
   }
 }
 

@@ -4,6 +4,7 @@ import time
 from api_config import BASE_URL, get_api_key_headers
 
 @pytest.mark.API
+@pytest.mark.skip(reason="mTLS_ineligable")
 def test_post_device_data_success():
     """
     Test POST /devices.
@@ -36,6 +37,7 @@ def test_post_device_data_success():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="mTLS_ineligable")
 def test_post_device_data_batch_payload():
     """
     Test POST /devices with a batch payload containing multiple readings.
@@ -106,6 +108,7 @@ def test_post_device_data_with_additional_fields():
 
 
 @pytest.mark.API
+@pytest.mark.skip(reason="mTLS_ineligable")
 def test_post_device_data_multiple_devices():
     """
     Test POST /devices with multiple sequential requests from different devices.

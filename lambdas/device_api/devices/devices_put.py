@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
+from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
     device_trail_log_month_table, device_table, cors_headers, get_device_trail_id, timestamp_conversion, \
     is_device_blocked, is_device_archived
 

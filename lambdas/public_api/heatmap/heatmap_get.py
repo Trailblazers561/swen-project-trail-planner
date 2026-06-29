@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_log_day_table, device_trail_table, convert_decimals, cors_headers
+from helper.helper_functions import device_trail_log_day_table, device_trail_table, convert_decimals, cors_headers
 
 algorithms = ("absolute", "relative")
 

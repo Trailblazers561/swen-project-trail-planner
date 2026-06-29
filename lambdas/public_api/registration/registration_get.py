@@ -1,6 +1,6 @@
 import json
 
-from helper_functions import registration_table, device_table, cors_headers, convert_decimals
+from helper.helper_functions import registration_table, device_table, cors_headers, convert_decimals
 
 
 def get_registrations(event, context):

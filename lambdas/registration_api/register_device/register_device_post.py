@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from cryptography import x509
 import requests
 from boto3.dynamodb.conditions import Key
-from helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, get_root_ca_cert, check_ca_health, gen_one_time_token
+from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, get_root_ca_cert, check_ca_health, gen_one_time_token
 
 TIMESTAMP_WINDOW = 120  # 2 min buffer from packet send time to parse time
 
