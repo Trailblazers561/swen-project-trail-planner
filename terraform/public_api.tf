@@ -227,7 +227,7 @@ resource "null_resource" "helper_layer_setup" {
   }
 
   provisioner "local-exec" {
-    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python) && copy /Y ${path.module}\\..\\lambdas\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper_functions.py"
+    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python) && copy /Y ${path.module}\\..\\lambdas\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper_functions.py && python -m pip install --no-compile --no-binary :all: -r ${path.module}\\lambdas\\layers\\requirements.txt -t ${path.module}\\lambdas\\layers\\helper\\python"
   }
 }
 
