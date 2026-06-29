@@ -56,7 +56,7 @@ jobs:
 
       - name: Setup Terraform Folder
         run: |
-          mkdir -p lambdas/layers/helper/python
+          mkdir -p lambdas/helper/layers/helper/python
           cp lambdas/helper_functions.py lambdas/layers/helper/python
           mkdir -p terraform/lambdas
           cp -r lambdas/* terraform/lambdas/
