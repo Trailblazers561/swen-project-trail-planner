@@ -227,7 +227,7 @@ resource "null_resource" "helper_layer_setup" {
   }
 
   provisioner "local-exec" {
-    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper) && copy /Y ${path.module}\\..\\lambdas\\helper\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper\\helper_functions.py && python -m pip install --no-compile --only-binary=:all:  --implementation cp --platform manylinux2014_x86_64 --upgrade -r ${path.module}\\..\\lambdas\\helper\\requirements.txt -t ${path.module}\\..\\lambdas\\layers\\helper\\python"
+    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper) && copy /Y ${path.module}\\..\\lambdas\\helper\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper\\helper_functions.py && python -m pip install --no-compile --only-binary=:all:  --implementation cp --platform manylinux2014_x86_64 --python-version 3.12 --upgrade -r ${path.module}\\..\\lambdas\\helper\\requirements.txt -t ${path.module}\\..\\lambdas\\layers\\helper\\python"
   }
 }
 
