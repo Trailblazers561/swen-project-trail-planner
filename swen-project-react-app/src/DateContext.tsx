@@ -28,34 +28,6 @@ export const DateProvider = ({ children }: { children: React.ReactNode }) => {
     const [endDate, setEndDateInternal] = useState<Date | null>(null);
     const [granularity, setGranularity] = useState<Granularity>(Granularity.Day);
     const [datePreset, setDatePreset] = useState<DatePreset>(DatePreset.Month);
-    //     const idToken = localStorage.getItem("idToken");
-
-    //     if (idToken) {
-    //         try {
-    //             const payload = JSON.parse(atob(idToken.split(".")[1]));
-
-    //             const groups: string[] = payload["cognito:groups"] || [];
-
-    //             const parsedRoles: Role[] = [];
-
-    //             groups.forEach((group) => {
-    //                 if (group === "root_admin") parsedRoles.push(Role.Root);
-    //                 else if (group === "admin") parsedRoles.push(Role.Admin);
-    //                 else if (group === "trail_manager") parsedRoles.push(Role.Manager);
-    //                 else if (group === "user") parsedRoles.push(Role.User);
-    //             });
-
-    //             setRoles(parsedRoles.length ? parsedRoles : []);
-    //             setUsername(payload["cognito:username"] || "");
-    //         } catch (e) {
-    //             console.error("Failed to parse idToken:", e);
-    //         }
-    //     }
-    //     else {
-    //         setRoles([]);
-    //         setUsername("");
-    //     }
-    // };
 
     useEffect(() => {
         //check for custom first so that dates aren't changed at all
