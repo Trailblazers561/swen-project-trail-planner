@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
+import type { UserRow } from "./components/tables/UserDataTable";
+import AccountDataTable from "./components/tables/AccountDataTable";
 import { Role, useAuth } from "./Context";
+import { useMediaQuery } from "react-responsive";
 
 interface User {
     user_id: string;
@@ -19,13 +22,31 @@ export const stringToEnum: Record<string, number> = {
     "root_admin": 4,
 };
 
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+  const Desktop = ({children}: DeviceType) => {
+    const isDesktop = useMediaQuery({ minWidth: 992 })
+    return isDesktop ? children : null
+  }
+  const Mobile = ({children}: DeviceType) => {
+    const isMobile = useMediaQuery({maxWidth: 500})
+    return isMobile ? children: null
+  }
+
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
     const [userListData, setUserListData] = useState<Array<User>>([]);
+    const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
 
     const { getUsers } = TrailData();
 
     const {currentRole} = useAuth();
+
+    const handleRowClick = (user: UserRow) => {
+        setSelectedUser(user);
+    }
 
     const loadUsers = async () => {
         try {
@@ -72,10 +93,13 @@ const Privileges = () => {
                     <div>Loading...</div>
                 ) : (
                     <div className="pt-4 lg:m-4">
-                        <UserDataTable data={userListData} onRefresh={loadUsers} />
+                        <UserDataTable data={userListData} onRefresh={loadUsers} onRowClick={handleRowClick} />
                     </div>
                 )}
             </div>
+            <Mobile>
+                <AccountDataTable data={userListData}/>
+            </Mobile>
         </div></>
     );
 };

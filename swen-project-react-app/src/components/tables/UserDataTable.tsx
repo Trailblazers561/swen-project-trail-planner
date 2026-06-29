@@ -6,7 +6,7 @@ import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 
-interface UserRow {
+export interface UserRow {
     user_id: string;
     username: string;
     email: string;
@@ -17,6 +17,7 @@ interface UserRow {
 interface Props {
     data: UserRow[];
     onRefresh: () => Promise<void>;
+    onRowClick?: (user: UserRow) => void;
 }
 
 type DeviceType = {
@@ -111,7 +112,7 @@ const roleDisplayMap: Record<string | number, string> = {
     [Role.Root]: "Root Admin",
 };
 
-const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
+const UserDataTable: React.FC<Props> = ({ data, onRefresh, onRowClick }) => {
 
     const { currentRole, username } = useAuth();
     const [loadingUsage, setLoadingUsage] = useState(false);
@@ -236,7 +237,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                     <div className="flex items-center gap-2">
                         <Button
                             onClick={() => { updateUserRole("promote", row, onRefresh); }}
-                            disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin) || row.banned}
+                            disabled={row.username === username || row.role === Role.Root || row.role === Role.Admin || (row.role === Role.Manager && currentRole === Role.Admin)}
                             className="bg-green-500 hover:bg-green-600 text-white p-2"
                             title="Promote"
                         >
@@ -244,7 +245,7 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                         </Button>
                         <Button
                             onClick={() => { updateUserRole("demote", row, onRefresh); }}
-                            disabled={row.username === username || row.role === Role.User || row.role === Role.Root || row.banned}
+                            disabled={row.username === username || row.role === Role.User || row.role === Role.Root}
                             className="bg-red-500 hover:bg-red-600 text-white p-2"
                             title="Demote"
                         >
@@ -276,6 +277,24 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
         }
     ];
 
+    const columnsMobile: TableColumn<UserRow>[] = [
+        {
+            name: "Username",
+            selector: (row) => row.username,
+            sortable: true,
+        },
+        {
+            name: "Role",
+            selector: (row) => row.role == null ? "None" : (roleDisplayMap[row.role] ?? "None"),
+            sortable: true,
+        },
+        {
+            name: "Banned",
+            selector: (row) => row.banned ? "Yes" : "No",
+            sortable: true,
+        }
+    ]
+
     return (
         <div className="bg-gray-50 shadow-md" data-testid="trail-user-table">
             {loadingUsage && (
@@ -304,12 +323,13 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
             </Desktop>
             <Mobile>
                 <DataTable
-                columns={columns}
+                columns={columnsMobile}
                 data={data}
                 pagination={true}
                 striped
                 responsive
                 customStyles={customStylesMobile}
+                onRowClicked={onRowClick}
                 noDataComponent={
                     <div className="py-6 text-gray-500">
                         No users found.
