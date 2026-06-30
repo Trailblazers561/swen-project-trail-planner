@@ -78,18 +78,21 @@ const Privileges = () => {
 
                 setUsers(data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => user.username));
 
-                setUserListData(
-                    data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => ({
+                const filteredUsers = data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => ({
                         user_id: user.user_id,
                         username: user.username,
                         email: user.email,
                         role: stringToEnum[user.role],
                         banned: user.banned
-                    }))
+                    }));
+
+                setUserListData(
+                    filteredUsers
                 );
 
                 // const newSelectedUser = userListData.find((user) => user.user_id === selectedUser[0].user_id);
-                const newSelectedUser = data.find((user) => user.user_id === selectedUser[0].user_id);
+                
+                const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
                 console.log(newSelectedUser);
                 if (newSelectedUser != undefined) {
                     setSelectedUser([newSelectedUser]);

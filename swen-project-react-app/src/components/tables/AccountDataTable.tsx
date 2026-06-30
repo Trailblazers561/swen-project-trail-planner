@@ -39,13 +39,25 @@ const handleBannedText = (bool: boolean) => {
 }
 
 const handleRoleText = (role: Role) => {
-    return("A");
+    if (role == Role.User) {
+        return("User");
+    }
+    else if (role == Role.Manager) {
+        return("Trail Manager");
+    }
+    else if (role == Role.Admin) {
+        return ("Admin");
+    }
+    else if (role == Role.Root) {
+        return ("Root Admin");
+    }
+    return("Guest");
 }
 
 const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
-    const [selectedUser, setSelectedUser] = useState<UserRow>(data[0]);
-    // const selectedUser:UserRow = data[0];
+    // const [data[0], setdata[0]] = useState<UserRow>(data[0]);
+    // const data[0]:UserRow = data[0];
     console.log(data[0]);
     // const previousUser:UserRow = {username: "", email: "", banned: false, user_id: "", role: ""};
 
@@ -141,9 +153,9 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
     const loadData = () => {
 
-        setSelectedUser(data[0]);
+        // setdata[0](data[0]);
 
-        if (selectedUser != undefined) {
+        if (data[0] != undefined) {
 
             const usernamerow:textRow = {text: "Username", field: data[0].username};
             const rolerow:textRow = {text: "Role", field: handleRoleText(data[0].role)};
@@ -176,7 +188,7 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
             )}
             <div className="modal-content modal-content-extra-large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header bg-navbar p-2!">
-                    <button className="modal-close left-10" onClick={onClose}>x</button>
+                    <button className="modal-close left-0" onClick={onClose}>x</button>
                 </div>
                 <DataTable
                 columns = {columns}
@@ -185,35 +197,35 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                 />
                 <div className="flex items-center gap-2">
                     <Button
-                        onClick={() => { updateUserRole("promote", selectedUser, onRefresh); }}
-                        disabled={selectedUser.username === username || selectedUser.role === Role.Root || selectedUser.role === Role.Admin || (selectedUser.role === Role.Manager && currentRole === Role.Admin)}
+                        onClick={() => { updateUserRole("promote", data[0], onRefresh); }}
+                        disabled={data[0].username === username || data[0].role === Role.Root || data[0].role === Role.Admin || (data[0].role === Role.Manager && currentRole === Role.Admin)}
                         className="bg-green-500 hover:bg-green-600 text-white w-5/16 p-8"
                         title="Promote"
                     >
                         <ArrowUp size={18} />
                     </Button>
                     <Button
-                        onClick={() => { updateUserRole("demote", selectedUser, onRefresh); }}
-                        disabled={selectedUser.username === username || selectedUser.role === Role.User || selectedUser.role === Role.Root}
+                        onClick={() => { updateUserRole("demote", data[0], onRefresh); }}
+                        disabled={data[0].username === username || data[0].role === Role.User || data[0].role === Role.Root}
                         className="bg-red-500 hover:bg-red-600 text-white w-5/16 p-8"
                         title="Demote"
                     >
                         <ArrowDown size={18} />
                     </Button>
-                    {selectedUser.banned ? (
+                    {data[0].banned ? (
                         <Button
-                            onClick={() => unbanUser(selectedUser.username, onRefresh)}
+                            onClick={() => unbanUser(data[0].username, onRefresh)}
                             className="bg-blue-700 hover:bg-blue-600 text-white w-5/16 p-8"
-                            disabled={selectedUser.role === Role.Root || selectedUser.role === currentRole}
+                            disabled={data[0].role === Role.Root || data[0].role === currentRole}
                             title="Unban"
                         >
                             <Undo2 size={18} />
                         </Button>
                     ) : (
                         <Button
-                            onClick={() => banUser(selectedUser.username, onRefresh)}
+                            onClick={() => banUser(data[0].username, onRefresh)}
                             className="bg-red-700 hover:bg-red-600 text-white w-5/16 p-8"
-                            disabled={selectedUser.role === Role.Root || selectedUser.role === currentRole}
+                            disabled={data[0].role === Role.Root || data[0].role === currentRole}
                             title="Ban"
                         >
                             <Ban size={18} />
