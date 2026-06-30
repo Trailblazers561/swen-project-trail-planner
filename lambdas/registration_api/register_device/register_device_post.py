@@ -98,7 +98,9 @@ def register_device(event, context):
                 "body": json.dumps({"error": "Device is archived. Registration rejected."})
             }
 
-        device_serial = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])["device_ser_no"]
+        device_secret = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
+
+        device_serial = device_secret.get("device_ser_no")
 
         # if the device is in device table, serial should be there guaranteed, this shouldn't fire
         if not device_serial:
@@ -135,7 +137,6 @@ def register_device(event, context):
         certificate = {"certificate": data["crt"]}
 
         # upload csr for reuse later
-        device_secret = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
         device_secret["csr"] = csr
         secrets_client.update_secret(SecretId=str(device_name), SecretString=json.dumps(device_secret))
 
