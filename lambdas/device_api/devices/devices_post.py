@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_table, cors_headers, get_next_device_id
+from helper.helper_functions import device_table, cors_headers, is_device_blocked, is_device_archived
 
 
 def upload_device_info(event, context):
@@ -35,6 +35,38 @@ def upload_device_info(event, context):
             raise ValueError("Missing required field: firmware_version")
         if date_manufactured is None:
             raise ValueError("Missing required field: date_manufactured")
+
+        # extract certificate info out of mtls pieces
+        cert_subject = event.get("requestContext", {}).get("identity", {}).get("clientCert", {}).get("subjectDN")
+        if not cert_subject:
+            raise ValueError("No client certificate presented")
+
+        # extract device name out of cert info common name field
+        cert_device_name = None
+        for part in cert_subject.split(","):
+            if part.strip().startswith("CN="):
+                cert_device_name = part.strip()[3:]
+                break
+
+        # passed in name should match the name on the cert
+        if cert_device_name != name:
+            raise ValueError("Device certificate information does not match the requested device for data test")
+
+        # assume device isn't blocked by our system
+        if is_device_blocked(device_name=name):
+            return {
+                "statusCode": 403,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device is blocked. Info upload rejected."})
+            }
+
+        # assume device isn't archived in our system
+        if is_device_archived(device_name=name):
+            return {
+                "statusCode": 403,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device is archived. Info upload rejected."})
+            }
 
         response = device_table.query(IndexName="name-index", KeyConditionExpression=Key("name").eq(name), Limit=1).get(
             "Items", [])

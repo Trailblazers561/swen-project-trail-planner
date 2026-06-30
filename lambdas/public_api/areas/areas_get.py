@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Attr
 
-from helper_functions import dynamodb, area_table, convert_decimals, cors_headers
+from helper.helper_functions import dynamodb, area_table, convert_decimals, cors_headers
 
 def get_areas(event, context):
     try:

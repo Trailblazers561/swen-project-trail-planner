@@ -79,3 +79,30 @@ resource "aws_s3_bucket_cors_configuration" "example" {
     expose_headers = ["ETag"]
   }
 }
+
+resource "aws_s3_bucket" "truststore_bucket" {
+  bucket = "${var.deploy_env}-truststore-bucket-${random_integer.random_suffix.result}"
+
+  tags = {
+    Name = "${var.deploy_env}-truststore-bucket"
+  }
+
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_policy" "truststore_policy" {
+  bucket = aws_s3_bucket.truststore_bucket.id
+  policy = jsonencode({
+Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.truststore_bucket.arn}/truststore.pem"
+      }
+    ]
+  })
+}

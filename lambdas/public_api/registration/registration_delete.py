@@ -1,6 +1,6 @@
 import json
 
-from helper_functions import registration_table, device_table, cors_headers, secrets_client
+from helper.helper_functions import registration_table, device_table, cors_headers, secrets_client
 
 
 def delete_registration(event, context):

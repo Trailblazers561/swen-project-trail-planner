@@ -32,6 +32,8 @@ locals {
   domain = "trailcount.io"
   cloudfront_sub_domain = "${var.deploy_env}"
   api_sub_domain = "public-api-${var.deploy_env}"
+  registration_api_sub_domain = "registration-api-${var.deploy_env}"
+  device_api_sub_domain = "device-api-${var.deploy_env}"
   verification_email = local.local_run ? var.local_user_email : "TrailCount@auth.${local.domain}"
 }
 
@@ -73,4 +75,9 @@ locals {
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
+}
+
+variable "step_ca_version" {
+  type    = string
+  default = "0.30.2"
 }

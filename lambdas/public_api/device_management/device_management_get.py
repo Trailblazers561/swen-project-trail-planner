@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import convert_decimals, cors_headers, device_log_table
+from helper.helper_functions import convert_decimals, cors_headers, device_log_table
 
 def get_device_management(event, context):
     try:

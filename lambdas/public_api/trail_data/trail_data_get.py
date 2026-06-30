@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_log_day_table, device_trail_table, table_time_map, convert_decimals, cors_headers
+from helper.helper_functions import device_trail_log_day_table, device_trail_table, table_time_map, convert_decimals, cors_headers
 
 def get_trail_data(event, context):
     try:
