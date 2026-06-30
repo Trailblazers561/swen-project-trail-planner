@@ -88,7 +88,8 @@ const Privileges = () => {
                     }))
                 );
 
-                const newSelectedUser = userListData.find((user) => user.user_id === selectedUser[0].user_id);
+                // const newSelectedUser = userListData.find((user) => user.user_id === selectedUser[0].user_id);
+                const newSelectedUser = data.find((user) => user.user_id === selectedUser[0].user_id);
                 console.log(newSelectedUser);
                 if (newSelectedUser != undefined) {
                     setSelectedUser([newSelectedUser]);

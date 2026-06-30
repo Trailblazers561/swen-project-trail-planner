@@ -38,6 +38,10 @@ const handleBannedText = (bool: boolean) => {
     }
 }
 
+const handleRoleText = (role: Role) => {
+    return("A");
+}
+
 const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
     const [selectedUser, setSelectedUser] = useState<UserRow>(data[0]);
@@ -141,10 +145,10 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
         if (selectedUser != undefined) {
 
-            const usernamerow:textRow = {text: "Username", field: selectedUser.username};
-            const rolerow:textRow = {text: "Role", field: selectedUser.role.toString()};
-            const bannedrow:textRow = {text: "Banned?", field: handleBannedText(selectedUser.banned)};
-            const emailrow:textRow = {text: "Email", field: selectedUser.email}
+            const usernamerow:textRow = {text: "Username", field: data[0].username};
+            const rolerow:textRow = {text: "Role", field: handleRoleText(data[0].role)};
+            const bannedrow:textRow = {text: "Banned?", field: handleBannedText(data[0].banned)};
+            const emailrow:textRow = {text: "Email", field: data[0].email}
 
             setTextData([usernamerow, rolerow, bannedrow, emailrow]);
         }
