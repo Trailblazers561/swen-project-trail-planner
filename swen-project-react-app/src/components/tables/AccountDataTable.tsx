@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserRow } from "./UserDataTable";
-import DataTable, { TableColumn } from "react-data-table-component";import { UserRole } from "@/lib/apiTypes";
+import DataTable, { TableColumn } from "react-data-table-component";
 {}
 
 interface Props {
@@ -34,16 +34,19 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose }) => {
     const [textData, setTextData] = useState<Array<textRow>>([]);
         
     
-    // if (selectedUser.banned) {
-    //     setBannedText("Yes")
-    // }
-    // else {
-    //     setBannedText("No")
-    // }
+    
 
     const loadData = () => {
 
         if (selectedUser != null) {
+
+            if (selectedUser.banned) {
+                setBannedText("Yes")
+            }
+            else {
+                setBannedText("No")
+            }
+
             const usernamerow:textRow = {text: "Username", field: selectedUser.username};
             const rolerow:textRow = {text: "Role", field: selectedUser.role.toString()};
             const bannedrow:textRow = {text: "Banned?", field: bannedText};
@@ -57,6 +60,9 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose }) => {
         }
     }
 
+    useEffect (() => {
+        loadData();
+    }, [selectedUser])
     
 
     return(

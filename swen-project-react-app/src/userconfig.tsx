@@ -45,18 +45,18 @@ const Privileges = () => {
 
     const {currentRole} = useAuth();
 
-    const modalHandler = () => {
-        if (selectedUser.length == 0) {
-            setIsModalOpen(false)
-        }
-        else {
-            setIsModalOpen(true)
-        }
-    }
+    // const modalHandler = () => {
+    //     if (selectedUser.length == 0) {
+    //         setIsModalOpen(false)
+    //     }
+    //     else {
+    //         setIsModalOpen(true)
+    //     }
+    // }
 
     const handleRowClick = (user: UserRow) => {
         setSelectedUser([user]);
-        modalHandler();
+        setIsModalOpen(true);
 
         // console.log("User: ", user);
         // console.log("Selected User Array: ", selectedUser); //For some reason, selectedUser isn't updated until after this function concludes
@@ -65,7 +65,7 @@ const Privileges = () => {
 
     const handleModalClose = () => {
         setSelectedUser([]);
-        modalHandler(); //does not use updated selectedUser for some reason
+        setIsModalOpen(false); //does not use updated selectedUser for some reason
 
         // console.log("Selected User Array: ", selectedUser);
     }
@@ -102,6 +102,10 @@ const Privileges = () => {
     useEffect(() => {
         loadUsers();
     }, []);
+
+    useEffect(() => {
+
+    }, [selectedUser]);
 
     // console.log(selectedUser);
 
