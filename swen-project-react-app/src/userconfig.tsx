@@ -58,8 +58,8 @@ const Privileges = () => {
         setSelectedUser([user]);
         modalHandler();
 
-        console.log("User: ", user);
-        console.log("Selected User Array: ", selectedUser); //For some reason, selectedUser isn't updated until after this function concludes
+        // console.log("User: ", user);
+        // console.log("Selected User Array: ", selectedUser); //For some reason, selectedUser isn't updated until after this function concludes
         
     }
 
@@ -67,7 +67,7 @@ const Privileges = () => {
         setSelectedUser([]);
         modalHandler(); //does not use updated selectedUser for some reason
 
-        console.log("Selected User Array: ", selectedUser);
+        // console.log("Selected User Array: ", selectedUser);
     }
     
 
@@ -103,7 +103,7 @@ const Privileges = () => {
         loadUsers();
     }, []);
 
-    console.log(selectedUser);
+    // console.log(selectedUser);
 
     return (
         <><meta name="viewport" content="width=device-width initial-scale=1.0" /><div className="flex flex-col">
