@@ -27,11 +27,11 @@ type DeviceType = {
   }
 
   const Desktop = ({children}: DeviceType) => {
-    const isDesktop = useMediaQuery({ minWidth: 992 })
+    const isDesktop = useMediaQuery({ minWidth: 500 })
     return isDesktop ? children : null
   }
   const Mobile = ({children}: DeviceType) => {
-    const isMobile = useMediaQuery({maxWidth: 500})
+    const isMobile = useMediaQuery({maxWidth: 499})
     return isMobile ? children: null
   }
 
