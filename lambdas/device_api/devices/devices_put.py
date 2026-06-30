@@ -31,15 +31,40 @@ def upload_device_data(event, context):
             raise ValueError("Request body cannot be empty")
 
         name = body.get("name")
-        if not name: raise ValueError("Missing required field: name")
+        if not name:
+            raise ValueError("Missing required field: name")
+
+        # extract certificate info out of mtls pieces
+        cert_subject = event.get("requestContext", {}).get("identity", {}).get("clientCert", {}).get("subjectDN")
+        if not cert_subject:
+            raise ValueError("No client certificate presented")
+
+        # extract device name out of cert info common name field
+        cert_device_name = None
+        for part in cert_subject.split(","):
+            if part.strip().startswith("CN="):
+                cert_device_name = part.strip()[3:]
+                break
+
+        # passed in name should match the name on the cert
+        if cert_device_name != name:
+            raise ValueError("Device certificate information does not match the requested device for data upload")
 
         # assume device isn't blocked by our system
         if is_device_blocked(device_name=name):
-            raise ValueError(f"Device [{name}] is blocked and cannot upload data")
+            return {
+                "statusCode": 403,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device is blocked. Data upload rejected."})
+            }
 
         # assume device isn't archived in our system
         if is_device_archived(device_name=name):
-            raise ValueError(f"Device [{name}] is archived and cannot upload data")
+            return {
+                "statusCode": 403,
+                "headers": cors_headers(),
+                "body": json.dumps({"error": "Device is archived. Data upload rejected."})
+            }
 
         firmware_version = body.get("firmware_version")
         data_points = body.get("data")

@@ -23,6 +23,22 @@ def renew_certificate(event, context):
         if not device_name:
             raise ValueError("Device name not provided")
 
+        # extract certificate info out of mtls pieces
+        cert_subject = event.get("requestContext", {}).get("identity", {}).get("clientCert", {}).get("subjectDN")
+        if not cert_subject:
+            raise ValueError("No client certificate presented")
+
+        # extract device name out of cert info common name field
+        cert_device_name = None
+        for part in cert_subject.split(","):
+            if part.strip().startswith("CN="):
+                cert_device_name = part.strip()[3:]
+                break
+
+        # passed in name should match the name on the cert
+        if cert_device_name != device_name:
+            raise ValueError("Device certificate information does not match the requested device for renewal")
+
         # device name provided not in table? drop packet
         response = device_table.query(
             IndexName="name-index",
@@ -62,8 +78,8 @@ def renew_certificate(event, context):
             }
 
         device_secrets = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
-        device_serial = device_secrets["device_ser_no"]
-        csr = device_secrets["csr"]
+        device_serial = device_secrets.get("device_ser_no")
+        csr = device_secrets.get("csr")
 
         if not csr:
             raise ValueError("No csr for the device present, try registering the device before attempting a renewal")
