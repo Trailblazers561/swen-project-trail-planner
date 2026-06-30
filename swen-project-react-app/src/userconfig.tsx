@@ -38,7 +38,7 @@ type DeviceType = {
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
     const [userListData, setUserListData] = useState<Array<User>>([]);
-    const [selectedUser, setSelectedUser] = useState<Array<UserRow>>([]);
+    const [selectedUser, setSelectedUser] = useState<Array<User>>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { getUsers } = TrailData();
@@ -57,17 +57,11 @@ const Privileges = () => {
     const handleRowClick = (user: UserRow) => {
         setSelectedUser([user]);
         setIsModalOpen(true);
-
-        // console.log("User: ", user);
-        // console.log("Selected User Array: ", selectedUser); //For some reason, selectedUser isn't updated until after this function concludes
-        
     }
 
     const handleModalClose = () => {
         setSelectedUser([]);
-        setIsModalOpen(false); //does not use updated selectedUser for some reason
-
-        // console.log("Selected User Array: ", selectedUser);
+        setIsModalOpen(false);
     }
     
 
@@ -93,6 +87,13 @@ const Privileges = () => {
                         banned: user.banned
                     }))
                 );
+
+                const newSelectedUser = userListData.find((user) => user.user_id === selectedUser[0].user_id);
+                console.log(newSelectedUser);
+                if (newSelectedUser != undefined) {
+                    setSelectedUser([newSelectedUser]);
+                }
+                
             }
         } catch (error) {
             console.error("Error loading users:", error);
@@ -127,7 +128,7 @@ const Privileges = () => {
                 )}
             </div>
             {isModalOpen && <Mobile>
-                <AccountDataTable data={selectedUser} onClose={handleModalClose}/>
+                <AccountDataTable data={selectedUser} onClose={handleModalClose} onRefresh={loadUsers}/>
             </Mobile>}
         </div></>
     );

@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import { Role, roleMap, useAuth } from "@/Context";
+import { TrailData } from "@/api";
+import { Button } from "../templates/button";
+import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
 import { UserRow } from "./UserDataTable";
 import DataTable, { TableColumn } from "react-data-table-component";
 {}
@@ -6,6 +10,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 interface Props {
     data: UserRow[];
     onClose?: () => void;
+    onRefresh: () => Promise<void>;
     //loading: boolean;
 }
 
@@ -24,32 +29,121 @@ const columns: TableColumn<textRow>[] = [
     }
 ] 
 
-const AccountDataTable: React.FC<Props> = ({ data, onClose }) => {
+const handleBannedText = (bool: boolean) => {
+    if (bool) {
+        return ("Yes");
+    }
+    else {
+        return ("No")
+    }
+}
 
-    const selectedUser:UserRow = data[0];
-    console.log(selectedUser);
+const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
+
+    const [selectedUser, setSelectedUser] = useState<UserRow>(data[0]);
+    // const selectedUser:UserRow = data[0];
+    console.log(data[0]);
     // const previousUser:UserRow = {username: "", email: "", banned: false, user_id: "", role: ""};
 
-    const [bannedText, setBannedText] = useState<string>("No");
     const [textData, setTextData] = useState<Array<textRow>>([]);
         
+    const { currentRole, username } = useAuth();
+    const [loadingUsage, setLoadingUsage] = useState(false);
     
+    const updateUserRole = async (option: string, row: UserRow, onRefresh: () => Promise<void>) => {
+        const isPromote = option === "promote";
+        const isDemote = option === "demote";
+        const { updateUserRole } = TrailData();
+
+        try {
+            setLoadingUsage(true);
+            let newRole: Role = row.role;
+
+            if (isPromote && newRole < Role.Root) {
+                newRole = newRole + 1;
+            }
+
+            if (isDemote && newRole > Role.User) {
+                newRole = newRole - 1;
+            }
+
+            const roleForApi = roleMap[newRole];
+
+            const response = await updateUserRole(row.username, roleForApi);
+            if (response.success) {
+                await onRefresh();
+                console.log(`Successfully updated role for ${row.username} to ${roleForApi}`);
+            }
+        } catch (error) {
+            console.error("Error updating role: ", error);
+        } finally {
+            setLoadingUsage(false);
+        }
+    };
+
+    const banUser = async (user_name: string, onRefresh: () => Promise<void>) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to ban ${user_name}?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const { banUser } = TrailData();
+
+        try {
+            setLoadingUsage(true);
+            const response = await banUser(user_name);
+            console.log(response.json);
+
+            if (response.success) {
+                console.log(`Successfully banned user ${user_name}`);
+                await onRefresh();
+            }
+        } catch (error) {
+            console.error("Error banning user:", error);
+        } finally {
+            setLoadingUsage(false);
+        }
+    };
+
+    const unbanUser = async (user_name: string, onRefresh: () => Promise<void>) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to unban ${user_name}?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        const { updateUserRole } = TrailData();
+
+        try {
+            setLoadingUsage(true);
+            const response = await updateUserRole(user_name, roleMap[Role.User]);
+            console.log(response.json);
+            if (response.success) {
+                console.log(`Successfully unbanned user ${user_name}`);
+                await onRefresh();
+            }
+        } catch (error) {
+            console.error("Error unbanning user:", error);
+        } finally {
+            setLoadingUsage(false);
+        }
+    };
     
 
     const loadData = () => {
 
-        if (selectedUser != null) {
+        setSelectedUser(data[0]);
 
-            if (selectedUser.banned) {
-                setBannedText("Yes")
-            }
-            else {
-                setBannedText("No")
-            }
+        if (selectedUser != undefined) {
 
             const usernamerow:textRow = {text: "Username", field: selectedUser.username};
             const rolerow:textRow = {text: "Role", field: selectedUser.role.toString()};
-            const bannedrow:textRow = {text: "Banned?", field: bannedText};
+            const bannedrow:textRow = {text: "Banned?", field: handleBannedText(selectedUser.banned)};
             const emailrow:textRow = {text: "Email", field: selectedUser.email}
 
             setTextData([usernamerow, rolerow, bannedrow, emailrow]);
@@ -62,17 +156,67 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose }) => {
 
     useEffect (() => {
         loadData();
-    }, [selectedUser])
+    }, [data])
     
 
     return(
         <div className="bg-gray-50 shadow-md modal-overlay w-screen h-screen" data-testid="device-log-table">
-            <button className="modal-close" onClick={onClose}>x</button>
-            <DataTable
-            columns = {columns}
-            data = {textData}
-            // progressPending = {loading}
-            />
+            {loadingUsage && (
+                <div className="absolute inset-0 z-[9998] flex items-center justify-center bg-black/20">
+                    <LoaderCircle
+                        size={80}
+                        strokeWidth={2}
+                        className="animate-spin text-navbar"
+                    />
+                </div>
+            )}
+            <div className="modal-content modal-content-extra-large" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header bg-navbar p-2!">
+                    <button className="modal-close left-10" onClick={onClose}>x</button>
+                </div>
+                <DataTable
+                columns = {columns}
+                data = {textData}
+                noTableHead={true}
+                />
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => { updateUserRole("promote", selectedUser, onRefresh); }}
+                        disabled={selectedUser.username === username || selectedUser.role === Role.Root || selectedUser.role === Role.Admin || (selectedUser.role === Role.Manager && currentRole === Role.Admin)}
+                        className="bg-green-500 hover:bg-green-600 text-white w-5/16 p-8"
+                        title="Promote"
+                    >
+                        <ArrowUp size={18} />
+                    </Button>
+                    <Button
+                        onClick={() => { updateUserRole("demote", selectedUser, onRefresh); }}
+                        disabled={selectedUser.username === username || selectedUser.role === Role.User || selectedUser.role === Role.Root}
+                        className="bg-red-500 hover:bg-red-600 text-white w-5/16 p-8"
+                        title="Demote"
+                    >
+                        <ArrowDown size={18} />
+                    </Button>
+                    {selectedUser.banned ? (
+                        <Button
+                            onClick={() => unbanUser(selectedUser.username, onRefresh)}
+                            className="bg-blue-700 hover:bg-blue-600 text-white w-5/16 p-8"
+                            disabled={selectedUser.role === Role.Root || selectedUser.role === currentRole}
+                            title="Unban"
+                        >
+                            <Undo2 size={18} />
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={() => banUser(selectedUser.username, onRefresh)}
+                            className="bg-red-700 hover:bg-red-600 text-white w-5/16 p-8"
+                            disabled={selectedUser.role === Role.Root || selectedUser.role === currentRole}
+                            title="Ban"
+                        >
+                            <Ban size={18} />
+                        </Button>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }
