@@ -40,7 +40,7 @@ try:
                    check=True)
     subprocess.run(["docker", "push", f"{repo_url}:{step_ca_version}"], check=True)
 
-    print(f"StepCA push to {repo_url}:latest successful")
+    print(f"StepCA push to {repo_url}:{step_ca_version} successful")
     with open("/tmp/ecr_done", "w") as f:
         f.write("success")
 
