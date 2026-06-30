@@ -8,6 +8,7 @@ region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 ecr = boto3.client('ecr', region_name=region)
 sts = boto3.client('sts', region_name=region)
 deploy_env = sys.argv[1]
+step_ca_version = sys.argv[2]
 repo_name = f"{deploy_env}-step-ca"
 
 account_id = sts.get_caller_identity()['Account']
@@ -34,9 +35,10 @@ try:
         input=password, text=True, check=True
     )
 
-    subprocess.run(["docker", "pull", "smallstep/step-ca:latest"], check=True)
-    subprocess.run(["docker", "tag", "smallstep/step-ca:latest", f"{repo_url}:latest"], check=True)
-    subprocess.run(["docker", "push", f"{repo_url}:latest"], check=True)
+    subprocess.run(["docker", "pull", f"smallstep/step-ca:{step_ca_version}"], check=True)
+    subprocess.run(["docker", "tag", f"smallstep/step-ca:{step_ca_version}", f"{repo_url}:{step_ca_version}"],
+                   check=True)
+    subprocess.run(["docker", "push", f"{repo_url}:{step_ca_version}"], check=True)
 
     print(f"StepCA push to {repo_url}:latest successful")
     with open("/tmp/ecr_done", "w") as f:

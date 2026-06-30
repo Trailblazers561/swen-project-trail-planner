@@ -79,5 +79,5 @@ resource "random_integer" "random_suffix" {
 
 variable "step_ca_version" {
   type    = string
-  default = "latest"
+  default = "0.30.2"
 }
