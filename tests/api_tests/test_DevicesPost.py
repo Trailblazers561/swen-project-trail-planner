@@ -4,7 +4,7 @@ import time
 from api_config import BASE_URL, get_api_key_headers
 
 @pytest.mark.API
-@pytest.mark.skip(reason="mTLS_ineligable")
+@pytest.mark.skip(reason="mTLS_ineligible")
 def test_post_device_data_success():
     """
     Test POST /devices.
