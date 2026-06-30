@@ -65,7 +65,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Start ECR Push Background Job
-        run: python scripts/push_step_ca.py ${{ vars.ENV_NAME }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
+        run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
