@@ -17,22 +17,23 @@ const DeviceManagementPage = () => {
     };
 
     const [loading, setLoading] = useState(true);
-    const [devices, setDevices] = useState<DeviceRow[]>([]);
+    const [devices, setDevices] = useState<DeviceRow[]>([]); //devices is an array of DeviceRow objects, defaults to an empty array
     
     const { getDeviceMetadata, getTrailLogs, getTrailMetadata } = TrailData();
     
     const loadDevices = async () => {
         try {
-            setLoading(true);
+            setLoading(true); //Sets loading animation in element
 
-            const metadataResponse = await getDeviceMetadata();
+            const metadataResponse = await getDeviceMetadata(); //Gets a or all device's meta data
 
+            //if getDeviceMetadata fails, set devices (deviceRow[]) to an empty array
             if (!metadataResponse.success) {
                 setDevices([]);
                 return;
             }
 
-            const metadata = await metadataResponse.json;
+            const metadata = await metadataResponse.json; //An array of device data; each element in the array is a collection of data representing a device
             console.log("Devices:", metadata);
 
             

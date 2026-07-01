@@ -8,6 +8,7 @@ import DeviceManagementPage from './deviceManagementPage';
 import Privileges from './userconfig';
 import { Role, useAuth } from "@/AuthContext";
 import Navbar from './components/Navbar';
+import Bottombar from './components/Bottombar';
 
 function App() {
     const { currentRole } = useAuth();
@@ -15,7 +16,7 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<><Navbar/><Outlet/></>}>
+                <Route element={<><Navbar/><Outlet/><Bottombar/></>}>
                     <Route
                         path="/"
                         element={<Navigate replace to="/home" />
