@@ -17,10 +17,10 @@ pip install -r requirements.txt
 
 ### Environment Variables
 
-The tests require specific references to the resources that need to be tested. Generally, when making local changes, it is assumed that you will use your aws account to deploy the application. When performed locally terraform will automatically create a [.env](.env) file with the neccisary variables to run the tests.
+The tests require specific references to the resources that need to be tested. Generally, when making local changes, it is assumed that you will use your aws account to deploy the application. When performed locally terraform will automatically create a [.env](.env) file with the necessary variables to run the tests.
 
 
-In the event this doesn't reflect what you wan't, there is also a [setup_env.py](setup_env.py) file that when run will create a [.env](.env). It takes a *--env* parameter which should be *local* for a local run, or *tst* if hooked up to the sponsor's account. To look more at linking your local aws credentials to the sponsor account look at [README.md](../README.md). To run [setup_env.py](setup_env.py) run the following command from the `root` directory:
+In the event this doesn't reflect what you want, there is also a [setup_env.py](setup_env.py) file that when run will create a [.env](.env). It takes a *--env* parameter which should be *local* for a local run, or *tst* if hooked up to the sponsor's account. To look more at linking your local aws credentials to the sponsor account look at [README.md](../README.md). To run [setup_env.py](setup_env.py) run the following command from the `root` directory:
 
 ```bash
 python tests/setup_env.py --env <ENV_PREFIX> --password <USER_PASSWORDS>

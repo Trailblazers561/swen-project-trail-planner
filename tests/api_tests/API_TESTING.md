@@ -57,7 +57,7 @@ Information about running tests in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
 
 ## Authentication
 
-Endpoints are authenticated in two ways, an custom lambda authorizer and an api key (soon to be mTSL encryption). More information on each authentication method and which endpoints use what can be found in [API_DOCUMENTATION.md](../../API_DOCUMENTATION.md)
+Endpoints are authenticated in two ways, a custom lambda authorizer and an api key (soon to be mTLS encryption). More information on each authentication method and which endpoints use what can be found in [API_DOCUMENTATION.md](../../API_DOCUMENTATION.md)
 
 ## Test Coverage
 
