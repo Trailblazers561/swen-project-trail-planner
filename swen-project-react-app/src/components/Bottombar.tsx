@@ -1,4 +1,4 @@
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext";
 import { Link } from "react-router-dom";
 import "./Bottombar.css";
 import { useMediaQuery } from "react-responsive";

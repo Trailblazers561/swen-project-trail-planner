@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Role, roleMap, useAuth } from "@/Context";
+import { Role, roleMap, useAuth } from "@/AuthContext";
 import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
