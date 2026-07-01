@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_table, cors_headers, get_next_device_trail_id
+from helper.helper_functions import device_trail_table, cors_headers, get_next_device_trail_id
 
 def update_device_trail_association(event, context):
     """

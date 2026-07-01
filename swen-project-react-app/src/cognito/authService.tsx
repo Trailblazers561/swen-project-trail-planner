@@ -11,7 +11,7 @@ import {
   GetTokensFromRefreshTokenCommand,
   AuthFlowType
 } from "@aws-sdk/client-cognito-identity-provider";
-import { setTokens } from "@/Context";
+import { setTokens } from "@/AuthContext";
 
 // Get Cognito configuration from environment variables
 const cognitoConfig = {

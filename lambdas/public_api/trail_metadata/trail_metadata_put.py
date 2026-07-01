@@ -1,7 +1,7 @@
 import json
 from decimal import Decimal
 
-from helper_functions import area_table, trail_table, cors_headers
+from helper.helper_functions import area_table, trail_table, cors_headers
 
 def update_trail_metadata(event, context):
     """

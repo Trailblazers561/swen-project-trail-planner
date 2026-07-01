@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 from decimal import Decimal
 
-from helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, cors_headers, get_device_trail_id, timestamp_conversion
+from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, cors_headers, get_device_trail_id, timestamp_conversion
 
 def upload_trail_data(event, context):
     try:

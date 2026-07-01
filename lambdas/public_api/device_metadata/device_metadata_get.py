@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import dynamodb, device_table, device_log_table, device_trail_table, registration_table, convert_decimals, cors_headers
+from helper.helper_functions import dynamodb, device_table, device_log_table, device_trail_table, registration_table, convert_decimals, cors_headers
 
 def get_device_metadata(event, context):
     try:

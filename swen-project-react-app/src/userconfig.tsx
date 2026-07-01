@@ -3,8 +3,8 @@ import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
 import type { UserRow } from "./components/tables/UserDataTable";
 import AccountDataTable from "./components/tables/AccountDataTable";
-import { Role, useAuth } from "./Context";
 import { useMediaQuery } from "react-responsive";
+import { Role, useAuth } from "./AuthContext";
 
 interface User {
     user_id: string;

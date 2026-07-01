@@ -3,7 +3,7 @@ from datetime import datetime
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_table, device_trail_table, cors_headers
+from helper.helper_functions import device_table, device_trail_table, cors_headers
 
 
 def set_device_blocked(event, context):
