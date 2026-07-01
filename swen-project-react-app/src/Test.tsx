@@ -1,5 +1,5 @@
 import Navbar from "./components/Navbar.tsx";
-import { useAuth } from "./Context.tsx";
+import { useAuth } from "./AuthContext.tsx";
  
 // This is a test component to test anything within the UI. It is not used in the functional application and can be ignored for releases.
 // Author: Richard Tang

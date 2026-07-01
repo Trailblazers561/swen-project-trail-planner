@@ -46,16 +46,6 @@ locals {
         handler = "device_metadata_put.update_device_trail_association"
       }
     }
-    devices = {
-      POST = {
-        file = "devices/devices_post.py"
-        handler = "devices_post.upload_device_info"
-      }
-      PUT = {
-        file = "devices/devices_put.py"
-        handler = "devices_put.upload_device_data"
-      }
-    }
     device_management = {
       GET = {
         file = "device_management/device_management_get.py"
@@ -201,12 +191,6 @@ resource "aws_api_gateway_stage" "api_stage" {
   stage_name    = "${var.deploy_env}_trailcount_public_api_stage"
 }
 
-# API Key 
-resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.deploy_env} TrailCount Device API Key"
-  value = "REDACTED"
-}
-
 # API Gateway Usage Plan
 resource "aws_api_gateway_usage_plan" "public_api_usage_plan" {
   name = "${var.deploy_env} TrailCount Public API Usage Plan"
@@ -229,18 +213,6 @@ resource "aws_api_gateway_usage_plan" "public_api_usage_plan" {
   depends_on = [aws_api_gateway_stage.api_stage]
 }
 
-# Associate API Key with Usage Plan (Will Get Removed With MTLS)
-resource "aws_api_gateway_usage_plan_key" "device_usage_plan_key" {
-  key_id        = aws_api_gateway_api_key.api_key.id
-  key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.public_api_usage_plan.id
-
-  depends_on = [
-    aws_api_gateway_api_key.api_key,
-    aws_api_gateway_usage_plan.public_api_usage_plan
-  ]
-}
-
 # Output
 output "api_gateway_url" {
   value = aws_api_gateway_stage.api_stage.invoke_url
@@ -251,11 +223,11 @@ resource "null_resource" "helper_layer_setup" {
   count = local.local_run ? 1 : 0
 
   triggers = {
-    shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/helper_functions.py")
+    shell_hash = filesha256("${path.module}/${local.lambda_code_directory}/helper/helper_functions.py")
   }
 
   provisioner "local-exec" {
-    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python) && copy /Y ${path.module}\\..\\lambdas\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper_functions.py"
+    command = "(if not exist ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper mkdir ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper) && copy /Y ${path.module}\\..\\lambdas\\helper\\helper_functions.py ${path.module}\\..\\lambdas\\layers\\helper\\python\\helper\\helper_functions.py && python -m pip install --no-compile --only-binary=:all:  --implementation cp --platform manylinux2014_x86_64 --python-version 3.12 --upgrade -r ${path.module}\\..\\lambdas\\helper\\requirements.txt -t ${path.module}\\..\\lambdas\\layers\\helper\\python"
   }
 }
 

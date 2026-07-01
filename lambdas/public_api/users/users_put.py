@@ -1,6 +1,6 @@
 import json
 
-from helper_functions import cognito, COGNITO_USER_POOL_ID, user_groups, cors_headers
+from helper.helper_functions import cognito, COGNITO_USER_POOL_ID, user_groups, cors_headers
 
 def change_user_group(event, context):
     print(event)

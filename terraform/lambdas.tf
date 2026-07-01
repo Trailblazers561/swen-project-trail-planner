@@ -172,7 +172,7 @@ resource "aws_lambda_function" "cognito_config_lambdas" {
 // Allow Lambdas To Be Invoked By Cognito
 resource "aws_lambda_permission" "allow_cognito_cognito_config_lambdas" {
   for_each = aws_lambda_function.cognito_config_lambdas
-  
+
   statement_id  = "AllowExecutionFromCognito"
   action        = "lambda:InvokeFunction"
   function_name = each.value.function_name

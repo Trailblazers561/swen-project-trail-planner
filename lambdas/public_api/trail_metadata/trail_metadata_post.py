@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from decimal import Decimal
 
-from helper_functions import area_table, trail_table, cors_headers, get_next_trail_id
+from helper.helper_functions import area_table, trail_table, cors_headers, get_next_trail_id
 
 def create_trail(event, context):
     """

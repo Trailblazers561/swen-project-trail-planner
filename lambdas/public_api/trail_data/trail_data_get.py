@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import device_trail_log_day_table, device_trail_table, table_time_map, convert_decimals, cors_headers
+from helper.helper_functions import device_trail_log_day_table, device_trail_table, table_time_map, convert_decimals, cors_headers
 
 def get_trail_data(event, context):
     try:
@@ -96,9 +96,8 @@ def get_trail_data(event, context):
                     for result in start_results:
                         if result["device_trail_id"] in rows.keys():
                             rows[result["device_trail_id"]]["count"] += result["count"]
-                            rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"]}
                     device_log_rows.extend(rows.values())
 
         # Turn the extra ending days into a "partial" result
@@ -113,9 +112,8 @@ def get_trail_data(event, context):
                     for result in end_results:
                         if result["device_trail_id"] in rows.keys():
                             rows[result["device_trail_id"]]["count"] += result["count"]
-                            rows[result["device_trail_id"]]["battery"] = result["battery"]
                         else:
-                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"], "battery": result["device_trail_id"]}
+                            rows[result["device_trail_id"]] = {"device_trail_id": result["device_trail_id"], "start": result["start"], "count": result["count"]}
                     device_log_rows.extend(rows.values())
 
         device_log_rows = convert_decimals(device_log_rows)

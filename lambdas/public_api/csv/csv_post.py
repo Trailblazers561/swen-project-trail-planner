@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from botocore.exceptions import ClientError
 
-from helper_functions import csv_bucket, device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, s3_client, cors_headers, get_device_trail_id, timestamp_conversion
+from helper.helper_functions import csv_bucket, device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, device_trail_log_month_table, s3_client, cors_headers, get_device_trail_id, timestamp_conversion
 
 # Path in bucket for our uploaded hashes file
 file_hash_repository_path = "import-hashes/"

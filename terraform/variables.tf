@@ -12,9 +12,13 @@ locals {
   sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
 }
 
-// This can be changed later to not be defined here, but for now it's not less secure than before
+variable "user_passwords" {
+  type = string
+  default = ""
+}
+
 locals {
-  password = local.test_run ? "testPassword123!" : "REDACTED" # Sometimes google tells you your password has been found, this avoids that issue when testing
+  password = local.test_run ? "testPassword123!" : var.user_passwords # Sometimes google tells you your password has been found if it sucks, this avoids that issue when testing
   users = {
     root_admin = { email = "root_admin@gmail.com", password = local.password, groups=["root_admin", "admin", "trail_manager", "user"] }
     admin = { email = "admin@gmail.com", password = local.password, groups=["admin", "trail_manager", "user"] }
@@ -28,6 +32,8 @@ locals {
   domain = "trailcount.io"
   cloudfront_sub_domain = "${var.deploy_env}"
   api_sub_domain = "public-api-${var.deploy_env}"
+  registration_api_sub_domain = "registration-api-${var.deploy_env}"
+  device_api_sub_domain = "device-api-${var.deploy_env}"
   verification_email = local.local_run ? var.local_user_email : "TrailCount@auth.${local.domain}"
 }
 
@@ -69,4 +75,9 @@ locals {
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
+}
+
+variable "step_ca_version" {
+  type    = string
+  default = "0.30.2"
 }

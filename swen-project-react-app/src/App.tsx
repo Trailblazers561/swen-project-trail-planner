@@ -6,8 +6,9 @@ import LandingPage from "./landingPage";
 import Test from './Test';
 import DeviceManagementPage from './deviceManagementPage';
 import Privileges from './userconfig';
-import { Role, useAuth } from "@/Context";
+import { Role, useAuth } from "@/AuthContext";
 import Navbar from './components/Navbar';
+import Bottombar from './components/Bottombar';
 
 function App() {
     const { currentRole } = useAuth();
@@ -15,7 +16,7 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<><Navbar/><Outlet/></>}>
+                <Route element={<><Navbar/><Outlet/><Bottombar/></>}>
                     <Route
                         path="/"
                         element={<Navigate replace to="/home" />
@@ -24,9 +25,11 @@ function App() {
                     <Route path="/home" element={<LandingPage />} />
                     <Route path="/dashboard" element={<DashBoard />} />
                     <Route path="/test" element={<Test />} />
-                    <Route path="/devices" element={<DeviceManagementPage />} />
+                    <Route path="/devices" 
+                        element={(currentRole && currentRole >= Role.Manager) ? <DeviceManagementPage /> : <Navigate replace to="/login" />} 
+                    />
                     <Route path="/privileges" 
-                    element={(currentRole === Role.Admin || currentRole === Role.Root) ? <Privileges /> : <Navigate replace to="/login" />} 
+                        element={(currentRole && currentRole >= Role.Admin) ? <Privileges /> : <Navigate replace to="/login" />} 
                     />
                 </Route>
                 <Route path="/login" element={<LoginPage />} />

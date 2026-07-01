@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from boto3.dynamodb.conditions import Key
 
-from helper_functions import csv_bucket, dynamodb, device_trail_log_day_table, s3_client, table_time_map, trail_table, device_trail_table, convert_decimals, cors_headers
+from helper.helper_functions import csv_bucket, dynamodb, s3_client, table_time_map, trail_table, device_trail_table, convert_decimals, cors_headers
 
 fancy_granularity = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly", "year": "Yearly"}
 
@@ -90,15 +90,14 @@ def create_and_fill_csv(event, context):
             if granularity == "year" and rows:
                 year_rows = []
                 last_year = int(datetime.fromtimestamp(int(rows[0]["start"])).astimezone(ZoneInfo("America/New_York")).replace(month=1).timestamp())
-                current_year_log = {"device_trail_id": device_trail_id, "start": last_year, "count": 0, "battery": None}
+                current_year_log = {"device_trail_id": device_trail_id, "start": last_year, "count": 0}
                 for row in rows:
                     current_year = int(datetime.fromtimestamp(int(row["start"])).astimezone(ZoneInfo("America/New_York")).replace(month=1).timestamp())
                     if current_year == last_year:
                         current_year_log["count"] += row["count"]
-                        current_year_log["battery"] = row["battery"]
                     else:
                         year_rows.append(current_year_log)
-                        current_year_log = {"device_trail_id": device_trail_id, "start": current_year, "count": 0, "battery": None}
+                        current_year_log = {"device_trail_id": device_trail_id, "start": current_year, "count": 0}
                         last_year = current_year
                 year_rows.append(current_year_log)
                 trail_log_rows.extend(year_rows)
@@ -109,22 +108,9 @@ def create_and_fill_csv(event, context):
 
         for row in trail_log_rows:
             dt_id = row["device_trail_id"]
-            # row["device_id"] = device_trail_cache[dt_id].get("device_id", "") # Commented out because Craig doesn't want it
             row["trail_id"] = device_trail_cache[dt_id].get("trail_id", "")
 
         trail_log_rows.sort(key=lambda log: (log["trail_id"], log["start"]))
-
-        # brute forcing battery on an hourly basis
-        if granularity == "hour":
-            cached_battery_values = {}
-            for row in trail_log_rows:
-                start_timestamp = row["start"]
-                start_of_day = int(datetime.fromtimestamp(float(start_timestamp)).astimezone(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
-                cache_value = (row["device_trail_id"], start_of_day)
-                if cache_value not in cached_battery_values:
-                    day_entry = device_trail_log_day_table.get_item(Key={"device_trail_id": row["device_trail_id"], "start": Decimal(start_of_day)}).get("Item")
-                    cached_battery_values[cache_value] = convert_decimals(day_entry).get("battery", "") if day_entry else ""
-                row["battery"] = cached_battery_values[cache_value]
 
         key = "/tmp/trail_data_export.csv"
         file_path = Path(key)
@@ -133,7 +119,7 @@ def create_and_fill_csv(event, context):
         f = open(key, "w+", newline='')
         temp_csv_file = csv.writer(f)
 
-        headers = ["Trail ID", "Trail Name", "Start Time", f"{fancy_granularity[granularity]} Count", "Battery %"]
+        headers = ["Trail ID", "Trail Name", "Start Time", f"{fancy_granularity[granularity]} Count"]
         temp_csv_file.writerow(headers)
 
         for row in trail_log_rows:
@@ -149,8 +135,7 @@ def create_and_fill_csv(event, context):
                 row.get("trail_id", ""),
                 trail_id_to_name[row.get("trail_id", 0) or 0],
                 start_time,
-                row.get("count", 0) or 0,
-                row.get("battery", "") or ""
+                row.get("count", 0) or 0
             ]
             temp_csv_file.writerow(entry)
         f.close()

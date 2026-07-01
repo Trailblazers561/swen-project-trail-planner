@@ -16,6 +16,8 @@ env:
   CONFIG_DIRECTORY: "./terraform"
   TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
   TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
+  TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
 
 jobs:
   terraform-apply:
@@ -52,17 +54,28 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tests/requirements.txt
           python -m pip install --no-compile --no-binary :all: -r lambdas/lambda_authorizer/requirements.txt -t lambdas/layers/auth_reqs/python
+          mkdir -p lambdas/layers/helper/python/helper
+          cp lambdas/helper/helper_functions.py lambdas/layers/helper/python/helper
+          python -m pip install --no-compile --only-binary=:all: --implementation cp --platform manylinux2014_x86_64 --python-version 3.12 -r lambdas/helper/requirements.txt -t lambdas/layers/helper/python 
 
       - name: Setup Terraform Folder
         run: |
-          mkdir -p lambdas/layers/helper/python
-          cp lambdas/helper_functions.py lambdas/layers/helper/python
           mkdir -p terraform/lambdas
           cp -r lambdas/* terraform/lambdas/
           mkdir -p terraform/swen-project-react-app
           cp -r swen-project-react-app/* terraform/swen-project-react-app/
           mkdir -p terraform/sample_data
           cp -r sample_data/* terraform/sample_data/
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Start ECR Push Background Job
+        run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
@@ -86,12 +99,19 @@ jobs:
           run: ${{ steps.apply-run.outputs.run_id }}
           comment: "Apply Run from GitHub Actions CI ${{ github.sha }}"
 
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+      - name: Wait for ECR Push
+        run: |
+          echo "Waiting for ECR push to complete"
+          while [ ! -f /tmp/ecr_done ]; do
+            sleep 10
+          done
+          cat /tmp/ecr_push.log
+          RESULT=$(cat /tmp/ecr_done)
+          if [ "$RESULT" != "success" ]; then
+            echo "ECR push failed: $RESULT"
+            exit 1
+          fi
+          echo "ECR push completed successfully"
 
       - name: Add React Files To React Bucket
         run: |

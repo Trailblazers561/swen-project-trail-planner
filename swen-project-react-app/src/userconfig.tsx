@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
-import { Role, useAuth } from "./Context";
+import type { UserRow } from "./components/tables/UserDataTable";
+import AccountDataTable from "./components/tables/AccountDataTable";
+import { useMediaQuery } from "react-responsive";
+import { Role, useAuth } from "./AuthContext";
 
 interface User {
     user_id: string;
@@ -19,13 +22,40 @@ export const stringToEnum: Record<string, number> = {
     "root_admin": 4,
 };
 
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+  const Desktop = ({children}: DeviceType) => {
+    const isDesktop = useMediaQuery({ minWidth: 500 })
+    return isDesktop ? children : null
+  }
+  const Mobile = ({children}: DeviceType) => {
+    const isMobile = useMediaQuery({maxWidth: 499})
+    return isMobile ? children: null
+  }
+
 const Privileges = () => {
     const [users, setUsers] = useState<string[]>([]);
     const [userListData, setUserListData] = useState<Array<User>>([]);
+    const [selectedUser, setSelectedUser] = useState<Array<User>>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { getUsers } = TrailData();
 
     const {currentRole} = useAuth();
+
+
+    const handleRowClick = (user: UserRow) => {
+        setSelectedUser([user]);
+        setIsModalOpen(true);
+    }
+
+    const handleModalClose = () => {
+        setSelectedUser([]);
+        setIsModalOpen(false);
+    }
+    
 
     const loadUsers = async () => {
         try {
@@ -40,15 +70,24 @@ const Privileges = () => {
 
                 setUsers(data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => user.username));
 
-                setUserListData(
-                    data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => ({
+                const filteredUsers = data.filter((user) => stringToEnum[user.role] < currentRole).map((user) => ({
                         user_id: user.user_id,
                         username: user.username,
                         email: user.email,
                         role: stringToEnum[user.role],
                         banned: user.banned
-                    }))
+                    }));
+
+                setUserListData(
+                    filteredUsers
                 );
+                
+                const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
+                console.log(newSelectedUser);
+                if (newSelectedUser != undefined) {
+                    setSelectedUser([newSelectedUser]);
+                }
+                
             }
         } catch (error) {
             console.error("Error loading users:", error);
@@ -59,24 +98,31 @@ const Privileges = () => {
         loadUsers();
     }, []);
 
+    useEffect(() => {
+
+    }, [selectedUser]);
+
     return (
-        <div className="flex flex-col">
+        <><meta name="viewport" content="width=device-width initial-scale=1.0" /><div className="flex flex-col">
 
             <div className="w-full bg-[var(--color-button-secondary)]">
                 <div className="font-semibold text-2xl p-2 ml-2 text-left"> User Configuration </div>
             </div>
 
             {/* Render users */}
-            <div className="p-4">
+            <div className="lg:p-4 p-2">
                 {users.length === 0 ? (
                     <div>Loading...</div>
                 ) : (
-                    <div className="pt-4 m-4">
-                        <UserDataTable data={userListData} onRefresh={loadUsers} />
+                    <div className="pt-4 lg:m-4">
+                        <UserDataTable data={userListData} onRefresh={loadUsers} onRowClick={handleRowClick} />
                     </div>
                 )}
             </div>
-        </div>
+            {isModalOpen && <Mobile>
+                <AccountDataTable data={selectedUser} onClose={handleModalClose} onRefresh={loadUsers}/>
+            </Mobile>}
+        </div></>
     );
 };
 

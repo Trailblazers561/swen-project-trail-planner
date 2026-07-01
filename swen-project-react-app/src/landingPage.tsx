@@ -15,6 +15,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/templates/select";
+import { useDate, DatePreset } from "@/DateContext.tsx"
+import { DatePickerWithRange } from "./components/templates/daterangepicker.tsx";
+import { DateRange } from "node_modules/react-day-picker/dist/esm/types/shared";
 
 const LandingPage = () => {
 
@@ -51,46 +54,37 @@ const LandingPage = () => {
         [45.6, -71.0],
     ];
 
-    const [startDate, setStartDate] = useState<Date | null>(null);
-    const [endDate, setEndDate] = useState<Date | null>(null);
-    const [selectedPreset, setSelectedPreset] = useState("month");
+    
+    const { startDate, endDate, datePreset, setStartDate, setEndDate, setDatePreset } = useDate();
+    const [range, setRange] = useState<DateRange | undefined>({ from: startDate ?? undefined, to: endDate ?? undefined })
 
-    const applyPreset = (preset: string) => {
-        const endMoment = moment.tz("America/New_York").startOf("day");
-        let startMoment: moment.Moment | undefined;
-
-        //check for custom first so that dates aren't changed at all
-        if (preset === "custom") {
-            setSelectedPreset("custom");
-            return;
-        }
-
-        switch (preset) {
-            case "day":
-                startMoment = endMoment.clone().subtract(1, "day");
-                break;
-
-            case "week":
-                startMoment = endMoment.clone().subtract(1, "week");
-                break;
-
-            case "2weeks":
-                startMoment = endMoment.clone().subtract(2, "weeks");
-                break;
-
-            case "month":
-                startMoment = endMoment.clone().subtract(1, "month");
-                break;
-
-        }
-
-        if (!startMoment) return;
-
-        endMoment.subtract(1, "day");
-        setSelectedPreset(preset);
-        setStartDate(startMoment.toDate());
-        setEndDate(endMoment.toDate());
+    const handleStartDateChange = (startDate: Date | null) => {
+        setStartDate(startDate);
     };
+
+    const handleEndDateChange = (endDate: Date | null) => {
+        setEndDate(endDate);
+    };
+
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        const timezoneRange: DateRange = {from: undefined, to: undefined};
+        if (range?.from) {
+            const userISO = moment(range.from).tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format("YYYY-MM-DD");
+            const newYorkOffset = moment(range.from).tz("America/New_York").format("Z");
+            timezoneRange.from = new Date(`${userISO}T00:00:00${newYorkOffset}`);
+        }
+        if (range?.to) {
+            const userISO = moment(range.to).tz(Intl.DateTimeFormat().resolvedOptions().timeZone).format("YYYY-MM-DD");
+            const newYorkOffset = moment(range.to).tz("America/New_York").format("Z");
+            timezoneRange.to = new Date(`${userISO}T23:00:00${newYorkOffset}`);
+        }
+
+        setRange(range);
+        setStartDate(timezoneRange?.from ?? null);
+        setEndDate(timezoneRange?.to ?? null);
+        handleStartDateChange(timezoneRange?.from ?? null);
+        handleEndDateChange(timezoneRange?.to ?? null);
+    }
 
     useEffect(() => {
         async function fetchTrails() {
@@ -99,19 +93,6 @@ const LandingPage = () => {
                 if (res.success) {
                     const trailData = await res.json;
                     setTrails(trailData);
-
-                    // I think it makes more sense to just apply the month preset here since that is the dropdown default.
-                    const dates = trailData
-                        .map((t: any) => Number(t.date_activated))
-                        .filter(Boolean);
-
-                    if (dates.length > 0) {
-                        const earliest = new Date(Math.min(...dates) * 1000);
-
-                        setStartDate(earliest);
-                        setEndDate(new Date());
-                    }
-
                 } else {
                     console.warn("Trail metadata not available");
                     setTrails([]);
@@ -223,13 +204,6 @@ const LandingPage = () => {
         return null;
     }
 
-    // Returns the start of the given date in the America/New_York timezone
-    function getDateStart(date: Date) {
-        const userISO = moment(date).tz("UTC").format("YYYY-MM-DD");
-        const newYorkOffset = moment(date).tz("America/New_York").format("Z");
-        return new Date(`${userISO}T00:00:00${newYorkOffset}`);
-    }
-
     function HeatmapLayer({ trails, heatmapData }: { trails: any[]; heatmapData: Record<number, number> }) {
         const map = useMap();
 
@@ -267,7 +241,7 @@ const LandingPage = () => {
 
         <div className="h-screen w-screen relative overflow-hidden">
 
-            <div className="absolute top-20 left-4 z-[9999] pointer-events-auto">
+            <div className="absolute top-20 left-4 z-9999 pointer-events-auto">
                 <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
 
                     <div className="font-semibold mb-3 text-center">
@@ -276,51 +250,27 @@ const LandingPage = () => {
 
                     <div className="flex justify-center">
                         <Select
-                            value={selectedPreset}
-                            onValueChange={(value) => applyPreset(value)}
+                            value={datePreset}
+                            onValueChange={(value) => setDatePreset(value as DatePreset)}
                         >
-                            <SelectContent className="z-[10000]" />
+                            <SelectContent className="z-10000" />
                             <SelectTrigger className="w-48 bg-white">
                                 <SelectValue />
                             </SelectTrigger>
 
-                            <SelectContent className="z-[10000]" position="popper" side="bottom" sideOffset={4}>
+                            <SelectContent className="z-10000" position="popper" side="bottom" sideOffset={4}>
                                 <SelectItem value="day">Yesterday</SelectItem>
                                 <SelectItem value="week">Last Week</SelectItem>
-                                <SelectItem value="2weeks">Last 2 Weeks</SelectItem>
+                                <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
                                 <SelectItem value="month">Last Month</SelectItem>
                                 <SelectItem value="custom">Custom</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {selectedPreset === "custom" && (
+                    {datePreset === DatePreset.Custom && (
                         <div className="flex justify-center gap-2 mt-2">
-                            <input
-                                type="date"
-                                value={
-                                    startDate
-                                        ? startDate.toISOString().split("T")[0] : ""
-                                }
-                                onChange={(e) => {
-                                    setSelectedPreset("custom");
-                                    setStartDate(getDateStart(new Date(e.target.value)));
-                                }}
-                                className="border rounded px-2 py-1 bg-white"
-                            />
-
-                            <input
-                                type="date"
-                                value={
-                                    endDate
-                                        ? endDate.toISOString().split("T")[0] : ""
-                                }
-                                onChange={(e) => {
-                                    setSelectedPreset("custom");
-                                    setEndDate(getDateStart(new Date(e.target.value)));
-                                }}
-                                className="border rounded px-2 py-1 bg-white"
-                            />
+                            <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
                         </div>
                     )}
 
@@ -384,8 +334,8 @@ const LandingPage = () => {
 
                 </div>
             </div>
-            {loadingUsage && zoom >= 9 && (
-                <div className="absolute inset-0 z-[9998] flex items-center justify-center pointer-events-none bg-black/20">
+            {loadingUsage && (
+                <div className="absolute inset-0 z-9998 flex items-center justify-center pointer-events-none bg-black/20">
                     <LoaderCircle
                         size={80}
                         strokeWidth={2}

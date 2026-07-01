@@ -1,11 +1,12 @@
-import { Role, roleMap, useAuth } from "@/Context";
+import { Role, roleMap, useAuth } from "@/AuthContext";
 import React, { useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 
-interface UserRow {
+export interface UserRow {
     user_id: string;
     username: string;
     email: string;
@@ -16,7 +17,21 @@ interface UserRow {
 interface Props {
     data: UserRow[];
     onRefresh: () => Promise<void>;
+    onRowClick?: (user: UserRow) => void;
 }
+
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+  const Desktop = ({children}: DeviceType) => {
+    const isDesktop = useMediaQuery({ minWidth: 500 })
+    return isDesktop ? children : null
+  }
+  const Mobile = ({children}: DeviceType) => {
+    const isMobile = useMediaQuery({maxWidth: 499})
+    return isMobile ? children: null
+  }
 
 const customStyles = {
     table: {
@@ -54,6 +69,42 @@ const customStyles = {
     },
 };
 
+const customStylesMobile = {
+    table: {
+        style: {
+            overflow: "hidden",
+        },
+    },
+    headRow: {
+        style: {
+            backgroundColor: "#C0D3D1",
+            minHeight: "52px",
+        },
+    },
+    headCells: {
+        style: {
+            fontWeight: 600,
+            fontSize: "12px",
+            letterSpacing: "0.05em",
+        },
+    },
+    rows: {
+        style: {
+            fontSize: "12px",
+            minHeight: "48px",
+        },
+        stripedStyle: {
+            backgroundColor: "#edeef0",
+        },
+    },
+    pagination: {
+        style: {
+            borderBottomLeftRadius: "0.75rem",
+            borderBottomRightRadius: "0.75rem",
+        },
+    },
+};
+
 const roleDisplayMap: Record<string | number, string> = {
     [Role.User]: "User",
     [Role.Manager]: "Trail Manager",
@@ -61,7 +112,7 @@ const roleDisplayMap: Record<string | number, string> = {
     [Role.Root]: "Root Admin",
 };
 
-const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
+const UserDataTable: React.FC<Props> = ({ data, onRefresh, onRowClick }) => {
 
     const { currentRole, username } = useAuth();
     const [loadingUsage, setLoadingUsage] = useState(false);
@@ -226,6 +277,24 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
         }
     ];
 
+    const columnsMobile: TableColumn<UserRow>[] = [
+        {
+            name: "Username",
+            selector: (row) => row.username,
+            sortable: true,
+        },
+        {
+            name: "Role",
+            selector: (row) => row.role == null ? "None" : (roleDisplayMap[row.role] ?? "None"),
+            sortable: true,
+        },
+        {
+            name: "Banned",
+            selector: (row) => row.banned ? "Yes" : "No",
+            sortable: true,
+        }
+    ]
+
     return (
         <div className="bg-gray-50 shadow-md" data-testid="trail-user-table">
             {loadingUsage && (
@@ -237,19 +306,37 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh }) => {
                     />
                 </div>
             )}
-            <DataTable
-                columns={columns}
+            <Desktop>
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    pagination={true}
+                    striped
+                    responsive
+                    customStyles={customStyles}
+                    noDataComponent={
+                        <div className="py-6 text-gray-500">
+                            No users found.
+                        </div>
+                    }
+                />
+            </Desktop>
+            <Mobile>
+                <DataTable
+                columns={columnsMobile}
                 data={data}
                 pagination={true}
                 striped
                 responsive
-                customStyles={customStyles}
+                customStyles={customStylesMobile}
+                onRowClicked={onRowClick}
                 noDataComponent={
                     <div className="py-6 text-gray-500">
                         No users found.
                     </div>
                 }
-            />
+                />
+            </Mobile>
         </div>
     );
 };

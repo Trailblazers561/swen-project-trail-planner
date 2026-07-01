@@ -28,7 +28,7 @@ resource "local_sensitive_file" "testing_env" {
 CLOUDFRONT_URL=http://${aws_cloudfront_distribution.s3_distribution.domain_name}
 API_URL=${aws_api_gateway_stage.api_stage.invoke_url}
 API_TOKEN=${local.cognito_token}
-API_KEY=${aws_api_gateway_api_key.api_key.value}
+USER_PASSWORDS=${local.password}
 LOCAL_RUN=true
 EOF
   filename = "${path.module}/${local.test_directory}/.env"

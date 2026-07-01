@@ -1,11 +1,11 @@
-id,name,notes,firmware_version,date_manufactured
-1,f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3,"this is a pretty neat device right",1.0.0,1767225600
-2,6ae48c0dcbd66a4d287f9cf05d2f2d2ff93a39b3dcd7db4a4f16279806b4f083,"this is a pretty neat device right",1.0.0,1767225600
-3,20f244d703c66e79ebfa8c7c978bcf2a9e92c1d4f894f5e2eb39e5c9b32c9f44,"this is a pretty neat device right",1.0.0,1767225600
-4,3e6e3bb1da8d5903b59b308fc7db71e1d2da4d1e9dfe239e95ed6f9f851a5b57,"this is a pretty neat device right",1.0.0,1767225600
-5,521d2b7e4208a8c6480c78ec4c92f4877fa9f2b16f57d9df514f8c84e218c3d1,"this is a pretty neat device right",1.0.0,1767225600
-6,a0fa9d6459f4b6e446c7d5c9e38e4e6d9ffb21c5dcf2f3f18a9230ed86d6fa32,"this is a pretty neat device right",1.0.0,1767225600
-7,9e62b2b0c7f4f94e3b95f65e324d64c34e94f3e20a7b5f492c4b0d8f9a7c6f2d,"this is a pretty neat device right",1.0.0,1767225600
-8,bcf4d9f0c3a54e1c8b2f9d7f4e8a2c9b7d1f6e3a9c8d0e5b1f3a6c7d2e8f9b0a,"this is a pretty neat device right",1.0.0,1767225600
-9,7d3b2f1c4e5a6d7b8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c,"this is a pretty neat device right",1.0.0,1767225600
-10,c2b3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3,"this is a pretty neat device right",1.0.0,1767225600
+id,name,notes,date_manufactured
+1,f1c9645dbc14efddc7d8a322685f26eb3c0b65c6d5aeb89f9a3a98a4f8f5c0d3,"this is a pretty neat device right",1767225600
+2,6ae48c0dcbd66a4d287f9cf05d2f2d2ff93a39b3dcd7db4a4f16279806b4f083,"this is a pretty neat device right",1767225600
+3,20f244d703c66e79ebfa8c7c978bcf2a9e92c1d4f894f5e2eb39e5c9b32c9f44,"this is a pretty neat device right",1767225600
+4,3e6e3bb1da8d5903b59b308fc7db71e1d2da4d1e9dfe239e95ed6f9f851a5b57,"this is a pretty neat device right",1767225600
+5,521d2b7e4208a8c6480c78ec4c92f4877fa9f2b16f57d9df514f8c84e218c3d1,"this is a pretty neat device right",1767225600
+6,a0fa9d6459f4b6e446c7d5c9e38e4e6d9ffb21c5dcf2f3f18a9230ed86d6fa32,"this is a pretty neat device right",1767225600
+7,9e62b2b0c7f4f94e3b95f65e324d64c34e94f3e20a7b5f492c4b0d8f9a7c6f2d,"this is a pretty neat device right",1767225600
+8,bcf4d9f0c3a54e1c8b2f9d7f4e8a2c9b7d1f6e3a9c8d0e5b1f3a6c7d2e8f9b0a,"this is a pretty neat device right",1767225600
+9,7d3b2f1c4e5a6d7b8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c,"this is a pretty neat device right",1767225600
+10,c2b3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3,"this is a pretty neat device right",1767225600
