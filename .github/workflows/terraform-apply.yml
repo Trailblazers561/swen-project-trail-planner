@@ -6,6 +6,7 @@ on:
       - trailblazers-tst
       - trailblazers-uat
       - trailblazers-prod
+      - main
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
@@ -25,7 +26,7 @@ jobs:
       ${{ 
           github.ref_name == 'trailblazers-tst' && 'TST Apply' ||
           github.ref_name == 'trailblazers-uat' && 'UAT Apply' ||
-          github.ref_name == 'trailblazers-prod' && 'PROD Apply'
+          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'PROD Apply'
         }}
     runs-on: ubuntu-latest
     permissions:
@@ -34,7 +35,7 @@ jobs:
       ${{ 
           github.ref_name == 'trailblazers-tst' && 'tst' ||
           github.ref_name == 'trailblazers-uat' && 'uat' ||
-          github.ref_name == 'trailblazers-prod' && 'prod'
+          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'prod'
         }}
     env:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
@@ -134,7 +135,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
 
   demo-apply:
-    if: github.ref_name == 'trailblazers-prod'
+    if: github.ref_name == 'trailblazers-prod' || github.ref_name == 'main'
     name: DEMO Apply
     runs-on: ubuntu-latest
     permissions:
