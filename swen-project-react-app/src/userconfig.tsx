@@ -45,14 +45,6 @@ const Privileges = () => {
 
     const {currentRole} = useAuth();
 
-    // const modalHandler = () => {
-    //     if (selectedUser.length == 0) {
-    //         setIsModalOpen(false)
-    //     }
-    //     else {
-    //         setIsModalOpen(true)
-    //     }
-    // }
 
     const handleRowClick = (user: UserRow) => {
         setSelectedUser([user]);
@@ -89,8 +81,6 @@ const Privileges = () => {
                 setUserListData(
                     filteredUsers
                 );
-
-                // const newSelectedUser = userListData.find((user) => user.user_id === selectedUser[0].user_id);
                 
                 const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
                 console.log(newSelectedUser);
@@ -111,8 +101,6 @@ const Privileges = () => {
     useEffect(() => {
 
     }, [selectedUser]);
-
-    // console.log(selectedUser);
 
     return (
         <><meta name="viewport" content="width=device-width initial-scale=1.0" /><div className="flex flex-col">

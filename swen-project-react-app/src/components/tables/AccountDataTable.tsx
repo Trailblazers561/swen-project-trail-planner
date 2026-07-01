@@ -56,10 +56,7 @@ const handleRoleText = (role: Role) => {
 
 const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
-    // const [data[0], setdata[0]] = useState<UserRow>(data[0]);
-    // const data[0]:UserRow = data[0];
     console.log(data[0]);
-    // const previousUser:UserRow = {username: "", email: "", banned: false, user_id: "", role: ""};
 
     const [textData, setTextData] = useState<Array<textRow>>([]);
         
@@ -153,7 +150,6 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
     const loadData = () => {
 
-        // setdata[0](data[0]);
 
         if (data[0] != undefined) {
 
