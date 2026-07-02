@@ -19,25 +19,25 @@ function parseJwt(token) {
 const HomePage = () => {
     const [count, setCount] = useState(0)
     const navigate = useNavigate();
-    const idToken = parseJwt(sessionStorage.idToken.toString());
-    const accessToken = parseJwt(sessionStorage.accessToken.toString());
+    const idToken = parseJwt(localStorage.idToken.toString());
+    const accessToken = parseJwt(localStorage.accessToken.toString());
     console.log(
-      `Amazon Cognito ID token encoded: ${sessionStorage.idToken.toString()}`,
+      `Amazon Cognito ID token encoded: ${localStorage.idToken.toString()}`,
     );
     console.log("Amazon Cognito ID token decoded: ");
     console.log(idToken);
     console.log(
-      `Amazon Cognito access token encoded: ${sessionStorage.accessToken.toString()}`,
+      `Amazon Cognito access token encoded: ${localStorage.accessToken.toString()}`,
     );
     console.log("Amazon Cognito access token decoded: ");
     console.log(accessToken);
     console.log("Amazon Cognito refresh token: ");
-    console.log(sessionStorage.refreshToken);
+    console.log(localStorage.refreshToken);
     console.log(
       "Amazon Cognito example application. Not for use in production applications.",
     );
     const handleLogout = () => {
-      sessionStorage.clear();
+      localStorage.clear();
       navigate("/login");
     };
   

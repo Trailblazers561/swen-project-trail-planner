@@ -1,113 +1,84 @@
-variable "default_name" {
-  type    = string
-  default = "trailplanner"
+variable "deploy_env" {
+  type = string
+  default = "local"
 }
 
-#root domain
-variable "domain" {
-  type    = string
-  default = "example.com"
+locals {
+  local_run = var.deploy_env == "local"
+  test_run = var.deploy_env == "test"
+  prod_run = var.deploy_env == "prod"
+  react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
+  lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
+  test_directory = local.local_run ? "../tests" : "./tests"
+  sample_data_directory = local.local_run ? "../sample_data" : "./sample_data"
 }
 
-#sub domain
-variable "sub" {
-  type    = string
-  default = "adiron"
+variable "user_passwords" {
+  type = string
+  default = ""
 }
 
-variable "has_domain" {
-  type    = bool
-  default = false
+locals {
+  password = local.test_run ? "testPassword123!" : var.user_passwords # Sometimes google tells you your password has been found if it sucks, this avoids that issue when testing
+  users = {
+    root_admin = { email = "root_admin@gmail.com", password = local.password, groups=["root_admin", "admin", "trail_manager", "user"] }
+    admin = { email = "admin@gmail.com", password = local.password, groups=["admin", "trail_manager", "user"] }
+    trail_manager = { email = "trail_manager@gmail.com", password = local.password, groups=["trail_manager", "user"] }
+    user = { email = "user@gmail.com", password = local.password, groups=["user"] }
+  }
 }
 
-#If has domain is true this needs to have a value
+locals {
+  use_domain = !local.local_run && !local.test_run
+  domain = "trailcount.io"
+  cloudfront_sub_domain = "${var.deploy_env}"
+  api_sub_domain = "public-api-${var.deploy_env}"
+  registration_api_sub_domain = "registration-api-${var.deploy_env}"
+  device_api_sub_domain = "device-api-${var.deploy_env}"
+  verification_email = local.local_run ? var.local_user_email : "TrailCount@auth.${local.domain}"
+}
+
+// Will get populated from github actions and stored in the repo, not populated in a local run
 variable "acm_certificate_arn" {
   type        = string
   default     = "arn:"
   description = "Domain certificate arn"
 }
 
+// Will get populated from github actions and stored in the repo, should be overriden for a local run too
+variable "ses_identity_arn" {
+  type        = string
+  default     = "arn:"
+  description = "SES identity arn"
+}
+
+variable "local_user_email" {
+  type = string
+  default = "email@g.rit.edu"
+}
+
 variable "bucket_name" {
   type    = string
-  default = "trailplanner-bucket"
+  default = "trailcount-bucket"
 }
 
-variable "bucket_acl" {
-  type        = string
-  default     = "private"
-  description = "Bucket ACL (Access Control Listing)"
-}
-
-variable "react_app_directory" {
-  type    = string
-  default = "../swen-project-react-app"
-}
-
-variable "authorization_type" {
-  type = string
-  #Set to "NONE" to disable auth
-  default = "COGNITO_USER_POOLS"
-}
-
-# ONLY USE FOR TESTING. Removes CDN optimizations and exposes all files in the s3 to the public with read permissions.
-variable "has_cdn" {
-  type    = bool
-  default = false
-}
-
-variable "device_api_key" {
-  type      = string
-  sensitive = true
-  default   = null
-  description = "API key value for the device endpoint. Null = AWS auto-generates (use for staging)."
-}
-
-variable "admin_password" {
-  type = string
-  sensitive = true
-  default = null
-  description = "The password for the admin account to use."
-}
-
-variable "env" {
-  type        = string
-  default     = ""
-  description = "Environment within a tenant (e.g. 'prod', 'test'). Legacy workspaces use '' (default) or 'tst' (legacy staging)."
-}
-
-variable "tenant" {
-  type        = string
-  default     = ""
-  description = "Tenant name (e.g. 'adk', 'demo'). Empty = legacy workspaces (default and tst). New tenant-scoped workspaces set this to enable the tc-<tenant>-<env>- naming pattern."
-}
-
-variable "manage_dns" {
-  type        = bool
-  default     = false
-  description = "When true, Terraform creates ACM certs + CloudFront with custom domain + API Gateway custom domain. New tenant-scoped workspaces set this true. Legacy workspaces keep it false (DNS/certs managed manually outside Terraform if at all)."
-}
-
-variable "dashboard_domain" {
-  type        = string
-  default     = ""
-  description = "Full FQDN for the dashboard (e.g. 'adk.trailcount.io', 'test.adk.trailcount.io'). Used only when manage_dns = true."
-}
-
-variable "api_domain" {
-  type        = string
-  default     = ""
-  description = "Full FQDN for the API (e.g. 'api.adk.trailcount.io', 'api.test.adk.trailcount.io'). Used only when manage_dns = true."
+# Set to false to disable auth
+variable "authorization_enabled" {
+  type = bool
+  default = true
 }
 
 locals {
-  # Resource name prefix. Three cases:
-  #   tenant-scoped (tenant='adk', env='test')  -> 'tc-adk-test-'
-  #   legacy staging  (tenant='',   env='tst')  -> 'tst-'         (preserves existing behavior)
-  #   legacy prod     (tenant='',   env='')     -> ''             (preserves existing behavior)
-  name_prefix = var.tenant != "" ? "tc-${var.tenant}-${var.env}-" : (var.env != "" ? "${var.env}-" : "")
+  gateway_method_authorization = var.authorization_enabled ? "CUSTOM" : "NONE"
+  gateway_authorizer_type = var.authorization_enabled ? "TOKEN" : "NONE"
 }
 
 resource "random_integer" "random_suffix" {
   min = 10000000
   max = 99999999
+}
+
+variable "step_ca_version" {
+  type    = string
+  default = "0.30.2"
 }

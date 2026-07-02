@@ -1,77 +1,71 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Select from "react-select";
+import { MultiSelectOption } from "./templates/multi-select";
 
 interface Trail {
-    trail_id: number;
-    trail_name: string;
+    id: number;
+    name: string;
 }
 
-interface TrailGroup {
-    group_name: string;
+interface Area {
+    name: string;
     trail_ids: number[];
 }
 
 interface TrailSelectorProps {
     onChange: (trails: string[]) => void;
-    onGroupChange?: (groupName: string | null) => void;
     clearTrails: () => void;
     clearGraph: () => void;
     clearName: () => void;
     trailMetadata?: Trail[];
-    trailGroups?: TrailGroup[];
+    areas?: Area[];
 }
 
 const TrailSelector = ({
     onChange,
-    onGroupChange,
     clearGraph,
     clearName,
     clearTrails,
     trailMetadata = [],
-    trailGroups = []
+    areas = []
 }: TrailSelectorProps) => {
-    const [selectedWilderness, setSelectedWilderness] = useState<string>("All Areas");
+    const [selectedWilderness, setSelectedWilderness] = useState<string>("");
     const [selectedTrails, setSelectedTrails] = useState<Array<{ value: string; label: string }>>([]);
-    const isInitialMount = useRef(true);
 
-    // Build wilderness options from trail groups (exclude empty groups)
+    // Build wilderness options from areas (exclude empty areas)
     const wildernessOptions = useMemo(() => {
-        const options = [{ value: "All Areas", label: "All Areas" }];
-        trailGroups.forEach(group => {
-            if (group.group_name &&
-                group.group_name !== "All Areas" &&
-                group.trail_ids &&
-                Array.isArray(group.trail_ids) &&
-                group.trail_ids.length > 0) {
-                options.push({ value: group.group_name, label: group.group_name });
+        const options: MultiSelectOption[] = [];
+        areas.forEach(area => {
+            if (area.name &&
+                area.trail_ids &&
+                Array.isArray(area.trail_ids) &&
+                area.trail_ids.length > 0) {
+                options.push({ value: area.name, label: area.name });
             }
         });
         return options;
-    }, [trailGroups]);
+    }, [areas]);
 
-    // Build trail data map - "All Areas" always contains ALL trails, groups contain their specific trails
+    // Build trail data map -  areas contain their specific trails
     const trailData = useMemo(() => {
         const data: Record<string, string[]> = {};
 
         // Filter out any trails with invalid names
-        const validTrails = trailMetadata.filter(t => t && t.trail_name && t.trail_name.trim().length > 0);
+        const validTrails = trailMetadata.filter(t => t && t.name && t.name.trim().length > 0);
 
-        // "All Areas" always includes "All Trails" option plus all valid trails
-        data["All Areas"] = ["All Trails", ...validTrails.map(t => t.trail_name)];
-
-        // Add trails for each group (only trails that exist in metadata)
-        trailGroups.forEach(group => {
-            if (group.group_name && group.group_name !== "All Areas") {
-                const groupTrails = (group.trail_ids || [])
-                    .map(id => validTrails.find(t => t.trail_id === id))
+        // Add trails for each area (only trails that exist in metadata)
+        areas.forEach(area => {
+            if (area.name) {
+                const areaTrails = (area.trail_ids || [])
+                    .map(id => validTrails.find(t => t.id === id))
                     .filter((t): t is Trail => t !== undefined)
-                    .map(t => t.trail_name);
-                data[group.group_name] = groupTrails;
+                    .map(t => t.name);
+                data[area.name] = areaTrails;
             }
         });
 
         return data;
-    }, [trailMetadata, trailGroups]);
+    }, [trailMetadata, areas]);
 
     // Get filtered trails for the selected wilderness
     const filteredTrails = useMemo(() => {
@@ -85,48 +79,17 @@ const TrailSelector = ({
             }));
     }, [trailData, selectedWilderness]);
 
-    // Auto-select "All Trails" on first data load when nothing is selected
-    useEffect(() => {
-        if (selectedTrails.length === 0 && (trailData["All Areas"]?.length ?? 0) > 0 && selectedWilderness === "All Areas") {
-            const defaultSelection = [{ value: "All Trails", label: "All Trails" }];
-            setSelectedTrails(defaultSelection);
-            onChange(["All Trails"]);
-            if (onGroupChange) onGroupChange("All Areas");
-        }
-    }, [trailData]);
-
-    // Re-sync selection when group composition changes (e.g. a trail is added/removed from the group)
-    useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
-            return;
-        }
-        if (selectedWilderness === "All Areas") return;
-        const trailsForWilderness = trailData[selectedWilderness] || [];
-        if (trailsForWilderness.length === 0) return;
-        const autoSelectedTrails = trailsForWilderness.map(trail => ({
-            value: trail,
-            label: trail,
-        }));
-        setSelectedTrails(autoSelectedTrails);
-        onChange(autoSelectedTrails.map(o => o.value));
-    }, [trailData]);
-
     // Update selected trails when metadata changes - preserve selections if trails still exist
     useEffect(() => {
         if (trailMetadata.length > 0 && selectedTrails.length > 0) {
             const validTrailNames = new Set(
                 trailMetadata
-                    .filter(t => t && t.trail_name && t.trail_name.trim().length > 0)
-                    .map(t => t.trail_name)
+                    .filter(t => t && t.name && t.name.trim().length > 0)
+                    .map(t => t.name)
             );
 
             const updatedTrails = selectedTrails
                 .map(selected => {
-                    // Always keep "All Trails" if selected
-                    if (selected.value === "All Trails") {
-                        return selected;
-                    }
                     // Keep trail if it still exists (even if name changed, we'll update it)
                     if (validTrailNames.has(selected.value)) {
                         return { value: selected.value, label: selected.value };
@@ -149,15 +112,15 @@ const TrailSelector = ({
     }, [trailMetadata]);
 
     const selectKey = useMemo(() => {
-        const trailCount = trailMetadata.filter(t => t && t.trail_name).length;
-        const groupCount = trailGroups.length;
+        const trailCount = trailMetadata.filter(t => t && t.name).length;
+        const areaCount = areas.length;
         const trailIds = trailMetadata
-            .filter(t => t && t.trail_id)
-            .map(t => t.trail_id)
+            .filter(t => t && t.id)
+            .map(t => t.id)
             .sort()
             .join(',');
-        return `trail-select-${trailCount}-${groupCount}-${trailIds}-${selectedWilderness}`;
-    }, [trailMetadata, trailGroups, selectedWilderness]);
+        return `trail-select-${trailCount}-${areaCount}-${trailIds}-${selectedWilderness}`;
+    }, [trailMetadata, areas, selectedWilderness]);
 
     const handleWildernessChange = (selectedOption: { value: string; label: string } | null) => {
         if (!selectedOption) return;
@@ -168,28 +131,21 @@ const TrailSelector = ({
         // Auto-select appropriate trails based on wilderness
         let autoSelectedTrails: Array<{ value: string; label: string }> = [];
 
-        if (newWilderness === "All Areas") {
-            // Default to "All Trails" when "All Areas" is selected
-            autoSelectedTrails = [{ value: "All Trails", label: "All Trails" }];
-        } else {
-            // Select all trails in the group
-            const trailsForWilderness = trailData[newWilderness] || [];
-            autoSelectedTrails = trailsForWilderness.map(trail => ({
-                value: trail,
-                label: trail,
-            }));
-        }
+        // Select all trails in the area
+        const trailsForWilderness = trailData[newWilderness] || [];
+        autoSelectedTrails = trailsForWilderness.map(trail => ({
+            value: trail,
+            label: trail,
+        }));
 
         setSelectedTrails(autoSelectedTrails);
         onChange(autoSelectedTrails.map(option => option.value));
-        onGroupChange?.(newWilderness);
     };
 
     const handleTrailChange = (selectedOptions: readonly { value: string; label: string }[]) => {
         const options = selectedOptions as Array<{ value: string; label: string }>;
         setSelectedTrails(options);
         onChange(options.map(option => option.value));
-        onGroupChange?.(null); // manual trail selection — no group active
     };
 
     return (
@@ -210,12 +166,12 @@ const TrailSelector = ({
                         minWidth: "200px",
                         borderRadius: "5px",
                         backgroundColor: "#fff",
-                        border: "2px solid #6a9e5e",
+                        border: "2px solid #007bff",
                         boxShadow: "none",
                     }),
                     multiValue: (base) => ({
                         ...base,
-                        backgroundColor: "#6a9e5e",
+                        backgroundColor: "#007bff",
                         color: "white",
                         borderRadius: "5px",
                         padding: "2px 5px",
@@ -229,7 +185,7 @@ const TrailSelector = ({
                         ...base,
                         color: "white",
                         ":hover": {
-                            backgroundColor: "#4e8040",
+                            backgroundColor: "#0056b3",
                             color: "white",
                         },
                     }),
@@ -240,10 +196,10 @@ const TrailSelector = ({
                     }),
                     option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isSelected ? "#6a9e5e" : "#fff",
+                        backgroundColor: state.isSelected ? "#007bff" : "#fff",
                         color: state.isSelected ? "white" : "#333",
                         ":hover": {
-                            backgroundColor: "#6a9e5e",
+                            backgroundColor: "#007bff",
                             color: "white",
                         },
                     }),
@@ -261,7 +217,7 @@ const TrailSelector = ({
                         minWidth: "200px",
                         borderRadius: "5px",
                         backgroundColor: "#fff",
-                        border: "2px solid #6a9e5e",
+                        border: "2px solid #007bff",
                         boxShadow: "none",
                     }),
                     menu: (base) => ({
@@ -271,10 +227,10 @@ const TrailSelector = ({
                     }),
                     option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isSelected ? "#6a9e5e" : "#fff",
+                        backgroundColor: state.isSelected ? "#007bff" : "#fff",
                         color: state.isSelected ? "white" : "#333",
                         ":hover": {
-                            backgroundColor: "#6a9e5e",
+                            backgroundColor: "#007bff",
                             color: "white",
                         },
                     }),
