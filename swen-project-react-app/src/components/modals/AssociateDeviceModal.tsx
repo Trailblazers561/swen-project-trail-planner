@@ -46,7 +46,7 @@ const AssociateDeviceModal: React.FC<AssociateDeviceModalProps> = ({ isOpen, onC
       else
         setSelectedTrail(0);
     }
-  }, [selectedDevice])
+  }, [selectedDevice]);
 
   const loadData = async () => {
     try {
