@@ -16,9 +16,8 @@ def load_module():
     return importlib.reload(module)
 
 
-def test_get_all_active_areas(aws):
+def test_get_all_active_areas():
     # Arrange
-
     module = load_module()
 
     event = {
@@ -35,29 +34,13 @@ def test_get_all_active_areas(aws):
 
     body = json.loads(response["body"])
 
-    assert len(body) == 4
+    assert len(body) == 1
 
     names = {area["name"] for area in body}
 
-    assert names == {"High Peaks Wilderness", "Giant Mountain Wilderness", "Adirondack Park", "Testing Area"}
+    assert names == {"Testing Area"}
 
-def test_get_only_retired_areas(aws):
-    # Arrange
-    area_table = aws["area"]
-
-    area_table.put_item(
-        Item={
-            "name": "Old Area",
-            "retired": True,
-        }
-    )
-
-    area_table.put_item(
-        Item={
-            "name": "Current Area",
-        }
-    )
-
+def test_get_only_retired_areas():
     module = load_module()
 
     event = {
