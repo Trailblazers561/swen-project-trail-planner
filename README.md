@@ -201,9 +201,9 @@ Ensure that your AWS IAM user has sufficient permissions for:
 - **React Frontend**: See [swen-project-react-app/REACT_FRONTEND.md](swen-project-react-app/REACT_FRONTEND.md)
 - **CloudFront/Route53 Deployment**: See [terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md](terraform/DEPLOYMENT_CLOUDFRONT_ROUTE53.md)
 - **API Documentation**: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
-- **Testing**: See [tests/TESTING_OVERVIEW.md](tests/TESTING_OVERVIEW.md)
-- **API Testing**: See [tests/api_tests/API_TESTING.md](tests/api_tests/API_TESTING.md)
-- **UI Testing**: See [tests/ui_tests/UI_TESTING.md](tests/ui_tests/UI_TESTING.md)
+- **Testing**: See [tests/TESTING_OVERVIEW.md](testing/TESTING_OVERVIEW.md)
+- **API Testing**: See [tests/api_tests/API_TESTING.md](testing/api_tests/API_TESTING.md)
+- **UI Testing**: See [tests/ui_tests/UI_TESTING.md](testing/ui_tests/UI_TESTING.md)
 
 ## Additional Resources
 

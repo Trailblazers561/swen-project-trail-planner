@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains component tests for the Trail Count lambdas. The general purpose testing documentation can be found in [TESTING_OVERVIEW](/tests/TESTING_OVERVIEW.md).
+This directory contains component tests for the Trail Count lambdas. The general purpose testing documentation can be found in [TESTING_OVERVIEW](/testing/TESTING_OVERVIEW.md).
 
 ## Prerequisites
 

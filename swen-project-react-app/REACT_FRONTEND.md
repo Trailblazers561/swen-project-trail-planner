@@ -173,7 +173,7 @@ See [API_DOCUMENTATION.md](../API_DOCUMENTATION.md) for API details.
 
 ## Testing
 
-UI tests are located in `../tests/ui_tests/`. See [UI_TESTING.md](../tests/ui_tests/UI_TESTING.md) for testing instructions.
+UI tests are located in `../tests/ui_tests/`. See [UI_TESTING.md](../testing/ui_tests/UI_TESTING.md) for testing instructions.
 
 ## Troubleshooting
 
