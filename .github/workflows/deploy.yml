@@ -106,7 +106,7 @@ jobs:
           cache-dependency-path: swen-project-react-app/package-lock.json
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.15.2
           terraform_wrapper: false
