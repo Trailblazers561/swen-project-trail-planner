@@ -20,9 +20,25 @@ update_sys_path()
 #
 
 ENV = "local"
-TABLES = { "AREA_TABLE": f"{ENV}_trailcount_area_table", "TRAIL_TABLE": f"{ENV}_trailcount_trail_table", "DEVICE_TABLE": f"{ENV}_trailcount_device_table", "DEVICE_TRAIL_TABLE": f"{ENV}_trailcount_device_trail_table", "DEVICE_LOG_TABLE": f"{ENV}_trailcount_device_log_table", "REGISTRATION_TABLE": f"{ENV}_trailcount_registration_table", "DEVICE_TRAIL_LOG_HOUR_TABLE": f"{ENV}_trailcount_device_trail_log_hour_table", "DEVICE_TRAIL_LOG_DAY_TABLE": f"{ENV}_trailcount_device_trail_log_day_table", "DEVICE_TRAIL_LOG_WEEK_TABLE": f"{ENV}_trailcount_device_trail_log_week_table", "DEVICE_TRAIL_LOG_MONTH_TABLE": f"{ENV}_trailcount_device_trail_log_month_table", }
+TABLES = {
+    "AREA_TABLE": f"{ENV}_trailcount_area_table",
+    "TRAIL_TABLE": f"{ENV}_trailcount_trail_table",
+    "DEVICE_TABLE": f"{ENV}_trailcount_device_table",
+    "DEVICE_TRAIL_TABLE": f"{ENV}_trailcount_device_trail_table",
+    "DEVICE_LOG_TABLE": f"{ENV}_trailcount_device_log_table",
+    "REGISTRATION_TABLE": f"{ENV}_trailcount_registration_table",
+    "DEVICE_TRAIL_LOG_HOUR_TABLE": f"{ENV}_trailcount_device_trail_log_hour_table",
+    "DEVICE_TRAIL_LOG_DAY_TABLE": f"{ENV}_trailcount_device_trail_log_day_table",
+    "DEVICE_TRAIL_LOG_WEEK_TABLE": f"{ENV}_trailcount_device_trail_log_week_table",
+    "DEVICE_TRAIL_LOG_MONTH_TABLE": f"{ENV}_trailcount_device_trail_log_month_table",
+}
+
 def load_test_data_module():
-    """ Import (or reload) the Lambda after Moto has created the mocked AWS resources. This ensures the module's global DynamoDB objects point at Moto instead of real AWS. """
+    """
+    Import (or reload) the Lambda after Moto has created the mocked AWS resources.
+    This ensures the module's global DynamoDB objects point at Moto instead of real AWS.
+    """
+
     module = importlib.import_module("sample_data.load_test_data")
     return importlib.reload(module)
 

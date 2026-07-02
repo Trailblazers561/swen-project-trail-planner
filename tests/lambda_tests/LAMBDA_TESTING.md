@@ -8,11 +8,11 @@ This directory contains component tests for the Trail Count lambdas. The general
 
 ### Required Packages
 
-Follow the prerequisites outlined in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
+Follow the prerequisites outlined in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.). 
 
 ## Configuration
 
-There is no configuration required outside of the mock objects created in the conftest.py file. If you need an object mocked that isn't already, you'll need to update that file.
+There is no configuration required outside the mock objects created in the conftest.py file. If you need an object mocked that isn't already, you'll need to update that file. See the [Moto](https://docs.getmoto.org/en/latest/docs/getting_started.html) docs for a guide.
 
 ## Running Tests
 
