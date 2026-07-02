@@ -53,9 +53,6 @@ const handleRoleText = (role: Role) => {
     else if (role == Role.Root) {
         return ("Root Admin");
     }
-    else if (role == Role.Guest) {
-        return ("Guest");
-    }
     return("None");
 }
 

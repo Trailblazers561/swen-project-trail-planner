@@ -273,7 +273,6 @@ const LoginPage = () => {
           className="fixed left-0 top-0 h-5/16 lg:h-screen w-screen lg:w-11/16 bg-cover bg-center"
           style={{backgroundImage: "url('/News-OswegatchieRiver-BearPond.jpg')"}}
       >
-        <div className="absolute inset-0 bg-black/20" />
         <img
           src="/AWA-logo.png"
           alt="Logo"
