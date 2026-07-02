@@ -99,7 +99,7 @@ jobs:
       - name: Setup Node.js
         # Needed for `npm install && npm run build` inside the
         # null_resource.deploy_react_app provisioner that terraform runs.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
