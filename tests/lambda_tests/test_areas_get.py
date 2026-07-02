@@ -1,10 +1,12 @@
+# you
 from lambda_config import update_sys_path
 update_sys_path()
 
+#import the test data you need
+from test_data import AREA_DATA
+
 import importlib
 import json
-
-import boto3
 
 def load_module():
     """
@@ -12,12 +14,14 @@ def load_module():
     resources. This ensures the module's global DynamoDB objects point at
     Moto instead of real AWS.
     """
+    # DO NOT IMPORT THE FUNCTION UP TOP, IMPORT IT IN THIS FUNCTION
     module = importlib.import_module("lambdas.public_api.areas.areas_get")
     return importlib.reload(module)
 
 
 def test_get_all_active_areas():
     # Arrange
+    # THIS IS THE IMPORT STATEMENT - DO THIS FOR EVERY FUNCTION
     module = load_module()
 
     event = {
@@ -35,12 +39,14 @@ def test_get_all_active_areas():
 
     assert len(body) == 4
 
+    # Pull all area names from test_data.py
+    expected_names = {area["name"] for area in AREA_DATA}
     names = {area["name"] for area in body}
-    print("AREAS: ", names)
 
-    assert names == {"Adirondack Park", "Testing Area", "High Peaks Wilderness", "Giant Mountain Wilderness"}
+    assert names == expected_names
 
 def test_get_only_retired_areas():
+    # Arrange
     module = load_module()
 
     event = {
@@ -85,10 +91,10 @@ def test_get_specific_areas():
 
     body = json.loads(response["body"])
 
+    expected_names = {"Adirondack Park", "Testing Area"}
     names = {area["name"] for area in body}
 
-    assert names == {"Adirondack Park", "Testing Area"}
-
+    assert names == expected_names
 
 def test_unknown_area_returns_empty_list():
     # Arrange
