@@ -5,7 +5,7 @@ import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
 import { UserRow } from "../tables/UserDataTable";
 import DataTable, { TableColumn } from "react-data-table-component";
-{}
+import "./Modal.css";
 
 interface Props {
     data: UserRow[];
@@ -26,7 +26,8 @@ const columns: TableColumn<textRow>[] = [
         // grow: 2,
     },
     {
-        selector: (row) => row.field
+        selector: (row) => row.field,
+        grow: 2
     }
 ] 
 
@@ -185,8 +186,9 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                 </div>
             )}
             <div className="modal-content modal-content-extra-large" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header bg-navbar p-2!">
-                    <button className="modal-close left-0" onClick={onClose}>x</button>
+                <div className="modal-header bg-navbar p-4!">
+                    <div className="font-primary text-white font-semibold text-xl left-2">Account Details</div>
+                    <button className="modal-close" onClick={onClose}>X</button>
                 </div>
                 <DataTable
                 columns = {columns}
