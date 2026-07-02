@@ -6,3 +6,6 @@ selenium
 python-dotenv
 webdriver-manager
 boto3
+jwcrypto
+cryptography
+requests
