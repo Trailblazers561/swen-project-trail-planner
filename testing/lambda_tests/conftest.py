@@ -5,21 +5,22 @@ import pytest
 from moto import mock_aws
 import importlib
 from lambda_config import update_sys_path
-AWS_REGION = "us-east-1"
 
 #
 # --------------------------------------------------------------------------
 # Python Path
 # --------------------------------------------------------------------------
-
+#
 update_sys_path()
+
 #
 # --------------------------------------------------------------------------
 # Environment Variables
 # --------------------------------------------------------------------------
 #
 
-ENV = "local"
+AWS_REGION = "us-east-1"
+ENV = "test"
 TABLES = {
     "AREA_TABLE": f"{ENV}_trailcount_area_table",
     "TRAIL_TABLE": f"{ENV}_trailcount_trail_table",
@@ -107,24 +108,23 @@ def create_table(
     return table
 
 def create_tables():
-    dynamodb = boto3.resource( "dynamodb", region_name=AWS_REGION, )
-    #
+    dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
     # Area
-    #
     create_table( dynamodb,
-                  TABLES["AREA_TABLE"],
-                  "name",
-                  "S", )
-    #
+        TABLES["AREA_TABLE"],
+        "name",
+        "S"
+    )
+
     # Trail
-    #
-    create_table( dynamodb,
-                  TABLES["TRAIL_TABLE"],
-                  "id",
-                  "N", )
-    #
+    create_table(
+        dynamodb,
+        TABLES["TRAIL_TABLE"],
+        "id",
+        "N"
+    )
+
     # Device
-    #
     create_table(
         dynamodb,
         TABLES["DEVICE_TABLE"],
@@ -141,45 +141,49 @@ def create_tables():
         ],
     )
 
-    #
     # Device Trail
-    #
-    create_table( dynamodb,
-                  TABLES["DEVICE_TRAIL_TABLE"],
-                  "device_id",
-                  "N",
-                  sort_key="id",
-                  sort_type="N", )
-    #
-    # Registration
-    #
-    create_table( dynamodb,
-                  TABLES["REGISTRATION_TABLE"],
-                  "registration_id",
-                  "N", )
+    create_table(
+        dynamodb,
+        TABLES["DEVICE_TRAIL_TABLE"],
+        "device_id",
+        "N",
+        sort_key="id",
+        sort_type="N"
+    )
 
-    #
+    # Registration
+    create_table(
+        dynamodb,
+        TABLES["REGISTRATION_TABLE"],
+        "registration_id",
+        "N"
+    )
+
     # Device Log
-    #
-    create_table( dynamodb,
-                  TABLES["DEVICE_LOG_TABLE"],
-                  "device_id",
-                  "N",
-                  sort_key="time",
-                  sort_type="N", )
-    #
+    create_table(
+        dynamodb,
+        TABLES["DEVICE_LOG_TABLE"],
+        "device_id",
+        "N",
+        sort_key="time",
+        sort_type="N"
+    )
+
     # Hour / Day / Week / Month
-    #
-    for table in [ TABLES["DEVICE_TRAIL_LOG_HOUR_TABLE"],
-                   TABLES["DEVICE_TRAIL_LOG_DAY_TABLE"],
-                   TABLES["DEVICE_TRAIL_LOG_WEEK_TABLE"],
-                   TABLES["DEVICE_TRAIL_LOG_MONTH_TABLE"], ]:
-        create_table( dynamodb,
-                      table,
-                      "device_trail_id",
-                      "N",
-                      sort_key="start",
-                      sort_type="N", )
+    for table in [
+        TABLES["DEVICE_TRAIL_LOG_HOUR_TABLE"],
+        TABLES["DEVICE_TRAIL_LOG_DAY_TABLE"],
+        TABLES["DEVICE_TRAIL_LOG_WEEK_TABLE"],
+        TABLES["DEVICE_TRAIL_LOG_MONTH_TABLE"]
+    ]:
+        create_table(
+            dynamodb,
+            table,
+            "device_trail_id",
+            "N",
+            sort_key="start",
+            sort_type="N"
+        )
 
 #
 # --------------------------------------------------------------------------
@@ -191,15 +195,11 @@ def aws_environment():
     set_environment()
     with mock_aws():
         create_tables()
-        #
         # Populate DynamoDB
-        #
         module = load_test_data_module()
         module.load_test_data(ENV)
 
-        #
         # Tests execute here
-        #
         yield
 
 @pytest.fixture(autouse=True)
