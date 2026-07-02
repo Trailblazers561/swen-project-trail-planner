@@ -1,6 +1,5 @@
 import json
 from collections import defaultdict
-from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 

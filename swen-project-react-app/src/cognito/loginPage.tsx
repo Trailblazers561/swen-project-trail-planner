@@ -123,7 +123,7 @@ const LoginPage = () => {
       if (error instanceof UsernameExistsException) {
         setLoginError(LoginError.USERNAME_EXISTS);
       } else if (error instanceof UserLambdaValidationException) {
-        setLoginError(LoginError.EMAIL_EXISTS)
+        setLoginError(LoginError.EMAIL_EXISTS);
       } else {
         setLoginError(LoginError.UNKNOWN_ERROR);
         alert(`Sign up failed: ${error}`);
@@ -144,7 +144,7 @@ const LoginPage = () => {
       if (error instanceof CodeMismatchException) {
         setLoginError(LoginError.CODE_MISMATCH);
       } else if (error instanceof ExpiredCodeException) {
-        setLoginError(LoginError.EXPIRED_CODE)
+        setLoginError(LoginError.EXPIRED_CODE);
       } else {
         setLoginError(LoginError.UNKNOWN_ERROR);
         alert(`Confirm account failed: ${error}`);
@@ -159,7 +159,7 @@ const LoginPage = () => {
       const session = await forgotPassword(username);
       setLoading(false);
       console.log("Forgot password code send successful", session);
-      setDestinationEmail(session.CodeDeliveryDetails?.Destination ?? "your email")
+      setDestinationEmail(session.CodeDeliveryDetails?.Destination ?? "your email");
       setPassword("");
       setLoginMode(LoginMode.RESET_PASSWORD);
     } catch (error) {
@@ -198,7 +198,7 @@ const LoginPage = () => {
       if (error instanceof CodeMismatchException) {
         setLoginError(LoginError.CODE_MISMATCH);
       } else if (error instanceof ExpiredCodeException) {
-        setLoginError(LoginError.EXPIRED_CODE)
+        setLoginError(LoginError.EXPIRED_CODE);
       } else {
         setLoginError(LoginError.UNKNOWN_ERROR);
         alert(`Reset password failed: ${error}`);
@@ -237,7 +237,8 @@ const LoginPage = () => {
         alert(`Resend verification code failed: ${error}`);
       }
     }
-  }
+  };
+
   const resendPasswordCode = async () => {
     try {
       const session = await forgotPassword(username);
@@ -257,7 +258,8 @@ const LoginPage = () => {
         alert(`Resend password code failed: ${error}`);
       }
     }
-  }
+  };
+
   useEffect(() => {
     if (resentCode)
       if (loginMode === LoginMode.CONFIRM_ACCOUNT)

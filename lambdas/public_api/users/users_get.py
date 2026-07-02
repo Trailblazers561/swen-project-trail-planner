@@ -11,7 +11,6 @@ def get_users(event, context):
         target_user_role = params.get("target_user_role")
         if target_user_role and target_user_role not in user_groups:
             raise ValueError("Invalid target_user_role format")
-        target_user_role = None
 
         max_count = int(params.get("max_count", 99))
 

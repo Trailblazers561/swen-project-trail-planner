@@ -144,7 +144,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setNotes("");
     setCurrentAction(null);
     setLoading(true);
-  }
+  };
 
   const loadData = async () => {
     try {
