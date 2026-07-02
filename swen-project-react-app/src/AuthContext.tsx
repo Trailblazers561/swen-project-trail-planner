@@ -101,10 +101,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const setAuth = (idToken: string, accessToken: string, refreshToken: string) => {
-        setTokens(idToken, accessToken, refreshToken)
+        setTokens(idToken, accessToken, refreshToken);
 
         refreshAuth();
-    }
+    };
 
     return (
         <Context.Provider value={{ username, roles, currentRole, clearAuth, setAuth }}>

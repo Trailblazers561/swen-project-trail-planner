@@ -24,7 +24,7 @@ def ban_user(event, context):
         print(f"Attempting to ban user [{target_username}] as a [{caller_role}]")
         try:
             cognito.admin_get_user(Username=target_username, UserPoolId=COGNITO_USER_POOL_ID)
-        except:
+        except Exception:
             raise ValueError(f"User with username [{target_username}] not found")
 
         current_target_users_groups = cognito.admin_list_groups_for_user(Username=target_username, UserPoolId=COGNITO_USER_POOL_ID)["Groups"]

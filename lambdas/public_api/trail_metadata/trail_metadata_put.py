@@ -114,7 +114,6 @@ def update_trail_metadata(event, context):
             except Exception as e:
                 print(f"Failed updating area with exception: {e}")
                 # Continue even if area update fails
-                pass
         else:
             # If area is None (empty string), remove it from all areas
             # This handles the case when removing a trail from a specific area
@@ -136,7 +135,6 @@ def update_trail_metadata(event, context):
             except Exception as e:
                 print(f"Failed removing trail areas with exception: {e}")
                 # Continue even if area update fails
-                pass
 
         print("Successfully updated trail metadata")
         return {
