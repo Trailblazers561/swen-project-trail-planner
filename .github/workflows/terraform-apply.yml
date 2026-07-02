@@ -20,6 +20,10 @@ env:
   TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
 
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
 jobs:
   terraform-apply:
     name: | 
