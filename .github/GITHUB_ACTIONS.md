@@ -45,12 +45,16 @@ HasiCorp (terraform's company) have setup a way to create a terraform workspace 
 
 ### Terraform Plan
 
-This action runs when a pull request is created or updated for one of three branches, trailblazers-tst, trailbazers-uat, and trailblazers-prod. It will run a terraform plan going from the current configuration to the proposed configuration, and ensure that the new react code successfully builds. It will then output the results, success or failure, in a comment on the pull request. This action will _fail_ if it doesn't successfully plan or build, and _pass_ if everything work properly. The _pass_/_fail_ results of this action will be displayed on the pull request that triggered them.
+This action runs when a pull request is created or updated for one of three branches, trailblazers-tst, trailbazers-uat, and main. It will run a terraform plan going from the current configuration to the proposed configuration, and ensure that the new react code successfully builds. It will then output the results, success or failure, in a comment on the pull request. This action will _fail_ if it doesn't successfully plan or build, and _pass_ if everything work properly. The _pass_/_fail_ results of this action will be displayed on the pull request that triggered them.
 
 ### Terraform Apply
 
-This action runs when code is pushed for one of three branches, trailblazers-tst, trailbazers-uat, and trailblazers-prod. It will run terraform apply using the new code to update the workspace to the latest version. It then updates the react bucket with the latest files by building the react files and syncing the bucket contents to the new build.
+This action runs when code is pushed for one of three branches, trailblazers-tst, trailbazers-uat, and main. It will run terraform apply using the new code to update the workspace to the latest version. It then updates the react bucket with the latest files by building the react files and syncing the bucket contents to the new build.
 
 ### Integration Testing
 
-This action runs when a pull request is created or updated for one of three branches, trailblazers-tst, trailbazers-uat, and trailblazers-prod. It will create a new _test_ environment with the proposed changes, run all of the tests against that enviornment, output the results in a comment and attach `test-results.xml`, and destroy the test environment. This action will _fail_ if any of the creation/deletion fails, or if any tests fail, and _pass_ if everything works properly with all tests passing. The _pass_/_fail_ results of this action will be displayed on the pull request that triggered them.
+This action runs when a pull request is created or updated for one of three branches, trailblazers-tst, trailbazers-uat, and main. It will create a new _test_ environment with the proposed changes, run all of the tests against that enviornment, output the results in a comment and attach `test-results.xml`, and destroy the test environment. This action will _fail_ if any of the creation/deletion fails, or if any tests fail, and _pass_ if everything works properly with all tests passing. The _pass_/_fail_ results of this action will be displayed on the pull request that triggered them.
+
+### Branch Protections
+
+This actions runs when a pull request is opened for trailblazers-tst, trailbazers-uat, and main. It will check that pull requests follow the proper pipeline of feature -> TST -> UAT -> main. Additionally, it enforces that feature branches must be prefixed with "trailblazers-"
