@@ -1,0 +1,189 @@
+name: "Terraform Plan"
+
+on:
+  pull_request:
+    branches:
+      - trailblazers-tst
+      - trailblazers-uat
+      - trailblazers-prod
+      - main
+
+env:
+  TF_CLOUD_ORGANIZATION: "Trailblazers"
+  TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: us-east-1
+  CONFIG_DIRECTORY: "./terraform"
+  TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
+  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
+
+jobs:
+  terraform-plan:
+    name: | 
+      ${{ 
+          github.base_ref == 'trailblazers-tst' && 'TST Plan' ||
+          github.base_ref == 'trailblazers-uat' && 'UAT Plan' ||
+          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'PROD Plan'
+        }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    environment: | 
+      ${{ 
+          github.base_ref == 'trailblazers-tst' && 'tst' ||
+          github.base_ref == 'trailblazers-uat' && 'uat' ||
+          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'prod'
+        }}
+    env:
+      TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
+      TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
+      TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python Requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tests/requirements.txt
+          python -m pip install --no-compile --no-binary :all: -r lambdas/lambda_authorizer/requirements.txt -t lambdas/layers/auth_reqs/python
+          mkdir -p lambdas/layers/helper/python/helper
+          cp lambdas/helper/helper_functions.py lambdas/layers/helper/python/helper
+          python -m pip install --no-compile --only-binary=:all: --implementation cp --platform manylinux2014_x86_64 --python-version 3.12 -r lambdas/helper/requirements.txt -t lambdas/layers/helper/python 
+
+      - name: Setup Terraform Folder
+        run: |
+          mkdir -p terraform/lambdas
+          cp -r lambdas/* terraform/lambdas/
+          mkdir -p terraform/swen-project-react-app
+          cp -r swen-project-react-app/* terraform/swen-project-react-app/
+          mkdir -p terraform/sample_data
+          cp -r sample_data/* terraform/sample_data/
+
+      - name: Upload Configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
+        id: plan-upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+          speculative: true
+
+      - name: Create Plan Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: plan-run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.plan-upload.outputs.configuration_version_id }}
+          plan_only: true
+
+      - name: Get Plan Output
+        uses: hashicorp/tfc-workflows-github/actions/plan-output@v1.3.0
+        id: plan-output
+        with:
+          plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Ensure NPM Build
+        id: ensure-npm-build
+        run: |
+          cd swen-project-react-app
+          npm install
+          npm run build
+
+      - name: Update PR Success
+        if: success()
+        uses: actions/github-script@v6
+        id: plan-comment-success
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
+            });
+            // Delete previous comment so PR timeline makes sense
+            if (botComment) {
+              github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+
+            const output = `#### Terraform Cloud Plan Output
+            \`\`\`
+            Plan: ${{ steps.plan-output.outputs.add }} to add, ${{ steps.plan-output.outputs.change }} to change, ${{ steps.plan-output.outputs.destroy }} to destroy.
+            \`\`\`
+            [Terraform Cloud Plan](${{ steps.plan-run.outputs.run_link }})
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Update PR Failure
+        if: failure()
+        uses: actions/github-script@v6
+        id: plan-comment-failure
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Cloud Plan Output')
+            });
+            // Delete previous comment so PR timeline makes sense
+            if (botComment) {
+              github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+
+            let reason = "Plan Failed: ";
+            if ("${{ steps.plan-run.outcome }}" === "failure") {
+              reason += "Terraform plan run failed.";
+            } else if ("${{ steps.ensure-npm-build.outcome }}" === "failure") {
+              reason += "React npm build failed.";
+            } else {
+              reason += "Failure unknown, please check logs for reason."
+            }
+
+            const output = `#### Terraform Cloud Plan Output
+            \`\`\`
+            ${reason}
+            \`\`\`
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });  

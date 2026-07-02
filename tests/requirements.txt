@@ -1,0 +1,8 @@
+pytest
+pytest-check
+pytest-cov
+requests
+selenium
+python-dotenv
+webdriver-manager
+boto3

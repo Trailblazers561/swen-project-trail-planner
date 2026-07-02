@@ -5,7 +5,13 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
+  ResendConfirmationCodeCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
+  GetTokensFromRefreshTokenCommand,
+  AuthFlowType
 } from "@aws-sdk/client-cognito-identity-provider";
+import { setTokens } from "@/AuthContext";
 
 // Get Cognito configuration from environment variables
 const cognitoConfig = {
@@ -25,7 +31,7 @@ export const cognitoClient = new CognitoIdentityProviderClient({
 
 export const signIn = async (username: string, password: string) => {
   const params = {
-    AuthFlow: "USER_PASSWORD_AUTH",
+    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
     ClientId: cognitoConfig.clientId,
     AuthParameters: {
       USERNAME: username,
@@ -35,34 +41,23 @@ export const signIn = async (username: string, password: string) => {
   try {
     const command = new InitiateAuthCommand(params);
     const { AuthenticationResult } = await cognitoClient.send(command);
-    if (AuthenticationResult) {
-      sessionStorage.setItem("idToken", AuthenticationResult.IdToken || "");
-      sessionStorage.setItem(
-        "accessToken",
-        AuthenticationResult.AccessToken || "",
-      );
-      sessionStorage.setItem(
-        "refreshToken",
-        AuthenticationResult.RefreshToken || "",
-      );
-      return AuthenticationResult;
-    }
+    return AuthenticationResult;
   } catch (error) {
     console.error("Error signing in: ", error);
     throw error;
   }
 };
 
-export const signUp = async (email: string, password: string) => {
+export const signUp = async (username: string, email: string, password: string) => {
   const params = {
     ClientId: cognitoConfig.clientId,
-    Username: email,
+    Username: username,
     Password: password,
     UserAttributes: [
       {
         Name: "email",
         Value: email,
-      },
+      }
     ],
   };
   try {
@@ -92,3 +87,75 @@ export const confirmSignUp = async (username: string, code: string) => {
     throw error;
   }
 };
+
+export const resendConfirmationCode = async (username: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+  };
+  try {
+    const command = new ResendConfirmationCodeCommand(params);
+    await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return true;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
+
+export const forgotPassword = async (username: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+  };
+  try {
+    const command = new ForgotPasswordCommand(params);
+    const response = await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return response;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
+
+export const confirmForgotPassword = async (username: string, code: string, password: string) => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    Username: username,
+    ConfirmationCode: code,
+    Password: password
+  };
+  try {
+    const command = new ConfirmForgotPasswordCommand(params);
+    await cognitoClient.send(command);
+    console.log("Code resent successfully");
+    return true;
+  } catch (error) {
+    console.error("Error resending code: ", error);
+    throw error;
+  }
+}
+
+export const refreshTokens = async () => {
+  const params = {
+    ClientId: cognitoConfig.clientId,
+    RefreshToken: localStorage.getItem("refreshToken") ?? undefined
+  };
+  try {
+    const command = new GetTokensFromRefreshTokenCommand(params);
+    const { AuthenticationResult } = await cognitoClient.send(command);
+    if (AuthenticationResult) {
+      setTokens(
+        AuthenticationResult.IdToken || "",
+        AuthenticationResult.AccessToken || "",
+        AuthenticationResult.RefreshToken || ""
+      );
+      return AuthenticationResult;
+    }
+  } catch (error) {
+    console.error("Error refreshing tokens: ", error);
+    throw error;
+  }
+}

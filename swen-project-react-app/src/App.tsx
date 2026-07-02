@@ -1,40 +1,40 @@
 import './App.css'
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import LoginPage from "./cognito/loginPage";
 import DashBoard from "./dashboard";
-import InstallCheck from "./InstallCheck";
-import ConfirmUserPage from "./cognito/confirmUserPage";
-import React from 'react';
+import LandingPage from "./landingPage";
+import Test from './Test';
+import DeviceManagementPage from './deviceManagementPage';
+import Privileges from './userconfig';
+import { Role, useAuth } from "@/AuthContext";
+import Navbar from './components/Navbar';
+import Bottombar from './components/Bottombar';
 
 function App() {
-  const isAuthenticated = () => {
-    const accessToken = sessionStorage.getItem("accessToken");
-    return !!accessToken;
-  };
+    const { currentRole } = useAuth();
 
-  return (
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              isAuthenticated() ? (
-                <Navigate replace to="/dashboard" />
-              ) : (
-                <Navigate replace to="/login" />
-              )
-            }
-          />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/confirm" element={<ConfirmUserPage />} />
-          <Route path="/dashboard"
-            element={isAuthenticated() ? <DashBoard /> : <Navigate replace to="/" />}
-          />
-          <Route path="/install-check"
-            element={isAuthenticated() ? <InstallCheck /> : <Navigate replace to="/login" />}
-          />
-        </Routes>
-      </BrowserRouter>
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route element={<><Navbar/><Outlet/><Bottombar/></>}>
+                    <Route
+                        path="/"
+                        element={<Navigate replace to="/home" />
+                        }
+                    />
+                    <Route path="/home" element={<LandingPage />} />
+                    <Route path="/dashboard" element={<DashBoard />} />
+                    <Route path="/test" element={<Test />} />
+                    <Route path="/devices" 
+                        element={(currentRole && currentRole >= Role.Manager) ? <DeviceManagementPage /> : <Navigate replace to="/login" />} 
+                    />
+                    <Route path="/privileges" 
+                        element={(currentRole && currentRole >= Role.Admin) ? <Privileges /> : <Navigate replace to="/login" />} 
+                    />
+                </Route>
+                <Route path="/login" element={<LoginPage />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

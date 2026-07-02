@@ -4,26 +4,19 @@
 !.vscode/extensions.json
 .DS_Store
 swen-project-react-app/src/cognito/config.json
-swen-project-react-app/tsconfig.json
-USER_STORIES.pdf
+
+# previously: swen-project-react-app/tsconfig.json, why was this ignored? needed for project to compile & run
 
 # Terraform
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
-terraform.tfstate.d/
 .terraform.tfstate.lock.info
 /lambdas/zips/*
-
-# By default ignore all tfvars (legacy terraform.tfvars / tst.tfvars contain API keys).
-# Explicitly allow per-tenant tfvars for new TrailCount workspaces — these contain
-# no secrets, only tenant/env/domain configuration.
-*.tfvars
-!adk-test.tfvars
-!adk-prod.tfvars
-!demo-test.tfvars
-!demo-prod.tfvars
+/lambdas/layers/*
+terraform/token.json
+/terraform/terraform.tfvars
 
 # Logs
 logs
@@ -36,9 +29,7 @@ lerna-debug.log*
 
 # Node / JS
 node_modules/
-# package-lock.json is tracked (was previously ignored). Tracking it
-# pins exact dependency versions for reproducible builds and lets CI
-# cache npm installs by the lockfile hash.
+package-lock.json
 dist/
 dist-ssr/
 *.local
@@ -81,6 +72,11 @@ var/
 .cache
 nosetests.xml
 coverage.xml
+test-results*.*
+tests/ui_tests/downloads/*
+!tests/ui_tests/downloads/.gitkeep
+tests/ui_tests/errors/*
+!tests/ui_tests/errors/.gitkeep
 
 # Translations
 *.mo
@@ -106,3 +102,6 @@ docs/_build/
 
 # Node addons
 build/Release
+
+# Negations
+!swen-project-react-app/src/lib/
