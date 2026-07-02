@@ -9,3 +9,4 @@ boto3
 jwcrypto
 cryptography
 requests
+moto
