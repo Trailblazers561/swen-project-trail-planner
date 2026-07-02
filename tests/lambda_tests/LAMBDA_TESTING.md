@@ -12,8 +12,8 @@ Follow the prerequisites outlined in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.)
 
 ## Configuration
 
-Configuration is automatically determined from the `tests/.env` file, more information in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
+There is no configuration required outside of the mock objects created in the conftest.py file. If you need an object mocked that isn't already, you'll need to update that file.
 
 ## Running Tests
 
-Information about running tests in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.).
+Information about running tests in [TESTING_OVERVIEW](../TESTING_OVERVIEW.md.). It's recommended to simply run `pytest` on this directory to run all tests. 
