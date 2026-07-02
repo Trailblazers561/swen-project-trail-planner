@@ -33,7 +33,7 @@ def change_user_group(event, context):
         print(f"Attempting to update user groups for user [{target_username}] to role [{target_user_role}] as a [{caller_role}]")
         try:
             user = cognito.admin_get_user(Username=target_username, UserPoolId=COGNITO_USER_POOL_ID)
-        except:
+        except Exception:
             raise ValueError(f"User with username [{target_username}] not found")
 
         if not user["Enabled"]:

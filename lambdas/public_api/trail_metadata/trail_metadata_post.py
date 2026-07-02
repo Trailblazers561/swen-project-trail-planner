@@ -94,7 +94,6 @@ def create_trail(event, context):
         except Exception as e:
             print(f"Area updated failed with exception: {e}")
             # Continue even if area update fails
-            pass
 
         print(f"Successfully added trail with trail_id [{new_trail_id}]")
         return {
