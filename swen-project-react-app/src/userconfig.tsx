@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
 import type { UserRow } from "./components/tables/UserDataTable";
-import AccountDataTable from "./components/tables/AccountDataTable";
+import AccountDataTable from "./components/modals/UserDataModal";
 import { useMediaQuery } from "react-responsive";
 import { Role, useAuth } from "./AuthContext";
 
@@ -82,10 +82,13 @@ const Privileges = () => {
                     filteredUsers
                 );
                 
-                const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
-                console.log(newSelectedUser);
-                if (newSelectedUser != undefined) {
-                    setSelectedUser([newSelectedUser]);
+                //Only reloads selectedUser if a user is selected (when the modal is open)
+                if (selectedUser[0] != undefined) {
+                    const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
+                    console.log(newSelectedUser);
+                    if (newSelectedUser != undefined) {
+                        setSelectedUser([newSelectedUser]);
+                    }
                 }
                 
             }

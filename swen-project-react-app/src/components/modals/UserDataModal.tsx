@@ -3,7 +3,7 @@ import { Role, roleMap, useAuth } from "@/AuthContext";
 import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
-import { UserRow } from "./UserDataTable";
+import { UserRow } from "../tables/UserDataTable";
 import DataTable, { TableColumn } from "react-data-table-component";
 {}
 
@@ -14,14 +14,15 @@ interface Props {
     //loading: boolean;
 }
 
+//Simulates having headers at the start of a row by having each row contain the header and the respective user data
 interface textRow {
-        text: string;
+        header: string;
         field: string;
     }
 
 const columns: TableColumn<textRow>[] = [
     {
-        selector: (row) => row.text, //row is a textRow instance
+        selector: (row) => row.header, //row is a textRow instance
         // grow: 2,
     },
     {
@@ -51,12 +52,13 @@ const handleRoleText = (role: Role) => {
     else if (role == Role.Root) {
         return ("Root Admin");
     }
-    return("Guest");
+    else if (role == Role.Guest) {
+        return ("Guest");
+    }
+    return("None");
 }
 
 const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
-
-    console.log(data[0]);
 
     const [textData, setTextData] = useState<Array<textRow>>([]);
         
@@ -153,10 +155,10 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
         if (data[0] != undefined) {
 
-            const usernamerow:textRow = {text: "Username", field: data[0].username};
-            const rolerow:textRow = {text: "Role", field: handleRoleText(data[0].role)};
-            const bannedrow:textRow = {text: "Banned?", field: handleBannedText(data[0].banned)};
-            const emailrow:textRow = {text: "Email", field: data[0].email}
+            const usernamerow:textRow = {header: "Username", field: data[0].username};
+            const rolerow:textRow = {header: "Role", field: handleRoleText(data[0].role)};
+            const bannedrow:textRow = {header: "Banned?", field: handleBannedText(data[0].banned)};
+            const emailrow:textRow = {header: "Email", field: data[0].email}
 
             setTextData([usernamerow, rolerow, bannedrow, emailrow]);
         }
