@@ -1,7 +1,3 @@
-# you
-from lambda_config import update_sys_path
-update_sys_path()
-
 #import the test data you need
 from test_data import AREA_DATA
 
