@@ -106,7 +106,7 @@ jobs:
 
       - name: Update PR Success
         if: success()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         id: plan-comment-success
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -144,7 +144,7 @@ jobs:
 
       - name: Update PR Failure
         if: failure()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         id: plan-comment-failure
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
