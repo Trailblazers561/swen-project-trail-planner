@@ -269,11 +269,11 @@ resource "aws_dynamodb_table" "registration_table" {
 }
 
 locals {
-  device_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/devices.csv"))
-  trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/trails.csv"))
-  device_trail_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/device_trails.csv"))
-  areas_raw = csvdecode(file("${path.module}/${local.sample_data_directory}/areas.csv"))
-  area_sample_data = [
+  device_sample_data = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/devices.csv"))
+  trail_sample_data = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/trails.csv"))
+  device_trail_sample_data = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/device_trails.csv"))
+  areas_raw = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/areas.csv"))
+  area_sample_data = local.prod_run ? [] : [
     for area_name in distinct([for a in local.areas_raw : a.name]) : {
       name = area_name
       trail_ids = [
@@ -283,8 +283,8 @@ locals {
       ]
     }
   ]
-  error_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
-  registration_sample_data = csvdecode(file("${path.module}/${local.sample_data_directory}/registrations.csv"))
+  error_sample_data = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/errors.csv"))
+  registration_sample_data = local.prod_run ? [] : csvdecode(file("${path.module}/${local.sample_data_directory}/registrations.csv"))
 }
 
 # INSERT TEST DATA INTO Device

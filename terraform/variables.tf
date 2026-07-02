@@ -6,6 +6,7 @@ variable "deploy_env" {
 locals {
   local_run = var.deploy_env == "local"
   test_run = var.deploy_env == "test"
+  prod_run = var.deploy_env == "prod"
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
   test_directory = local.local_run ? "../tests" : "./tests"
