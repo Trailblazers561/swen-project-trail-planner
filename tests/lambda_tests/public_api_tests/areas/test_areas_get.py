@@ -1,5 +1,5 @@
 #import the test data you need
-from test_data import AREA_DATA
+from tests.lambda_tests.test_data import AREA_DATA
 
 import importlib
 import json
