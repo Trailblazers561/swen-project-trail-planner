@@ -19,19 +19,19 @@ jobs:
           echo "Target Branch: ${{github.base_ref}}"
           
           # Main will only accept PRs from UAT
-          if [["${{github.base_ref}}" == "main" && "${{github.head_ref}}" != "trailblazers-uat"]]; then
+          if [[ "${{github.base_ref}}" == "main" && "${{github.head_ref}}" != "trailblazers-uat" ]]; then
             echo "Failed: Main will only accept PRs from UAT"
             exit 1
           fi
           
-          # Main will only accept PRs from UAT
-          if [["${{github.base_ref}}" == "trailblazers-uat" && "${{github.head_ref}}" != "trailblazers-tst"]]; then
+          # UAT will only accept PRs from TST
+          if [[ "${{github.base_ref}}" == "trailblazers-uat" && "${{github.head_ref}}" != "trailblazers-tst" ]]; then
             echo "Failed: UAT will only accept PRs from TST"
             exit 1
           fi
           
-          # Main will only accept PRs from UAT
-          if [["${{github.base_ref}}" == "trailblazers-tst" && "${{github.head_ref}}" != "trailblazers-*"]]; then
+          # TST will only accept PRs from a trailblazers prefixed branch
+          if [[ "${{github.base_ref}}" == "trailblazers-tst" && "${{github.head_ref}}" != trailblazers-* ]]; then
             echo "Failed: TST will only accept PRs from a branch prefixed with trailblazers-"
             exit 1
           fi
