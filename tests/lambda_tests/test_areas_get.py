@@ -18,21 +18,6 @@ def load_module():
 
 def test_get_all_active_areas(aws):
     # Arrange
-    area_table = aws["area"]
-
-    area_table.put_item(
-        Item={
-            "name": "High Peaks",
-            "trail_ids": [1, 2],
-        }
-    )
-
-    area_table.put_item(
-        Item={
-            "name": "Dix",
-            "trail_ids": [],
-        }
-    )
 
     module = load_module()
 
@@ -43,18 +28,18 @@ def test_get_all_active_areas(aws):
 
     # Act
     response = module.get_areas(event, None)
+    print("AREAS: ", response)
 
     # Assert
     assert response["statusCode"] == 200
 
     body = json.loads(response["body"])
 
-    assert len(body) == 2
+    assert len(body) == 4
 
     names = {area["name"] for area in body}
 
-    assert names == {"High Peaks", "Dix"}
-
+    assert names == {"High Peaks Wilderness", "Giant Mountain Wilderness", "Adirondack Park", "Testing Area"}
 
 def test_get_only_retired_areas(aws):
     # Arrange

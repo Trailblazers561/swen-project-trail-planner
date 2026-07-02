@@ -40,9 +40,10 @@ def aws():
     """
 
     os.environ["AWS_DEFAULT_REGION"] = AWS_REGION
-    os.environ["AREA_TABLE"] = "local_trailcount_area_table"
-    os.environ["TRAIL_TABLE"] = "local_trailcount_trail_table"
-    os.environ["DEVICE_TABLE"] = "local_trailcount_device_table"
+    os.environ["AREA_TABLE"] = "test_trailcount_area_table"
+    os.environ["TRAIL_TABLE"] = "test_trailcount_trail_table"
+    os.environ["DEVICE_TABLE"] = "test_trailcount_device_table"
+    from sample_data.load_test_data import load_test_data
 
     with mock_aws():
         dynamodb = boto3.resource(
@@ -67,5 +68,6 @@ def aws():
                 "id",
             ),
         }
+        load_test_data("test")
 
         yield tables
