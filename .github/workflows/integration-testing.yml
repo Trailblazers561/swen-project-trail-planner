@@ -68,7 +68,7 @@ jobs:
         run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
 
       - name: Upload Configuration
-        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.2
         id: apply-upload
         with:
           workspace: ${{ env.TF_WORKSPACE }}
@@ -85,14 +85,14 @@ jobs:
           ps aux | grep push_step_ca
 
       - name: Create Apply Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
         id: apply-run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
 
       - name: Apply
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.2
         if: fromJSON(steps.apply-run.outputs.payload).data.attributes.actions.IsConfirmable
         id: apply
         with:
@@ -243,7 +243,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.2
         id: destroy-run
         with:
           workspace: ${{ env.TF_WORKSPACE }}
@@ -251,7 +251,7 @@ jobs:
         if: ${{ always() }}
 
       - name: Destroy
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.2
         with:
           run: ${{ steps.destroy-run.outputs.run_id }}
         if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
