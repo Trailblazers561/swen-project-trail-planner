@@ -87,7 +87,11 @@ with open(Path(__file__).parent / "../../sample_data/areas.csv") as f:
             areas[area_name].append(trail_id)
         else:
             areas[area_name] = [trail_id]
-    AREA_DATA.extend(areas.values())
+    for area, trails in areas.items():
+        AREA_DATA.append({
+            "name": area,
+            "trail_id_list": trails
+        })
 with open(Path(__file__).parent / "../../sample_data/test_areas.csv") as f:
     areas = {}
     reader = csv.DictReader(f)
@@ -98,7 +102,11 @@ with open(Path(__file__).parent / "../../sample_data/test_areas.csv") as f:
             areas[area_name].append(trail_id)
         else:
             areas[area_name] = [trail_id]
-    AREA_DATA.extend(areas.values())
+    for area, trails in areas.items():
+        AREA_DATA.append({
+            "name": area,
+            "trail_id_list": trails
+        })
 
 with open(Path(__file__).parent / "../../sample_data/hour_logs.csv") as f:
     reader = csv.DictReader(f)
