@@ -5,7 +5,6 @@ on:
     branches:
       - trailblazers-tst
       - trailblazers-uat
-      - trailblazers-prod
       - main
 
 env:
@@ -26,7 +25,7 @@ jobs:
       ${{ 
           github.ref_name == 'trailblazers-tst' && 'TST Apply' ||
           github.ref_name == 'trailblazers-uat' && 'UAT Apply' ||
-          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'PROD Apply'
+          github.ref_name == 'main' && 'PROD Apply'
         }}
     runs-on: ubuntu-latest
     permissions:
@@ -35,7 +34,7 @@ jobs:
       ${{ 
           github.ref_name == 'trailblazers-tst' && 'tst' ||
           github.ref_name == 'trailblazers-uat' && 'uat' ||
-          (github.base_ref == 'trailblazers-prod' || github.base_ref == 'main') && 'prod'
+          github.ref_name == 'main' && 'prod'
         }}
     env:
       TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
