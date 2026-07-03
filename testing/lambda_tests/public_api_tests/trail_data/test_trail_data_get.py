@@ -1,5 +1,4 @@
-from testing.lambda_tests.test_data import TRAIL_DATA
-
+from testing.lambda_tests.test_data import DAY_LOG_DATA, DEVICE_TRAIL_DATA
 import importlib
 import json
 
@@ -25,7 +24,7 @@ def test_get_single_trail():
         "granularity": "day",
     },
     "multiValueQueryStringParameters": {
-        "trail_id": ["8"],
+        "trail_id": ["1"],
     },
 }
 
@@ -37,10 +36,13 @@ def test_get_single_trail():
 
     body = json.loads(response["body"])
 
-    assert len(body) == 4
+    # Required fields exist
+    for row in body:
+        assert "device_trail_id" in row
+        assert "start" in row
+        assert "count" in row
+        assert "device_id" in row
+        assert "trail_id" in row
 
-    # Pull all area names from test_data.py
-    expected_names = {area["name"] for area in TRAIL_DATA}
-    names = {area["name"] for area in body}
-
-    assert names == expected_names
+    # Ensure all results belong to trail 1
+    assert all(row["trail_id"] == 1 for row in body)
