@@ -10,7 +10,7 @@ on:
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "demo-workplace"
+  TF_WORKSPACE: "demo-workspace"
   TF_WORKSPACE_ID: "ws-ghbbVVgtFD7ZkxG1"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
