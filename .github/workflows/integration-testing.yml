@@ -5,7 +5,7 @@ on:
     branches:
       - trailblazers-tst
       - trailblazers-uat
-      - trailblazers-prod
+      - main
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
