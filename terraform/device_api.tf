@@ -68,6 +68,8 @@ resource "aws_api_gateway_domain_name" "device_api_domain" {
       endpoint_access_mode,
     ]
   }
+
+  depends_on = [null_resource.wait_for_truststore]
 }
 
 resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {
