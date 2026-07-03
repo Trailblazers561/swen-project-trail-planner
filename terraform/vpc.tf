@@ -71,6 +71,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
   vpc_endpoint_type = "Gateway"
   route_table_ids = [aws_route_table.private_RT.id]
+  depends_on = [null_resource.nuke_enis]
 
   tags = {
     Name = "${var.deploy_env}_dynamodb_endpoint"
@@ -84,6 +85,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   subnet_ids          = [aws_subnet.private_subnet.id]
   security_group_ids  = [aws_security_group.lambda_sg.id, aws_security_group.vpce_sg.id, aws_security_group.ca_sg.id]
   private_dns_enabled = true
+  depends_on = [null_resource.nuke_enis]
 
   tags = {
     Name = "${var.deploy_env}_secretsmanager_endpoint"
@@ -95,8 +97,52 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private_RT.id]
+  depends_on = [null_resource.nuke_enis]
 
   tags = {
     Name = "${var.deploy_env}_s3_endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ssm" {
+  for_each            = local.ssm_endpoints
+  vpc_id              = aws_vpc.cert_vpc.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.${each.value}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet.id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+  depends_on = [null_resource.nuke_enis]
+
+  tags = {
+    Name = "${var.deploy_env}_${each.value}_endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.cert_vpc.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet.id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+  depends_on = [null_resource.nuke_enis]
+
+  tags = {
+    Name = "${var.deploy_env}_ecr_api_endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.cert_vpc.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private_subnet.id]
+  security_group_ids  = [aws_security_group.vpce_sg.id]
+  private_dns_enabled = true
+  depends_on = [null_resource.nuke_enis]
+
+  tags = {
+    Name = "${var.deploy_env}_ecr_dkr_endpoint"
   }
 }
