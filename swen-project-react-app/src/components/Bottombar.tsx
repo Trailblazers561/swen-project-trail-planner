@@ -12,11 +12,11 @@ children: React.ReactNode;
 }
 
 const Desktop = ({children}: DeviceType) => {
-const isDesktop = useMediaQuery({ minWidth: 500 })
+const isDesktop = useMediaQuery({ minWidth: 1024 })
 return isDesktop ? children : null
 }
 const Mobile = ({children}: DeviceType) => {
-const isMobile = useMediaQuery({maxWidth: 499})
+const isMobile = useMediaQuery({maxWidth: 1023})
 return isMobile ? children: null
 }
 
