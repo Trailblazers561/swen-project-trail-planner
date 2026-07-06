@@ -5,6 +5,7 @@ import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export interface UserRow {
     user_id: string;
@@ -335,6 +336,12 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh, onRowClick }) => {
                         No users found.
                     </div>
                 }
+                expandableRows
+                expandableIcon={{
+                    collapsed: <ChevronRight size={16} />,
+                    expanded:  <ChevronRight  size={16} />,
+                }}
+                expandableRowDisabled={row => true}
                 />
             </Mobile>
         </div>

@@ -192,7 +192,7 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                 data = {textData}
                 noTableHead={true}
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2 p-2">
                     <Button
                         onClick={() => { updateUserRole("promote", data[0], onRefresh); }}
                         disabled={data[0].username === username || data[0].role === Role.Root || data[0].role === Role.Admin || (data[0].role === Role.Manager && currentRole === Role.Admin)}
@@ -200,6 +200,7 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                         title="Promote"
                     >
                         <ArrowUp size={18} />
+                        <div></div>
                     </Button>
                     <Button
                         onClick={() => { updateUserRole("demote", data[0], onRefresh); }}
