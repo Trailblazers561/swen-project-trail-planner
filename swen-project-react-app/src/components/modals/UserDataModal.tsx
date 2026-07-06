@@ -200,7 +200,6 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                         title="Promote"
                     >
                         <ArrowUp size={18} />
-                        <div></div>
                     </Button>
                     <Button
                         onClick={() => { updateUserRole("demote", data[0], onRefresh); }}
