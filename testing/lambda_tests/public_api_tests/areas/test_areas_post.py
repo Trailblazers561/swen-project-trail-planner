@@ -42,34 +42,6 @@ def test_create_area():
     assert created["name"] == "New Area"
     assert created["trail_ids"] == [1, 2, 3]
 
-def test_create_area_with_overlapping_trail_ids():
-    # Arrange
-    module = load_module()
-
-    event = {
-        "body": json.dumps({
-            "name": "New Area",
-            "trail_ids": [1, 2, 3]
-        })
-    }
-
-    # Act
-    response = module.create_area(event, None)
-
-    # Assert
-    assert response["statusCode"] == 200
-
-    body = json.loads(response["body"])
-
-    assert body["message"] == "Area created successfully"
-
-    created = module.area_table.get_item(
-        Key={"name": "New Area"}
-    ).get("Item")
-
-    assert created["name"] == "New Area"
-    assert created["trail_ids"] == [1, 2, 3]
-
 def test_create_area_reassigns_trails():
     # Arrange
     module = load_module()
