@@ -54,28 +54,38 @@ resource "null_resource" "nuke_enis" {
     when       = destroy
     interpreter = ["python3", "-c"]
     command    = <<EOT
-import subprocess, json, time
+import sys, subprocess, json, time
 region = "${self.triggers.region}"
 subnet_id = "${self.triggers.subnet_id}"
 result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', f'Name=subnet-id,Values={subnet_id}', '--query', 'NetworkInterfaces[*].NetworkInterfaceId', '--output', 'json', '--region', region], capture_output=True, text=True)
-if not result.stdout.strip():
-    print("No ENIs found or AWS CLI error")
-    print("stderr:", result.stderr)
-    exit(0)
-enis = json.loads(result.stdout)
+if result.returncode != 0:
+    print("describe-network-interfaces function failed")
+    print(result.stderr, file=sys.stderr)
+    sys.exit(1)
+enis = json.loads(result.stdout) if result.stdout.strip() else []
 if not enis:
     print("No ENIs to delete")
-    exit(0)
+    sys.exit(0)
+failed = []
 for eni in enis:
+    deleted = False
     for attempt in range(40):
         r = subprocess.run(['aws', 'ec2', 'delete-network-interface', '--network-interface-id', eni, '--region', region], capture_output=True, text=True)
         if r.returncode == 0:
+            deleted = True
             break
         if 'currently in use' in r.stderr:
             print(f'ENI {eni} in use, waiting...')
             time.sleep(15)
         else:
+            print(f"Error caught while deleting {eni}: {r.stderr}", file=sys.stderr)
             break
+    if not deleted:
+        failed.append(eni)
+if failed:
+    print(f"Failed to delete the following ENIs: {failed}", file=sys.stderr)
+    sys.exit(1)
+print("ENI deletion successful")
 EOT
   }
 

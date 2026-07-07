@@ -94,7 +94,17 @@ resource "null_resource" "wait_for_truststore" {
     command = <<-EOT
       echo "Waiting for truststore.pem to appear in S3..."
       for i in $(seq 1 40); do
-        aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem && echo "Found!" && exit 0
+        output=$(aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem 2>&1)
+        rc=$?
+        if [ $rc -eq 0 ]; then
+          echo "Found"
+          exit 0
+        fi
+        if echo "$output" | grep -qi 'AccessDenied\|NoSuchBucket'; then
+          echo "Nonrecoverable error while checking bucket, terminating:"
+          echo "$output"
+          exit 1
+        fi
         echo "Attempt $i/40, retrying in 30s..."
         sleep 30
       done
