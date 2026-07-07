@@ -264,6 +264,7 @@ resource "aws_dynamodb_table" "registration_table" {
 
   /*
     date_registered: number (UNIX timestamp)
+    date_cert_issued: number (UNIX timestamp)
     cert_time_to_live: number (int, seconds)
   */
 }

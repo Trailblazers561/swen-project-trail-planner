@@ -77,6 +77,9 @@ def renew_certificate(event, context):
                 "body": json.dumps({"error": "Device is archived. Renewal rejected."})
             }
 
+        if not reg_items[0].get("date_cert_issued"):
+            raise ValueError("Device has not been issued a certificate yet, try registering the device before attempting a renewal")
+
         device_secrets = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
         device_serial = device_secrets.get("device_ser_no")
         csr = device_secrets.get("csr")
@@ -117,9 +120,9 @@ def renew_certificate(event, context):
         # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
+            UpdateExpression="SET date_cert_issued = :dc, cert_time_to_live = :tl",
             ExpressionAttributeValues={
-                ":dr": time_now,
+                ":dc": time_now,
                 ":tl": time_to_live
             }
         )
