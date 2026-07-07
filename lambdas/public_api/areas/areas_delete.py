@@ -26,7 +26,11 @@ def retire_area(event, context):
         )["Items"]
         if not area_exists: raise ValueError(f"Cannot find area with name [{name}]")
 
-        area_table.put_item(Item={"name": name, "trail_ids": [], "retired": True})
+        item = area_exists[0]
+        item["trail_ids"] = []
+        item["retired"] = True
+
+        area_table.put_item(Item=item)
 
         print("Successfully retired area")
         return {
