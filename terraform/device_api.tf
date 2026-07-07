@@ -47,8 +47,12 @@ resource "aws_api_gateway_rest_api" "device_api" {
   name = "${var.deploy_env}_trailcount_device_api"
 }
 
+locals {
+  enable_mtls_domain = local.use_domain && local.enable_CA_resources
+}
+
 resource "aws_api_gateway_domain_name" "device_api_domain" {
-  count = local.use_domain ? 1 : 0
+  count = local.enable_mtls_domain ? 1 : 0
   domain_name = "${local.device_api_sub_domain}.${local.domain}"
   regional_certificate_arn = var.acm_certificate_arn
 
@@ -73,7 +77,7 @@ resource "aws_api_gateway_domain_name" "device_api_domain" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {
-  count = local.use_domain ? 1 : 0
+  count = local.enable_mtls_domain ? 1 : 0
   api_id      = aws_api_gateway_rest_api.device_api.id
   stage_name  = aws_api_gateway_stage.device_api_stage.stage_name
   domain_name = aws_api_gateway_domain_name.device_api_domain[0].domain_name
