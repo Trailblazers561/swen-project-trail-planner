@@ -150,14 +150,14 @@ jobs:
         if: ${{ always() }}
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
             name: pytest-results
             path: junit/test-results-*.xml
         if: ${{ always() }}
 
       - name: Upload Error Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
             name: error-screenshots
             path: tests/ui_tests/errors/*.png
