@@ -147,9 +147,10 @@ def register_device(event, context):
         # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
+            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), date_cert_issued = :dc, cert_time_to_live = :tl",
             ExpressionAttributeValues={
                 ":dr": time_now,
+                ":dc": time_now,
                 ":tl": time_to_live
             }
         )
