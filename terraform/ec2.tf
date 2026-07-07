@@ -103,19 +103,19 @@ until aws secretsmanager get-random-password --region ${data.aws_region.current.
 done
 
 # check if secretsmanager has our secrets present, restore if so, else generate fresh and upload secrets
-if aws secretsmanager describe-secret --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} > /dev/null 2>&1; then
+if aws secretsmanager describe-secret --secret-id "${var.deploy_env}/cert-auth/root-ca-cert" --region ${data.aws_region.current.name} > /dev/null 2>&1; then
   mkdir -p /opt/ca_instance/certs
   mkdir -p /opt/ca_instance/secrets
   mkdir -p /opt/ca_instance/config
   mkdir -p /opt/ca_instance/db
 
-  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/root_ca.crt
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/intermediate_ca.crt
-  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/root_ca_key
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/intermediate_ca_key
-  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-config" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/config/ca.json
-  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/password
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/intermediate_password
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/root-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/root_ca.crt
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/intermediate_ca.crt
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/root-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/root_ca_key
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/intermediate_ca_key
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/ca-config" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/config/ca.json
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/password
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/intermediate_password
 
   chmod 644 /opt/ca_instance/password
   chmod 644 /opt/ca_instance/intermediate_password
@@ -162,13 +162,13 @@ PY
   secret_put() {
   aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
   }
-  secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
-  secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
-  secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
-  secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
-  secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
-  secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
-  secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
+  secret_put "${var.deploy_env}/cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
+  secret_put "${var.deploy_env}/cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
+  secret_put "${var.deploy_env}/cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
+  secret_put "${var.deploy_env}/cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
 fi
 
 # step-ca is picky about the password location when running it how i am below, needs to be in this place

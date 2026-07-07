@@ -1,6 +1,6 @@
 import json
 
-from helper.helper_functions import registration_table, device_table, cors_headers, secrets_client
+from helper.helper_functions import registration_table, device_table, cors_headers, secrets_client, device_secret_id
 
 
 def delete_registration(event, context):
@@ -51,7 +51,7 @@ def delete_registration(event, context):
         device_name = item.get("name")
 
         secrets_client.delete_secret(
-            SecretId=device_name,
+            SecretId=device_secret_id(device_name),
             ForceDeleteWithoutRecovery=True
         )
         device_table.delete_item(Key={"id": int(device_id)})

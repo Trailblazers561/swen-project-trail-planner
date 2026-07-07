@@ -126,6 +126,7 @@ resource "aws_lambda_function" "device_registration_api_lambdas" {
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
+      DEPLOY_ENV = var.deploy_env
     }
   }
 }

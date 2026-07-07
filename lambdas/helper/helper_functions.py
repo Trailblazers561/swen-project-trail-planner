@@ -52,6 +52,26 @@ user_groups = {"user": 0, "trail_manager": 1, "admin": 2, "root_admin": 3}
 CA_CERT_PATH = "../../tmp/root_ca.crt"
 
 
+def device_secret_id(device_name):
+    """
+    Quick conversion helper that converts from device name to the actual secrets manager path that's appended with the
+    deploy env. Ex "deviceName" in "prod" becomes "prod/deviceName"
+    :param device_name: Device name
+    :return: Environment appended to the device name as the path
+    """
+    return f"{os.environ['DEPLOY_ENV']}/{device_name}"
+
+
+def ca_secret_id(name):
+    """
+    Quick conversion helper that converts from cert-auth filename to the actual secrets manager path that's appended with the
+    deploy env. Ex "root-cert" in "prod" becomes "prod/cert-auth/root-cert"
+    :param name: File name
+    :return: Environment appended to the file name as the path
+    """
+    return f"{os.environ['DEPLOY_ENV']}/cert-auth/{name}"
+
+
 def check_ca_health():
     """
     Quick check for certificate authority status, ensuring its running properly. Queries the health api for it,
@@ -74,8 +94,8 @@ def gen_one_time_token(device_csr, device_name):
     :return: One time token string for the request. Valid for 300 seconds after creation.
     """
     # grab step ca pieces from secrets manager, retrieve values needed from config
-    provisioner_password = secrets_client.get_secret_value(SecretId="cert-auth/ca-password")["SecretString"].strip()
-    ca_config_file = secrets_client.get_secret_value(SecretId="cert-auth/ca-config")["SecretString"]
+    provisioner_password = secrets_client.get_secret_value(SecretId=ca_secret_id("ca-password"))["SecretString"].strip()
+    ca_config_file = secrets_client.get_secret_value(SecretId=ca_secret_id("ca-config"))["SecretString"]
     ca_config_json = json.loads(ca_config_file)
     provisioner_list = ca_config_json["authority"]["provisioners"]
     provisioner = next(p for p in provisioner_list if p["name"] == "device-provisioner")
@@ -205,7 +225,7 @@ def get_root_ca_cert():
     if not os.path.exists(CA_CERT_PATH):
         os.makedirs("../../tmp", exist_ok=True)
         sm = boto3.client("secretsmanager")
-        response = sm.get_secret_value(SecretId="cert-auth/root-ca-cert")
+        response = sm.get_secret_value(SecretId=ca_secret_id("root-ca-cert"))
         with open(CA_CERT_PATH, "w") as f:
             f.write(response["SecretString"])
     return CA_CERT_PATH

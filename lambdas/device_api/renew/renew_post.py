@@ -6,7 +6,8 @@ import time
 
 from cryptography import x509
 from boto3.dynamodb.conditions import Key
-from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, get_root_ca_cert, check_ca_health, gen_one_time_token
+from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, \
+    get_root_ca_cert, check_ca_health, gen_one_time_token, device_secret_id
 
 
 def renew_certificate(event, context):
@@ -80,7 +81,7 @@ def renew_certificate(event, context):
         if not reg_items[0].get("date_cert_issued"):
             raise ValueError("Device has not been issued a certificate yet, try registering the device before attempting a renewal")
 
-        device_secrets = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
+        device_secrets = json.loads(secrets_client.get_secret_value(SecretId=device_secret_id(str(device_name)))["SecretString"])
         device_serial = device_secrets.get("device_ser_no")
         csr = device_secrets.get("csr")
 
