@@ -1,4 +1,4 @@
-device_id,time,log_typecount,battery,firmware_version,rssi,rsrp,rsrq
+device_id,time,log_type,count,battery,firmware_version,rssi,rsrp,rsrq
 1,1767330060,data_upload,144,100,1.0.0,-53,-65,-13
 1,1767416460,data_upload,176,99,1.0.0,-61,-67,-9
 1,1767502860,data_upload,339,99,1.0.0,-69,-85,-6
