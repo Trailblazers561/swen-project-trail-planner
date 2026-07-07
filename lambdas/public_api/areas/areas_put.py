@@ -39,7 +39,7 @@ def update_area(event, context):
                 if original_name != other_area_name:
                     other_trail_ids = area.get("trail_ids", [])
                     if isinstance(trail_ids, list) and any(item in other_trail_ids for item in trail_ids):
-                        new_trail_ids = [trail_id for trail_id in trail_ids if trail_id not in trail_ids]
+                        new_trail_ids = [trail_id for trail_id in other_trail_ids if trail_id not in trail_ids]
                         area_table.put_item(Item={"name": other_area_name, "trail_ids": new_trail_ids})
 
         if new_name:
