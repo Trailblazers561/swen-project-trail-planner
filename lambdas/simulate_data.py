@@ -248,6 +248,7 @@ def log_log(device_id: int, count: int, battery: int):
     device_log_table.put_item(Item={
         "device_id": device_id,
         "time": time,
+        "log_type": "data_upload",
         "count": count,
         "battery": battery,
         "firmware_version": firmware,
