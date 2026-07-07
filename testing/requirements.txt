@@ -10,3 +10,4 @@ jwcrypto
 cryptography
 requests
 moto
+joserfc
