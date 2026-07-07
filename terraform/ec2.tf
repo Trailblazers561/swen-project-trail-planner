@@ -12,8 +12,9 @@ resource "aws_instance" "ca_instance" {
   ami                    = data.aws_ami.amazon_linux_2023.id
   instance_type          = "t3.small"
   subnet_id              = aws_subnet.private_subnet.id
-  vpc_security_group_ids = [aws_security_group.ca_sg.id]
+  vpc_security_group_ids = [aws_security_group.ca_sg[0].id]
   iam_instance_profile   = aws_iam_instance_profile.ca_instance_profile.name
+  count = local.enable_CA_resources ? 1 : 0
 
   root_block_device {
     volume_size           = 30
@@ -196,10 +197,10 @@ EOF
 }
 
 output "ca_instance_private_ip" {
-  value       = aws_instance.ca_instance.private_ip
+  value = local.enable_CA_resources ? aws_instance.ca_instance[0].private_ip : null
   description = "Private ip used as as STEP_CA_URL for lambdas"
 }
 
 output "ca_instance_id" {
-  value = aws_instance.ca_instance.id
+  value = local.enable_CA_resources ? aws_instance.ca_instance[0].id : null
 }

@@ -80,8 +80,10 @@ resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {
 }
 
 resource "null_resource" "wait_for_truststore" {
+  count = local.enable_CA_resources ? 1 : 0
+
   triggers = {
-    instance_id = aws_instance.ca_instance.id
+    instance_id = aws_instance.ca_instance[0].id
   }
 
   provisioner "local-exec" {

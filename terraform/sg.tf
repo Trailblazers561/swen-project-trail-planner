@@ -2,6 +2,7 @@ resource "aws_security_group" "lambda_sg" {
   name        = "${var.deploy_env}-lambda-sg"
   description = "sg for lambda access"
   vpc_id      = aws_vpc.cert_vpc.id
+  count = local.enable_CA_resources ? 1 : 0
 
   egress {
     from_port   = 0
@@ -19,13 +20,14 @@ resource "aws_security_group" "ca_sg" {
   name        = "${var.deploy_env}-ca-sg"
   description = "ca access from lambda"
   vpc_id      = aws_vpc.cert_vpc.id
+  count = local.enable_CA_resources ? 1 : 0
 
   ingress {
     description = "connection to CA from lambda"
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
-    security_groups = [aws_security_group.lambda_sg.id]
+    security_groups = [aws_security_group.lambda_sg[0].id]
   }
 
   egress {
@@ -43,9 +45,10 @@ resource "aws_security_group" "ca_sg" {
 resource "null_resource" "nuke_enis" {
   triggers = {
     subnet_id = aws_subnet.private_subnet.id
-    sg_id     = aws_security_group.ca_sg.id
+    sg_id     = aws_security_group.ca_sg[0].id
     region    = data.aws_region.current.name
   }
+  count = local.enable_CA_resources ? 1 : 0
 
   provisioner "local-exec" {
     when       = destroy
@@ -83,6 +86,7 @@ resource "aws_security_group" "vpce_sg" {
   name        = "${var.deploy_env}-vpce-sg"
   description = "connection for ssm endpoints"
   vpc_id      = aws_vpc.cert_vpc.id
+  count = local.enable_CA_resources ? 1 : 0
 
   ingress {
     from_port   = 443
@@ -95,7 +99,7 @@ resource "aws_security_group" "vpce_sg" {
     from_port       = 443
     to_port         = 443
     protocol        = "tcp"
-    security_groups = [aws_security_group.ca_sg.id]
+    security_groups = [aws_security_group.ca_sg[0].id]
   }
 
   egress {
@@ -107,5 +111,9 @@ resource "aws_security_group" "vpce_sg" {
 }
 
 locals {
-  ssm_endpoints = toset(["ssm", "ssmmessages", "ec2messages"])
+  ssm_endpoints = local.enable_CA_resources ? {
+    ssm        = "ssm"
+    ssmmessages = "ssmmessages"
+    ec2messages = "ec2messages"
+  } : {}
 }
