@@ -15,3 +15,13 @@ resource "aws_ecr_repository" "step_ca" {
 output "step_ca_ecr_url" {
   value = "${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version}"
 }
+
+resource "null_resource" "push_step_ca" {
+  count = local.local_run ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "python3 ../scripts/push_step_ca.py ${var.deploy_env} ${var.step_ca_version}"
+  }
+
+  depends_on = [ aws_ecr_repository.step_ca ]
+}
