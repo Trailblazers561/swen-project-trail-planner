@@ -19,6 +19,7 @@ env:
   CONFIG_DIRECTORY: "./terraform"
   TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
+  TF_VAR_fire_up_CA: true
 
 jobs:
   terraform:

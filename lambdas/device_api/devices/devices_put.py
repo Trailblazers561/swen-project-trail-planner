@@ -1,10 +1,11 @@
 import json
 from collections import defaultdict
+from datetime import datetime
 
 from boto3.dynamodb.conditions import Key
 
 from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
-    device_trail_log_month_table, device_table, cors_headers, get_device_trail_id, timestamp_conversion, \
+    device_trail_log_month_table, device_table, device_log_table, cors_headers, get_device_trail_id, timestamp_conversion, \
     is_device_blocked, is_device_archived
 
 
@@ -15,8 +16,11 @@ def upload_device_data(event, context):
     {
         "name": "deviceA",
         "battery": 94,
-        "data": [{"ts": 123}],
+        "data": [{"timestamp": 1767243600, "count": 184}],
         "firmware_version": "1.2.17"
+        "rssi": -61
+        "rsrp": -97
+        "rsrq": -7
     }
     A device should be registered in the system before using this.
     """
@@ -65,11 +69,15 @@ def upload_device_data(event, context):
                 "body": json.dumps({"error": "Device is archived. Data upload rejected."})
             }
 
-        firmware_version = body.get("firmware_version")
         data_points = body.get("data")
         battery = body.get("battery")
+        firmware_version = body.get("firmware_version")
+        rssi = body.get("rssi")
+        rsrp = body.get("rsrp")
+        rsrq = body.get("rsrq")
 
-        if not firmware_version and not (data_points and battery): raise ValueError("Missing required field: firmware_version or (data_points and battery)")
+        # TODO: figure this out thanks nico
+        if not (data_points and battery): raise ValueError("Missing required fieldsdata_points and battery")
 
         device_exists = device_table.query(
             IndexName="name-index",
@@ -80,42 +88,46 @@ def upload_device_data(event, context):
         if not device_id: raise ValueError(f"Cannot find device with name [{name}], please register if not done already")
         messages = []
 
-        if firmware_version:
-            print(f"Attempting to update firmware version of device [{device_id}] to version [{firmware_version}]")
-            device_table.update_item(
-                Key={"id": device_id},
-                UpdateExpression="SET firmware_version = :firmware_version",
-                ExpressionAttributeValues={
-                    ":firmware_version": firmware_version
-                }
-            )
-            messages.append("Firmware version updated successfully")
-            print("Successfully updated firmware version")
+        if not isinstance(data_points, list):
+            raise ValueError("Data field must be an array")
 
-        if data_points and battery:
-            if not isinstance(data_points, list):
-                raise ValueError("Data field must be an array")
+        total = 0
+        for point in data_points:
+            if "count" not in point:
+                raise ValueError("Data points must have count attribute")
+            if "timestamp" not in point and "ts" not in point:
+                raise ValueError("Data points must have ts or timestamp attribute")
+            total += point["count"]
 
-            if len(data_points) == 0:
-                raise ValueError("Data array must be a non-empty list")
+        device_log_table.put_item(Item={
+            "device_id": device_id,
+            "time": datetime.now().timestamp(),
+            "log_type": "data_upload",
+            "count": total,
+            "battery": battery,
+            "firmware_version": firmware_version,
+            "rssi": rssi,
+            "rsrp": rsrp,
+            "rsrq": rsrq
+        })
 
-            print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
+        print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
 
-            _, trail_id = get_device_trail_id(device_id)
+        _, trail_id = get_device_trail_id(device_id)
 
-            new_body = {
-                "trail_id": trail_id,
-                "device_id": device_id,
-                "battery": battery,
-                "data": data_points
-            }
-            new_event = {**event, "body": new_body}
+        new_body = {
+            "trail_id": trail_id,
+            "device_id": device_id,
+            "battery": battery,
+            "data": data_points
+        }
+        new_event = {**event, "body": new_body}
 
-            upload_trail_data_call = upload_trail_data(new_event, context)
-            if upload_trail_data_call["statusCode"] == 200:
-                messages.append("Device data uploaded successfully")
-            else:
-                return upload_trail_data_call
+        upload_trail_data_call = upload_trail_data(new_event, context)
+        if upload_trail_data_call["statusCode"] == 200:
+            messages.append("Device data uploaded successfully")
+        else:
+            return upload_trail_data_call
 
         return {
             "statusCode": 200,
