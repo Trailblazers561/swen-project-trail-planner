@@ -111,3 +111,97 @@ def test_unknown_area_returns_empty_list():
     # Assert
     assert response["statusCode"] == 200
     assert json.loads(response["body"]) == []
+
+def test_none_query_parameters():
+    module = load_module()
+
+    event = {
+        "queryStringParameters": None,
+        "multiValueQueryStringParameters": None,
+    }
+
+    response = module.get_areas(event, None)
+
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+    assert len(body) == 4
+
+def test_empty_name_list_returns_all_active():
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {},
+        "multiValueQueryStringParameters": {
+            "name": []
+        },
+    }
+
+    response = module.get_areas(event, None)
+
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+    assert len(body) == 4
+
+def test_name_lookup_ignores_retired_parameter():
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {
+            "retired": ""
+        },
+        "multiValueQueryStringParameters": {
+            "name": ["Testing Area"]
+        },
+    }
+
+    response = module.get_areas(event, None)
+
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+
+    assert len(body) == 1
+    assert body[0]["name"] == "Testing Area"
+
+def test_missing_query_parameters():
+    module = load_module()
+
+    response = module.get_areas({}, None)
+
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+    assert len(body) == 4
+
+def test_value_error_returns_400(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise ValueError("bad request")
+
+    monkeypatch.setattr(module.area_table, "scan", raise_error)
+
+    response = module.get_areas({}, None)
+
+    assert response["statusCode"] == 400
+
+    body = json.loads(response["body"])
+    assert body["error"] == "bad request"
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.area_table, "scan", raise_error)
+
+    response = module.get_areas({}, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]
