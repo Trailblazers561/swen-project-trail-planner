@@ -28,6 +28,9 @@ def set_device_blocked(event, context):
             print("Missing required field: is_blocked")
             raise ValueError("Missing required field: is_blocked")
 
+        if not isinstance(is_blocked, bool):
+            raise ValueError("is_blocked must be a boolean")
+
         response = device_table.get_item(Key={"id": int(device_id)})
         if not response.get("Item"):
             print("Device id not found")
