@@ -5,6 +5,7 @@ import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export interface UserRow {
     user_id: string;
@@ -25,11 +26,11 @@ type DeviceType = {
   }
 
   const Desktop = ({children}: DeviceType) => {
-    const isDesktop = useMediaQuery({ minWidth: 500 })
+    const isDesktop = useMediaQuery({ minWidth: 1024 })
     return isDesktop ? children : null
   }
   const Mobile = ({children}: DeviceType) => {
-    const isMobile = useMediaQuery({maxWidth: 499})
+    const isMobile = useMediaQuery({maxWidth: 1023})
     return isMobile ? children: null
   }
 
@@ -292,7 +293,15 @@ const UserDataTable: React.FC<Props> = ({ data, onRefresh, onRowClick }) => {
             name: "Banned",
             selector: (row) => row.banned ? "Yes" : "No",
             sortable: true,
-        }
+        },
+        {
+            name: "",
+            cell: (row) => <ChevronRight onClick={() => {
+                if (row != undefined) {
+                    onRowClick && onRowClick(row)}
+            }}/>,
+            width: "50px",
+        },
     ]
 
     return (

@@ -3,9 +3,9 @@ import { Role, roleMap, useAuth } from "@/AuthContext";
 import { TrailData } from "@/api";
 import { Button } from "../templates/button";
 import { LoaderCircle, ArrowUp, ArrowDown, Ban, Undo2 } from "lucide-react";
-import { UserRow } from "./UserDataTable";
+import { UserRow } from "../tables/UserDataTable";
 import DataTable, { TableColumn } from "react-data-table-component";
-{}
+import "./Modal.css";
 
 interface Props {
     data: UserRow[];
@@ -14,18 +14,20 @@ interface Props {
     //loading: boolean;
 }
 
+//Simulates having headers at the start of a row by having each row contain the header and the respective user data
 interface textRow {
-        text: string;
+        header: string;
         field: string;
     }
 
 const columns: TableColumn<textRow>[] = [
     {
-        selector: (row) => row.text, //row is a textRow instance
+        selector: (row) => row.header, //row is a textRow instance
         // grow: 2,
     },
     {
-        selector: (row) => row.field
+        selector: (row) => row.field,
+        grow: 2
     }
 ] 
 
@@ -51,12 +53,10 @@ const handleRoleText = (role: Role) => {
     else if (role == Role.Root) {
         return ("Root Admin");
     }
-    return("Guest");
+    return("None");
 }
 
 const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
-
-    console.log(data[0]);
 
     const [textData, setTextData] = useState<Array<textRow>>([]);
         
@@ -153,10 +153,10 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
 
         if (data[0] != undefined) {
 
-            const usernamerow:textRow = {text: "Username", field: data[0].username};
-            const rolerow:textRow = {text: "Role", field: handleRoleText(data[0].role)};
-            const bannedrow:textRow = {text: "Banned?", field: handleBannedText(data[0].banned)};
-            const emailrow:textRow = {text: "Email", field: data[0].email}
+            const usernamerow:textRow = {header: "Username", field: data[0].username};
+            const rolerow:textRow = {header: "Role", field: handleRoleText(data[0].role)};
+            const bannedrow:textRow = {header: "Banned?", field: handleBannedText(data[0].banned)};
+            const emailrow:textRow = {header: "Email", field: data[0].email}
 
             setTextData([usernamerow, rolerow, bannedrow, emailrow]);
         }
@@ -169,6 +169,14 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
     useEffect (() => {
         loadData();
     }, [data])
+
+    const customStyles = {
+        rows: {
+            stripedStyle: {
+                backgroundColor: "#edeef0",
+            }
+        }
+    }
     
 
     return(
@@ -183,48 +191,55 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
                 </div>
             )}
             <div className="modal-content modal-content-extra-large" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header bg-navbar p-2!">
-                    <button className="modal-close left-0" onClick={onClose}>x</button>
+                <div className="modal-header bg-navbar p-4!">
+                    <div className="font-primary text-white font-semibold text-xl left-2">Account Details</div>
+                    <button className="modal-close" onClick={onClose}>X</button>
                 </div>
                 <DataTable
                 columns = {columns}
                 data = {textData}
                 noTableHead={true}
+                striped
+                customStyles={customStyles}
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2 p-2">
                     <Button
                         onClick={() => { updateUserRole("promote", data[0], onRefresh); }}
                         disabled={data[0].username === username || data[0].role === Role.Root || data[0].role === Role.Admin || (data[0].role === Role.Manager && currentRole === Role.Admin)}
-                        className="bg-green-500 hover:bg-green-600 text-white w-5/16 p-8"
+                        className="bg-green-500 flex-col hover:bg-green-600 text-white w-5/16 p-8"
                         title="Promote"
                     >
-                        <ArrowUp size={18} />
+                        <ArrowUp size={24} />
+                        <div>Promote</div>
                     </Button>
                     <Button
                         onClick={() => { updateUserRole("demote", data[0], onRefresh); }}
                         disabled={data[0].username === username || data[0].role === Role.User || data[0].role === Role.Root}
-                        className="bg-red-500 hover:bg-red-600 text-white w-5/16 p-8"
+                        className="bg-red-500 flex-col hover:bg-red-600 text-white w-5/16 p-8"
                         title="Demote"
                     >
-                        <ArrowDown size={18} />
+                        <ArrowDown size={24} />
+                        <div>Demote</div>
                     </Button>
                     {data[0].banned ? (
                         <Button
                             onClick={() => unbanUser(data[0].username, onRefresh)}
-                            className="bg-blue-700 hover:bg-blue-600 text-white w-5/16 p-8"
+                            className="bg-blue-700 flex-col hover:bg-blue-600 text-white w-5/16 p-8"
                             disabled={data[0].role === Role.Root || data[0].role === currentRole}
                             title="Unban"
                         >
-                            <Undo2 size={18} />
+                            <Undo2 size={24} />
+                            <div>Promote</div>
                         </Button>
                     ) : (
                         <Button
                             onClick={() => banUser(data[0].username, onRefresh)}
-                            className="bg-red-700 hover:bg-red-600 text-white w-5/16 p-8"
+                            className="bg-red-700 flex-col hover:bg-red-600 text-white w-5/16 p-8"
                             disabled={data[0].role === Role.Root || data[0].role === currentRole}
                             title="Ban"
                         >
-                            <Ban size={18} />
+                            <Ban size={24} />
+                            <div>Promote</div>
                         </Button>
                     )}
                 </div>
