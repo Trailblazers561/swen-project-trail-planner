@@ -1,14 +1,12 @@
 import json
 from collections import defaultdict
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, timedelta
 
 from boto3.dynamodb.conditions import Key
 
 from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
-    device_trail_log_month_table, device_table, device_log_table, cors_headers, get_device_trail_id, timestamp_conversion, \
-    is_device_blocked, is_device_archived
-
+    device_trail_log_month_table, device_table, device_trail_table, device_log_table, cors_headers, get_device_trail_id, \
+    timestamp_conversion, is_device_blocked, is_device_archived
 
 def upload_device_data(event, context):
     """
@@ -87,7 +85,6 @@ def upload_device_data(event, context):
         )["Items"]
         device_id = device_exists[0]["id"] if device_exists else None
         if not device_id: raise ValueError(f"Cannot find device with name [{name}], please register if not done already")
-        messages = []
 
         if not isinstance(data_points, list):
             raise ValueError("Data field must be an array")
@@ -102,7 +99,7 @@ def upload_device_data(event, context):
 
         device_log_table.put_item(Item={
             "device_id": device_id,
-            "time": Decimal(str(datetime.now().timestamp())),
+            "time": int(datetime.now().timestamp()),
             "log_type": "data_upload",
             "count": total,
             "battery": battery,
@@ -114,26 +111,48 @@ def upload_device_data(event, context):
 
         print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
 
-        _, trail_id = get_device_trail_id(device_id)
+        device_trail_results = device_trail_table.query(
+            KeyConditionExpression=Key("device_id").eq(device_id),
+            ScanIndexForward=False,
+            Limit=1
+        ).get("Items", [])
+
+        if not device_trail_results or "date_retired" in device_trail_results[0]:
+            return {
+                "statusCode": 200, #TODO: this status code?
+                "headers": cors_headers(),
+                "body": json.dumps({"message": f"Device request logged, but must be associated to a trail to log data"})
+            }
+
+        if "date_installed" not in device_trail_results[0]:
+            return {
+                "statusCode": 200, #TODO: this status code?
+                "headers": cors_headers(),
+                "body": json.dumps({"message": f"Device request logged, but must be marked as installed to log data"})
+            }
+
+        trail_id = device_trail_results[0]["trail_id"]
+        date_installed = device_trail_results[0]["date_installed"]
+
+        minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0,second=0,microsecond=0) + timedelta(hours=1)).timestamp()
+        new_data_points = [data_point for data_point in data_points if data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp", 0) >= minimum_date]
 
         new_body = {
             "trail_id": trail_id,
             "device_id": device_id,
             "battery": battery,
-            "data": data_points
+            "data": new_data_points
         }
         new_event = {**event, "body": new_body}
 
         upload_trail_data_call = upload_trail_data(new_event, context)
-        if upload_trail_data_call["statusCode"] == 200:
-            messages.append("Device data uploaded successfully")
-        else:
+        if upload_trail_data_call["statusCode"] != 200:
             return upload_trail_data_call
 
         return {
             "statusCode": 200,
             "headers": cors_headers(),
-            "body": json.dumps({"message": ", ".join(messages)})
+            "body": json.dumps({"message": "Device data uploaded successfully"})
         }
     except ValueError as e:
         print(e)

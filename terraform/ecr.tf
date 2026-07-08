@@ -17,7 +17,7 @@ output "step_ca_ecr_url" {
 }
 
 resource "null_resource" "push_step_ca" {
-  count = local.local_run ? 1 : 0
+  count = local.enable_CA_resources && local.local_run ? 1 : 0
 
   provisioner "local-exec" {
     command = "python3 ../scripts/push_step_ca.py ${var.deploy_env} ${var.step_ca_version}"
