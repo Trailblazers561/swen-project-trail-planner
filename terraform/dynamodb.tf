@@ -209,6 +209,7 @@ resource "aws_dynamodb_table" "device_log_table" {
   }
 
   /*
+    log_type: string
     count: number (int)
     battery: number (percentage)
     firmware_version: string

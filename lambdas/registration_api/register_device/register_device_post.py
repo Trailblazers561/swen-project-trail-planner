@@ -3,12 +3,13 @@ import hmac
 import json
 import time
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal
 
 from cryptography import x509
 import requests
 from boto3.dynamodb.conditions import Key
 from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, \
-    get_root_ca_cert, check_ca_health, gen_one_time_token, device_secret_id
+    get_root_ca_cert, check_ca_health, gen_one_time_token, device_secret_id, device_log_table
 
 TIMESTAMP_WINDOW = 120  # 2 min buffer from packet send time to parse time
 
@@ -155,6 +156,12 @@ def register_device(event, context):
                 ":tl": time_to_live
             }
         )
+
+        device_log_table.put_item(Item={
+            "device_id": int(device_name),
+            "time": Decimal(str(datetime.now().timestamp())),
+            "log_type": "device_certificate_registration",
+        })
 
         return {
             "statusCode": 200,

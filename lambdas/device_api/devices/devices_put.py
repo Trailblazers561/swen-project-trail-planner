@@ -1,6 +1,7 @@
 import json
 from collections import defaultdict
 from datetime import datetime
+from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
@@ -101,7 +102,7 @@ def upload_device_data(event, context):
 
         device_log_table.put_item(Item={
             "device_id": device_id,
-            "time": datetime.now().timestamp(),
+            "time": Decimal(str(datetime.now().timestamp())),
             "log_type": "data_upload",
             "count": total,
             "battery": battery,
