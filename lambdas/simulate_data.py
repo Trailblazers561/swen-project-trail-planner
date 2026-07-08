@@ -83,6 +83,7 @@ def simulate_data(event, context):
             Limit=1
         )
         battery = response["Items"][0]["battery"] if response["Count"] >= 1 else 100
+        firmware_version = response["Items"][0]["firmware_version"] if response["Count"] >= 1 else "1.0.0"
 
         # 1/3 chance to decrement battery
         if (battery > 1 and random.random() < 1/3):
@@ -111,7 +112,7 @@ def simulate_data(event, context):
         month_timestamp = int((today.replace(day=1)).timestamp())
         log_month(device_trail_id, month_timestamp, hikers)
 
-        log_log(device_id, hikers, battery)
+        log_log(device_id, hikers, battery, firmware_version)
 
 def create_trail(trail: str) -> int:
     print(f"Creating trail with name [{trail}]")
@@ -226,10 +227,7 @@ def log_month(device_trail_id: int, start: int, count: int):
         }
     )
 
-def log_log(device_id: int, count: int, battery: int):
-    device = device_table.get_item(Key={"id": device_id}).get("Item")
-
-    firmware = device.get("firmware_version", "")
+def log_log(device_id: int, count: int, battery: int, firmware_version: str):
     time = int(datetime.now().timestamp())
 
     ranges = {
@@ -244,14 +242,14 @@ def log_log(device_id: int, count: int, battery: int):
     last = get_rndm(last)
     rsrq = random.randint(*ranges["rsrq"][last])
     
-    print(f"Adding device log for device_id [{device_id}] at time [{time}] with count [{count}], battery [{battery}], firmware [{firmware}], rssi [{rssi}], rsrp [{rsrp}], rsrq [{rsrq}]")
+    print(f"Adding device log for device_id [{device_id}] at time [{time}] with count [{count}], battery [{battery}], firmware [{firmware_version}], rssi [{rssi}], rsrp [{rsrp}], rsrq [{rsrq}]")
     device_log_table.put_item(Item={
         "device_id": device_id,
         "time": time,
         "log_type": "data_upload",
         "count": count,
         "battery": battery,
-        "firmware_version": firmware,
+        "firmware_version": firmware_version,
         "rssi": rssi,
         "rsrp": rsrp,
         "rsrq": rsrq
