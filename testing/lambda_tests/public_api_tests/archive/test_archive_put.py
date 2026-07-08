@@ -14,34 +14,6 @@ def load_module():
     module = importlib.import_module("lambdas.public_api.archive.archive_put")
     return importlib.reload(module)
 
-# Tests that don't currently work but should probably work are commented out for now
-#def test_archive_existing_device(): TO BE IMPLEMENTED
-    # Arrange
-    module = load_module()
-
-    event = {
-        "body": json.dumps({
-            "device_id": 1,
-            "is_archived": True
-        })
-    }
-
-    # Act
-    response = module.set_device_archived(event, None)
-
-    # Assert
-    assert response["statusCode"] == 200
-
-    body = json.loads(response["body"])
-    assert "is_archived set to True" in body["message"]
-
-    table = boto3.resource("dynamodb").Table(
-        "test_trailcount_device_table"
-    )
-
-    item = table.get_item(Key={"id": 1})["Item"]
-    assert item["is_archived"] is True
-
 def test_unarchive_existing_device():
     # Arrange
     module = load_module()
@@ -185,52 +157,3 @@ def test_missing_body():
 
     # Assert
     assert response["statusCode"] == 400
-
-#def test_invalid_json():
-#    # Arrange
-#    module = load_module()
-#
-#    event = {
-#        "body": "{"
-#    }
-#
-#    # Act
-#    response = module.set_device_archived(event, None)
-#
-#    # Assert
-#    assert response["statusCode"] == 500
-#
-#def test_is_archived_integer():
-#    # Arrange
-#    module = load_module()
-#
-#    event = {
-#        "body": json.dumps({
-#            "device_id": 1,
-#            "is_archived": 1
-#        })
-#    }
-#
-#    # Act
-#    response = module.set_device_archived(event, None)
-#
-#    # Assert
-#    assert response["statusCode"] == 200
-#
-#
-#def test_is_archived_string():
-#    # Arrange
-#    module = load_module()
-#
-#    event = {
-#        "body": json.dumps({
-#            "device_id": 1,
-#            "is_archived": "true"
-#        })
-#    }
-#
-#    # Act
-#    response = module.set_device_archived(event, None)
-#
-#    # Assert
-#    assert response["statusCode"] == 200

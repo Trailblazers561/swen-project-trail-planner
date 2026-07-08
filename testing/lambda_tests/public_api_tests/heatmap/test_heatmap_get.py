@@ -15,51 +15,6 @@ def load_module():
     module = importlib.import_module("lambdas.public_api.heatmap.heatmap_get")
     return importlib.reload(module)
 
-# Tests that don't currently work but should probably work are commented out for now
-#def test_heatmap_valid_absolute():
-    # Arrange
-    module = load_module()
-
-    event = {
-        "queryStringParameters": {
-            "start_time": "2025-01-01T00:00:00",
-            "end_time": "2025-01-02T00:00:00",
-            "algorithm": "absolute"
-        },
-        "multiValueQueryStringParameters": {
-            "trail_id": ["1", "2"]
-        }
-    }
-
-    # Act
-    response = module.get_heatmap_data(event, None)
-
-    # Assert
-    assert response["statusCode"] == 200
-    body = json.loads(response["body"])
-    assert isinstance(body, dict)
-
-#def test_heatmap_valid_relative():
-    # Arrange
-    module = load_module()
-
-    event = {
-        "queryStringParameters": {
-            "start_time": "2025-01-01T00:00:00",
-            "end_time": "2025-01-05T00:00:00",
-            "algorithm": "relative"
-        },
-        "multiValueQueryStringParameters": {
-            "trail_id": ["1"]
-        }
-    }
-
-    # Act
-    response = module.get_heatmap_data(event, None)
-
-    #Assert
-    assert response["statusCode"] == 200
-
 def test_missing_trail_id():
     #Arrange
     module = load_module()
@@ -158,26 +113,6 @@ def test_invalid_algorithm():
     # Assert
     assert response["statusCode"] == 400
 
-#def test_empty_trail_id_list():
-    # Arrange
-#    module = load_module()
-
-#    event = {
-#        "queryStringParameters": {
-#            "start_time": "2025-01-01T00:00:00",
-#            "end_time": "2025-01-02T00:00:00"
-#        },
-#        "multiValueQueryStringParameters": {
-#            "trail_id": []
-#        }
-#    }
-
-    # Act
-#    response = module.get_heatmap_data(event, None)
-
-    # Assert
-#    assert response["statusCode"] == 400
-
 def test_end_time_before_start_time():
     # Arrange
     module = load_module()
@@ -218,28 +153,3 @@ def test_invalid_datetime_format():
 
     # Assert
     assert response["statusCode"] == 400
-
-#def test_no_device_logs_returns_nulls():
-    # Arrange
-#    module = load_module()
-
-#    event = {
-#        "queryStringParameters": {
-#            "start_time": "2099-01-01T00:00:00",
-#            "end_time": "2099-01-02T00:00:00"
-#        },
-#        "multiValueQueryStringParameters": {
-#            "trail_id": ["1"]
-#        }
-#    }
-
-    # Act
-#    response = module.get_heatmap_data(event, None)
-
-    # Assert
-#    assert response["statusCode"] == 200
-
-#    body = json.loads(response["body"])
-
-    # expect no data
-#    assert body[1] is None or body[1] == 0 or body[1] is None
