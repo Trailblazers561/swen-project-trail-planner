@@ -18,6 +18,11 @@ env:
   TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
   TF_VAR_ses_identity_arn: '"${{  vars.SES_IDENTITY_ARN  }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
+  TF_VAR_fire_up_CA: true
+
+concurrency:
+  group:  testing-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   create-update-env:
@@ -310,3 +315,22 @@ jobs:
               body: output
             });
         if: ${{ always() }}
+
+      - name: Export Variables
+        run: echo 'TF_VAR_fire_up_CA=false' >> "$GITHUB_ENV"
+        if: ${{ always() }}
+
+      - name: Create Apply Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: apply-run-two
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+        if: ${{always() }}
+
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        if: fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply-two
+        with:
+          run: ${{ steps.apply-run-two.outputs.run_id }}
