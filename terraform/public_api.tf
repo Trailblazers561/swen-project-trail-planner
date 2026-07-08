@@ -282,6 +282,7 @@ resource "aws_lambda_function" "public_api_lambdas" {
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
       DEPLOY_ENV = var.deploy_env
+      CERTIFICATE_AUTHORITY_URL = local.enable_CA_resources ? "https://${aws_instance.ca_instance[0].private_ip}:9000" : ""
     }
   }
 }

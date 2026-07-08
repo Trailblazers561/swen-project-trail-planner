@@ -4,6 +4,7 @@ locals {
       POST = {
         file = "renew/renew_post.py"
         handler = "renew_post.renew_certificate"
+        needs_ca_access = true
       }
     }
     devices = {
@@ -187,6 +188,15 @@ resource "aws_lambda_function" "device_api_lambdas" {
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
       DEPLOY_ENV = var.deploy_env
+      CERTIFICATE_AUTHORITY_URL = local.enable_CA_resources ? "https://${aws_instance.ca_instance[0].private_ip}:9000" : ""
+    }
+  }
+
+  dynamic "vpc_config" {
+    for_each = (lookup(each.value, "needs_ca_access", false) && local.enable_CA_resources) ? [1] : []
+    content {
+      subnet_ids         = [aws_subnet.private_subnet.id]
+      security_group_ids = [aws_security_group.lambda_sg[0].id]
     }
   }
 }
