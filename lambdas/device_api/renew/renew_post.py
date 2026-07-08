@@ -130,7 +130,7 @@ def renew_certificate(event, context):
         )
 
         device_log_table.put_item(Item={
-            "device_id": int(device_name),
+            "device_id": int(item.get("id")),
             "time": Decimal(str(datetime.now().timestamp())),
             "log_type": "device_certificate_renewal",
         })
