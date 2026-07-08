@@ -1,4 +1,3 @@
-from testing.lambda_tests.test_data import DAY_LOG_DATA, DEVICE_TRAIL_DATA
 import importlib
 import json
 
