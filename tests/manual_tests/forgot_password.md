@@ -28,5 +28,5 @@
 
 ## Post-conditions
 
-* A secure session cookie is established in the browser storage.
-* User is left in an authenticated homepage state.
+* The user's password is updated
+* The user can login with the updated password
