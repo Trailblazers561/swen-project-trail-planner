@@ -21,8 +21,8 @@
 | 5    | Enter 'Code' (from email), 'Password', and 'Confirm Password'                       | Text displays, code is not masked, passwords are masked                                  | [x] Pass<br />[ ] Fail  |
 | 6    | Click eye icon                                                | Password switches from masked to no mask | [x] Pass<br />[ ] Fail  |
 | 7    | Click the 'Resend Code' button                                                 | New code is sent to email to use | [x] Pass<br />[ ] Fail  |
-| 6    | Click the Yellow**"Update password"** button.                                                  | Page updates back to 'Welcome Back' page | [x] Pass<br />[ ] Fail  |
-| 7    | Login regularly (follow steps 3-5 from login.md for help)                                                  | User logs in successfully | [x] Pass<br />[ ] Fail  |
+| 8    | Click the Yellow**"Update password"** button.                                                  | Page updates back to 'Welcome Back' page | [x] Pass<br />[ ] Fail  |
+| 9    | Login regularly (follow steps 3-5 from login.md for help)                                                  | User logs in successfully | [x] Pass<br />[ ] Fail  |
 
 
 
