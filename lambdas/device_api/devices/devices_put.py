@@ -75,8 +75,8 @@ def upload_device_data(event, context):
         rsrp = body.get("rsrp")
         rsrq = body.get("rsrq")
 
-        # TODO: figure this out thanks nico
-        if not (data_points and battery): raise ValueError("Missing required field: data_points and battery")
+        if not data_points: raise ValueError("Missing required field: data_points")
+        if not battery: raise ValueError("Missing required field: battery")
 
         device_exists = device_table.query(
             IndexName="name-index",
@@ -109,7 +109,7 @@ def upload_device_data(event, context):
             "rsrq": rsrq
         })
 
-        print(f"Attempting to upload data of device [{device_id}] to with data [{data_points}] and battery [{battery}]")
+        print(f"Attempting to upload data of device [{device_id}] with data [{data_points}] and battery [{battery}]")
 
         device_trail_results = device_trail_table.query(
             KeyConditionExpression=Key("device_id").eq(device_id),
@@ -119,14 +119,14 @@ def upload_device_data(event, context):
 
         if not device_trail_results or "date_retired" in device_trail_results[0]:
             return {
-                "statusCode": 200, #TODO: this status code?
+                "statusCode": 202,
                 "headers": cors_headers(),
                 "body": json.dumps({"message": f"Device request logged, but must be associated to a trail to log data"})
             }
 
         if "date_installed" not in device_trail_results[0]:
             return {
-                "statusCode": 200, #TODO: this status code?
+                "statusCode": 202,
                 "headers": cors_headers(),
                 "body": json.dumps({"message": f"Device request logged, but must be marked as installed to log data"})
             }

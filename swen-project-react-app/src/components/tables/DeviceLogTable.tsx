@@ -75,7 +75,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
   },
   {
     name: "Firmware",
-    selector: (row) => row.firmware_version ?? "",
+    selector: (row) => row.firmware_version ? row.firmware_version : "N/A",
     center: true,
   },
   {
