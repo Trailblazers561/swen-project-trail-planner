@@ -76,7 +76,7 @@ def upload_device_data(event, context):
         rsrq = body.get("rsrq")
 
         # TODO: figure this out thanks nico
-        if not (data_points and battery): raise ValueError("Missing required fieldsdata_points and battery")
+        if not (data_points and battery): raise ValueError("Missing required field: data_points and battery")
 
         device_exists = device_table.query(
             IndexName="name-index",
