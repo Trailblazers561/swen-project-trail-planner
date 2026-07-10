@@ -324,10 +324,6 @@ resource "aws_api_gateway_deployment" "device_api_deployment" {
     )))
   }
 
-  lifecycle {
-    # create_before_destroy = true
-  }
-
   depends_on = [
     aws_api_gateway_integration.device_api_integrations,
     aws_api_gateway_integration.device_api_options_integrations,

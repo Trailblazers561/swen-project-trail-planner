@@ -426,10 +426,6 @@ resource "aws_api_gateway_deployment" "public_api_deployment" {
     )))
   }
 
-  lifecycle {
-    # create_before_destroy = true
-  }
-
   depends_on = [
     aws_api_gateway_integration.public_api_integrations,
     aws_api_gateway_integration.public_api_options_integrations,
