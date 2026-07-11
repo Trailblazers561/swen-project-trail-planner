@@ -323,5 +323,5 @@ def aws_environment():
 @pytest.fixture(autouse=True)
 def reload_lambda_modules():
     for module in list(sys.modules):
-        if module.startswith("lambdas."):
+        if module.startswith("lambdas.") or module.startswith("helper."):
             del sys.modules[module]

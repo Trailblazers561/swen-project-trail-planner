@@ -16,7 +16,7 @@ def ban_user(event, context):
         if not caller_role:
             print("Error: caller role not found when needed")
             return {
-                    "statusCode": 400,
+                    "statusCode": 403,
                     "headers": cors_headers(),
                     "body": json.dumps({"error": "Unable to determine caller's role"})
                 }
