@@ -13,6 +13,7 @@ DAY_LOG_DATA: list[dict[str, object]] = [] # ["device_trail_id": int, "start": i
 WEEK_LOG_DATA: list[dict[str, object]] = [] # ["device_trail_id": int, "start": int, "count": int]
 MONTH_LOG_DATA: list[dict[str, object]] = [] # ["device_trail_id": int, "start": int, "count": int]
 DEVICE_LOG_DATA: list[dict[str, object]] = [] # ["device_id": int, "time": int, "count": int, "battery": int, "firmware_version": str, "rssi": int, "rsrp": int, "rsrq": int]
+REGISTRATION_DATA: list[dict[str, object]] = []  # ["registration_id": int, "device_id": int, "date_registered": int, "cert_time_to_live": int]
 
 with open(Path(__file__).parent / "../../sample_data/devices.csv") as f:
     reader = csv.DictReader(f)
@@ -179,4 +180,14 @@ with open(Path(__file__).parent / "../../sample_data/logs_recent.csv") as f:
             "rssi": int(row["rssi"]),
             "rsrp": int(row["rsrp"]),
             "rsrq": int(row["rsrq"]),
+        })
+
+with open(Path(__file__).parent / "../../sample_data/registrations.csv") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        REGISTRATION_DATA.append({
+            "registration_id": int(row["registration_id"]),
+            "device_id": int(row["device_id"]),
+            "date_registered": int(row["date_registered"]),
+            "cert_time_to_live": int(row["cert_time_to_live"]),
         })

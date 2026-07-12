@@ -152,7 +152,16 @@ def create_tables():
         "device_id",
         "N",
         sort_key="id",
-        sort_type="N"
+        sort_type="N",
+        global_secondary_indexes=[
+        {
+            "IndexName": "trail-index",
+            "KeySchema": [
+                {"AttributeName": "trail_id", "KeyType": "HASH"}
+            ],
+            "Projection": {"ProjectionType": "ALL"},
+        }
+    ],
     )
 
     # Registration

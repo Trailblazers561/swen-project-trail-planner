@@ -1,6 +1,6 @@
 import importlib
 import json
-from testing.lambda_tests.test_data import DEVICE_DATA
+from testing.lambda_tests.test_data import REGISTRATION_DATA
 
 
 def load_module():
@@ -29,12 +29,16 @@ def test_get_all_registrations():
     assert response["statusCode"] == 200
 
     body = json.loads(response["body"])
-    assert body == []
+    assert len(body) == len(REGISTRATION_DATA)
 
-    for registration in body:
-        assert "registration_id" in registration
-        assert "device_id" in registration
-        assert "device" in registration
+    for actual, expected in zip(body, REGISTRATION_DATA):
+        assert actual["registration_id"] == expected["registration_id"]
+        assert actual["device_id"] == expected["device_id"]
+        assert actual["date_registered"] == expected["date_registered"]
+        assert actual["cert_time_to_live"] == expected["cert_time_to_live"]
+
+        assert "device" in actual
+        assert actual["device"]["id"] == expected["device_id"]
 
 
 def test_get_specific_registration():
@@ -55,7 +59,14 @@ def test_get_specific_registration():
 
     body = json.loads(response["body"])
 
-    assert body == []
+    assert len(body) == 1
+
+    registration = body[0]
+
+    assert registration["registration_id"] == 1
+    assert registration["device_id"] == 1
+    assert "device" in registration
+    assert registration["device"]["id"] == 1
 
 
 def test_unknown_registration():
@@ -146,7 +157,7 @@ def test_missing_query_parameters():
 
     body = json.loads(response["body"])
 
-    assert body == []
+    len(body) == len(REGISTRATION_DATA)
 
 
 def test_none_query_parameters():
@@ -165,4 +176,20 @@ def test_none_query_parameters():
 
     body = json.loads(response["body"])
 
-    assert body == []
+    len(body) == len(REGISTRATION_DATA)
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.registration_table, "scan", raise_error)
+
+    response = module.get_registrations({}, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]
