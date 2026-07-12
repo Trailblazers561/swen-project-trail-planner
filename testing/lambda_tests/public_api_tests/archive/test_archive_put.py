@@ -157,3 +157,23 @@ def test_missing_body():
 
     # Assert
     assert response["statusCode"] == 400
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.device_table, "get_item", raise_error)
+
+    event = {
+    "body": json.dumps({
+        "device_id": 1,
+        "is_archived": True
+    })
+    }
+
+    response = module.set_device_archived(event, None)
+
+    assert response["statusCode"] == 500
+

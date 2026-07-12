@@ -15,6 +15,29 @@ def load_module():
     module = importlib.import_module("lambdas.public_api.heatmap.heatmap_get")
     return importlib.reload(module)
 
+def test_absolute_algorithm_success():
+    #Arrange
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {
+            "start_time": "2025-01-01T00:00:00",
+            "end_time": "2025-01-31T23:59:59",
+            "algorithm": "absolute"
+        },
+        "multiValueQueryStringParameters": {
+            "trail_id": ["1", "2"]
+        }
+    }
+
+    response = module.get_heatmap_data(event, None)
+
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+
+    assert isinstance(body, dict)
+
 def test_missing_trail_id():
     #Arrange
     module = load_module()
@@ -131,7 +154,10 @@ def test_end_time_before_start_time():
     response = module.get_heatmap_data(event, None)
 
     # Assert
-    assert response["statusCode"] in (400, 500)
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+    assert isinstance(body, dict)
 
 
 def test_invalid_datetime_format():
@@ -153,3 +179,29 @@ def test_invalid_datetime_format():
 
     # Assert
     assert response["statusCode"] == 400
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.device_trail_table, "query", raise_error)
+
+    event = {
+        "queryStringParameters": {
+            "start_time": "2025-01-01T00:00:00",
+            "end_time": "2025-01-02T00:00:00"
+        },
+        "multiValueQueryStringParameters": {
+            "trail_id": ["1"]
+        }
+    }
+
+    response = module.get_heatmap_data(event, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]
