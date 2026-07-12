@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import DataTable, { TableColumn } from "react-data-table-component";
+import DataTable, { type TableColumn, type ExpanderComponentProps } from "react-data-table-component";
 import moment from "moment-timezone";
 import { CircleQuestionMark } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -77,6 +77,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: "Firmware",
     selector: (row) => row.firmware_version ?? "",
     center: true,
+    hide: 1023,
   },
   {
     name: "Battery",
@@ -125,6 +126,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
+    hide: 1023
   },
   {
     name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower." />,
@@ -149,6 +151,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
+    hide: 1023
   },
   {
     name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />,
@@ -173,6 +176,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
+    hide: 1023
   },
   {
     name: "Count",
@@ -180,6 +184,25 @@ const columns: TableColumn<DeviceLogRow>[] = [
     center: true,
   }
 ];
+
+const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
+  <div style={{ padding: '16px 40px', background: '#f9fafb' }}>
+    <div>Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
+    <div>Firmware: {row.firmware_version ?? ""}</div>
+    <div>
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      {row.rssi}
+    </div>
+    <div>
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      {row.rsrp}
+    </div>
+    <div>
+      <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />
+      {row.rsrq}
+    </div>
+  </div>
+);
 
 const customStyles = {
   table: {
@@ -238,6 +261,8 @@ const DeviceLogTable: React.FC<Props> = ({ data, loading }) => {
             No logs found.
           </div>
         }
+        expandableRows={true}
+        expandableRowsComponent={expandedRow}
       />
     </div>
   );
