@@ -16,6 +16,10 @@ interface DeviceLogRow {
   count: number;
 }
 
+interface Row {
+  row: DeviceLogRow;
+}
+
 interface TooltipHeaderProps {
   label: string;
   expanded: string;
@@ -33,6 +37,64 @@ const Desktop = ({children}: DeviceType) => {
 const Mobile = ({children}: DeviceType) => {
   const isMobile = useMediaQuery({maxWidth: 1023})
   return isMobile ? children: null
+}
+
+function FontColorRSSI({row}: Row) {
+  
+  let rssiClass = "";
+  if (row.rssi === null)
+    rssiClass = "";
+
+  else {
+
+    if (row.rssi >= -65) {
+      rssiClass = "text-green-700";
+    } else if (row.rssi >= -80) {
+      rssiClass = "text-orange-600";
+    } else {
+      rssiClass = "text-red-600";
+    }
+  }
+  
+  return rssiClass;
+}
+
+function FontColorRSRP({row}: Row) {
+
+  let rsrpClass = "";
+
+  if (row.rsrp === null)
+    rsrpClass = "";
+  else {
+    if (row.rsrp >= -85) {
+      rsrpClass = "text-green-700";
+    } else if (row.rsrp >= -100) {
+      rsrpClass = "text-orange-600";
+    } else {
+      rsrpClass = "text-red-600";
+    }
+  }
+
+  return rsrpClass;
+}
+
+function FontColorRSRQ({row}: Row) {
+
+  let rsrqClass = "";
+
+  if (row.rsrq === null)
+    rsrqClass = "";
+
+  else {
+    if (row.rsrq >= -7) {
+      rsrqClass = "text-green-700";
+    } else if (row.rsrq >= -11) {
+      rsrqClass = "text-orange-600";
+    } else {
+      rsrqClass = "text-red-600";
+    }
+  }
+  return rsrqClass;
 }
 
 function TooltipHeader({label, expanded, description}: TooltipHeaderProps) {
@@ -123,15 +185,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
       if (row.rssi === null)
         return <span className="text-gray-400">N/A</span>;
 
-      let rssiClass = "";
-
-      if (row.rssi >= -65) {
-        rssiClass = "text-green-700";
-      } else if (row.rssi >= -80) {
-        rssiClass = "text-orange-600";
-      } else {
-        rssiClass = "text-red-600";
-      }
+      let rssiClass = FontColorRSSI({row})
 
       return (
         <span className={rssiClass}>
@@ -147,15 +201,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
       if (row.rsrp === null)
         return <span className="text-gray-400">N/A</span>;
 
-      let rsrpClass = "";
-
-      if (row.rsrp >= -85) {
-        rsrpClass = "text-green-700";
-      } else if (row.rsrp >= -100) {
-        rsrpClass = "text-orange-600";
-      } else {
-        rsrpClass = "text-red-600";
-      }
+      let rsrpClass = FontColorRSRP({row})
 
       return (
         <span className={rsrpClass}>
@@ -171,15 +217,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
       if (row.rsrq === null)
         return <span className="text-gray-400">N/A</span>;
 
-      let rsrqClass = "";
-
-      if (row.rsrq >= -7) {
-        rsrqClass = "text-green-700";
-      } else if (row.rsrq >= -11) {
-        rsrqClass = "text-orange-600";
-      } else {
-        rsrqClass = "text-red-600";
-      }
+      let rsrqClass = FontColorRSRQ({row})
 
       return (
         <span className={rsrqClass}>
@@ -237,14 +275,14 @@ const columnsMobile: TableColumn<DeviceLogRow>[] = [
     selector: (row) => moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A"),
     grow: 2,
     center: true,
-    minWidth: "150px",
+    minWidth: "120px",
   },
   {
     name: "Battery",
     center: true,
     grow: 1,
     compact: true,
-    minWidth: "50px",
+    minWidth: "45px",
     cell: (row) => {
       if (row.battery === null)
         return <span className="text-gray-400">N/A</span>;
@@ -272,25 +310,25 @@ const columnsMobile: TableColumn<DeviceLogRow>[] = [
     center: true,
     grow: 1,
     compact: true,
-    minWidth: "50px",
+    minWidth: "45px",
   }
 ];
 
 const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
-  <div style={{ padding: '16px 40px', background: '#f9fafb' }}>
-    <div>Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
-    <div>Firmware: {row.firmware_version ?? ""}</div>
-    <div className="flex">
+  <div style={{ padding: '16px 40px', background: '#f9fafb', fontSize: "12px"}}>
+    <div className="flex">Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
+    <div className="flex">Firmware: {row.firmware_version ?? ""}</div>
+    <div className="flex items-center">
       <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
-      : {row.rssi}
+      : <div className={FontColorRSSI({row})}>{row.rssi}</div>
     </div>
-    <div className="flex">
+    <div className="flex items-center">
       <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
-      : {row.rsrp}
+      : <div className={FontColorRSRP({row})}>{row.rsrp}</div>
     </div>
-    <div className="flex">
+    <div className="flex items-center">
       <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />
-      : {row.rsrq}
+      : <div className={FontColorRSRQ({row})}>{row.rsrq}</div>
     </div>
   </div>
 );
