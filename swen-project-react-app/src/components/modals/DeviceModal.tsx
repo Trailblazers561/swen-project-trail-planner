@@ -452,7 +452,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           <div className="modal-body min-h-50 relative">
             {currentAction === DeviceAction.CREATE_DEVICE && (
               <div className="flex flex-col items-center">
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-name">Device Name: <span style={{ color: 'red' }}>*</span></label>
                   <input
                     id="device-name"
@@ -464,7 +464,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-serial">Device Serial: <span style={{ color: 'red' }}>*</span></label>
                   <input
                     id="device-serial"
@@ -481,7 +481,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             {currentAction === DeviceAction.SETUP_DEVICE && (
               <div className="flex flex-col items-center">
                 <span className="font-bold text-xl mb-5">Please perform device setup process to associate this device.</span>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-name">Device Name:</label>
                   <input
                     id="device-name"
@@ -492,7 +492,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-serial">Device Serial:</label>
                   <input
                     id="device-serial"
@@ -514,7 +514,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             {currentAction === DeviceAction.ASSOCIATE_TRAIL && (
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.ASSOCIATE_TRAIL} device={device} setCurrentAction={setCurrentAction}/>
-                <div className="form-group w-150 m-auto">
+                <div className="form-group w-7/8 lg:w-150 m-auto">
                   <label htmlFor="trail-select">Select Trail:</label>
                   <select
                     id="trail-select"
@@ -543,7 +543,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             {currentAction === DeviceAction.EDIT_INFORMATION && (
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
-                <div className="form-group w-150 m-auto">
+                <div className="form-group w-7/8 lg:w-150 m-auto">
                   <label htmlFor="notes">Notes (optional):</label>
                   <textarea
                     id="notes"
