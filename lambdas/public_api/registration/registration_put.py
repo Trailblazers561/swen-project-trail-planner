@@ -2,7 +2,7 @@ import json
 
 from boto3.dynamodb.conditions import Key
 
-from helper.helper_functions import registration_table, device_table, cors_headers, secrets_client
+from helper.helper_functions import registration_table, device_table, cors_headers, secrets_client, device_secret_id
 
 
 def edit_registration(event, context):
@@ -80,10 +80,10 @@ def edit_registration(event, context):
 
             # fetch old serial if serial isn't being updated too
             if device_serial is None:
-                device_serial = json.loads(secrets_client.get_secret_value(SecretId=old_device_name)["SecretString"])["device_ser_no"]
+                device_serial = json.loads(secrets_client.get_secret_value(SecretId=device_secret_id(old_device_name))["SecretString"])["device_ser_no"]
 
             secrets_client.create_secret(
-                Name=device_name,
+                Name=device_secret_id(device_name),
                 SecretString=json.dumps({
                     "device_name": device_name,
                     "device_ser_no": device_serial
@@ -91,16 +91,16 @@ def edit_registration(event, context):
             )
 
             secrets_client.delete_secret(
-                SecretId=old_device_name,
+                SecretId=device_secret_id(old_device_name),
                 ForceDeleteWithoutRecovery=True
             )
         elif device_serial is not None:
             # in this case, device_name is not changing. adjust accordingly.
             current_name = item.get("name")
-            current_secret = json.loads(secrets_client.get_secret_value(SecretId=current_name)["SecretString"])
+            current_secret = json.loads(secrets_client.get_secret_value(SecretId=device_secret_id(current_name))["SecretString"])
             current_secret["device_ser_no"] = device_serial
             secrets_client.put_secret_value(
-                SecretId=current_name,
+                SecretId=device_secret_id(current_name),
                 SecretString=json.dumps(current_secret)
             )
 

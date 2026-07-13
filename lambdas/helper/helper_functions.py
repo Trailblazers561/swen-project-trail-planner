@@ -23,10 +23,14 @@ from cryptography.x509 import load_pem_x509_csr
 dynamodb = boto3.resource('dynamodb')
 secrets_client = boto3.client("secretsmanager")
 
-device_trail_log_hour_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_log_hour_table"))
-device_trail_log_day_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_log_day_table"))
-device_trail_log_week_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_log_week_table"))
-device_trail_log_month_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_log_month_table"))
+device_trail_log_hour_table = dynamodb.Table(
+    os.environ.get("DEVICE_TRAIL_LOG_HOUR_TABLE", "local_trailcount_device_trail_log_hour_table"))
+device_trail_log_day_table = dynamodb.Table(
+    os.environ.get("DEVICE_TRAIL_LOG_DAY_TABLE", "local_trailcount_device_trail_log_day_table"))
+device_trail_log_week_table = dynamodb.Table(
+    os.environ.get("DEVICE_TRAIL_LOG_WEEK_TABLE", "local_trailcount_device_trail_log_week_table"))
+device_trail_log_month_table = dynamodb.Table(
+    os.environ.get("DEVICE_TRAIL_LOG_MONTH_TABLE", "local_trailcount_device_trail_log_month_table"))
 trail_table = dynamodb.Table(os.environ.get("TRAIL_TABLE", "local_trailcount_trail_table"))
 device_table = dynamodb.Table(os.environ.get("DEVICE_TABLE", "local_trailcount_device_table"))
 device_trail_table = dynamodb.Table(os.environ.get("DEVICE_TRAIL_TABLE", "local_trailcount_device_trail_table"))
@@ -35,9 +39,9 @@ device_log_table = dynamodb.Table(os.environ.get("DEVICE_LOG_TABLE", "local_trai
 registration_table = dynamodb.Table(os.environ.get("REGISTRATION_TABLE", "local_trailcount_registration_table"))
 
 table_time_map = {
-    "hour":  device_trail_log_hour_table,
-    "day":   device_trail_log_day_table,
-    "week":  device_trail_log_week_table,
+    "hour": device_trail_log_hour_table,
+    "day": device_trail_log_day_table,
+    "week": device_trail_log_week_table,
     "month": device_trail_log_month_table,
     "year": device_trail_log_month_table
 }
@@ -49,7 +53,27 @@ csv_bucket = os.environ.get("TRAIL_CSV_BUCKET")
 cognito = boto3.client('cognito-idp')
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID")
 user_groups = {"user": 0, "trail_manager": 1, "admin": 2, "root_admin": 3}
-CA_CERT_PATH = "../../tmp/root_ca.crt"
+CA_CERT_PATH = "/tmp/root_ca.crt"
+
+
+def device_secret_id(device_name):
+    """
+    Quick conversion helper that converts from device name to the actual secrets manager path that's appended with the
+    deploy env. Ex "deviceName" in "prod" becomes "prod/deviceName"
+    :param device_name: Device name
+    :return: Environment appended to the device name as the path
+    """
+    return f"{os.environ['DEPLOY_ENV']}/{device_name}"
+
+
+def ca_secret_id(name):
+    """
+    Quick conversion helper that converts from cert-auth filename to the actual secrets manager path that's appended with the
+    deploy env. Ex "root-cert" in "prod" becomes "prod/cert-auth/root-cert"
+    :param name: File name
+    :return: Environment appended to the file name as the path
+    """
+    return f"{os.environ['DEPLOY_ENV']}/cert-auth/{name}"
 
 
 def check_ca_health():
@@ -58,6 +82,9 @@ def check_ca_health():
     verifies the certificate against the certificate authority root certificate, and returns the response
     :return: health response
     """
+    if not CA_URL:
+        return {"status": "error",
+                "message:": "Certificate Authority URL not configured, or broken environment variable"}
     ca_cert = get_root_ca_cert()
     response = requests.get(f"{CA_URL}/health", verify=ca_cert)
     return response.json()
@@ -74,8 +101,8 @@ def gen_one_time_token(device_csr, device_name):
     :return: One time token string for the request. Valid for 300 seconds after creation.
     """
     # grab step ca pieces from secrets manager, retrieve values needed from config
-    provisioner_password = secrets_client.get_secret_value(SecretId="cert-auth/ca-password")["SecretString"].strip()
-    ca_config_file = secrets_client.get_secret_value(SecretId="cert-auth/ca-config")["SecretString"]
+    provisioner_password = secrets_client.get_secret_value(SecretId=ca_secret_id("ca-password"))["SecretString"].strip()
+    ca_config_file = secrets_client.get_secret_value(SecretId=ca_secret_id("ca-config"))["SecretString"]
     ca_config_json = json.loads(ca_config_file)
     provisioner_list = ca_config_json["authority"]["provisioners"]
     provisioner = next(p for p in provisioner_list if p["name"] == "device-provisioner")
@@ -203,12 +230,13 @@ def get_root_ca_cert():
     :return: path to the root ca file
     """
     if not os.path.exists(CA_CERT_PATH):
-        os.makedirs("../../tmp", exist_ok=True)
+        os.makedirs("/tmp", exist_ok=True)  # should already exist but redundancy is great
         sm = boto3.client("secretsmanager")
-        response = sm.get_secret_value(SecretId="cert-auth/root-ca-cert")
+        response = sm.get_secret_value(SecretId=ca_secret_id("root-ca-cert"))
         with open(CA_CERT_PATH, "w") as f:
             f.write(response["SecretString"])
     return CA_CERT_PATH
+
 
 def convert_decimals(obj):
     if isinstance(obj, list):
@@ -240,6 +268,7 @@ def timestamp_conversion(timestamp, time_increment):
         return int(dt_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp())
     return None
 
+
 def get_next_registration_id() -> int:
     print("Retrieving next registration_id")
     # Get all existing registrations to find next available ID
@@ -257,6 +286,7 @@ def get_next_registration_id() -> int:
         new_registration_id = 1
 
     return new_registration_id
+
 
 def get_next_trail_id() -> int:
     print("Retrieving next trail_id")
@@ -276,6 +306,7 @@ def get_next_trail_id() -> int:
 
     return new_trail_id
 
+
 def get_next_device_id() -> int:
     print("Retrieving next device_id")
     # Get all existing devices to find next available ID
@@ -294,6 +325,7 @@ def get_next_device_id() -> int:
 
     return new_device_id
 
+
 def get_next_device_trail_id() -> int:
     print("Retrieving next device_trail_id")
     # Get all existing device_trails to find next available ID
@@ -311,6 +343,7 @@ def get_next_device_trail_id() -> int:
         new_device_trail_id = 1
 
     return new_device_trail_id
+
 
 def get_device_trail_id(device_id, trail_id=None):
     """
