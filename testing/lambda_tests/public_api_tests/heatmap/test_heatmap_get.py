@@ -30,8 +30,10 @@ def test_absolute_algorithm_success():
         }
     }
 
+    # Act
     response = module.get_heatmap_data(event, None)
 
+    # Assert
     assert response["statusCode"] == 200
 
     body = json.loads(response["body"])
