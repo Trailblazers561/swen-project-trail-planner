@@ -48,6 +48,40 @@ def test_get_single_trail():
     # Ensure all results belong to trail 1
     assert all(row["trail_id"] == 1 for row in body)
 
+def test_get_partial_trail():
+    #Arrange
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {
+            "start_time": "2026-01-01T00:00:00",
+            "end_time": "2026-03-15T00:00:00",
+            "granularity": "month",
+        },
+        "multiValueQueryStringParameters": {
+            "trail_id": ["1"],
+        },
+    }
+
+    #Act
+    response = module.get_trail_data(event, None)
+
+    #Assert
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+
+    assert len(body) == 3
+
+    # January and February
+    assert body[0]["trail_id"] == 1
+    assert body[0]["device_trail_id"] == 1
+    assert body[1]["trail_id"] == 1
+
+    # March exists, but is partial
+    assert body[2]["trail_id"] == 1
+
+
 def test_error_for_no_trail_id():
     #Arrange
     module = load_module()
@@ -209,3 +243,31 @@ def test_multi_trail():
 
     assert len(body) > 0
     assert all(row["trail_id"] in (1, 2) for row in body)
+
+def test_exception_returns_500(monkeypatch):
+    #Arrange
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {
+            "start_time": "2026-01-01T00:00:00",
+            "end_time": "2026-01-02T00:00:00",
+        },
+        "multiValueQueryStringParameters": {
+            "trail_id": ["1"],
+        },
+    }
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.device_trail_table, "query", raise_error)
+
+    #Act
+    response = module.get_trail_data(event, None)
+
+    #Assert
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+    assert "Internal server error" in body["error"]

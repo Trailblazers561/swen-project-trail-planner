@@ -17,7 +17,6 @@ def test_get_single_metadata():
 
     event = {
         "queryStringParameters": {
-            "retired": "false",
         },
         "multiValueQueryStringParameters": {
             "trail_id": ["1"],
@@ -38,13 +37,13 @@ def test_get_single_metadata():
 
     assert body[0]["name"] == "Mt. Marcy"
 
-def test_empty_list_for_no_trail_id():
+def test_empty_list_for_retired_trails():
     #Arrange
     module = load_module()
 
     event = {
         "queryStringParameters": {
-            "retired": "false",
+            "retired": "retired",
         },
         "multiValueQueryStringParameters": {
         },
@@ -60,6 +59,27 @@ def test_empty_list_for_no_trail_id():
 
     assert len(body) == 0
 
+def test_empty_list_returns_all_trails():
+    #Arrange
+    module = load_module()
+
+    event = {
+        "queryStringParameters": {
+        },
+        "multiValueQueryStringParameters": {
+        },
+    }
+
+    #Act
+    response = module.get_trail_metadata(event, None)
+
+    #Assert
+    assert response["statusCode"] == 200
+
+    body = json.loads(response["body"])
+
+    assert len(body) == 12
+
 
 def test_error_for_invalid_trail_id():
     #Arrange
@@ -67,7 +87,6 @@ def test_error_for_invalid_trail_id():
 
     event = {
         "queryStringParameters": {
-            "retired": "false",
         },
         "multiValueQueryStringParameters": {
             "trail_id": ["test"],
@@ -90,7 +109,7 @@ def test_get_retired_trails_works():
 
     event = {
         "queryStringParameters": {
-            "retired": "true",
+            "retired": "retired",
         },
         "multiValueQueryStringParameters": {
             "trail_id": [],
@@ -109,7 +128,6 @@ def test_get_multiple_metadata():
 
     event = {
         "queryStringParameters": {
-            "retired": "false",
         },
         "multiValueQueryStringParameters": {
             "trail_id": ["1", "2"],
