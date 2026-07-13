@@ -3,6 +3,7 @@ import DataTable, { type TableColumn, type ExpanderComponentProps } from "react-
 import moment from "moment-timezone";
 import { CircleQuestionMark } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useMediaQuery } from "react-responsive";
 
 
 interface DeviceLogRow {
@@ -19,6 +20,19 @@ interface TooltipHeaderProps {
   label: string;
   expanded: string;
   description: string;
+}
+
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+const Desktop = ({children}: DeviceType) => {
+  const isDesktop = useMediaQuery({ minWidth: 1024 })
+  return isDesktop ? children : null
+}
+const Mobile = ({children}: DeviceType) => {
+  const isMobile = useMediaQuery({maxWidth: 1023})
+  return isMobile ? children: null
 }
 
 function TooltipHeader({label, expanded, description}: TooltipHeaderProps) {
@@ -77,7 +91,6 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: "Firmware",
     selector: (row) => row.firmware_version ?? "",
     center: true,
-    hide: 1023,
   },
   {
     name: "Battery",
@@ -126,7 +139,6 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
-    hide: 1023
   },
   {
     name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower." />,
@@ -151,7 +163,6 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
-    hide: 1023
   },
   {
     name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />,
@@ -176,7 +187,6 @@ const columns: TableColumn<DeviceLogRow>[] = [
         </span>
       );
     },
-    hide: 1023
   },
   {
     name: "Count",
@@ -184,25 +194,6 @@ const columns: TableColumn<DeviceLogRow>[] = [
     center: true,
   }
 ];
-
-const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
-  <div style={{ padding: '16px 40px', background: '#f9fafb' }}>
-    <div>Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
-    <div>Firmware: {row.firmware_version ?? ""}</div>
-    <div>
-      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
-      {row.rssi}
-    </div>
-    <div>
-      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
-      {row.rsrp}
-    </div>
-    <div>
-      <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />
-      {row.rsrq}
-    </div>
-  </div>
-);
 
 const customStyles = {
   table: {
@@ -240,6 +231,106 @@ const customStyles = {
   },
 };
 
+const columnsMobile: TableColumn<DeviceLogRow>[] = [
+  {
+    name: "Date / Time",
+    selector: (row) => moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A"),
+    grow: 2,
+    center: true,
+    minWidth: "150px",
+  },
+  {
+    name: "Battery",
+    center: true,
+    grow: 1,
+    compact: true,
+    minWidth: "50px",
+    cell: (row) => {
+      if (row.battery === null)
+        return <span className="text-gray-400">N/A</span>;
+
+      let batteryClass = "";
+
+      if (row.battery > 50) {
+        batteryClass = "text-green-700";
+      } else if (row.battery > 20) {
+        batteryClass = "text-orange-600";
+      } else {
+        batteryClass = "text-red-600";
+      }
+
+      return (
+        <span className={batteryClass}>
+          {row.battery}%
+        </span>
+      );
+    },
+  },
+  {
+    name: "Count",
+    selector: (row) => row.count,
+    center: true,
+    grow: 1,
+    compact: true,
+    minWidth: "50px",
+  }
+];
+
+const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
+  <div style={{ padding: '16px 40px', background: '#f9fafb' }}>
+    <div>Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
+    <div>Firmware: {row.firmware_version ?? ""}</div>
+    <div className="flex">
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      : {row.rssi}
+    </div>
+    <div className="flex">
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      : {row.rsrp}
+    </div>
+    <div className="flex">
+      <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />
+      : {row.rsrq}
+    </div>
+  </div>
+);
+
+const customStylesMobile = {
+  table: {
+    style: {
+      overflow: "hidden",
+    },
+  },
+  headRow: {
+    style: {
+      backgroundColor: "#C0D3D1",
+      minHeight: "52px",
+    },
+  },
+  headCells: {
+    style: {
+      fontWeight: 600,
+      fontSize: "12px",
+      letterSpacing: "0.05em",
+    },
+  },
+  rows: {
+    style: {
+      fontSize: "12px",
+      minHeight: "48px",
+    },
+    stripedStyle: {
+      backgroundColor: "#edeef0", 
+    },
+  },
+  pagination: {
+    style: {
+      borderBottomLeftRadius: "0.75rem",
+      borderBottomRightRadius: "0.75rem",
+    },
+  },
+};
+
 interface Props {
   data: DeviceLogRow[];
   loading: boolean;
@@ -248,22 +339,41 @@ interface Props {
 const DeviceLogTable: React.FC<Props> = ({ data, loading }) => {
   return (
     <div className="bg-gray-50 shadow-md" data-testid="device-log-table">
-      <DataTable
-        columns={columns}
-        data={data}
-        progressPending={loading}
-        pagination = {false}
-        striped
-        responsive
-        customStyles={customStyles}
-        noDataComponent={
-          <div className="py-6 text-gray-500">
-            No logs found.
-          </div>
-        }
-        expandableRows={true}
-        expandableRowsComponent={expandedRow}
-      />
+      <Desktop>
+        <DataTable
+          columns={columns}
+          data={data}
+          progressPending={loading}
+          pagination={false}
+          striped
+          responsive
+          customStyles={customStyles}
+          noDataComponent={
+            <div className="py-6 text-gray-500">
+              No logs found
+            </div>
+          }
+        />
+      </Desktop>
+      <Mobile>
+        <DataTable
+          columns={columnsMobile}
+          data={data}
+          progressPending={loading}
+          pagination = {false}
+          striped
+          responsive
+          customStyles={customStylesMobile}
+          noDataComponent={
+            <div className="py-6 text-gray-500">
+              No logs found.
+            </div>
+          }
+          expandableRows={true}
+          expandableRowsComponent={expandedRow}
+          expandOnRowClicked
+        />
+      </Mobile>
     </div>
   );
 };

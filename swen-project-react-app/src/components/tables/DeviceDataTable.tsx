@@ -104,6 +104,10 @@ const columnsMobile: TableColumn<DeviceRow>[] = [
     name: "Device Name",
     selector: (row) => row.name,
     sortable: true,
+    center: true,
+    grow: 0,
+    minWidth: "120px",
+    // compact: true,
   },
   {
     name: "Associated Trail",
@@ -117,12 +121,18 @@ const columnsMobile: TableColumn<DeviceRow>[] = [
     sortFunction: (a, b) =>
     (a.trailName ?? "").localeCompare(b.trailName ?? ""),
     center: true,
+    grow: 1,
+    minWidth: "120px",
+    compact: true,
   },
   {
     name: "Weekly Count",
     selector: (row) => row.weeklyCount,
     sortable: true,
     center: true,
+    grow: 0,
+    maxWidth: "50px",
+    compact: true,
   }
 ]
 
@@ -183,7 +193,7 @@ const customStylesMobile = {
   headCells: {
     style: {
       fontWeight: 600,
-      fontSize: "15px",
+      fontSize: "12px",
       letterSpacing: "0.05em",
     },
   },
