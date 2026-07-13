@@ -72,6 +72,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
   vpc_endpoint_type = "Gateway"
   route_table_ids = [aws_route_table.private_RT.id]
   depends_on = [null_resource.nuke_enis]
+  count = local.enable_CA_resources ? 1 : 0
 
   tags = {
     Name = "${var.deploy_env}_dynamodb_endpoint"
@@ -83,9 +84,10 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_subnet.id]
-  security_group_ids  = [aws_security_group.lambda_sg.id, aws_security_group.vpce_sg.id, aws_security_group.ca_sg.id]
+  security_group_ids  = [aws_security_group.lambda_sg[0].id, aws_security_group.vpce_sg[0].id, aws_security_group.ca_sg[0].id]
   private_dns_enabled = true
   depends_on = [null_resource.nuke_enis]
+  count = local.enable_CA_resources ? 1 : 0
 
   tags = {
     Name = "${var.deploy_env}_secretsmanager_endpoint"
@@ -98,6 +100,7 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private_RT.id]
   depends_on = [null_resource.nuke_enis]
+  count = local.enable_CA_resources ? 1 : 0
 
   tags = {
     Name = "${var.deploy_env}_s3_endpoint"
@@ -110,7 +113,7 @@ resource "aws_vpc_endpoint" "ssm" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.${each.value}"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_subnet.id]
-  security_group_ids  = [aws_security_group.vpce_sg.id]
+  security_group_ids  = [aws_security_group.vpce_sg[0].id]
   private_dns_enabled = true
   depends_on = [null_resource.nuke_enis]
 
@@ -124,9 +127,10 @@ resource "aws_vpc_endpoint" "ecr_api" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_subnet.id]
-  security_group_ids  = [aws_security_group.vpce_sg.id]
+  security_group_ids  = [aws_security_group.vpce_sg[0].id]
   private_dns_enabled = true
   depends_on = [null_resource.nuke_enis]
+  count = local.enable_CA_resources ? 1 : 0
 
   tags = {
     Name = "${var.deploy_env}_ecr_api_endpoint"
@@ -138,9 +142,10 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = [aws_subnet.private_subnet.id]
-  security_group_ids  = [aws_security_group.vpce_sg.id]
+  security_group_ids  = [aws_security_group.vpce_sg[0].id]
   private_dns_enabled = true
   depends_on = [null_resource.nuke_enis]
+  count = local.enable_CA_resources ? 1 : 0
 
   tags = {
     Name = "${var.deploy_env}_ecr_dkr_endpoint"

@@ -4,6 +4,7 @@ locals {
       POST = {
         file = "renew/renew_post.py"
         handler = "renew_post.renew_certificate"
+        needs_ca_access = true
       }
     }
     devices = {
@@ -47,8 +48,12 @@ resource "aws_api_gateway_rest_api" "device_api" {
   name = "${var.deploy_env}_trailcount_device_api"
 }
 
+locals {
+  enable_mtls_domain = local.use_domain && local.enable_CA_resources
+}
+
 resource "aws_api_gateway_domain_name" "device_api_domain" {
-  count = local.use_domain ? 1 : 0
+  count = local.enable_mtls_domain ? 1 : 0
   domain_name = "${local.device_api_sub_domain}.${local.domain}"
   regional_certificate_arn = var.acm_certificate_arn
 
@@ -73,22 +78,34 @@ resource "aws_api_gateway_domain_name" "device_api_domain" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "device_api_mapping" {
-  count = local.use_domain ? 1 : 0
+  count = local.enable_mtls_domain ? 1 : 0
   api_id      = aws_api_gateway_rest_api.device_api.id
   stage_name  = aws_api_gateway_stage.device_api_stage.stage_name
   domain_name = aws_api_gateway_domain_name.device_api_domain[0].domain_name
 }
 
 resource "null_resource" "wait_for_truststore" {
+  count = local.enable_CA_resources ? 1 : 0
+
   triggers = {
-    instance_id = aws_instance.ca_instance.id
+    instance_id = aws_instance.ca_instance[0].id
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       echo "Waiting for truststore.pem to appear in S3..."
       for i in $(seq 1 40); do
-        aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem && echo "Found!" && exit 0
+        output=$(aws s3 ls s3://${aws_s3_bucket.truststore_bucket.bucket}/truststore.pem 2>&1)
+        rc=$?
+        if [ $rc -eq 0 ]; then
+          echo "Found"
+          exit 0
+        fi
+        if echo "$output" | grep -qi 'AccessDenied\|NoSuchBucket'; then
+          echo "Nonrecoverable error while checking bucket, terminating:"
+          echo "$output"
+          exit 1
+        fi
         echo "Attempt $i/40, retrying in 30s..."
         sleep 30
       done
@@ -170,6 +187,16 @@ resource "aws_lambda_function" "device_api_lambdas" {
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
+      DEPLOY_ENV = var.deploy_env
+      CERTIFICATE_AUTHORITY_URL = local.enable_CA_resources ? "https://${aws_instance.ca_instance[0].private_ip}:9000" : ""
+    }
+  }
+
+  dynamic "vpc_config" {
+    for_each = (lookup(each.value, "needs_ca_access", false) && local.enable_CA_resources) ? [1] : []
+    content {
+      subnet_ids         = [aws_subnet.private_subnet.id]
+      security_group_ids = [aws_security_group.lambda_sg[0].id]
     }
   }
 }
@@ -295,10 +322,6 @@ resource "aws_api_gateway_deployment" "device_api_deployment" {
       # Options Integration Responses
       [ for r in aws_api_gateway_integration_response.device_api_options_integration_responses : r.response_parameters ],
     )))
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 
   depends_on = [

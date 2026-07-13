@@ -31,7 +31,7 @@ def get_device_metadata(event, context):
         print(f"Successfully found device metadata [{items[:3]}], attempting to append additional information")
 
         # Retrieve and add additional fields from DeviceTrail table information 
-        desired_device_trail_fields = ["trail_id", "notes", "date_installed", "date_removed"]
+        desired_device_trail_fields = ["trail_id", "notes", "date_associated", "date_installed", "date_removed"]
         for item in items:
             device_trails_result = device_trail_table.query(
                 KeyConditionExpression=Key("device_id").eq(item["id"]),
@@ -43,6 +43,8 @@ def get_device_metadata(event, context):
             if len(device_trails_result):
                 if not device_trails_result[0].get("date_removed"):
                     item["current_trail_id"] = device_trails_result[0]["trail_id"]
+                    if device_trails_result[0].get("date_installed"):
+                        item["date_installed"] = device_trails_result[0]["date_installed"]
 
             registration_result = registration_table.query(
                 IndexName="device-index",
@@ -61,6 +63,7 @@ def get_device_metadata(event, context):
             if device_log_result:
                 item["battery"] = device_log_result[0]["battery"]
                 item["last_updated"] = device_log_result[0]["time"]
+                item["firmware_version"] = device_log_result[0]["firmware_version"]
 
         print(f"Successfully appended device metadata [{items[:3]}]")
         return {

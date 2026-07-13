@@ -82,3 +82,13 @@ variable "step_ca_version" {
   type    = string
   default = "0.30.2"
 }
+
+variable "fire_up_CA" {
+  description = "Activate to build the full certificate authority, including the EC2 and the VPC endpoints to access it. EXPENSIVE, should not be on for non demo/prod environments with the exception of running tests."
+  type = bool
+  default = false
+}
+
+locals {
+  enable_CA_resources = contains(["demo", "prod"], var.deploy_env) || var.fire_up_CA
+}

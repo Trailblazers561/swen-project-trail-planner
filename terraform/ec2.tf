@@ -12,8 +12,9 @@ resource "aws_instance" "ca_instance" {
   ami                    = data.aws_ami.amazon_linux_2023.id
   instance_type          = "t3.small"
   subnet_id              = aws_subnet.private_subnet.id
-  vpc_security_group_ids = [aws_security_group.ca_sg.id]
+  vpc_security_group_ids = [aws_security_group.ca_sg[0].id]
   iam_instance_profile   = aws_iam_instance_profile.ca_instance_profile.name
+  count = local.enable_CA_resources ? 1 : 0
 
   root_block_device {
     volume_size           = 30
@@ -102,19 +103,19 @@ until aws secretsmanager get-random-password --region ${data.aws_region.current.
 done
 
 # check if secretsmanager has our secrets present, restore if so, else generate fresh and upload secrets
-if aws secretsmanager describe-secret --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} > /dev/null 2>&1; then
+if aws secretsmanager describe-secret --secret-id "${var.deploy_env}/cert-auth/root-ca-cert" --region ${data.aws_region.current.name} > /dev/null 2>&1; then
   mkdir -p /opt/ca_instance/certs
   mkdir -p /opt/ca_instance/secrets
   mkdir -p /opt/ca_instance/config
   mkdir -p /opt/ca_instance/db
 
-  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/root_ca.crt
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/intermediate_ca.crt
-  aws secretsmanager get-secret-value --secret-id "cert-auth/root-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/root_ca_key
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/intermediate_ca_key
-  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-config" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/config/ca.json
-  aws secretsmanager get-secret-value --secret-id "cert-auth/ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/password
-  aws secretsmanager get-secret-value --secret-id "cert-auth/intermediate-ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/intermediate_password
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/root-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/root_ca.crt
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-cert" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/certs/intermediate_ca.crt
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/root-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/root_ca_key
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-key" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/secrets/intermediate_ca_key
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/ca-config" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/config/ca.json
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/password
+  aws secretsmanager get-secret-value --secret-id "${var.deploy_env}/cert-auth/intermediate-ca-password" --region ${data.aws_region.current.name} --query SecretString --output text > /opt/ca_instance/intermediate_password
 
   chmod 644 /opt/ca_instance/password
   chmod 644 /opt/ca_instance/intermediate_password
@@ -161,13 +162,13 @@ PY
   secret_put() {
   aws secretsmanager describe-secret --secret-id "$1" --region ${data.aws_region.current.name} 2>/dev/null && aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2" --region ${data.aws_region.current.name} || aws secretsmanager create-secret --name "$1" --secret-string "$2" --region ${data.aws_region.current.name}
   }
-  secret_put "cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
-  secret_put "cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
-  secret_put "cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
-  secret_put "cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
-  secret_put "cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
-  secret_put "cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
-  secret_put "cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
+  secret_put "${var.deploy_env}/cert-auth/ca-password" "$(cat /opt/ca_instance/password)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-password" "$(cat /opt/ca_instance/intermediate_password)"
+  secret_put "${var.deploy_env}/cert-auth/root-ca-key" "$(cat /opt/ca_instance/secrets/root_ca_key)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-key" "$(cat /opt/ca_instance/secrets/intermediate_ca_key)"
+  secret_put "${var.deploy_env}/cert-auth/root-ca-cert" "$(cat /opt/ca_instance/certs/root_ca.crt)"
+  secret_put "${var.deploy_env}/cert-auth/intermediate-ca-cert" "$(cat /opt/ca_instance/certs/intermediate_ca.crt)"
+  secret_put "${var.deploy_env}/cert-auth/ca-config" "$(cat /opt/ca_instance/config/ca.json)"
 fi
 
 # step-ca is picky about the password location when running it how i am below, needs to be in this place
@@ -191,15 +192,15 @@ EOF
     Name = "${var.deploy_env}_ca_instance"
   }
 
-  depends_on = [aws_ecr_repository.step_ca, null_resource.nuke_enis]
+  depends_on = [aws_ecr_repository.step_ca, null_resource.push_step_ca, null_resource.nuke_enis]
 
 }
 
 output "ca_instance_private_ip" {
-  value       = aws_instance.ca_instance.private_ip
+  value = local.enable_CA_resources ? aws_instance.ca_instance[0].private_ip : null
   description = "Private ip used as as STEP_CA_URL for lambdas"
 }
 
 output "ca_instance_id" {
-  value = aws_instance.ca_instance.id
+  value = local.enable_CA_resources ? aws_instance.ca_instance[0].id : null
 }

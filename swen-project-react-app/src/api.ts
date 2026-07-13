@@ -147,18 +147,12 @@ export function TrailData() {
    * Update device trail association
    * @param deviceId - The device ID to update
    * @param trailId - The trail ID to associate the device with
-   * @param dateInstalled - Optional: Date the device was installed on the new trail
-   * @param dateRemoved - Optional: Date the device was removed from the old trail
    */
-  async function updateDeviceTrailAssociation(deviceId: number, trailId: number, dateInstalled?: Date, dateRemoved?: Date) {
+  async function updateDeviceTrailAssociation(deviceId: number, trailId: number) {
     const payload: Record<string, any> = {
       device_id: deviceId,
       trail_id: trailId,
     }
-    if (dateInstalled)
-      payload.date_installed = dateInstalled.toISOString();
-    if (dateRemoved)
-      payload.date_removed = dateRemoved.toISOString();
 
     return await request(`${API_URL}/device_metadata`, {
       method: "PUT",

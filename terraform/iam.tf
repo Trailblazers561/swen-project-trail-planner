@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "ca_secrets_policy" {
       "secretsmanager:DescribeSecret"
     ]
     resources = [
-      "arn:aws:secretsmanager:${data.aws_region.current.name}:*:secret:cert-auth*"
+      "arn:aws:secretsmanager:${data.aws_region.current.name}:*:secret:${var.deploy_env}/cert-auth*"
     ]
   }
 
