@@ -268,7 +268,7 @@ const LandingPage = () => {
 
         <div className="flex h-[calc(100vh-80px)]">
 
-            <div className={`absolute top-20 left-4 z-[1000] 
+            <div className={`absolute top-20 left-4 z-[500] 
                             transition-transform duration-300
                             ${showPanel ? "translate-x-0 w-80" : "-translate-x-[85%]"}
                             `}
@@ -276,7 +276,7 @@ const LandingPage = () => {
             <div className="relative w-80 bg-white rounded-lg shadow-xl border">
                 <button
                     onClick={() => setShowPanel(!showPanel)}
-                    className="absolute top-1 right-2 z-1001 h-8 w-8 bg-white shadow rounded-lg"
+                    className="absolute top-1 right-2 z-600 h-8 w-8 bg-white shadow rounded-lg"
                 >
                     {showPanel ? "◀" : "▶"}
                 </button>

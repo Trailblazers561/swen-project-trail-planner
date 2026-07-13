@@ -282,7 +282,7 @@ const LoginPage = () => {
           className="absolute top-8 left-1/2 max-lg:max-h-10/16 max-lg:max-w-10/16 lg:w-56 md:w-64 -translate-x-1/2"/>
       </div>
 
-      {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-1/2 lg:left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-500" />)}
+      {loading && (<LoaderCircle size={200} strokeWidth={2} className="absolute text-5xl text-navbar m-auto left-1/2 lg:left-27/32 animate-spin  -translate-x-1/2 top-1/2 -translate-y-50 z-50" />)}
       {loading && (<div className="fixed right-0 top-0 h-screen w-screen lg:w-5/16  bg-black/40 z-499"></div>)}
 
       <div className="fixed lg:right-0 top-5/16 lg:top-0 h-11/16 lg:h-screen w-screen lg:w-5/16 flex items-center justify-center">

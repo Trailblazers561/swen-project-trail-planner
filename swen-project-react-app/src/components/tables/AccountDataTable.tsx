@@ -174,7 +174,7 @@ const AccountDataTable: React.FC<Props> = ({ data, onClose, onRefresh }) => {
     return(
         <div className="bg-gray-50 shadow-md modal-overlay w-screen h-screen" data-testid="device-log-table">
             {loadingUsage && (
-                <div className="absolute inset-0 z-[9998] flex items-center justify-center bg-black/20">
+                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/20">
                     <LoaderCircle
                         size={80}
                         strokeWidth={2}
