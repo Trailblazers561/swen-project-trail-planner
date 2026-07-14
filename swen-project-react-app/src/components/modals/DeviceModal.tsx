@@ -445,6 +445,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 <div className="font-primary text-white font-semibold text-xl">{deviceId === 0 ? "Create Device" : "Manage Device"}</div>
                 {deviceId !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Device ID: {deviceId}</div>)}
                 {device && device?.current_trail_id && device?.current_trail_id !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Current Trail: {getTrailName(device?.current_trail_id ?? 0)}</div>)}
+                {deviceId !==0 && (<div className="font-primary text-[#bbb] font-semibold break-all">Device Name: {deviceName}</div>)}
             </div>
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
