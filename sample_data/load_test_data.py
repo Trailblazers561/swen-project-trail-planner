@@ -133,7 +133,7 @@ def reset_device_trail_table(device_trail_table):
         for item in data:
             batch.delete_item(Key={
                 "device_id": item["device_id"],
-                "date_installed": item["date_installed"]
+                "date_associated": item["date_associated"]
             })
 
     # Load Device Trail Data
@@ -147,6 +147,7 @@ def reset_device_trail_table(device_trail_table):
                         "device_id": int(row["device_id"]),
                         "trail_id": int(row["trail_id"]),
                         "notes": row["notes"],
+                        "date_associated": int(row["date_associated"]),
                         "date_installed": int(row["date_installed"])
                     }
                 )
@@ -162,6 +163,7 @@ def reset_device_trail_table(device_trail_table):
                         "device_id": int(row["device_id"]),
                         "trail_id": int(row["trail_id"]),
                         "notes": row["notes"],
+                        "date_associated": int(row["date_associated"]),
                         "date_installed": int(row["date_installed"])
                     }
                 )
