@@ -266,20 +266,26 @@ const LandingPage = () => {
 
     return (
 
-        <div className="flex h-[calc(100vh-80px)]">
+        <div className="flex flex-col h-[calc(103vh-96px)]">
 
-            <div className={`absolute top-20 left-4 z-[500] 
+            <div className={`absolute top-20 left-4 z-[500]
                             transition-transform duration-300
-                            ${showPanel ? "translate-x-0 w-80" : "-translate-x-[85%]"}
-                            `}
-            >
-            <div className="relative w-80 bg-white rounded-lg shadow-xl border">
+                            ${showPanel ? "translate-x-0" : "-translate-x-[18rem]"}`
+                            }
+                        >
                 <button
                     onClick={() => setShowPanel(!showPanel)}
-                    className="absolute top-1 right-2 z-600 h-8 w-8 bg-white shadow rounded-lg"
+                    className="absolute top-1 right-2 z-[600] h-8 w-8 bg-white shadow rounded-lg"
                 >
                     {showPanel ? "◀" : "▶"}
                 </button>
+            <div 
+                className={`
+                    relative w-80 bg-white rounded-lg shadow-xl border
+                    transition-transform duration-300
+                    ${showPanel ? "translate-x-0" : "-translate-x-full"}
+                `}
+            >
                 
             {showPanel && (
                 <>
@@ -425,7 +431,7 @@ const LandingPage = () => {
                     
                 )}
             </div>
-            </div>
+        </div>
 
             <div className="flex-1 relative">
                 {loadingUsage && (
