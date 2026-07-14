@@ -317,7 +317,7 @@ const columnsMobile: TableColumn<DeviceLogRow>[] = [
 const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
   <div style={{ padding: '16px 40px', background: '#f9fafb', fontSize: "12px"}}>
     <div className="flex">Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
-    <div className="flex">Firmware: {row.firmware_version ?? ""}</div>
+    <div className="flex">Firmware: {row.firmware_version ? row.firmware_version : "N/A"}</div>
     <div className="flex items-center">
       <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
       : <div className={FontColorRSSI({row})}>{row.rssi}</div>
