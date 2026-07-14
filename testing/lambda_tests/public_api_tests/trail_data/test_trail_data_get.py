@@ -1,4 +1,4 @@
-from testing.lambda_tests.test_data import DAY_LOG_DATA, DEVICE_TRAIL_DATA
+from testing.lambda_tests.test_data import DAY_LOG_DATA, DEVICE_TRAIL_DATA, MONTH_LOG_DATA
 import importlib
 import json
 from datetime import datetime
@@ -52,10 +52,13 @@ def test_get_partial_trail():
     #Arrange
     module = load_module()
 
+    start = datetime.fromisoformat("2026-01-10T00:00:00")
+    end = datetime.fromisoformat("2026-03-15T00:00:00")
+
     event = {
         "queryStringParameters": {
-            "start_time": "2026-01-01T00:00:00",
-            "end_time": "2026-03-15T00:00:00",
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
             "granularity": "month",
         },
         "multiValueQueryStringParameters": {
@@ -70,16 +73,43 @@ def test_get_partial_trail():
     assert response["statusCode"] == 200
 
     body = json.loads(response["body"])
+    body.sort(key=lambda x: x["start"]) #put the returned data in chronological order
 
-    assert len(body) == 3
+    jan_end = datetime(2026, 2, 1).timestamp()
+    feb_start = jan_end
+    feb_end = datetime(2026, 3, 1).timestamp()
+    mar_start = feb_end
 
-    # January and February
+
+    expected_jan = sum(
+        row["count"]
+        for row in DAY_LOG_DATA
+        if row.get("device_trail_id") == 1
+        and start.timestamp() <= row["start"] < jan_end
+    )
+
+    expected_feb = next(
+        row["count"]
+        for row in MONTH_LOG_DATA
+        if row.get("device_trail_id") == 1
+        and row["start"] == feb_start
+    )
+
+    expected_mar = sum(
+        row["count"]
+        for row in DAY_LOG_DATA
+        if row.get("device_trail_id") == 1
+        and mar_start <= row["start"] <= end.timestamp()
+    )
+
     assert body[0]["trail_id"] == 1
-    assert body[0]["device_trail_id"] == 1
-    assert body[1]["trail_id"] == 1
+    assert body[0]["count"] == expected_jan
 
-    # March exists, but is partial
+    assert body[1]["trail_id"] == 1
+    assert body[1]["count"] == expected_feb
+
     assert body[2]["trail_id"] == 1
+    assert body[2]["count"] == expected_mar
 
 
 def test_error_for_no_trail_id():

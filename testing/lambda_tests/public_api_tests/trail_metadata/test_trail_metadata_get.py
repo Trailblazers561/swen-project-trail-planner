@@ -1,5 +1,6 @@
 import importlib
 import json
+from testing.lambda_tests.test_data import TRAIL_DATA
 
 def load_module():
     """
@@ -78,7 +79,7 @@ def test_empty_list_returns_all_trails():
 
     body = json.loads(response["body"])
 
-    assert len(body) == 12
+    assert len(body) == len(TRAIL_DATA)
 
 
 def test_error_for_invalid_trail_id():
