@@ -4,6 +4,7 @@ locals {
       POST = {
         file = "register_device/register_device_post.py"
         handler = "register_device_post.register_device"
+        needs_ca_access = true
       }
     }
   }
@@ -126,6 +127,16 @@ resource "aws_lambda_function" "device_registration_api_lambdas" {
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
+      DEPLOY_ENV = var.deploy_env
+      CERTIFICATE_AUTHORITY_URL = local.enable_CA_resources ? "https://${aws_instance.ca_instance[0].private_ip}:9000" : ""
+    }
+  }
+
+  dynamic "vpc_config" {
+    for_each = (lookup(each.value, "needs_ca_access", false) && local.enable_CA_resources) ? [1] : []
+    content {
+      subnet_ids         = [aws_subnet.private_subnet.id]
+      security_group_ids = [aws_security_group.lambda_sg[0].id]
     }
   }
 }
@@ -251,10 +262,6 @@ resource "aws_api_gateway_deployment" "device_registration_api_deployment" {
       # Options Integration Responses
       [ for r in aws_api_gateway_integration_response.device_registration_api_options_integration_responses : r.response_parameters ],
     )))
-  }
-
-  lifecycle {
-    create_before_destroy = true
   }
 
   depends_on = [

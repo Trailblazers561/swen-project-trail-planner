@@ -16,6 +16,7 @@ interface Device {
   date_manufactured?: number;
   date_retired?: number;
   current_trail_id?: number;
+  date_installed?: number;
   battery?: number;
   firmware_version?: string;
   is_blocked?: boolean;
@@ -43,6 +44,7 @@ enum DeviceAction {
   SETUP_DEVICE,
   VIEW_LOGS,
   ASSOCIATE_TRAIL,
+  INSTALL_DEVICE,
   EDIT_INFORMATION,
   ARCHIVE_DEVICE,
   BLOCK_DEVICE,
@@ -60,8 +62,10 @@ function ActionsDropdown({currentAction, device, setCurrentAction}: ActionsDropd
   const actionList: DeviceAction[] = [];
   if (currentAction !== DeviceAction.VIEW_LOGS && device && device.current_trail_id && device.current_trail_id !== 0)
     actionList.push(DeviceAction.VIEW_LOGS);
-  if (currentAction !== DeviceAction.ASSOCIATE_TRAIL)
+  if (currentAction !== DeviceAction.ASSOCIATE_TRAIL && currentAction !== DeviceAction.INSTALL_DEVICE)
     actionList.push(DeviceAction.ASSOCIATE_TRAIL);
+  if (currentAction !== DeviceAction.INSTALL_DEVICE && currentAction !== DeviceAction.ASSOCIATE_TRAIL)
+    actionList.push(DeviceAction.INSTALL_DEVICE);
   if (currentAction !== DeviceAction.EDIT_INFORMATION)
     actionList.push(DeviceAction.EDIT_INFORMATION);
   if (currentAction !== DeviceAction.ARCHIVE_DEVICE)
@@ -172,6 +176,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               setCurrentAction(DeviceAction.SETUP_DEVICE);
             } else if (!deviceData[0]?.current_trail_id || deviceData[0]?.current_trail_id === 0) {
               setCurrentAction(DeviceAction.ASSOCIATE_TRAIL);
+            } else if (deviceData[0]?.current_trail_id && !deviceData[0]?.date_installed) {
+              setCurrentAction(DeviceAction.INSTALL_DEVICE);
             } else {
               setCurrentAction(DeviceAction.VIEW_LOGS);
             }
@@ -312,6 +318,29 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
         } else {
           const errorData = await response.json;
           setError(errorData.error || 'Failed to update device trail association');
+        }
+      } else if (currentAction === DeviceAction.INSTALL_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        if (!device?.current_trail_id) {
+          setError('Could not find trail to mark device installed on.');
+          return;
+        }
+        const response = await updateDeviceTrailAssociation(device?.id, device?.current_trail_id);
+
+        if (response.success) {
+          setSuccess('Device marked installed successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to mark device as installed');
         }
       } else if (currentAction === DeviceAction.EDIT_INFORMATION) {
         setError("This feature is not yet implemented, sorry!");
@@ -503,6 +532,14 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 </div>
               </div>
             )}
+            {currentAction === DeviceAction.INSTALL_DEVICE && (
+              <div className="w-full flex flex-col justify-center">
+                <ActionsDropdown currentAction={DeviceAction.INSTALL_DEVICE} device={device} setCurrentAction={setCurrentAction}/>
+                <div className="form-group w-150 m-auto">
+                  <span className="font-bold text-xl mb-5">Mark this device as installed to begin collecting data.</span>
+                </div>
+              </div>
+            )}
             {currentAction === DeviceAction.EDIT_INFORMATION && (
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
@@ -590,6 +627,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             <div className="modal-footer">
               <Button variant="primary" disabled={submitting}>
                 {submitting ? 'Associating...' : 'Associate Device'}
+              </Button>
+            </div>
+          )}
+          {currentAction === DeviceAction.INSTALL_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Marking Installed...' : 'Mark Installed'}
               </Button>
             </div>
           )}
