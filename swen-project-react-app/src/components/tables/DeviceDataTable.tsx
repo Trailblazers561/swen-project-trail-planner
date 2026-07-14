@@ -107,7 +107,6 @@ const columnsMobile: TableColumn<DeviceRow>[] = [
     center: true,
     grow: 0,
     minWidth: "120px",
-    // compact: true,
   },
   {
     name: "Associated Trail",
