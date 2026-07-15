@@ -3,6 +3,7 @@ name: "Integration Testing"
 on:
   pull_request:
     branches:
+      - trailblazers-tst
       - trailblazers-uat
       - main
 
