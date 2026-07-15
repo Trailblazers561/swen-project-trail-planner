@@ -18,7 +18,7 @@ env:
   TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
   TF_VAR_ses_identity_arn: '"${{  vars.SES_IDENTITY_ARN  }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
-  TF_VAR_fire_up_CA: true
+  TF_VAR_fire_up_CA: false
 
 concurrency:
   group:  testing-${{ github.event.pull_request.number }}
@@ -127,8 +127,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Start ECR Push Background Job
-        run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
+      # - name: Start ECR Push Background Job
+      #   run: python scripts/push_step_ca.py ${{ env.TF_VAR_deploy_env }} ${{ vars.STEP_CA_VERSION }} > /tmp/ecr_push.log 2>&1 & echo $! > /tmp/ecr_push.pid
 
       - name: Upload Configuration
         uses: hashicorp/tfc-workflows-github/actions/upload-configuration@v1.3.0
@@ -137,15 +137,15 @@ jobs:
           workspace: ${{ env.TF_WORKSPACE }}
           directory: ${{ env.CONFIG_DIRECTORY }}
 
-      - name: Debug ECR Push Start
-        run: |
-          sleep 5
-          echo "=== ECR push log so far ==="
-          cat /tmp/ecr_push.log 2>/dev/null || echo "log file does not exist"
-          echo "=== Background jobs ==="
-          jobs -l
-          echo "=== Processes ==="
-          ps aux | grep push_step_ca
+      # - name: Debug ECR Push Start
+      #   run: |
+      #     sleep 5
+      #     echo "=== ECR push log so far ==="
+      #     cat /tmp/ecr_push.log 2>/dev/null || echo "log file does not exist"
+      #     echo "=== Background jobs ==="
+      #     jobs -l
+      #     echo "=== Processes ==="
+      #     ps aux | grep push_step_ca
 
       - name: Create Apply Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
@@ -161,27 +161,27 @@ jobs:
         with:
           run: ${{ steps.apply-run.outputs.run_id }}
 
-      - name: Debug ECR Push Status
-        run: |
-          echo "=== ECR done file ==="
-          cat /tmp/ecr_done 2>/dev/null || echo "not written yet"
-          echo "=== ECR push log ==="
-          cat /tmp/ecr_push.log 2>/dev/null || echo "no log yet"
-        if: ${{ always() }}
+      # - name: Debug ECR Push Status
+      #   run: |
+      #     echo "=== ECR done file ==="
+      #     cat /tmp/ecr_done 2>/dev/null || echo "not written yet"
+      #     echo "=== ECR push log ==="
+      #     cat /tmp/ecr_push.log 2>/dev/null || echo "no log yet"
+      #   if: ${{ always() }}
 
-      - name: Wait for ECR Push
-        run: |
-          echo "Waiting for ECR push to complete"
-          while [ ! -f /tmp/ecr_done ]; do
-            sleep 10
-          done
-          cat /tmp/ecr_push.log
-          RESULT=$(cat /tmp/ecr_done)
-          if [ "$RESULT" != "success" ]; then
-            echo "ECR push failed: $RESULT"
-            exit 1
-          fi
-          echo "ECR push completed successfully"
+      # - name: Wait for ECR Push
+      #   run: |
+      #     echo "Waiting for ECR push to complete"
+      #     while [ ! -f /tmp/ecr_done ]; do
+      #       sleep 10
+      #     done
+      #     cat /tmp/ecr_push.log
+      #     RESULT=$(cat /tmp/ecr_done)
+      #     if [ "$RESULT" != "success" ]; then
+      #       echo "ECR push failed: $RESULT"
+      #       exit 1
+      #     fi
+      #     echo "ECR push completed successfully"
 
       - name: Get Website URL
         run: |
@@ -316,21 +316,21 @@ jobs:
             });
         if: ${{ always() }}
 
-      - name: Export Variables
-        run: echo 'TF_VAR_fire_up_CA=false' >> "$GITHUB_ENV"
-        if: ${{ always() }}
+      # - name: Export Variables
+      #   run: echo 'TF_VAR_fire_up_CA=false' >> "$GITHUB_ENV"
+      #   if: ${{ always() }}
 
-      - name: Create Apply Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: apply-run-two
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
-        if: ${{always() }}
+      # - name: Create Apply Run
+      #   uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+      #   id: apply-run-two
+      #   with:
+      #     workspace: ${{ env.TF_WORKSPACE }}
+      #     configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+      #   if: ${{always() }}
 
-      - name: Apply
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-        if: fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable
-        id: apply-two
-        with:
-          run: ${{ steps.apply-run-two.outputs.run_id }}
+      # - name: Apply
+      #   uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+      #   if: fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable
+      #   id: apply-two
+      #   with:
+      #     run: ${{ steps.apply-run-two.outputs.run_id }}
