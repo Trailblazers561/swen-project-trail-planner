@@ -593,7 +593,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               <LoaderCircle
                 size={80}
                 strokeWidth={2}
-                className="absolute left-1/2 -translate-x-1/2 top-1/4 z-10000000 animate-spin text-navbar"
+                className="absolute left-1/2 -translate-x-1/2 top-1/4 z-50 animate-spin text-navbar"
               />
             )}
             {error && <div className="error-message">{error}</div>}
