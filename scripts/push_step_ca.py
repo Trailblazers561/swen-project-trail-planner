@@ -3,7 +3,7 @@ import time
 import subprocess
 import sys
 import os
-
+print("Starting push step ca")
 region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 ecr = boto3.client('ecr', region_name=region)
 sts = boto3.client('sts', region_name=region)
