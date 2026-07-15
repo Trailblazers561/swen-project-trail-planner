@@ -3,31 +3,36 @@ name: "Integration Testing"
 on:
   pull_request:
     branches:
+      - trailblazers-tst
       - trailblazers-uat
       - main
 
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "test-workplace"
-  TF_WORKSPACE_ID: "ws-LG99RLWhhrv1UV1y"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
-  TF_VAR_deploy_env: '"test"'
   CONFIG_DIRECTORY: "./terraform"
-  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TEST_WORKSPACES: ${{ vars.TEST_WORKSPACES }}
+  TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
+  TF_VAR_ses_identity_arn: '"${{  vars.SES_IDENTITY_ARN  }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
-  TF_VAR_fire_up_CA: true
+  TF_VAR_fire_up_CA: false
+
+concurrency:
+  group:  testing-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
-  terraform:
-    name: "Integration Testing"
+  create-update-env:
+    name: Integration Testing
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
       actions: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7

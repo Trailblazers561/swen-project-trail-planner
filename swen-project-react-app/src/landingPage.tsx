@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/templates/button";
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, ZoomControl, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.heat";
 import "leaflet/dist/leaflet.css";
@@ -29,18 +29,32 @@ const LandingPage = () => {
 
     const [zoom, setZoom] = useState(8);
 
-    const createTrailIcon = (color: string) =>
+    const [selectedTrails, setSelectedTrails] = useState<any[]>([]);
+
+    const [showPanel, setShowPanel] = useState(true);
+
+    const [showTimeFrame, setShowTimeFrame] = useState(false);
+
+    const createTrailIcon = (color: string, selected = false) =>
         L.divIcon({
             className: "",
             html: `
-        <svg width="30" height="42" viewBox="0 0 24 24">
-            <path fill="${color}" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-            <circle cx="12" cy="9" r="2.5" fill="white"/>
-        </svg>
-        `,
+            <svg width="30" height="42" viewBox="0 0 24 24"
+                style="
+                transform-origin: center bottom;
+                transform: ${selected ? "scale(1.25)" : "scale(1)"};
+                transition: transform .15s ease;
+                    "
+                >
+                <path 
+                    fill="${color}" 
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+                />
+                <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+            `,
             iconSize: [30, 42],
             iconAnchor: [15, 42],
-            popupAnchor: [1, -36],
         });
 
     const { getTrailMetadata, getHeatmapData } = TrailData();
@@ -236,48 +250,85 @@ const LandingPage = () => {
         return null;
     }
 
+    function MapClickHandler({
+    onClick,
+    }: {
+        onClick: () => void;
+    }) {
+        useMapEvents({
+            click() {
+                onClick();
+            },
+        });
+
+        return null;
+    }
 
     return (
 
-        <div className="h-screen w-screen relative overflow-hidden">
+        <div className="flex flex-col h-[calc(103vh-96px)]">
 
-            <div className="absolute top-20 left-4 z-9999 pointer-events-auto">
-                <div className="bg-white rounded-lg  shadow-lg p-4 border min-w-[420px]">
-
-                    <div className="font-semibold mb-3 text-center">
-                        Time Frame
-                    </div>
-
-                    <div className="flex justify-center">
-                        <Select
-                            value={datePreset}
-                            onValueChange={(value) => setDatePreset(value as DatePreset)}
+            <div className={`absolute top-20 left-4 z-[500]
+                            transition-transform duration-300
+                            ${showPanel ? "translate-x-0" : "-translate-x-[18rem]"}`
+                            }
                         >
-                            <SelectContent className="z-10000" />
-                            <SelectTrigger className="w-48 bg-white">
-                                <SelectValue />
-                            </SelectTrigger>
+                <button
+                    onClick={() => setShowPanel(!showPanel)}
+                    className="absolute top-1 right-2 z-[600] h-8 w-8 bg-white shadow rounded-lg"
+                >
+                    {showPanel ? "◀" : "▶"}
+                </button>
+            <div 
+                className={`
+                    relative w-80 bg-white rounded-lg shadow-xl border
+                    transition-transform duration-300
+                    ${showPanel ? "translate-x-0" : "-translate-x-full"}
+                `}
+            >
+                
+            {showPanel && (
+                <>
+                <div className="p-4 space-y-4 relative h-full flex flex-col">
+                    <button className="w-full text-left font-semibold"
+                            onClick={() => setShowTimeFrame(!showTimeFrame)}
+                    >
+                        Time Frame {showTimeFrame ? "▼" : "▶"}
+                    </button>
+                {showTimeFrame && (
+                    <>
+                        <div className="flex justify-center">
+                            <Select
+                                value={datePreset}
+                                onValueChange={(value) => setDatePreset(value as DatePreset)}
+                            >
+                                <SelectContent className="z-30" />
+                                <SelectTrigger className="w-48 bg-white">
+                                    <SelectValue />
+                                </SelectTrigger>
 
-                            <SelectContent className="z-10000" position="popper" side="bottom" sideOffset={4}>
-                                <SelectItem value="day">Yesterday</SelectItem>
-                                <SelectItem value="week">Last Week</SelectItem>
-                                <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
-                                <SelectItem value="month">Last Month</SelectItem>
-                                <SelectItem value="custom">Custom</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {datePreset === DatePreset.Custom && (
-                        <div className="flex justify-center gap-2 mt-2">
-                            <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                                <SelectContent className="z-30" position="popper" side="bottom" sideOffset={4}>
+                                    <SelectItem value="day">Yesterday</SelectItem>
+                                    <SelectItem value="week">Last Week</SelectItem>
+                                    <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
+                                    <SelectItem value="month">Last Month</SelectItem>
+                                    <SelectItem value="custom">Custom</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
 
-                    <hr className="my-3" />
+                        {datePreset === DatePreset.Custom && (
+                            <div className="flex justify-center gap-2 mt-2">
+                                <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
+                            </div>
+                        )}
+                    </>
+                )}
+
+                    <hr className="my-5" />
 
                     <button
-                        className="w-full text-left font-semibold text-sm"
+                        className="w-full text-left font-semibold"
                         onClick={() => setShowLegend(!showLegend)}
                     >
                         Trail Usage Legend {showLegend ? "▼" : "▶"}
@@ -330,79 +381,115 @@ const LandingPage = () => {
                                 <span>No Data</span>
                             </div>
                         </div>
+
                     )}
 
+                    {selectedTrails.length > 0 ? (
+                        <div className="mt-6 rounded-lg border bg-white p-4 shadow">
+                            <div className="max-h-[45vh] overflow-y-auto space-y-4 pr-2">
+                                {selectedTrails.map(trail => (
+                                    <div
+                                        key={trail.id}
+                                        className="rounded-lg border bg-gray-50 p-4 shadow-sm"
+                                    >
+                                        <h3 className="text-lg font-semibold">
+                                            {trail.name}
+                                        </h3>
+
+                                        <p className="text-sm text-gray-500">
+                                            ID: {trail.id}
+                                        </p>
+
+                                        <p className="mt-2">
+                                            {trail.notes}
+                                        </p>
+
+                                        <p className="mt-3">
+                                            <strong>Trail Usage:</strong>{" "}
+                                            {getUsageLabel(displayedUsage[trail.id])}
+                                        </p>
+
+                                        <Button variant = "primary" className="mt-4 w-full"
+                                            onClick={() =>
+                                                navigate(`/dashboard?trailName=${trail.name}`)
+                                            }
+                                        >
+                                            See Trail Data
+                                        </Button>
+                                    </div>
+                                    
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mt-6 text-gray-500">
+                            Select a trail
+                        </div>      
+                        )}  
+                        </div>
+                    </>
+                    
+                )}
+            </div>
+        </div>
+
+            <div className="flex-1 relative">
+                {loadingUsage && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/20">
+                        <LoaderCircle
+                            size={80}
+                            strokeWidth={2}
+                            className="animate-spin text-navbar"
+                        />
+                    </div>
+                )}
+                <MapContainer
+                    className="h-full w-full"
+                    center={[44.02, -73.82]}
+                    zoom={8}
+                    minZoom={8}
+                    maxZoom={15}
+                    zoomControl={false}
+                    scrollWheelZoom={true}
+                    maxBounds={parkBounds}
+                    maxBoundsViscosity={0.8}
+                >
+
+                    <ZoomWatcher setZoom={setZoom} />
+
+                    <TileLayer
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+                    />
+
+                    <HeatmapLayer trails={parsedTrails} heatmapData={displayedUsage} />
+
+                    <ZoomControl position="bottomright" />
+
+                    <MapClickHandler onClick={() => setSelectedTrails([])} />
+
+                    {zoom >= 9 && parsedTrails.map((trail) => (
+                        <Marker
+                            key={trail.id}
+                            position={[trail.latitude, trail.longitude]}
+                            icon={createTrailIcon(getTrailColor(trail.id), selectedTrails.some(t => t.id === trail.id))}
+                            eventHandlers={{
+                                                                click: () => {
+                                    setSelectedTrails(prev => {
+                                        const alreadySelected = prev.some(t => t.id === trail.id);
+
+                                        if (alreadySelected) {
+                                            return prev.filter(t => t.id !== trail.id);
+                                        }
+
+                                        return [...prev, trail];
+                                    });
+                                }
+                            }}
+                        />
+                    ))}
+                </MapContainer>
                 </div>
             </div>
-            {loadingUsage && (
-                <div className="absolute inset-0 z-9998 flex items-center justify-center pointer-events-none bg-black/20">
-                    <LoaderCircle
-                        size={80}
-                        strokeWidth={2}
-                        className="animate-spin text-navbar"
-                    />
-                </div>
-            )}
-            <MapContainer
-                center={[44.02, -73.82]}
-                zoom={8}
-                minZoom={8}
-                maxZoom={15}
-                zoomControl={false}
-                scrollWheelZoom={true}
-                className="h-full w-full"
-                maxBounds={parkBounds}
-                maxBoundsViscosity={0.8}
-            >
-
-                <ZoomWatcher setZoom={setZoom} />
-
-                <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-                />
-
-                <HeatmapLayer trails={parsedTrails} heatmapData={displayedUsage} />
-
-                <ZoomControl position="bottomright" />
-
-                {zoom >= 9 && parsedTrails.map((trail) => (
-                    <Marker
-                        key={trail.id}
-                        position={[trail.latitude, trail.longitude]}
-                        icon={createTrailIcon(getTrailColor(trail.id))}
-                    >
-                        <Popup>
-                            <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="space-y-2"
-                            >
-                                <div>
-                                    <strong>{trail.name}</strong>{" "}
-                                    <span className="text-gray-500 ml-2">(ID: {trail.id})</span>
-                                    <br />
-                                    {trail.notes}
-                                    <div>
-                                        <strong>Trail Usage:</strong>{" "}
-                                        {getUsageLabel(displayedUsage[trail.id])}
-                                    </div>
-                                </div>
-
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() =>
-                                        navigate(`/dashboard?trailName=${trail.name}`)
-                                    }
-                                >
-                                    See Trail Data
-                                </Button>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-            </MapContainer>
-
-        </div>
     );
 };
 

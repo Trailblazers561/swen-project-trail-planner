@@ -44,7 +44,7 @@ function TooltipHeader({label, expanded, description}: TooltipHeaderProps) {
       {showTooltip &&
         createPortal(
           <div
-            className="fixed z-1000 bg-[#e9f2f1] text-[rgba(0,0,0,0.87)] rounded-xl px-3 py-2 w-75"
+            className="fixed z-10 bg-[#e9f2f1] text-[rgba(0,0,0,0.87)] rounded-xl px-3 py-2 w-75"
             style={{
               left: tooltipPosition.x,
               top: tooltipPosition.y - 15,

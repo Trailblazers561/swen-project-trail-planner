@@ -16,7 +16,7 @@ export function UserIcon() {
     };
 
     return (
-        <div className="z-3000">
+        <div className="z-50">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button className="bg-(--color-navbar)" size="icon" id="user-icon-button">
