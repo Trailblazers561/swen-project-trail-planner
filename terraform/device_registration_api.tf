@@ -5,6 +5,7 @@ locals {
         file = "register_device/register_device_post.py"
         handler = "register_device_post.register_device"
         needs_ca_access = true
+        timeout = 30
       }
     }
   }
