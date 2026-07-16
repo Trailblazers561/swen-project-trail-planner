@@ -892,9 +892,9 @@ const dashboard = () => {
     return (
         <div data-testid="dashboard-root">
             <div className="flex flex-col">
-                <div className="filter-container flex w-full justify-between items-end px-6 py-2">
-                    <div className="flex gap-8 items-start flex-wrap">
-                        <div className="flex gap-2">
+                <div className="filter-container flex w-full justify-between items-end px-2 lg:px-6 py-2">
+                    {/* <div className="flex gap-8 items-start flex-wrap"> */}
+                        {/* <div className="flex gap-2"> */}
                             <div className="filter-group flex flex-col">
                                 <label>Date Range:</label>
                                 <DatePickerWithRange value={range} onChange={handleDateRangeChange} />
@@ -916,8 +916,8 @@ const dashboard = () => {
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                            </div>
-                        </div>
+                            {/* </div> */}
+                        {/* </div> */}
                     </div>
                     <div className="filter-group flex flex-col">
                         <label>Areas:</label>
@@ -927,19 +927,19 @@ const dashboard = () => {
                         <label>Trails:</label>
                         <MultiSelect ref={trailSelectRef} options={trailOptions} onValueChange={handleTrailChange} value={trails} data-testid="trail-selector"/>
                     </div>
-                    <div className="flex flex-col ml-auto">
+                    <div className="flex flex-col">
                         <label>Additional Options:</label>
-                        <div className="flex flex-row gap-2">
+                        <div className="flex flex-row gap-2 justify-between items-center">
                             {(currentRole === null ) && (
                                 <div>Please log in or register to view additional options.</div>
                             )}
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                <Button variant="secondary" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
+                                <Button variant="secondary" className="px-2" onClick={handleAssociateDevice} data-testid="associate-device">Associate Device</Button>
                             )}
                             {currentRole !== null && (
                                 <Popover open={isDownloadingStatus !== "idle"}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="secondary" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
+                                        <Button variant="secondary" className="px-2" onClick={handleExportData} disabled={isDownloadingStatus !== "idle"} data-testid="export-data">
                                             Export Data
                                         </Button>
                                     </PopoverTrigger>
@@ -968,7 +968,7 @@ const dashboard = () => {
                             {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                                 <Popover open={isUploadingStatus !== "idle"}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="secondary" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
+                                        <Button variant="secondary" className="px-2" onClick={handleImportData} disabled={isUploadingStatus !== "idle"}>
                                             Import Data
                                         </Button>
                                     </PopoverTrigger>
@@ -1001,47 +1001,45 @@ const dashboard = () => {
             <div className="w-full border-t bg-gray-50">
                 <div>
                     <div className="flex p-2.5 justify-between items-center">
-                        <Button variant="primary" onClick={toggleView} className="items-center" data-testid="toggle-view">Toggle View</Button>
-                            {viewMode === "graph" && !graphBroken ? (
-                                <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
-                                    {graphTitle}
-                                </div>
-                            ) : viewMode === "graph"  ? (
-                                <div className="text-lg font-bold text-red-700 rounded-lg border border-red-800 bg-red-50 px-4 py-0.75 mx-2" data-testid="graph-title">
-                                    Failed to Load Trail Data. Check Your Connection and Try Again.
-                                </div>
-                            ) : (
-                                <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
-                            )}
-                        <div className="flex gap-2.5">
-                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="primary" data-testid="trail-options">Trail Options</Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuGroup>
-                                            <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                            {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="primary" data-testid="area-options">Area Options</Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuGroup>
-                                            <DropdownMenuItem onClick={handleAddArea} data-testid="add-area">Add Area</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleEditArea} data-testid="edit-area">Edit Area</DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
+                        <Button variant="primary" onClick={toggleView} className="items-center px-2" data-testid="toggle-view">Toggle View</Button>
+                        {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="primary" className="px-2" data-testid="trail-options">Trail Options</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuItem onClick={handleAddTrail} data-testid="add-trail">Add Trail</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleEditTrail} data-testid="edit-trail">Edit Trail Info</DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                        {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="primary" className="px-2" data-testid="area-options">Area Options</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuGroup>
+                                        <DropdownMenuItem onClick={handleAddArea} data-testid="add-area">Add Area</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleEditArea} data-testid="edit-area">Edit Area</DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
+                {viewMode === "graph" && !graphBroken ? (
+                    <div className="text-lg font-bold text-gray-800" data-testid="graph-title">
+                        {graphTitle}
+                    </div>
+                ) : viewMode === "graph"  ? (
+                    <div className="text-lg font-bold text-red-700 rounded-lg border border-red-800 bg-red-50 px-4 py-0.75 mx-2" data-testid="graph-title">
+                        Failed to Load Trail Data. Check Your Connection and Try Again.
+                    </div>
+                ) : (
+                    <div className="text-lg font-bold text-gray-800">Trail Status Overview</div>
+                )}
                 </div>
                 <div className="w-full bg-gray-50">
                     <div className="w-full border-t border-gray-200">
