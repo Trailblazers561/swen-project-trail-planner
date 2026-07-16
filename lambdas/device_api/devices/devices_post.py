@@ -77,7 +77,7 @@ def upload_device_info(event, context):
                 "headers": cors_headers(),
                 "body": json.dumps({"error": "Device id liked to registration entry not found"})
             }
-        device_name = response[0].get("id")
+        device_id = response[0].get("id")
 
         date_manufactured = Decimal(str(datetime.fromisoformat(date_manufactured).timestamp()))
         print(
@@ -91,25 +91,25 @@ def upload_device_info(event, context):
             expression_values[":notes"] = notes
 
         device_table.update_item(
-            Key={"id": int(device_name)},
+            Key={"id": int(device_id)},
             UpdateExpression=update_values,
             ExpressionAttributeValues=expression_values
         )
 
         device_log_table.put_item(Item={
-            "device_id": int(device_name),
+            "device_id": int(device_id),
             "time": Decimal(str(datetime.now().timestamp())),
             "log_type": "device_info_connectivity_test",
             "firmware_version": firmware_version,
         })
 
-        print(f"Successfully updated device with id [{device_name}]")
+        print(f"Successfully updated device with id [{device_id}]")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
             "body": json.dumps({
                 "message": "Device info updated successfully",
-                "device_id": id
+                "device_id": int(device_id)
             })
         }
 
