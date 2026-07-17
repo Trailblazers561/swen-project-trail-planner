@@ -3,7 +3,6 @@ import hmac
 import json
 import time
 from datetime import datetime, timezone, timedelta
-from decimal import Decimal
 
 from botocore.exceptions import ClientError
 from cryptography import x509
@@ -177,7 +176,7 @@ def register_device(event, context):
 
         device_log_table.put_item(Item={
             "device_id": int(item.get("id")),
-            "time": Decimal(str(datetime.now().timestamp())),
+            "time": int(str(datetime.now().timestamp())),
             "log_type": "device_certificate_registration",
         })
 

@@ -1,6 +1,6 @@
 import json
 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 
 from helper.helper_functions import dynamodb, device_table, device_log_table, device_trail_table, registration_table, convert_decimals, cors_headers
 
@@ -55,15 +55,28 @@ def get_device_metadata(event, context):
                 item["registration_id"] = registration_result[0]["registration_id"]
                 item["date_registered"] = registration_result[0]["date_registered"]
 
-            device_log_result = device_log_table.query(
+            device_log_latest_result = device_log_table.query(
                 KeyConditionExpression=Key("device_id").eq(item["id"]),
                 Limit=1,
                 ScanIndexForward=False
             ).get("Items", [])
-            if device_log_result:
-                item["battery"] = device_log_result[0]["battery"]
-                item["last_updated"] = device_log_result[0]["time"]
-                item["firmware_version"] = device_log_result[0]["firmware_version"]
+            if device_log_latest_result:
+                item["last_updated"] = device_log_latest_result[0]["time"]
+                if device_log_latest_result[0].get("battery"):
+                    item["battery"] = device_log_latest_result[0]["battery"]
+                    item["firmware_version"] = device_log_latest_result[0].get("firmware_version", "")
+                else:
+                    device_log_battery_result = device_log_table.query(
+                        KeyConditionExpression=Key("device_id").eq(item["id"]),
+                        FilterExpression=(
+                            Attr("log_type").eq("data_upload")
+                        ),
+                        Limit=1,
+                        ScanIndexForward=False
+                    ).get("Items", [])
+                    if device_log_battery_result:
+                        item["battery"] = device_log_battery_result[0].get("battery")
+                        item["firmware_version"] = device_log_battery_result[0].get("firmware_version", "")
 
         print(f"Successfully appended device metadata [{items[:3]}]")
         return {
