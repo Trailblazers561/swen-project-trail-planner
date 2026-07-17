@@ -5,6 +5,7 @@ import { Button } from '../templates/button';
 import DeviceLogTable from "../tables/DeviceLogTable";
 import { EllipsisVertical, LoaderCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "../templates/dropdown-menu"
+import { DeviceLogType } from '@/lib/apiTypes';
 
 
 interface Device {
@@ -26,12 +27,13 @@ interface Device {
 interface DeviceLog {
   device_id: number;
   time: number;
-  battery: number;
-  firmware_version: string;
-  count: number;
-  rssi: number;
-  rsrp: number;
-  rsrq: number;
+  log_type: DeviceLogType;
+  firmware_version: string | null;
+  battery: number | null;
+  rssi: number | null;
+  rsrp: number | null;
+  rsrq: number | null;
+  count: number | null;
 }
 
 interface Trail {
@@ -60,7 +62,7 @@ interface ActionsDropdownProps {
 
 function ActionsDropdown({currentAction, device, setCurrentAction}: ActionsDropdownProps) {
   const actionList: DeviceAction[] = [];
-  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.current_trail_id && device.current_trail_id !== 0)
+  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.date_registered && device.date_registered !== -1)
     actionList.push(DeviceAction.VIEW_LOGS);
   if (currentAction !== DeviceAction.ASSOCIATE_TRAIL && currentAction !== DeviceAction.INSTALL_DEVICE)
     actionList.push(DeviceAction.ASSOCIATE_TRAIL);
@@ -148,6 +150,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setNotes("");
     setCurrentAction(null);
     setLoading(true);
+    setError("");
+    setSuccess(""); 
   };
 
   const loadData = async () => {
@@ -159,7 +163,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
 
         if (deviceResponse.success && deviceLogResponse.success && trailsResponse.success) {
           const deviceData: Device[] = await deviceResponse.json;
-          const deviceLogData = await deviceLogResponse.json;
+          const deviceLogData: DeviceLog[] = await deviceLogResponse.json;
           const trailsData = await trailsResponse.json;
 
           if (deviceData.length) {
@@ -182,7 +186,12 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               setCurrentAction(DeviceAction.VIEW_LOGS);
             }
           }
-          setDeviceLogs(deviceLogData);
+          setDeviceLogs(deviceLogData.map(log => {
+            return {
+                ...log,
+                log_type: Object.values(DeviceLogType).includes(log.log_type as DeviceLogType) ? log.log_type : DeviceLogType.Unknown,
+            };
+          }));
           setTrails(trailsData);
         } else {
           setCurrentAction(null);
