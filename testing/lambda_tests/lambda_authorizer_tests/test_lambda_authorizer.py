@@ -1,11 +1,4 @@
-from datetime import date, datetime, timedelta
-from decimal import Decimal
-
 import importlib
-import json
-
-import boto3
-import pytest
 
 def load_module():
     """
@@ -31,6 +24,7 @@ def test_parse_token_valid():
     # Assert
     assert result["valid"] is True
     assert result["token"] == "abc123"
+    assert result == {"valid": True, "token": "abc123",}
 
 def test_parse_token_missing_header():
     # Arrange
@@ -169,3 +163,17 @@ def test_handler_guest_allowed(monkeypatch):
 
     # Assert
     assert result["policyDocument"]["Statement"][0]["Effect"] == "Allow"
+
+def test_handler_guest_denied():
+    # Arrange
+    module = load_module()
+
+    event = {
+        "methodArn": "arn:aws:execute-api:us-east-1:1:api/dev/GET/users"
+    }
+
+    # Act
+    result = module.handler(event, None)
+
+    # Assert
+    assert result["policyDocument"]["Statement"][0]["Effect"] == "Deny"

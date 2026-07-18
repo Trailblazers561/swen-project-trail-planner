@@ -1,9 +1,5 @@
-from datetime import datetime, timedelta
-from decimal import Decimal
-
 import importlib
 import json
-import boto3
 
 def load_module():
     """
@@ -21,8 +17,8 @@ def test_absolute_algorithm_success():
 
     event = {
         "queryStringParameters": {
-            "start_time": "2025-01-01T00:00:00",
-            "end_time": "2025-01-31T23:59:59",
+            "start_time": "2026-01-01T00:00:00",
+            "end_time": "2026-01-31T23:59:59",
             "algorithm": "absolute"
         },
         "multiValueQueryStringParameters": {
@@ -39,6 +35,9 @@ def test_absolute_algorithm_success():
     body = json.loads(response["body"])
 
     assert isinstance(body, dict)
+
+    assert isinstance(body["1"], (int, float))
+    assert isinstance(body["2"], (int, float))
 
 def test_missing_trail_id():
     #Arrange

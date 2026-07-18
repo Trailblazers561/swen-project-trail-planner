@@ -50,10 +50,20 @@ PERMISSIONS = {
 }
 
 # Download public keys when lambda is created (code is outside handler)
-keys_url = f"https://cognito-idp.us-east-1.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
-with urllib.request.urlopen(keys_url) as f:
-    response = f.read()
-keys = json.loads(response.decode('utf-8'))['keys']
+keys = None
+
+def get_keys():
+    global keys
+
+    if keys is None:
+        keys_url = (f"https://cognito-idp.us-east-1.amazonaws.com/"f"{COGNITO_USER_POOL_ID}/.well-known/jwks.json")
+
+        with urllib.request.urlopen(keys_url) as f:
+            response = f.read()
+
+        keys = json.loads(response.decode())["keys"]
+
+    return keys
 
 def handler(event, context):
     print(event)
@@ -112,6 +122,8 @@ def validate_token(token):
     # get the kid from the headers prior to verification
     headers = jwt.get_unverified_headers(token)
     kid = headers['kid']
+
+    keys = get_keys()
 
     # search for the kid in the downloaded public keys
     key_index = -1
