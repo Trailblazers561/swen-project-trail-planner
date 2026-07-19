@@ -31,6 +31,7 @@ const columns: TableColumn<TrailRow>[] = [
     name: "Battery Status",
     sortable: true,
     center: true,
+    hide: 1023,
     cell: (row) => {
       if (row.batteryStatus === null)
         return <span className="text-gray-400">N/A</span>;
@@ -58,6 +59,7 @@ const columns: TableColumn<TrailRow>[] = [
     name: "Last Updated",
     sortable: true,
     center: true,
+    hide: 1023,
     cell: (row) => {
     if (!row.lastUpdated) {
       return <span className="text-gray-400">N/A</span>;
