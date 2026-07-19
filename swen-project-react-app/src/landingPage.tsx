@@ -307,7 +307,7 @@ const LandingPage = () => {
                                     <SelectValue />
                                 </SelectTrigger>
 
-                                <SelectContent className="z-30" position="popper" side="bottom" sideOffset={4}>
+                                <SelectContent className="z-600" position="popper" side="bottom" sideOffset={4}>
                                     <SelectItem value="day">Yesterday</SelectItem>
                                     <SelectItem value="week">Last Week</SelectItem>
                                     <SelectItem value="fortnight">Last 2 Weeks</SelectItem>
