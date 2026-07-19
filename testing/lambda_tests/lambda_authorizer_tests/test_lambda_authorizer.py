@@ -1,3 +1,5 @@
+import time
+from datetime import time as datetime_time
 import importlib
 
 def load_module():
@@ -177,3 +179,99 @@ def test_handler_guest_denied():
 
     # Assert
     assert result["policyDocument"]["Statement"][0]["Effect"] == "Deny"
+
+def test_handler_authenticated_user_allowed(monkeypatch):
+    # Arrange
+    module = load_module()
+
+    monkeypatch.setattr(
+        module,
+        "validate_token",
+        lambda token: {
+            "sub": "user123",
+            "cognito:groups": [module.USER]
+        }
+    )
+
+    event = {
+        "authorizationToken": "Bearer fake-token",
+        "methodArn": "arn:aws:execute-api:us-east-1:1:api/dev/GET/trail_metadata"
+    }
+
+    # Act
+    result = module.handler(event, None)
+
+    # Assert
+    assert result["principalId"] == "user123"
+    assert result["policyDocument"]["Statement"][0]["Effect"] == "Allow"
+    assert result["context"]["caller_role"] == "user"
+
+
+def test_handler_invalid_token(monkeypatch):
+    # Arrange
+    module = load_module()
+
+    monkeypatch.setattr(module, "validate_token", lambda token: False)
+
+    event = {
+        "authorizationToken": "Bearer bad-token",
+        "methodArn": "arn:aws:execute-api:us-east-1:1:api/dev/GET/trail_metadata"
+    }
+
+    # Act
+    result = module.handler(event, None)
+
+    # Assert
+    assert result["principalId"] == "invalid-token"
+    assert result["policyDocument"]["Statement"][0]["Effect"] == "Deny"
+
+def test_validate_token_success(monkeypatch):
+    # Arrange
+    module = load_module()
+
+    claims = {
+        "exp": time.time() + 1000,
+        "client_id": module.COGNITO_APP_CLIENT_ID,
+        "sub": "abc",
+        "cognito:groups": [module.USER],
+    }
+
+    monkeypatch.setattr(
+        module.jwt,
+        "get_unverified_headers",
+        lambda token: {"kid": "123"}
+    )
+
+    monkeypatch.setattr(
+        module.jwt,
+        "get_unverified_claims",
+        lambda token: claims
+    )
+
+    monkeypatch.setattr(
+        module,
+        "get_keys",
+        lambda: [{"kid": "123"}]
+    )
+
+    class FakeKey:
+        def verify(self, message, signature):
+            return True
+
+    monkeypatch.setattr(
+        module.jwk, 
+        "construct", 
+        lambda key: FakeKey()
+    )
+
+    monkeypatch.setattr(
+        module,
+        "base64url_decode",
+        lambda x: b"signature"
+    )
+
+    # Act
+    result = module.validate_token("fake.jwt.token")
+
+    # Assert
+    assert result == claims
