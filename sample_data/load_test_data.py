@@ -19,6 +19,7 @@ def load_test_data(env):
     week_log_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_week_table")
     month_log_table = dynamodb.Table(f"{env}_trailcount_device_trail_log_month_table")
     device_log_table = dynamodb.Table(f"{env}_trailcount_device_log_table")
+    registration_table = dynamodb.Table(f"{env}_trailcount_registration_table")
 
     reset_device_table(device_table)
     reset_trail_table(trail_table)
@@ -29,6 +30,7 @@ def load_test_data(env):
     reset_week_log_table(week_log_table)
     reset_month_log_table(month_log_table)
     reset_device_log_table(device_log_table)
+    reset_registration_table(registration_table)
 
 def reset_device_table(device_table):
     # Delete Device Data
@@ -395,6 +397,40 @@ def reset_device_log_table(device_log_table):
                         "rssi": int(row["rssi"]),
                         "rsrp": int(row["rsrp"]),
                         "rsrq": int(row["rsrq"]),
+                    }
+                )
+
+def reset_registration_table(registration_table):
+    # Delete Registration Data
+    response = registration_table.scan()
+    data = response.get("Items", [])
+
+    while "LastEvaluatedKey" in response:
+        response = registration_table.scan(
+            ExclusiveStartKey=response["LastEvaluatedKey"]
+        )
+        data.extend(response["Items"])
+
+    with registration_table.batch_writer() as batch:
+        for item in data:
+            batch.delete_item(
+                Key={
+                    "registration_id": item["registration_id"]
+                }
+            )
+
+    # Load Registrations Data
+    with open(Path(__file__).parent / "registrations.csv") as f:
+        reader = csv.DictReader(f)
+
+        with registration_table.batch_writer() as batch:
+            for row in reader:
+                batch.put_item(
+                    Item={
+                        "registration_id": int(row["registration_id"]),
+                        "device_id": int(row["device_id"]),
+                        "date_registered": int(row["date_registered"]),
+                        "cert_time_to_live": int(row["cert_time_to_live"]),
                     }
                 )
 
