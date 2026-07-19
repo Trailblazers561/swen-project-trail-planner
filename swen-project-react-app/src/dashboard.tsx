@@ -929,7 +929,7 @@ const dashboard = () => {
                     </div>
                     <div className="flex flex-col">
                         <label>Additional Options:</label>
-                        <div className="flex flex-row gap-2 justify-between items-center">
+                        <div className="flex flex-row gap-4 lg:gap-2 justify-between items-center">
                             {(currentRole === null ) && (
                                 <div>Please log in or register to view additional options.</div>
                             )}
@@ -1000,7 +1000,7 @@ const dashboard = () => {
             </div>
             <div className="w-full border-t bg-gray-50">
                 <div>
-                    <div className="flex p-2.5 justify-between items-center">
+                    <div className="flex p-2.5 justify-between lg:justify-start lg:gap-2 items-center">
                         <Button variant="primary" onClick={toggleView} className="items-center px-2" data-testid="toggle-view">Toggle View</Button>
                         {(currentRole === Role.Root || currentRole === Role.Admin || currentRole === Role.Manager ) && (
                             <DropdownMenu>
@@ -1116,6 +1116,7 @@ const dashboard = () => {
                 onClose={() => setIsAssociateDeviceModalOpen(false)}
                 onUpdate={handleTrailUpdated}
             />
+        <div className="p-12"></div>
         </div>
     );
 };
