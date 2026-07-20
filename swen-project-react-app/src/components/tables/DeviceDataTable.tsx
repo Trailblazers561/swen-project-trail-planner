@@ -246,6 +246,7 @@ const DeviceDataTable: React.FC<Props> = ({ data, loading, onRowClick }) => {
         columns={columnsMobile}
         data={data}
         progressPending={loading}
+        pagination={true}
         striped
         responsive
         customStyles={customStylesMobile}

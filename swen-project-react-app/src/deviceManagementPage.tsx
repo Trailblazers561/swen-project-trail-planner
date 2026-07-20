@@ -131,8 +131,8 @@ const DeviceManagementPage = () => {
                         className="absolute bottom-30 left-2"
                             variant="primary"
                             onClick={() => {
-                                setSelectedDevice(null);   // 🔥
-                                setIsModalOpen(true);      // 🔥
+                                setSelectedDevice(null);
+                                setIsModalOpen(true);
                             }}
                         >
                             Create Device
