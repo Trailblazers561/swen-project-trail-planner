@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 
 from boto3.dynamodb.conditions import Key
 
-from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, device_trail_log_week_table, \
+from helper.helper_functions import device_trail_log_hour_table, device_trail_log_day_table, \
+    device_trail_log_week_table, \
     device_trail_log_month_table, device_table, device_trail_table, device_log_table, cors_headers, get_device_trail_id, \
     timestamp_conversion, is_device_blocked, is_device_archived
+
 
 def upload_device_data(event, context):
     """
@@ -28,7 +30,7 @@ def upload_device_data(event, context):
     """
     try:
         print(event)
-        body = event.get("body","{}")
+        body = event.get("body", "{}")
         if isinstance(body, str):
             body = json.loads(body)
 
@@ -78,10 +80,7 @@ def upload_device_data(event, context):
         rsrp = body.get("rsrp")
         rsrq = body.get("rsrq")
 
-        testFlag = body.get("unitTestMode")
-        testMode = False
-        if testFlag:
-            testMode = True
+        testFlag = body.get("unitTestMode") is True
 
         if not data_points: raise ValueError("Missing required field: data_points")
         if battery is None: raise ValueError("Missing required field: battery")
@@ -92,7 +91,8 @@ def upload_device_data(event, context):
             Limit=1
         )["Items"]
         device_id = device_exists[0]["id"] if device_exists else None
-        if not device_id: raise ValueError(f"Cannot find device with name [{name}], please register if not done already")
+        if not device_id: raise ValueError(
+            f"Cannot find device with name [{name}], please register if not done already")
 
         if not isinstance(data_points, list):
             raise ValueError("Data field must be an array")
@@ -145,8 +145,12 @@ def upload_device_data(event, context):
         if testFlag:
             new_data_points = data_points
         else:
-            minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0,second=0,microsecond=0) + timedelta(hours=1)).timestamp()
-            new_data_points = [data_point for data_point in data_points if data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp", 0) >= minimum_date]
+            minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0, second=0,
+                                                                                microsecond=0) + timedelta(
+                hours=1)).timestamp()
+            new_data_points = [data_point for data_point in data_points if
+                               data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp",
+                                                                                         0) >= minimum_date]
 
         if new_data_points:
             new_body = {
@@ -180,6 +184,7 @@ def upload_device_data(event, context):
             "headers": cors_headers(),
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
+
 
 def upload_trail_data(event, context):
     try:
