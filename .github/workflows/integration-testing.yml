@@ -34,7 +34,7 @@ jobs:
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
         id: destroy-run-a
         with:
-          workspace: test0-workspace
+          workspace: test1-workspace
           is_destroy: true
         if: ${{ always() }}
 
@@ -48,7 +48,7 @@ jobs:
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
         id: destroy-run-b
         with:
-          workspace: test1-workspace
+          workspace: test2-workspace
           is_destroy: true
         if: ${{ always() }}
 
@@ -57,17 +57,3 @@ jobs:
         with:
           run: ${{ steps.destroy-run-b.outputs.run_id }}
         if: ${{ always() && fromJSON(steps.destroy-run-b.outputs.payload).data.attributes.actions.IsConfirmable }}
-
-      - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: destroy-run-c
-        with:
-          workspace: test2-workspace
-          is_destroy: true
-        if: ${{ always() }}
-
-      - name: Destroy
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-        with:
-          run: ${{ steps.destroy-run-c.outputs.run_id }}
-        if: ${{ always() && fromJSON(steps.destroy-run-c.outputs.payload).data.attributes.actions.IsConfirmable }}
