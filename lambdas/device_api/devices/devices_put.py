@@ -20,8 +20,11 @@ def upload_device_data(event, context):
         "rssi": -61
         "rsrp": -97
         "rsrq": -7
+        "unitTestMode": true
     }
     A device should be registered in the system before using this.
+    unitTestMode is an OPTIONAL value that should NOT be sent by a normal device. It is exclusively a test mode flag
+    for the device emulator to get around some of the safeguards that a normal device has on ensuring clean data.
     """
     try:
         print(event)
@@ -74,6 +77,11 @@ def upload_device_data(event, context):
         rssi = body.get("rssi")
         rsrp = body.get("rsrp")
         rsrq = body.get("rsrq")
+
+        testFlag = body.get("unitTestMode")
+        testMode = False
+        if testFlag:
+            testMode = True
 
         if not data_points: raise ValueError("Missing required field: data_points")
         if battery is None: raise ValueError("Missing required field: battery")
@@ -134,8 +142,11 @@ def upload_device_data(event, context):
         trail_id = device_trail_results[0]["trail_id"]
         date_installed = device_trail_results[0]["date_installed"]
 
-        minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0,second=0,microsecond=0) + timedelta(hours=1)).timestamp()
-        new_data_points = [data_point for data_point in data_points if data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp", 0) >= minimum_date]
+        if testFlag:
+            new_data_points = data_points
+        else:
+            minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0,second=0,microsecond=0) + timedelta(hours=1)).timestamp()
+            new_data_points = [data_point for data_point in data_points if data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp", 0) >= minimum_date]
 
         if new_data_points:
             new_body = {
