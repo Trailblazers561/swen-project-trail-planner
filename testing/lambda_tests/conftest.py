@@ -151,7 +151,7 @@ def create_tables():
         TABLES["DEVICE_TRAIL_TABLE"],
         "device_id",
         "N",
-        sort_key="id",
+        sort_key="date_installed",
         sort_type="N"
     )
 
