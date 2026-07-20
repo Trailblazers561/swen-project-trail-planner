@@ -137,17 +137,18 @@ def upload_device_data(event, context):
         minimum_date = (datetime.fromtimestamp(int(date_installed)).replace(minute=0,second=0,microsecond=0) + timedelta(hours=1)).timestamp()
         new_data_points = [data_point for data_point in data_points if data_point.get("ts", 0) >= minimum_date or data_point.get("timestamp", 0) >= minimum_date]
 
-        new_body = {
-            "trail_id": trail_id,
-            "device_id": device_id,
-            "battery": battery,
-            "data": new_data_points
-        }
-        new_event = {**event, "body": new_body}
+        if new_data_points:
+            new_body = {
+                "trail_id": trail_id,
+                "device_id": device_id,
+                "battery": battery,
+                "data": new_data_points
+            }
+            new_event = {**event, "body": new_body}
 
-        upload_trail_data_call = upload_trail_data(new_event, context)
-        if upload_trail_data_call["statusCode"] != 200:
-            return upload_trail_data_call
+            upload_trail_data_call = upload_trail_data(new_event, context)
+            if upload_trail_data_call["statusCode"] != 200:
+                return upload_trail_data_call
 
         return {
             "statusCode": 200,
