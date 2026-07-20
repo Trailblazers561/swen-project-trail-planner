@@ -325,3 +325,42 @@ def test_invalid_is_blocked_type_returns_400():
     body = json.loads(response["body"])
 
     assert body["error"] == "is_blocked must be a boolean"
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.device_table, "update_item", raise_error)
+
+    module.device_table.put_item(
+        Item={
+            "id": 1,
+            "name": "Test Device",
+            "is_blocked": False,
+        }
+    )
+
+    module.device_trail_table.put_item(
+        Item={
+            "device_id": 1,
+            "date_installed": 100,
+        }
+    )
+
+    event = {
+        "body": json.dumps({
+            "device_id": 1,
+            "is_blocked": True,
+        })
+    }
+
+    # Act
+    response = module.set_device_blocked(event, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]

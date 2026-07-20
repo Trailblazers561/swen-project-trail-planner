@@ -190,7 +190,7 @@ def test_empty_trail_ids_is_allowed():
     assert created["trail_ids"] == []
 
 
-def test_invalid_json_returns_500():
+def test_invalid_json_returns_400():
     # Arrange
     module = load_module()
 
@@ -207,3 +207,27 @@ def test_invalid_json_returns_500():
     body = json.loads(response["body"])
 
     assert "Expecting property name enclosed in double quotes" in body["error"]
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.area_table, "put_item", raise_error)
+
+    event = {
+        "body": json.dumps({
+            "name": "Empty Trails",
+            "trail_ids": []
+        })
+    }
+
+    # Act
+    response = module.create_area(event, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]

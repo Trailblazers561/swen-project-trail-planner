@@ -146,3 +146,29 @@ def test_retire_area_preserves_other_fields():
     assert item["description"] == "Important"
     assert item["trail_ids"] == []
     assert item["retired"] is True
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    module.area_table.put_item(
+        Item={
+            "name": "Testing Area",
+            "trail_ids": [1, 2],
+            "description": "Important",
+        }
+    )
+
+    monkeypatch.setattr(module.area_table, "query", raise_error)
+
+    response = module.retire_area({
+        "body": json.dumps({"name": "Testing Area"})
+    }, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]

@@ -324,3 +324,29 @@ def test_rename_to_existing_area_returns_400():
     body = json.loads(response["body"])
 
     assert "Already found area" in body["error"]
+
+def test_exception_returns_500(monkeypatch):
+    module = load_module()
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(module.area_table, "put_item", raise_error)
+
+    original_name = AREA_DATA[0]["name"]
+
+    event = {
+        "body": json.dumps({
+            "original_name": original_name,
+            "trail_ids": [11, 22, 33],
+        })
+    }
+
+    # Act
+    response = module.update_area(event, None)
+
+    assert response["statusCode"] == 500
+
+    body = json.loads(response["body"])
+
+    assert "Internal server error" in body["error"]
