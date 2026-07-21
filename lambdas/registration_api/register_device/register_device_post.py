@@ -4,10 +4,12 @@ import json
 import time
 from datetime import datetime, timezone, timedelta
 
+from botocore.exceptions import ClientError
 from cryptography import x509
 import requests
 from boto3.dynamodb.conditions import Key
-from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, get_root_ca_cert, check_ca_health, gen_one_time_token
+from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, \
+    get_root_ca_cert, check_ca_health, gen_one_time_token, device_secret_id, device_log_table
 
 TIMESTAMP_WINDOW = 120  # 2 min buffer from packet send time to parse time
 
@@ -98,7 +100,7 @@ def register_device(event, context):
                 "body": json.dumps({"error": "Device is archived. Registration rejected."})
             }
 
-        device_secret = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
+        device_secret = json.loads(secrets_client.get_secret_value(SecretId=device_secret_id(str(device_name)))["SecretString"])
 
         device_serial = device_secret.get("device_ser_no")
 
@@ -138,7 +140,7 @@ def register_device(event, context):
 
         # upload csr for reuse later
         device_secret["csr"] = csr
-        secrets_client.update_secret(SecretId=str(device_name), SecretString=json.dumps(device_secret))
+        secrets_client.update_secret(SecretId=device_secret_id(str(device_name)), SecretString=json.dumps(device_secret))
 
         cert = x509.load_pem_x509_certificate(data["crt"].encode())
         time_now = int(time.time())
@@ -147,12 +149,36 @@ def register_device(event, context):
         # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
+            UpdateExpression="SET date_cert_issued = :dc, cert_time_to_live = :tl",
             ExpressionAttributeValues={
-                ":dr": time_now,
+                ":dc": time_now,
                 ":tl": time_to_live
             }
         )
+
+        try:
+            registration_table.update_item(
+                Key={"registration_id": reg_items[0]["registration_id"]},
+                UpdateExpression="SET date_registered = :dr",
+                ConditionExpression="date_registered = :presetValue",
+                ExpressionAttributeValues={
+                    ":dr": time_now,
+                    ":presetValue": -1
+                }
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+                # that error was relevant, raise it
+                raise
+            else:
+                # device already registered, ignore and move on
+                pass
+
+        device_log_table.put_item(Item={
+            "device_id": int(item.get("id")),
+            "time": int(str(datetime.now().timestamp())),
+            "log_type": "device_certificate_registration",
+        })
 
         return {
             "statusCode": 200,

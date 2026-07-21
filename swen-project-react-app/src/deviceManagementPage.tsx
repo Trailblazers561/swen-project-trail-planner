@@ -128,15 +128,16 @@ const DeviceManagementPage = () => {
                     <div className="m-4 mb-0 relative">
                         <DeviceDataTable data={devices} loading={false} onRowClick={handleRowClick} />
                         <Button
-                        className="absolute bottom-2 left-2"
+                        className="absolute bottom-30 left-2"
                             variant="primary"
                             onClick={() => {
-                                setSelectedDevice(null);   // 🔥
-                                setIsModalOpen(true);      // 🔥
+                                setSelectedDevice(null);
+                                setIsModalOpen(true);
                             }}
                         >
                             Create Device
                         </Button>
+                        <div className="p-22"></div>
                     </div>
                 )}
             <DeviceModal

@@ -3,7 +3,7 @@ import json
 from boto3.dynamodb.conditions import Key
 
 from helper.helper_functions import registration_table, device_table, cors_headers, get_next_device_id, secrets_client, \
-    get_next_registration_id
+    get_next_registration_id, device_secret_id
 
 
 def pre_register_device(event, context):
@@ -42,7 +42,7 @@ def pre_register_device(event, context):
             new_device_id = get_next_device_id()
 
             secrets_client.create_secret(
-                Name=device_name,
+                Name=device_secret_id(device_name),
                 SecretString=json.dumps({
                     "device_name": device_name,
                     "device_ser_no": device_serial

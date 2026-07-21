@@ -19,6 +19,15 @@ env:
   TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
 
+concurrency:
+  group:  | 
+    ${{ 
+        github.ref_name == 'trailblazers-tst' && 'terraform-tst' ||
+        github.ref_name == 'trailblazers-uat' && 'terraform-uat' ||
+        github.ref_name == 'main' && 'terraform-prod'
+      }}
+  cancel-in-progress: false
+
 jobs:
   terraform-apply:
     name: | 
@@ -42,7 +51,7 @@ jobs:
       TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -68,7 +77,7 @@ jobs:
           cp -r sample_data/* terraform/sample_data/
 
       - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -146,7 +155,7 @@ jobs:
       TF_VAR_deploy_env: '"${{ vars.DEMO_ENV_NAME }}"'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -172,7 +181,7 @@ jobs:
           cp -r sample_data/* terraform/sample_data/
 
       - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

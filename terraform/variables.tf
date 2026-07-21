@@ -5,7 +5,7 @@ variable "deploy_env" {
 
 locals {
   local_run = var.deploy_env == "local"
-  test_run = var.deploy_env == "test"
+  test_run = startswith(var.deploy_env, "test")
   prod_run = var.deploy_env == "prod"
   react_app_directory = local.local_run ? "../swen-project-react-app" : "./swen-project-react-app"
   lambda_code_directory = local.local_run ? "../lambdas" : "./lambdas"
@@ -81,4 +81,14 @@ resource "random_integer" "random_suffix" {
 variable "step_ca_version" {
   type    = string
   default = "0.30.2"
+}
+
+variable "fire_up_CA" {
+  description = "Activate to build the full certificate authority, including the EC2 and the VPC endpoints to access it. EXPENSIVE, should not be on for non demo/prod environments with the exception of running tests."
+  type = bool
+  default = false
+}
+
+locals {
+  enable_CA_resources = contains(["demo", "prod"], var.deploy_env) || var.fire_up_CA
 }

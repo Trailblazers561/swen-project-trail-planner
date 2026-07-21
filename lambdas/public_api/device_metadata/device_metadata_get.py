@@ -1,6 +1,6 @@
 import json
 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 
 from helper.helper_functions import dynamodb, device_table, device_log_table, device_trail_table, registration_table, convert_decimals, cors_headers
 
@@ -31,7 +31,7 @@ def get_device_metadata(event, context):
         print(f"Successfully found device metadata [{items[:3]}], attempting to append additional information")
 
         # Retrieve and add additional fields from DeviceTrail table information 
-        desired_device_trail_fields = ["trail_id", "notes", "date_installed", "date_removed"]
+        desired_device_trail_fields = ["trail_id", "notes", "date_associated", "date_installed", "date_removed"]
         for item in items:
             device_trails_result = device_trail_table.query(
                 KeyConditionExpression=Key("device_id").eq(item["id"]),
@@ -43,6 +43,8 @@ def get_device_metadata(event, context):
             if len(device_trails_result):
                 if not device_trails_result[0].get("date_removed"):
                     item["current_trail_id"] = device_trails_result[0]["trail_id"]
+                    if device_trails_result[0].get("date_installed"):
+                        item["date_installed"] = device_trails_result[0]["date_installed"]
 
             registration_result = registration_table.query(
                 IndexName="device-index",
@@ -53,14 +55,28 @@ def get_device_metadata(event, context):
                 item["registration_id"] = registration_result[0]["registration_id"]
                 item["date_registered"] = registration_result[0]["date_registered"]
 
-            device_log_result = device_log_table.query(
+            device_log_latest_result = device_log_table.query(
                 KeyConditionExpression=Key("device_id").eq(item["id"]),
                 Limit=1,
                 ScanIndexForward=False
             ).get("Items", [])
-            if device_log_result:
-                item["battery"] = device_log_result[0]["battery"]
-                item["last_updated"] = device_log_result[0]["time"]
+            if device_log_latest_result:
+                item["last_updated"] = device_log_latest_result[0]["time"]
+                if device_log_latest_result[0].get("battery"):
+                    item["battery"] = device_log_latest_result[0]["battery"]
+                    item["firmware_version"] = device_log_latest_result[0].get("firmware_version", "")
+                else:
+                    device_log_battery_result = device_log_table.query(
+                        KeyConditionExpression=Key("device_id").eq(item["id"]),
+                        FilterExpression=(
+                            Attr("log_type").eq("data_upload")
+                        ),
+                        Limit=1,
+                        ScanIndexForward=False
+                    ).get("Items", [])
+                    if device_log_battery_result:
+                        item["battery"] = device_log_battery_result[0].get("battery")
+                        item["firmware_version"] = device_log_battery_result[0].get("firmware_version", "")
 
         print(f"Successfully appended device metadata [{items[:3]}]")
         return {

@@ -6,7 +6,8 @@ import time
 
 from cryptography import x509
 from boto3.dynamodb.conditions import Key
-from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, get_root_ca_cert, check_ca_health, gen_one_time_token
+from helper.helper_functions import device_table, registration_table, cors_headers, secrets_client, CA_URL, \
+    get_root_ca_cert, check_ca_health, gen_one_time_token, device_secret_id, device_log_table
 
 
 def renew_certificate(event, context):
@@ -77,7 +78,10 @@ def renew_certificate(event, context):
                 "body": json.dumps({"error": "Device is archived. Renewal rejected."})
             }
 
-        device_secrets = json.loads(secrets_client.get_secret_value(SecretId=str(device_name))["SecretString"])
+        if not reg_items[0].get("date_cert_issued"):
+            raise ValueError("Device has not been issued a certificate yet, try registering the device before attempting a renewal")
+
+        device_secrets = json.loads(secrets_client.get_secret_value(SecretId=device_secret_id(str(device_name)))["SecretString"])
         device_serial = device_secrets.get("device_ser_no")
         csr = device_secrets.get("csr")
 
@@ -117,12 +121,18 @@ def renew_certificate(event, context):
         # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), cert_time_to_live = :tl",
+            UpdateExpression="SET date_cert_issued = :dc, cert_time_to_live = :tl",
             ExpressionAttributeValues={
-                ":dr": time_now,
+                ":dc": time_now,
                 ":tl": time_to_live
             }
         )
+
+        device_log_table.put_item(Item={
+            "device_id": int(item.get("id")),
+            "time": int(str(datetime.now().timestamp())),
+            "log_type": "device_certificate_renewal",
+        })
 
         return {
             "statusCode": 200,

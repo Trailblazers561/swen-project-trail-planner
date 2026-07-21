@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { TrailData } from "./api";
 import UserDataTable from "./components/tables/UserDataTable";
 import type { UserRow } from "./components/tables/UserDataTable";
-import AccountDataTable from "./components/tables/AccountDataTable";
+import AccountDataTable from "./components/modals/UserDataModal";
 import { useMediaQuery } from "react-responsive";
 import { Role, useAuth } from "./AuthContext";
 
@@ -27,11 +27,11 @@ type DeviceType = {
   }
 
   const Desktop = ({children}: DeviceType) => {
-    const isDesktop = useMediaQuery({ minWidth: 500 })
+    const isDesktop = useMediaQuery({ minWidth: 1024 })
     return isDesktop ? children : null
   }
   const Mobile = ({children}: DeviceType) => {
-    const isMobile = useMediaQuery({maxWidth: 499})
+    const isMobile = useMediaQuery({maxWidth: 1023})
     return isMobile ? children: null
   }
 
@@ -82,10 +82,13 @@ const Privileges = () => {
                     filteredUsers
                 );
                 
-                const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
-                console.log(newSelectedUser);
-                if (newSelectedUser != undefined) {
-                    setSelectedUser([newSelectedUser]);
+                //Only reloads selectedUser if a user is selected (when the modal is open)
+                if (selectedUser[0] != undefined) {
+                    const newSelectedUser = filteredUsers.find((user) => user.user_id === selectedUser[0].user_id);
+                    console.log(newSelectedUser);
+                    if (newSelectedUser != undefined) {
+                        setSelectedUser([newSelectedUser]);
+                    }
                 }
                 
             }

@@ -5,6 +5,7 @@ import { Button } from '../templates/button';
 import DeviceLogTable from "../tables/DeviceLogTable";
 import { EllipsisVertical, LoaderCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from "../templates/dropdown-menu"
+import { DeviceLogType } from '@/lib/apiTypes';
 
 
 interface Device {
@@ -16,6 +17,7 @@ interface Device {
   date_manufactured?: number;
   date_retired?: number;
   current_trail_id?: number;
+  date_installed?: number;
   battery?: number;
   firmware_version?: string;
   is_blocked?: boolean;
@@ -25,12 +27,13 @@ interface Device {
 interface DeviceLog {
   device_id: number;
   time: number;
-  battery: number;
-  firmware_version: string;
-  count: number;
-  rssi: number;
-  rsrp: number;
-  rsrq: number;
+  log_type: DeviceLogType;
+  firmware_version: string | null;
+  battery: number | null;
+  rssi: number | null;
+  rsrp: number | null;
+  rsrq: number | null;
+  count: number | null;
 }
 
 interface Trail {
@@ -43,6 +46,7 @@ enum DeviceAction {
   SETUP_DEVICE,
   VIEW_LOGS,
   ASSOCIATE_TRAIL,
+  INSTALL_DEVICE,
   EDIT_INFORMATION,
   ARCHIVE_DEVICE,
   BLOCK_DEVICE,
@@ -58,10 +62,12 @@ interface ActionsDropdownProps {
 
 function ActionsDropdown({currentAction, device, setCurrentAction}: ActionsDropdownProps) {
   const actionList: DeviceAction[] = [];
-  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.current_trail_id && device.current_trail_id !== 0)
+  if (currentAction !== DeviceAction.VIEW_LOGS && device && device.date_registered && device.date_registered !== -1)
     actionList.push(DeviceAction.VIEW_LOGS);
-  if (currentAction !== DeviceAction.ASSOCIATE_TRAIL)
+  if (currentAction !== DeviceAction.ASSOCIATE_TRAIL && currentAction !== DeviceAction.INSTALL_DEVICE)
     actionList.push(DeviceAction.ASSOCIATE_TRAIL);
+  if (currentAction !== DeviceAction.INSTALL_DEVICE && currentAction !== DeviceAction.ASSOCIATE_TRAIL)
+    actionList.push(DeviceAction.INSTALL_DEVICE);
   if (currentAction !== DeviceAction.EDIT_INFORMATION)
     actionList.push(DeviceAction.EDIT_INFORMATION);
   if (currentAction !== DeviceAction.ARCHIVE_DEVICE)
@@ -144,6 +150,8 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
     setNotes("");
     setCurrentAction(null);
     setLoading(true);
+    setError("");
+    setSuccess(""); 
   };
 
   const loadData = async () => {
@@ -155,7 +163,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
 
         if (deviceResponse.success && deviceLogResponse.success && trailsResponse.success) {
           const deviceData: Device[] = await deviceResponse.json;
-          const deviceLogData = await deviceLogResponse.json;
+          const deviceLogData: DeviceLog[] = await deviceLogResponse.json;
           const trailsData = await trailsResponse.json;
 
           if (deviceData.length) {
@@ -172,11 +180,18 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               setCurrentAction(DeviceAction.SETUP_DEVICE);
             } else if (!deviceData[0]?.current_trail_id || deviceData[0]?.current_trail_id === 0) {
               setCurrentAction(DeviceAction.ASSOCIATE_TRAIL);
+            } else if (deviceData[0]?.current_trail_id && !deviceData[0]?.date_installed) {
+              setCurrentAction(DeviceAction.INSTALL_DEVICE);
             } else {
               setCurrentAction(DeviceAction.VIEW_LOGS);
             }
           }
-          setDeviceLogs(deviceLogData);
+          setDeviceLogs(deviceLogData.map(log => {
+            return {
+                ...log,
+                log_type: Object.values(DeviceLogType).includes(log.log_type as DeviceLogType) ? log.log_type : DeviceLogType.Unknown,
+            };
+          }));
           setTrails(trailsData);
         } else {
           setCurrentAction(null);
@@ -313,6 +328,29 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           const errorData = await response.json;
           setError(errorData.error || 'Failed to update device trail association');
         }
+      } else if (currentAction === DeviceAction.INSTALL_DEVICE) {
+        if (!device?.id) {
+          setError("Unable to find device id");
+          return;
+        }
+        if (!device?.current_trail_id) {
+          setError('Could not find trail to mark device installed on.');
+          return;
+        }
+        const response = await updateDeviceTrailAssociation(device?.id, device?.current_trail_id);
+
+        if (response.success) {
+          setSuccess('Device marked installed successfully!');
+          setTimeout(() => {
+            onUpdate();
+            onClose();
+            setSuccess(null);
+            refreshVariables();
+          }, 1500);
+        } else {
+          const errorData = await response.json;
+          setError(errorData.error || 'Failed to mark device as installed');
+        }
       } else if (currentAction === DeviceAction.EDIT_INFORMATION) {
         setError("This feature is not yet implemented, sorry!");
       } else if (currentAction === DeviceAction.ARCHIVE_DEVICE) {
@@ -416,6 +454,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 <div className="font-primary text-white font-semibold text-xl">{deviceId === 0 ? "Create Device" : "Manage Device"}</div>
                 {deviceId !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Device ID: {deviceId}</div>)}
                 {device && device?.current_trail_id && device?.current_trail_id !== 0 && (<div className="font-primary text-[#bbb] font-semibold">Current Trail: {getTrailName(device?.current_trail_id ?? 0)}</div>)}
+                {deviceId !==0 && (<div className="font-primary text-[#bbb] font-semibold break-all">Device Name: {deviceName}</div>)}
             </div>
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
@@ -423,7 +462,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
           <div className="modal-body min-h-50 relative">
             {currentAction === DeviceAction.CREATE_DEVICE && (
               <div className="flex flex-col items-center">
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-name">Device Name: <span style={{ color: 'red' }}>*</span></label>
                   <input
                     id="device-name"
@@ -435,7 +474,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-serial">Device Serial: <span style={{ color: 'red' }}>*</span></label>
                   <input
                     id="device-serial"
@@ -452,7 +491,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             {currentAction === DeviceAction.SETUP_DEVICE && (
               <div className="flex flex-col items-center">
                 <span className="font-bold text-xl mb-5">Please perform device setup process to associate this device.</span>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-name">Device Name:</label>
                   <input
                     id="device-name"
@@ -463,7 +502,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                     autoComplete="off"
                   />
                 </div>
-                <div className="form-group w-150">
+                <div className="form-group w-7/8 lg:w-150">
                   <label htmlFor="device-serial">Device Serial:</label>
                   <input
                     id="device-serial"
@@ -485,7 +524,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             {currentAction === DeviceAction.ASSOCIATE_TRAIL && (
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.ASSOCIATE_TRAIL} device={device} setCurrentAction={setCurrentAction}/>
-                <div className="form-group w-150 m-auto">
+                <div className="form-group w-7/8 lg:w-150 m-auto">
                   <label htmlFor="trail-select">Select Trail:</label>
                   <select
                     id="trail-select"
@@ -503,10 +542,18 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
                 </div>
               </div>
             )}
+            {currentAction === DeviceAction.INSTALL_DEVICE && (
+              <div className="w-full flex flex-col justify-center">
+                <ActionsDropdown currentAction={DeviceAction.INSTALL_DEVICE} device={device} setCurrentAction={setCurrentAction}/>
+                <div className="form-group w-150 m-auto">
+                  <span className="font-bold text-xl mb-5">Mark this device as installed to begin collecting data.</span>
+                </div>
+              </div>
+            )}
             {currentAction === DeviceAction.EDIT_INFORMATION && (
               <div className="w-full flex flex-col justify-center">
                 <ActionsDropdown currentAction={DeviceAction.EDIT_INFORMATION} device={device} setCurrentAction={setCurrentAction}/>
-                <div className="form-group w-150 m-auto">
+                <div className="form-group w-7/8 lg:w-150 m-auto">
                   <label htmlFor="notes">Notes (optional):</label>
                   <textarea
                     id="notes"
@@ -555,7 +602,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
               <LoaderCircle
                 size={80}
                 strokeWidth={2}
-                className="absolute left-1/2 -translate-x-1/2 top-1/4 z-10000000 animate-spin text-navbar"
+                className="absolute left-1/2 -translate-x-1/2 top-1/4 z-50 animate-spin text-navbar"
               />
             )}
             {error && <div className="error-message">{error}</div>}
@@ -590,6 +637,13 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             <div className="modal-footer">
               <Button variant="primary" disabled={submitting}>
                 {submitting ? 'Associating...' : 'Associate Device'}
+              </Button>
+            </div>
+          )}
+          {currentAction === DeviceAction.INSTALL_DEVICE && (
+            <div className="modal-footer">
+              <Button variant="primary" disabled={submitting}>
+                {submitting ? 'Marking Installed...' : 'Mark Installed'}
               </Button>
             </div>
           )}
