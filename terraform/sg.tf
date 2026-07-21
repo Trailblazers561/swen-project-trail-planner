@@ -19,7 +19,7 @@ resource "null_resource" "detach_lambda_sg" {
     command    = <<EOT
 import sys, subprocess, json
 
-lambda_names = json.loads("${self.triggers.lambda_names}")
+lambda_names = json.loads("""${self.triggers.lambda_names}""")
 
 for lambda in lambda_names:
     print(f"Detaching VPC Configuration From [lambda]")
