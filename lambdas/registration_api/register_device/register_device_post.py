@@ -3,8 +3,8 @@ import hmac
 import json
 import time
 from datetime import datetime, timezone, timedelta
-from decimal import Decimal
 
+from botocore.exceptions import ClientError
 from cryptography import x509
 import requests
 from boto3.dynamodb.conditions import Key
@@ -149,17 +149,34 @@ def register_device(event, context):
         # registration table functionality
         registration_table.update_item(
             Key={"registration_id": reg_items[0]["registration_id"]},
-            UpdateExpression="SET date_registered = if_not_exists(date_registered, :dr), date_cert_issued = :dc, cert_time_to_live = :tl",
+            UpdateExpression="SET date_cert_issued = :dc, cert_time_to_live = :tl",
             ExpressionAttributeValues={
-                ":dr": time_now,
                 ":dc": time_now,
                 ":tl": time_to_live
             }
         )
 
+        try:
+            registration_table.update_item(
+                Key={"registration_id": reg_items[0]["registration_id"]},
+                UpdateExpression="SET date_registered = :dr",
+                ConditionExpression="date_registered = :presetValue",
+                ExpressionAttributeValues={
+                    ":dr": time_now,
+                    ":presetValue": -1
+                }
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+                # that error was relevant, raise it
+                raise
+            else:
+                # device already registered, ignore and move on
+                pass
+
         device_log_table.put_item(Item={
             "device_id": int(item.get("id")),
-            "time": Decimal(str(datetime.now().timestamp())),
+            "time": int(str(datetime.now().timestamp())),
             "log_type": "device_certificate_registration",
         })
 

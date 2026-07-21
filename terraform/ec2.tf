@@ -132,8 +132,15 @@ else
   openssl rand -base64 32 > /opt/ca_instance/intermediate_password
   chmod 644 /opt/ca_instance/intermediate_password
 
+  # create token to access ec2's local api that stores some relevant data pieces
+  # relevant due to certain prots that may or may not be present, better to be safe in case of changes
+  TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+  # grab our instance ip(can't access it through other means until this is created which obviously isnt practical)
+  PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+
   # initialize step-ca
-  docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "YourOrg CA" --dns "localhost" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
+  docker run --rm -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step ca init --name "TrailCount CA" --dns "localhost,$PRIVATE_IP" --address ":9000" --provisioner "device-provisioner" --password-file "/home/step/password" --provisioner-password-file "/home/step/password"
   # change intermediate key password
   docker run --rm -e TERM=dumb -v /opt/ca_instance:/home/step ${aws_ecr_repository.step_ca.repository_url}:${var.step_ca_version} step crypto change-pass /home/step/secrets/intermediate_ca_key --password-file /home/step/password --new-password-file /home/step/intermediate_password --force
 

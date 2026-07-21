@@ -1,5 +1,4 @@
 from datetime import datetime, timezone, timedelta
-from decimal import Decimal
 
 import requests
 import json
@@ -131,7 +130,7 @@ def renew_certificate(event, context):
 
         device_log_table.put_item(Item={
             "device_id": int(item.get("id")),
-            "time": Decimal(str(datetime.now().timestamp())),
+            "time": int(str(datetime.now().timestamp())),
             "log_type": "device_certificate_renewal",
         })
 
