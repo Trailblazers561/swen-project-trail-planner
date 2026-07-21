@@ -89,7 +89,12 @@ print("ENI deletion successful")
 EOT
   }
 
-  depends_on = [aws_subnet.private_subnet, aws_security_group.ca_sg]
+  depends_on = [
+    aws_subnet.private_subnet,
+    aws_security_group.ca_sg,
+    aws_lambda_function.device_registration_api_lambdas,
+    aws_lambda_function.device_api_lambdas
+  ]
 }
 
 resource "aws_security_group" "vpce_sg" {
