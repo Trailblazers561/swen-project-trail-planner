@@ -10,6 +10,7 @@ locals {
 resource "null_resource" "detach_lambda_sg" {
   triggers = {
     lambda_names = jsonencode(local.ca_lambda_names)
+    region = data.aws_region.current.name
   }
   count = local.enable_CA_resources ? 1 : 0
 
@@ -18,19 +19,18 @@ resource "null_resource" "detach_lambda_sg" {
     interpreter = ["python3", "-c"]
     command    = <<EOT
 import sys, subprocess, json
-
+region = "${self.triggers.region}"
 lambda_names = json.loads("""${self.triggers.lambda_names}""")
+for lambda_name in lambda_names:
+    print(f"Detaching VPC Configuration From [lambda_name]")
 
-for lambda in lambda_names:
-    print(f"Detaching VPC Configuration From [lambda]")
-
-    result = subprocess.run(["aws", "lambda", "update-function-configuration", "--function-name", lambda, "--vpc-config", "SubnetIds=[],SecurityGroupIds=[]"], capture_output=True, text=True)
+    result = subprocess.run(["aws", "lambda", "update-function-configuration", "--function-name", lambda_name, "--vpc-config", "SubnetIds=[],SecurityGroupIds=[]", "--output", "json", "--region", region], capture_output=True, text=True)
     if result.returncode != 0:
         print("update-function-configuration function failed")
         print(result.stderr, file=sys.stderr)
         sys.exit(1)
 
-    print(f"Finished Detaching [lambda]")
+    print(f"Finished Detaching [lambda_name]")
 
 print("All Lambda VPC Configurations Detached")
 EOT
