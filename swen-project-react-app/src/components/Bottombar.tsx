@@ -2,17 +2,21 @@ import { Role, useAuth } from "@/AuthContext";
 import { Link } from "react-router-dom";
 import "./Bottombar.css";
 import { useMediaQuery } from "react-responsive";
+import home from "@/assets/images/home_icon.png";
+import dashboard from "@/assets/images/dashboard_icon.png";
+import device from "@/assets/images/device_icon.png";
+import privileges from "@/assets/images/privileges_icon.png";
 
 type DeviceType = {
 children: React.ReactNode;
 }
 
 const Desktop = ({children}: DeviceType) => {
-const isDesktop = useMediaQuery({ minWidth: 500 })
+const isDesktop = useMediaQuery({ minWidth: 769 })
 return isDesktop ? children : null
 }
 const Mobile = ({children}: DeviceType) => {
-const isMobile = useMediaQuery({maxWidth: 499})
+const isMobile = useMediaQuery({maxWidth: 768})
 return isMobile ? children: null
 }
 
@@ -21,12 +25,20 @@ function Bottombar() {
     return (
         <Mobile>
             <nav className="fixed bottom-0 w-full bg-white shadow-md z-50 mb-20px z-[1000]" id="navbar">
-                <div className="bottom-0 h-24 bg-navbar text-white flex items-center justify-between p-2">
-                    <div className="flex items-center gap-2 w-full">  
-                        <Link className="color-blue" to="/home">Home</Link>
-                        <Link to="/dashboard">Dashboard</Link>
-                        {(currentRole === Role.Manager || currentRole === Role.Admin || currentRole === Role.Root) && <Link to="/devices">Device Management</Link>}
-                        {(currentRole === Role.Admin || currentRole === Role.Root) && <Link to="/privileges">Privileges</Link>}
+                <div className="bottom-0 h-24 bg-navbar text-white flex items-center justify-between">
+                    <div className="flex items-center justify-center gap-4 w-full">  
+                        <Link className="color-blue w-3/16 max-w-24" to="/home">
+                            <img src={home} alt="home"/>
+                        </Link>
+                        <Link className="w-3/16 max-w-24" to="/dashboard">
+                            <img src={dashboard} alt="home"/>
+                        </Link>
+                        {(currentRole === Role.Manager || currentRole === Role.Admin || currentRole === Role.Root) && <Link className="w-3/16 max-w-24" to="/devices">
+                            <img src={device} alt="home"/>
+                        </Link>}
+                        {(currentRole === Role.Admin || currentRole === Role.Root) && <Link className="w-3/16 max-w-24" to="/privileges">
+                            <img src={privileges} alt="home"/>
+                        </Link>}
                     </div>
                 </div>
             </nav>

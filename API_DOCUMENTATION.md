@@ -214,9 +214,7 @@ Content-Type: application/json
 ```json
 {
   "device_id": 1,
-  "trail_id": 1,
-  "date_installed": "2026-01-01",
-  "date_removed": "2026-01-01"
+  "trail_id": 1
 }
 ```
 

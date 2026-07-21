@@ -18,6 +18,15 @@ env:
   TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
   TF_VAR_user_passwords: '"${{ secrets.USER_PASSWORDS }}"'
 
+concurrency:
+  group: | 
+    ${{ 
+        github.base_ref == 'trailblazers-tst' && 'terraform-tst' ||
+        github.base_ref == 'trailblazers-uat' && 'terraform-uat' ||
+        github.base_ref == 'main' && 'terraform-prod'
+      }}
+  cancel-in-progress: false
+  
 jobs:
   terraform-plan:
     name: | 
@@ -42,7 +51,7 @@ jobs:
       TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -90,7 +99,7 @@ jobs:
           plan: ${{ fromJSON(steps.plan-run.outputs.payload).data.relationships.plan.data.id }}
 
       - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

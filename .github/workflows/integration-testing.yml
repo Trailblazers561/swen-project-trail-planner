@@ -10,27 +10,90 @@ on:
 env:
   TF_CLOUD_ORGANIZATION: "Trailblazers"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "test-workplace"
-  TF_WORKSPACE_ID: "ws-LG99RLWhhrv1UV1y"
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
-  TF_VAR_deploy_env: '"test"'
   CONFIG_DIRECTORY: "./terraform"
-  TF_VAR_ses_identity_arn: '"${{vars.SES_IDENTITY_ARN}}"'
+  TEST_WORKSPACES: ${{ vars.TEST_WORKSPACES }}
+  TF_VAR_acm_certificate_arn: '"${{vars.DOMAIN_CERTIFICATE_ARN}}"'
+  TF_VAR_ses_identity_arn: '"${{  vars.SES_IDENTITY_ARN  }}"'
   TF_VAR_step_ca_version: '"${{ vars.STEP_CA_VERSION }}"'
+  TF_VAR_fire_up_CA: true
+
+concurrency:
+  group:  testing-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
-  terraform:
-    name: "Integration Testing"
+  create-update-env:
+    name: Integration Testing
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
       actions: read
+
     steps:
+      - name: Claim Test Workspace
+        id: obtain-env
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.VARIABLE_ACCESS_TOKEN }}
+          script: |
+            const testWorkspaces = JSON.parse(process.env.TEST_WORKSPACES);
+            const pr = context.payload.pull_request.number;
+
+            // Check If PR Already Owns A Workspace
+            for (const [env, workspace] of Object.entries(testWorkspaces)) {
+              if (workspace.pr === pr) {
+                core.setOutput("envName", env);
+                core.setOutput("workspace_name", workspace.workspace_name);
+                core.setOutput("workspace_id", workspace.workspace_id);
+                return;
+              }
+            }
+
+            // Find And Claim Availible Workspace
+            let envName = null;
+            let workspace = null;
+
+            for (const [env, value] of Object.entries(testWorkspaces)) {
+              if (value.pr === null) {
+                value.pr = pr;
+                envName = env;
+                workspace = value;
+                break;
+              }
+            }
+
+            // No Workspace Free
+            if (!workspace) {
+              core.setFailed("No available test workspace.");
+              return;
+            }
+
+            // Update Repo Variable To Claim Workspace
+            await github.rest.actions.updateRepoVariable({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "TEST_WORKSPACES",
+              value: JSON.stringify(testWorkspaces),
+            });
+
+            // Set Outputs
+            core.setOutput("envName", envName);
+            core.setOutput("workspace_name", workspace.workspace_name);
+            core.setOutput("workspace_id", workspace.workspace_id);
+            core.info(`Claimed ${envName} For PR #${pr}.`);
+
+      - name: Export Variables
+        run: |
+          echo 'TF_VAR_deploy_env="${{ steps.obtain-env.outputs.envName }}"' >> "$GITHUB_ENV"
+          echo 'TF_WORKSPACE=${{ steps.obtain-env.outputs.workspace_name }}' >> "$GITHUB_ENV"
+          echo 'TF_WORKSPACE_ID=${{ steps.obtain-env.outputs.workspace_id }}' >> "$GITHUB_ENV"
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -58,7 +121,7 @@ jobs:
           cp -r sample_data/* terraform/sample_data/
 
       - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -104,6 +167,7 @@ jobs:
           cat /tmp/ecr_done 2>/dev/null || echo "not written yet"
           echo "=== ECR push log ==="
           cat /tmp/ecr_push.log 2>/dev/null || echo "no log yet"
+        if: ${{ always() }}
 
       - name: Wait for ECR Push
         run: |
@@ -118,6 +182,15 @@ jobs:
             exit 1
           fi
           echo "ECR push completed successfully"
+
+      - name: Get Website URL
+        run: |
+          WEBSITE_URL=$(curl -s \
+          -H "Authorization: Bearer ${{ secrets.TF_API_ORG_TOKEN }}" \
+          -H "Content-Type: application/vnd.api+json" \
+          "https://app.terraform.io/api/v2/workspaces/${{ env.TF_WORKSPACE_ID }}/current-state-version?include=outputs" \
+          | jq -r '.included[] | select(.type == "state-version-outputs" and .attributes.name == "website_url") | .attributes.value')
+          echo "WEBSITE_URL=$WEBSITE_URL" >> "$GITHUB_ENV"
 
       - name: Add React Files To React Bucket
         run: |
@@ -147,17 +220,17 @@ jobs:
 
       - name: Run API Tests
         run: pytest -s tests/api_tests -m API --doctest-modules --junitxml=junit/test-results-api.xml --cov=com --cov-report=xml --cov-report=html
-        if: ${{ always() }}
+        if: ${{ always() && steps.apply.outcome == 'success' }}
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
             name: pytest-results
             path: junit/test-results-*.xml
-        if: ${{ always() }}
+        if: ${{ always() && steps.apply.outcome == 'success' }}
 
       - name: Upload Error Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
             name: error-screenshots
             path: tests/ui_tests/errors/*.png
@@ -233,6 +306,7 @@ jobs:
             ${passed} passed, ${failed} failed, ${errored} errored, ${skipped} skipped, in ${time}s
             \`\`\`
             [Test Results](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            [Environment URL](${{ env.WEBSITE_URL }})
             `;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -242,16 +316,21 @@ jobs:
             });
         if: ${{ always() }}
 
-      - name: Create Destroy Run
-        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
-        id: destroy-run
-        with:
-          workspace: ${{ env.TF_WORKSPACE }}
-          is_destroy: true
+      - name: Export Variables
+        run: echo 'TF_VAR_fire_up_CA=false' >> "$GITHUB_ENV"
         if: ${{ always() }}
 
-      - name: Destroy
-        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+      - name: Create Apply Run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@v1.3.0
+        id: apply-run-two
         with:
-          run: ${{ steps.destroy-run.outputs.run_id }}
-        if: ${{ always() && fromJSON(steps.destroy-run.outputs.payload).data.attributes.actions.IsConfirmable }}
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
+        if: ${{always() }}
+
+      - name: Apply
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
+        if: fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable
+        id: apply-two
+        with:
+          run: ${{ steps.apply-run-two.outputs.run_id }}

@@ -1,24 +1,102 @@
 import React, { useState } from "react";
-import DataTable, { TableColumn } from "react-data-table-component";
+import DataTable, { type TableColumn, type ExpanderComponentProps } from "react-data-table-component";
 import moment from "moment-timezone";
 import { CircleQuestionMark } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useMediaQuery } from "react-responsive";
 
+import { DeviceLogType, DeviceLogMap } from "@/lib/apiTypes";
 
 interface DeviceLogRow {
   time: number;
+  log_type: DeviceLogType;
   firmware_version: string | null;
   battery: number | null;
   rssi: number | null;
   rsrp: number | null;
   rsrq: number | null;
-  count: number;
+  count: number | null;
+}
+
+interface Row {
+  row: DeviceLogRow;
 }
 
 interface TooltipHeaderProps {
   label: string;
   expanded: string;
   description: string;
+}
+
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+const Desktop = ({children}: DeviceType) => {
+  const isDesktop = useMediaQuery({ minWidth: 1024 })
+  return isDesktop ? children : null
+}
+const Mobile = ({children}: DeviceType) => {
+  const isMobile = useMediaQuery({maxWidth: 1023})
+  return isMobile ? children: null
+}
+
+function FontColorRSSI({row}: Row) {
+  
+  let rssiClass = "";
+  if (row.rssi === null)
+    rssiClass = "";
+
+  else {
+
+    if (row.rssi >= -65) {
+      rssiClass = "text-green-700";
+    } else if (row.rssi >= -80) {
+      rssiClass = "text-orange-600";
+    } else {
+      rssiClass = "text-red-600";
+    }
+  }
+  
+  return rssiClass;
+}
+
+function FontColorRSRP({row}: Row) {
+
+  let rsrpClass = "";
+
+  if (row.rsrp === null)
+    rsrpClass = "";
+  else {
+    if (row.rsrp >= -85) {
+      rsrpClass = "text-green-700";
+    } else if (row.rsrp >= -100) {
+      rsrpClass = "text-orange-600";
+    } else {
+      rsrpClass = "text-red-600";
+    }
+  }
+
+  return rsrpClass;
+}
+
+function FontColorRSRQ({row}: Row) {
+
+  let rsrqClass = "";
+
+  if (row.rsrq === null)
+    rsrqClass = "";
+
+  else {
+    if (row.rsrq >= -7) {
+      rsrqClass = "text-green-700";
+    } else if (row.rsrq >= -11) {
+      rsrqClass = "text-orange-600";
+    } else {
+      rsrqClass = "text-red-600";
+    }
+  }
+  return rsrqClass;
 }
 
 function TooltipHeader({label, expanded, description}: TooltipHeaderProps) {
@@ -44,7 +122,7 @@ function TooltipHeader({label, expanded, description}: TooltipHeaderProps) {
       {showTooltip &&
         createPortal(
           <div
-            className="fixed z-1000 bg-[#e9f2f1] text-[rgba(0,0,0,0.87)] rounded-xl px-3 py-2 w-75"
+            className="fixed z-1000 bg-[#e9f2f1] text-[rgba(0,0,0,0.87)] rounded-xl px-3 py-2 w-60 lg:w-75"
             style={{
               left: tooltipPosition.x,
               top: tooltipPosition.y - 15,
@@ -74,15 +152,26 @@ const columns: TableColumn<DeviceLogRow>[] = [
     center: true,
   },
   {
-    name: "Firmware",
-    selector: (row) => row.firmware_version ?? "",
+    name: "Log Type",
     center: true,
+    cell: (row) => {
+      return <span>{DeviceLogMap[row.log_type]}</span>;
+    },
+  },
+  {
+    name: "Firmware",
+    center: true,
+    cell: (row) => {
+      if (!row.firmware_version)
+        return <span className="text-gray-400">N/A</span>;
+      return <span>{row.count}</span>;
+    },
   },
   {
     name: "Battery",
     center: true,
     cell: (row) => {
-      if (row.battery === null)
+      if (row.battery === null || row.battery === undefined)
         return <span className="text-gray-400">N/A</span>;
 
       let batteryClass = "";
@@ -106,18 +195,10 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />,
     center: true,
     cell: (row) => {
-      if (row.rssi === null)
+      if (row.rssi === null || row.rssi === undefined)
         return <span className="text-gray-400">N/A</span>;
 
-      let rssiClass = "";
-
-      if (row.rssi >= -65) {
-        rssiClass = "text-green-700";
-      } else if (row.rssi >= -80) {
-        rssiClass = "text-orange-600";
-      } else {
-        rssiClass = "text-red-600";
-      }
+      let rssiClass = FontColorRSSI({row})
 
       return (
         <span className={rssiClass}>
@@ -130,18 +211,10 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower." />,
     center: true,
     cell: (row) => {
-      if (row.rsrp === null)
+      if (row.rsrp === null || row.rsrp === undefined)
         return <span className="text-gray-400">N/A</span>;
 
-      let rsrpClass = "";
-
-      if (row.rsrp >= -85) {
-        rsrpClass = "text-green-700";
-      } else if (row.rsrp >= -100) {
-        rsrpClass = "text-orange-600";
-      } else {
-        rsrpClass = "text-red-600";
-      }
+      let rsrpClass = FontColorRSRP({row})
 
       return (
         <span className={rsrpClass}>
@@ -154,18 +227,10 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />,
     center: true,
     cell: (row) => {
-      if (row.rsrq === null)
+      if (row.rsrq === null || row.rsrq === undefined)
         return <span className="text-gray-400">N/A</span>;
 
-      let rsrqClass = "";
-
-      if (row.rsrq >= -7) {
-        rsrqClass = "text-green-700";
-      } else if (row.rsrq >= -11) {
-        rsrqClass = "text-orange-600";
-      } else {
-        rsrqClass = "text-red-600";
-      }
+      let rsrqClass = FontColorRSRQ({row})
 
       return (
         <span className={rsrqClass}>
@@ -176,8 +241,12 @@ const columns: TableColumn<DeviceLogRow>[] = [
   },
   {
     name: "Count",
-    selector: (row) => row.count,
     center: true,
+    cell: (row) => {
+      if (row.count === null || row.count === undefined)
+        return <span className="text-gray-400">N/A</span>;
+      return <span>{row.count}</span>;
+    },
   }
 ];
 
@@ -217,6 +286,106 @@ const customStyles = {
   },
 };
 
+const columnsMobile: TableColumn<DeviceLogRow>[] = [
+  {
+    name: "Date / Time",
+    selector: (row) => moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A"),
+    grow: 2,
+    center: true,
+    minWidth: "120px",
+  },
+  {
+    name: "Battery",
+    center: true,
+    grow: 1,
+    compact: true,
+    minWidth: "45px",
+    cell: (row) => {
+      if (row.battery === null)
+        return <span className="text-gray-400">N/A</span>;
+
+      let batteryClass = "";
+
+      if (row.battery > 50) {
+        batteryClass = "text-green-700";
+      } else if (row.battery > 20) {
+        batteryClass = "text-orange-600";
+      } else {
+        batteryClass = "text-red-600";
+      }
+
+      return (
+        <span className={batteryClass}>
+          {row.battery}%
+        </span>
+      );
+    },
+  },
+  {
+    name: "Count",
+    selector: (row) => row.count,
+    center: true,
+    grow: 1,
+    compact: true,
+    minWidth: "45px",
+  }
+];
+
+const expandedRow = ({ data: row }: ExpanderComponentProps<DeviceLogRow>) => (
+  <div style={{ padding: '16px 40px', background: '#f9fafb', fontSize: "12px"}}>
+    <div className="flex">Time: {moment(row.time * 1000).tz("America/New_York").format("MM/DD/YYYY hh:mm:ss A")}</div>
+    <div className="flex">Firmware: {row.firmware_version ? row.firmware_version : "N/A"}</div>
+    <div className="flex items-center">
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      : <div className={FontColorRSSI({row})}>{row.rssi}</div>
+    </div>
+    <div className="flex items-center">
+      <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />
+      : <div className={FontColorRSRP({row})}>{row.rsrp}</div>
+    </div>
+    <div className="flex items-center">
+      <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />
+      : <div className={FontColorRSRQ({row})}>{row.rsrq}</div>
+    </div>
+  </div>
+);
+
+const customStylesMobile = {
+  table: {
+    style: {
+      overflow: "hidden",
+    },
+  },
+  headRow: {
+    style: {
+      backgroundColor: "#C0D3D1",
+      minHeight: "52px",
+    },
+  },
+  headCells: {
+    style: {
+      fontWeight: 600,
+      fontSize: "12px",
+      letterSpacing: "0.05em",
+    },
+  },
+  rows: {
+    style: {
+      fontSize: "12px",
+      minHeight: "48px",
+    },
+    stripedStyle: {
+      backgroundColor: "#edeef0", 
+    },
+  },
+  pagination: {
+    style: {
+      borderBottomLeftRadius: "0.75rem",
+      borderBottomRightRadius: "0.75rem",
+    },
+  },
+};
+
 interface Props {
   data: DeviceLogRow[];
   loading: boolean;
@@ -225,20 +394,41 @@ interface Props {
 const DeviceLogTable: React.FC<Props> = ({ data, loading }) => {
   return (
     <div className="bg-gray-50 shadow-md" data-testid="device-log-table">
-      <DataTable
-        columns={columns}
-        data={data}
-        progressPending={loading}
-        pagination = {false}
-        striped
-        responsive
-        customStyles={customStyles}
-        noDataComponent={
-          <div className="py-6 text-gray-500">
-            No logs found.
-          </div>
-        }
-      />
+      <Desktop>
+        <DataTable
+          columns={columns}
+          data={data}
+          progressPending={loading}
+          pagination={false}
+          striped
+          responsive
+          customStyles={customStyles}
+          noDataComponent={
+            <div className="py-6 text-gray-500">
+              No logs found
+            </div>
+          }
+        />
+      </Desktop>
+      <Mobile>
+        <DataTable
+          columns={columnsMobile}
+          data={data}
+          progressPending={loading}
+          pagination = {false}
+          striped
+          responsive
+          customStyles={customStylesMobile}
+          noDataComponent={
+            <div className="py-6 text-gray-500">
+              No logs found.
+            </div>
+          }
+          expandableRows={true}
+          expandableRowsComponent={expandedRow}
+          expandOnRowClicked
+        />
+      </Mobile>
     </div>
   );
 };

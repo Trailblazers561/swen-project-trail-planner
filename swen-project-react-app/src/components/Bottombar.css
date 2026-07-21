@@ -3,7 +3,7 @@ a {
   font-size: medium;
   color: white;
   text-decoration: inherit;
-  text-justify: right;
+  /* text-justify: right; */
 }
 
 a:hover {
@@ -11,6 +11,6 @@ a:hover {
 }
 
 .nav-container {
-  display: flex;
-  justify-content: flex; /*Pushes all child items to the right*/
+  /* display: flex; */
+  /* justify-content: center; Pushes all child items to the right */
 }

@@ -118,7 +118,7 @@ for trail, stats in trails.items():
             hour_timestamp += 60 * 60
 
         day_data.append([device_trail_id, int(current_day.timestamp()), hikers, battery])
-        log_data.append([device_trail_id, int((current_day + timedelta(days=1, minutes=1)).timestamp()), hikers, battery, "1.0.0", *get_signals()])
+        log_data.append([device_trail_id, int((current_day + timedelta(days=1, minutes=1)).timestamp()),"data_upload", hikers, battery, "1.0.0", *get_signals()])
 
         current_day += timedelta(days=1)
 
@@ -185,6 +185,6 @@ with open(Path(__file__).parent / "month_logs.csv", "w", newline='') as f:
 
 with open(Path(__file__).parent / "device_logs.csv", "w", newline='') as f:
     file = csv.writer(f)
-    file.writerow(["device_id", "time", "count", "battery", "firmware_version", "rssi", "rsrp", "rsrq"])
+    file.writerow(["device_id", "time", "log_type", "count", "battery", "firmware_version", "rssi", "rsrp", "rsrq"])
     for data in log_data:
         file.writerow(data)

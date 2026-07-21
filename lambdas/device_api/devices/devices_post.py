@@ -1,10 +1,9 @@
 import json
 from datetime import datetime
-from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 
-from helper.helper_functions import device_table, cors_headers, is_device_blocked, is_device_archived
+from helper.helper_functions import device_table, cors_headers, is_device_blocked, is_device_archived, device_log_table
 
 
 def upload_device_info(event, context):
@@ -79,7 +78,7 @@ def upload_device_info(event, context):
             }
         device_id = response[0].get("id")
 
-        date_manufactured = Decimal(datetime.fromisoformat(date_manufactured).timestamp())
+        date_manufactured = int(str(datetime.fromisoformat(date_manufactured).timestamp()))
         print(
             f"Attempting to update device data- firmware_version [{firmware_version}], date_manufactured [{date_manufactured}], notes [{notes}]")
 
@@ -96,13 +95,20 @@ def upload_device_info(event, context):
             ExpressionAttributeValues=expression_values
         )
 
+        device_log_table.put_item(Item={
+            "device_id": int(device_id),
+            "time": int(str(datetime.now().timestamp())),
+            "log_type": "device_info_connectivity_test",
+            "firmware_version": firmware_version,
+        })
+
         print(f"Successfully updated device with id [{device_id}]")
         return {
             "statusCode": 200,
             "headers": cors_headers(),
             "body": json.dumps({
                 "message": "Device info updated successfully",
-                "device_id": id
+                "device_id": int(device_id)
             })
         }
 

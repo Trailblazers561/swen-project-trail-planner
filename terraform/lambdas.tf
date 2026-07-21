@@ -25,6 +25,7 @@ resource "aws_lambda_function" "simulate_data" {
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       AREA_TABLE    = aws_dynamodb_table.area_table.name
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
+      DEPLOY_ENV = var.deploy_env
     }
   }
 }
