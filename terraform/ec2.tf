@@ -199,7 +199,7 @@ EOF
     Name = "${var.deploy_env}_ca_instance"
   }
 
-  depends_on = [aws_ecr_repository.step_ca, null_resource.push_step_ca]#, null_resource.nuke_enis]
+  depends_on = [aws_ecr_repository.step_ca, null_resource.push_step_ca, null_resource.nuke_enis]
 
 }
 
