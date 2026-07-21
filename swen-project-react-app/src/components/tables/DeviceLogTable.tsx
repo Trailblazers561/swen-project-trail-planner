@@ -5,15 +5,17 @@ import { CircleQuestionMark } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useMediaQuery } from "react-responsive";
 
+import { DeviceLogType, DeviceLogMap } from "@/lib/apiTypes";
 
 interface DeviceLogRow {
   time: number;
+  log_type: DeviceLogType;
   firmware_version: string | null;
   battery: number | null;
   rssi: number | null;
   rsrp: number | null;
   rsrq: number | null;
-  count: number;
+  count: number | null;
 }
 
 interface Row {
@@ -150,15 +152,26 @@ const columns: TableColumn<DeviceLogRow>[] = [
     center: true,
   },
   {
-    name: "Firmware",
-    selector: (row) => row.firmware_version ? row.firmware_version : "N/A",
+    name: "Log Type",
     center: true,
+    cell: (row) => {
+      return <span>{DeviceLogMap[row.log_type]}</span>;
+    },
+  },
+  {
+    name: "Firmware",
+    center: true,
+    cell: (row) => {
+      if (!row.firmware_version)
+        return <span className="text-gray-400">N/A</span>;
+      return <span>{row.count}</span>;
+    },
   },
   {
     name: "Battery",
     center: true,
     cell: (row) => {
-      if (row.battery === null)
+      if (row.battery === null || row.battery === undefined)
         return <span className="text-gray-400">N/A</span>;
 
       let batteryClass = "";
@@ -182,7 +195,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSSI" expanded="Received Signal Strength Indicator" description="It measures the power level of a radio signal as it is received by a wireless device." />,
     center: true,
     cell: (row) => {
-      if (row.rssi === null)
+      if (row.rssi === null || row.rssi === undefined)
         return <span className="text-gray-400">N/A</span>;
 
       let rssiClass = FontColorRSSI({row})
@@ -198,7 +211,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSRP" expanded="Reference Signal Received Power" description="It measures the strength of the signal being received from a nearby cell tower." />,
     center: true,
     cell: (row) => {
-      if (row.rsrp === null)
+      if (row.rsrp === null || row.rsrp === undefined)
         return <span className="text-gray-400">N/A</span>;
 
       let rsrpClass = FontColorRSRP({row})
@@ -214,7 +227,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     name: <TooltipHeader label="RSRQ" expanded="Reference Signal Received Quality" description="It measures the clarity and overall usability of a cellular signal." />,
     center: true,
     cell: (row) => {
-      if (row.rsrq === null)
+      if (row.rsrq === null || row.rsrq === undefined)
         return <span className="text-gray-400">N/A</span>;
 
       let rsrqClass = FontColorRSRQ({row})
@@ -228,8 +241,12 @@ const columns: TableColumn<DeviceLogRow>[] = [
   },
   {
     name: "Count",
-    selector: (row) => row.count,
     center: true,
+    cell: (row) => {
+      if (row.count === null || row.count === undefined)
+        return <span className="text-gray-400">N/A</span>;
+      return <span>{row.count}</span>;
+    },
   }
 ];
 

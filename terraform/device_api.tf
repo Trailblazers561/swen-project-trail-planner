@@ -5,6 +5,7 @@ locals {
         file = "renew/renew_post.py"
         handler = "renew_post.renew_certificate"
         needs_ca_access = true
+        timeout = 30
       }
     }
     devices = {
