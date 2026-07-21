@@ -140,8 +140,6 @@ resource "aws_lambda_function" "device_registration_api_lambdas" {
       security_group_ids = [aws_security_group.lambda_sg[0].id]
     }
   }
-
-  depends_on = [aws_security_group.lambda_sg]
 }
 
 // Allow Lambdas To Be Invoked By An API
