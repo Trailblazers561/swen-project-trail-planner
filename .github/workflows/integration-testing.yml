@@ -326,11 +326,11 @@ jobs:
         with:
           workspace: ${{ env.TF_WORKSPACE }}
           configuration_version: ${{ steps.apply-upload.outputs.configuration_version_id }}
-        if: ${{always() }}
+        if: ${{ always() }}
 
       - name: Apply
         uses: hashicorp/tfc-workflows-github/actions/apply-run@v1.3.0
-        if: fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable
+        if:  ${{ always() && fromJSON(steps.apply-run-two.outputs.payload).data.attributes.actions.IsConfirmable }}
         id: apply-two
         with:
           run: ${{ steps.apply-run-two.outputs.run_id }}

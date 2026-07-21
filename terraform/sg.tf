@@ -15,9 +15,9 @@ resource "null_resource" "detach_lambda_sg" {
   count = local.enable_CA_resources ? 1 : 0
 
   provisioner "local-exec" {
-    when       = destroy
+    when = destroy
     interpreter = ["python3", "-c"]
-    command    = <<EOT
+    command = <<EOT
 import sys, subprocess, json
 region = "${self.triggers.region}"
 lambda_names = json.loads("""${self.triggers.lambda_names}""")
