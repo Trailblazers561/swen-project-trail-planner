@@ -12,11 +12,11 @@ children: React.ReactNode;
 }
 
 const Desktop = ({children}: DeviceType) => {
-const isDesktop = useMediaQuery({ minWidth: 1024 })
+const isDesktop = useMediaQuery({ minWidth: 769 })
 return isDesktop ? children : null
 }
 const Mobile = ({children}: DeviceType) => {
-const isMobile = useMediaQuery({maxWidth: 1023})
+const isMobile = useMediaQuery({maxWidth: 768})
 return isMobile ? children: null
 }
 
@@ -27,16 +27,16 @@ function Bottombar() {
             <nav className="fixed bottom-0 w-full bg-white shadow-md z-50 mb-20px z-[1000]" id="navbar">
                 <div className="bottom-0 h-24 bg-navbar text-white flex items-center justify-between">
                     <div className="flex items-center justify-center gap-4 w-full">  
-                        <Link className="color-blue max-w-3/16" to="/home">
+                        <Link className="color-blue w-3/16 max-w-24" to="/home">
                             <img src={home} alt="home"/>
                         </Link>
-                        <Link className="max-w-3/16" to="/dashboard">
+                        <Link className="w-3/16 max-w-24" to="/dashboard">
                             <img src={dashboard} alt="home"/>
                         </Link>
-                        {(currentRole === Role.Manager || currentRole === Role.Admin || currentRole === Role.Root) && <Link className="max-w-3/16" to="/devices">
+                        {(currentRole === Role.Manager || currentRole === Role.Admin || currentRole === Role.Root) && <Link className="w-3/16 max-w-24" to="/devices">
                             <img src={device} alt="home"/>
                         </Link>}
-                        {(currentRole === Role.Admin || currentRole === Role.Root) && <Link className="max-w-3/16" to="/privileges">
+                        {(currentRole === Role.Admin || currentRole === Role.Root) && <Link className="w-3/16 max-w-24" to="/privileges">
                             <img src={privileges} alt="home"/>
                         </Link>}
                     </div>

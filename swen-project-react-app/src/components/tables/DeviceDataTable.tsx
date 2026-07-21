@@ -1,5 +1,6 @@
 import React from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
+import { useMediaQuery } from "react-responsive";
 
 export interface DeviceRow {
   name: string;
@@ -15,6 +16,19 @@ interface Props {
   data: DeviceRow[];
   loading: boolean;
   onRowClick?: (device: DeviceRow) => void;
+}
+
+type DeviceType = {
+    children: React.ReactNode;
+  }
+
+const Desktop = ({children}: DeviceType) => {
+  const isDesktop = useMediaQuery({ minWidth: 1024 })
+  return isDesktop ? children : null
+}
+const Mobile = ({children}: DeviceType) => {
+  const isMobile = useMediaQuery({maxWidth: 1023})
+  return isMobile ? children: null
 }
 
 const columns: TableColumn<DeviceRow>[] = [
@@ -85,6 +99,42 @@ const columns: TableColumn<DeviceRow>[] = [
   },
 ];
 
+const columnsMobile: TableColumn<DeviceRow>[] = [
+  {
+    name: "Device Name",
+    selector: (row) => row.name,
+    sortable: true,
+    center: true,
+    grow: 0,
+    minWidth: "120px",
+  },
+  {
+    name: "Associated Trail",
+    sortable: true,
+    cell: (row) => {
+        if(row.trailName == null)
+            return <span className="text-gray-400">Unassociated</span>;
+        else
+            return <span>{row.trailName}</span>;
+    },
+    sortFunction: (a, b) =>
+    (a.trailName ?? "").localeCompare(b.trailName ?? ""),
+    center: true,
+    grow: 1,
+    minWidth: "120px",
+    compact: true,
+  },
+  {
+    name: "Weekly Count",
+    selector: (row) => row.weeklyCount,
+    sortable: true,
+    center: true,
+    grow: 0,
+    maxWidth: "50px",
+    compact: true,
+  }
+]
+
 const customStyles = {
   table: {
     style: {
@@ -127,26 +177,87 @@ const customStyles = {
   },
 };
 
+const customStylesMobile = {
+  table: {
+    style: {
+      overflow: "hidden",
+    },
+  },
+  headRow: {
+    style: {
+      backgroundColor: "#C0D3D1",
+      minHeight: "52px",
+    },
+  },
+  headCells: {
+    style: {
+      fontWeight: 600,
+      fontSize: "12px",
+      letterSpacing: "0.05em",
+    },
+  },
+  rows: {
+    style: {
+      fontSize: "12px",
+      minHeight: "48px",
+      "&:nth-of-type(odd):hover": {
+        backgroundColor: "#e3e4e6",
+      },
+      "&:nth-of-type(even):hover": {
+        backgroundColor: "#f7f7f7",
+      },
+    },
+    stripedStyle: {
+      backgroundColor: "#edeef0", 
+    },
+  },
+  pagination: {
+    style: {
+      borderBottomLeftRadius: "0.75rem",
+      borderBottomRightRadius: "0.75rem",
+    },
+  },
+};
+
 const DeviceDataTable: React.FC<Props> = ({ data, loading, onRowClick }) => {
   return (
     <div className="bg-gray-50 shadow-md" data-testid="device-status-table">
-      <DataTable
-        columns={columns}
+      <Desktop>
+        <DataTable
+          columns={columns}
+          data={data}
+          progressPending={loading}
+          pagination={true}
+          striped
+          responsive
+          customStyles={customStyles}
+          pointerOnHover
+          highlightOnHover
+          onRowClicked={onRowClick}
+          noDataComponent={
+            <div className="py-6 text-gray-500">
+              No devices found.
+            </div>
+          }
+        />
+      </Desktop>
+      <Mobile>
+        <DataTable
+        columns={columnsMobile}
         data={data}
         progressPending={loading}
         pagination={true}
         striped
         responsive
-        customStyles={customStyles}
-        pointerOnHover
-        highlightOnHover
+        customStyles={customStylesMobile}
         onRowClicked={onRowClick}
         noDataComponent={
           <div className="py-6 text-gray-500">
             No devices found.
           </div>
         }
-      />
+        />
+      </Mobile>
     </div>
   );
 };
