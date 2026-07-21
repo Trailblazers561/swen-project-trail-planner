@@ -57,7 +57,7 @@ resource "null_resource" "nuke_enis" {
 import sys, subprocess, json, time
 region = "${self.triggers.region}"
 subnet_id = "${self.triggers.subnet_id}"
-result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', f'Name=subnet-id,Values={subnet_id}', '--query', 'NetworkInterfaces[?InterfaceType!="lambda"].NetworkInterfaceId', '--output', 'json', '--region', region], capture_output=True, text=True)
+result = subprocess.run(['aws', 'ec2', 'describe-network-interfaces', '--filters', f'Name=subnet-id,Values={subnet_id}', '--query', "NetworkInterfaces[?InterfaceType!='lambda'].NetworkInterfaceId", '--output', 'json', '--region', region], capture_output=True, text=True)
 if result.returncode != 0:
     print("describe-network-interfaces function failed")
     print(result.stderr, file=sys.stderr)
