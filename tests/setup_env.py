@@ -2,9 +2,9 @@ import boto3
 import argparse
 from pathlib import Path
 
-cloudfront = boto3.Session(profile_name="funny", region_name="us-east-1").client('cloudfront')
-api_gateway = boto3.Session(profile_name="funny", region_name="us-east-1").client('apigateway')
-cognito = boto3.Session(profile_name="funny", region_name="us-east-1").client('cognito-idp')
+cloudfront = boto3.client('cloudfront')
+api_gateway = boto3.client('apigateway')
+cognito = boto3.client('cognito-idp')
 
 def retrieve_cloudfront_url(DEPLOY_ENV):
     distributions = cloudfront.list_distributions()
