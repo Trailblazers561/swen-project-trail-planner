@@ -1,3 +1,44 @@
+locals {
+  ca_lambda_names = [
+    for lambda_name, configuration in merge(
+      local.device_registration_api_methods,
+      local.device_api_methods
+    ) : "${var.deploy_env}_trailcount_${lambda_name}" if lookup(configuration, "needs_ca_access", false)
+  ]
+}
+
+resource "null_resource" "detach_lambda_sg" {
+  triggers = {
+    lambda_names = jsonencode(local.ca_lambda_names)
+    region = data.aws_region.current.name
+  }
+  count = local.enable_CA_resources ? 1 : 0
+
+  provisioner "local-exec" {
+    when = destroy
+    interpreter = ["python3", "-c"]
+    command = <<EOT
+import sys, subprocess, json
+region = "${self.triggers.region}"
+lambda_names = json.loads("""${self.triggers.lambda_names}""")
+for lambda_name in lambda_names:
+    print(f"Detaching VPC Configuration From [lambda_name]")
+
+    result = subprocess.run(["aws", "lambda", "update-function-configuration", "--function-name", lambda_name, "--vpc-config", "SubnetIds=[],SecurityGroupIds=[]", "--output", "json", "--region", region], capture_output=True, text=True)
+    if result.returncode != 0:
+        print("update-function-configuration function failed")
+        print(result.stderr, file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Finished Detaching [lambda_name]")
+
+print("All Lambda VPC Configurations Detached")
+EOT
+  }
+
+  depends_on = [aws_security_group.lambda_sg]
+}
+
 resource "aws_security_group" "lambda_sg" {
   name        = "${var.deploy_env}-lambda-sg"
   description = "sg for lambda access"
