@@ -164,7 +164,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     cell: (row) => {
       if (!row.firmware_version)
         return <span className="text-gray-400">N/A</span>;
-      return <span>{row.count}</span>;
+      return <span>{row.firmware_version}</span>;
     },
   },
   {
