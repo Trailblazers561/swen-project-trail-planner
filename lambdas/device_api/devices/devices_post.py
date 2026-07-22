@@ -97,7 +97,7 @@ def upload_device_info(event, context):
 
         device_log_table.put_item(Item={
             "device_id": int(device_id),
-            "time": int(str(datetime.now().timestamp())),
+            "time": int(datetime.now().timestamp()),
             "log_type": "device_info_connectivity_test",
             "firmware_version": firmware_version,
         })
