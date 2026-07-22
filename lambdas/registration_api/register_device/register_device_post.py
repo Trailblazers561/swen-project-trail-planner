@@ -176,7 +176,7 @@ def register_device(event, context):
 
         device_log_table.put_item(Item={
             "device_id": int(item.get("id")),
-            "time": int(str(datetime.now().timestamp())),
+            "time": time_now,
             "log_type": "device_certificate_registration",
         })
 
