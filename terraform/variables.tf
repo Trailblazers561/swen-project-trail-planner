@@ -90,5 +90,5 @@ variable "fire_up_CA" {
 }
 
 locals {
-  enable_CA_resources = contains(["demo", "prod"], var.deploy_env) || var.fire_up_CA
+  enable_CA_resources = contains(["trailblazers", "prod"], var.deploy_env) || var.fire_up_CA
 }
