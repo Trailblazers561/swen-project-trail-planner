@@ -164,7 +164,7 @@ const columns: TableColumn<DeviceLogRow>[] = [
     cell: (row) => {
       if (!row.firmware_version)
         return <span className="text-gray-400">N/A</span>;
-      return <span>{row.count}</span>;
+      return <span>{row.firmware_version ? row.firmware_version : "N/A"}</span>;
     },
   },
   {
@@ -323,7 +323,11 @@ const columnsMobile: TableColumn<DeviceLogRow>[] = [
   },
   {
     name: "Count",
-    selector: (row) => row.count,
+    cell: (row) => {
+      if (row.count === null || row.count === undefined)
+        return <span className="text-gray-400">N/A</span>;
+      return <span>{row.count}</span>;
+    },
     center: true,
     grow: 1,
     compact: true,
