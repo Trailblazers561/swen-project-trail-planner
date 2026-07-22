@@ -49,6 +49,7 @@ table_time_map = {
 CA_URL = os.environ.get("CERTIFICATE_AUTHORITY_URL")
 s3_client = boto3.client('s3')
 csv_bucket = os.environ.get("TRAIL_CSV_BUCKET")
+v1_device_bucket = os.environ.get("V1_DEVICE_BUCKET")
 
 cognito = boto3.client('cognito-idp')
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID")

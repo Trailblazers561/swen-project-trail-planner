@@ -1,5 +1,11 @@
 locals {
   device_api_endpoints = {
+    adapter = {
+      POST = {
+        file = "adapter/adapter_post.py"
+        handler = "adapter_post.upload_adapted_device_data"
+      }
+    }
     renew = {
       POST = {
         file = "renew/renew_post.py"
@@ -186,6 +192,7 @@ resource "aws_lambda_function" "device_api_lambdas" {
       DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
       AREA_TABLE = aws_dynamodb_table.area_table.name
       TRAIL_CSV_BUCKET = aws_s3_bucket.csv_bucket.bucket
+      V1_DEVICE_BUCKET = aws_s3_bucket.v1_device_bucket.bucket
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
       DEPLOY_ENV = var.deploy_env

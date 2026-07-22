@@ -179,3 +179,55 @@ resource "aws_lambda_permission" "allow_cognito_cognito_config_lambdas" {
   function_name = each.value.function_name
   principal     = "cognito-idp.amazonaws.com"
 }
+
+# Daily V1 Device Accumulation
+data "archive_file" "accumulation_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/${local.lambda_code_directory}/accumulate_v1_data.py"
+  output_path = "${path.module}/${local.lambda_code_directory}/zips/accumulate_v1_data.zip"
+}
+
+resource "aws_lambda_function" "accumulation_lambda" {
+  function_name = "${var.deploy_env}_trailcount_accumulate_v1_data"
+  role          = aws_iam_role.lambda_iam_role.arn
+  handler       = "accumulate_v1_data.accumulate"
+  runtime       = "python3.11"
+
+  filename      = "${path.module}/${local.lambda_code_directory}/zips/accumulate_v1_data.zip"
+  code_sha256   = data.archive_file.accumulation_lambda_zip.output_base64sha256
+  layers        = [aws_lambda_layer_version.helper_layer.arn]
+
+
+  environment {
+    variables = {
+      V1_DEVICE_BUCKET = aws_s3_bucket.v1_device_bucket.bucket
+      DEVICE_TABLE = aws_dynamodb_table.device_table.name
+      DEVICE_TRAIL_TABLE = aws_dynamodb_table.device_trail_table.name
+      DEVICE_TRAIL_LOG_HOUR_TABLE = aws_dynamodb_table.device_trail_log_hour_table.name
+      DEVICE_TRAIL_LOG_DAY_TABLE = aws_dynamodb_table.device_trail_log_day_table.name
+      DEVICE_TRAIL_LOG_WEEK_TABLE = aws_dynamodb_table.device_trail_log_week_table.name
+      DEVICE_TRAIL_LOG_MONTH_TABLE = aws_dynamodb_table.device_trail_log_month_table.name
+      DEVICE_LOG_TABLE = aws_dynamodb_table.device_log_table.name
+      DEPLOY_ENV = var.deploy_env
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "v1_device_daily_accumulation" {
+  name                = "${var.deploy_env}_trailcount_daily_accumulation"
+  schedule_expression = "cron(5 0 * * ? *)" // 5 minutes after midnight, daily
+}
+
+resource "aws_cloudwatch_event_target" "trigger_accumulation" {
+  rule      = aws_cloudwatch_event_rule.v1_device_daily_accumulation.name
+  target_id = "${var.deploy_env}_trailcount_accumulate_event"
+  arn       = aws_lambda_function.accumulation_lambda.arn
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch_accumulate_v1_device_data" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.accumulation_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.v1_device_daily_accumulation.arn
+}
