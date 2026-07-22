@@ -458,7 +458,7 @@ const DeviceModal: React.FC<DeviceModalProps> = ({ isOpen, onClose, onUpdate, de
             </div>
           <button className="modal-close" onClick={onClose} data-testid="modal-close">×</button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form className="max-h-70" onSubmit={handleSubmit}>
           <div className="modal-body min-h-50 relative">
             {currentAction === DeviceAction.CREATE_DEVICE && (
               <div className="flex flex-col items-center">
