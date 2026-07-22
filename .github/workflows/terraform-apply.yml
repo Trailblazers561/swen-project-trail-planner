@@ -1,7 +1,7 @@
 name: "Terraform Apply"
 
 on:
-  push:
+  pull_request:
     branches:
       - trailblazers-tst
       - trailblazers-uat
@@ -39,16 +39,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    environment: | 
-      ${{ 
-          github.ref_name == 'trailblazers-tst' && 'tst' ||
-          github.ref_name == 'trailblazers-uat' && 'uat' ||
-          github.ref_name == 'main' && 'prod'
-        }}
+    environment: prod
     env:
-      TF_WORKSPACE: "${{ vars.TF_WORKSPACE }}"
-      TF_WORKSPACE_ID: "${{ vars.TF_WORKSPACE_ID }}"
-      TF_VAR_deploy_env: '"${{ vars.ENV_NAME }}"'
+      TF_WORKSPACE: "${{ vars.DEMO_TF_WORKSPACE }}"
+      TF_WORKSPACE_ID: "${{ vars.DEMO_TF_WORKSPACE_ID }}"
+      TF_VAR_deploy_env: '"${{ vars.DEMO_ENV_NAME }}"'
     steps:
       - name: Checkout
         uses: actions/checkout@v7
