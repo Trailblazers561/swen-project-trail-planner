@@ -106,3 +106,23 @@ Version = "2012-10-17"
     ]
   })
 }
+
+resource "aws_s3_bucket" "v1_device_bucket" {
+  bucket = "${var.deploy_env}-trailcount-v1-device-bucket-${random_integer.random_suffix.result}"
+
+  tags = {
+    Name = "${var.deploy_env}-trailcount-v1-device-bucket"
+  }
+
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "v1_device_bucket" {
+  bucket = aws_s3_bucket.v1_device_bucket.id
+  rule {
+    id     = "expire-buffer-objects"
+    status = "Enabled"
+    filter {}
+    expiration { days = 30 }
+  }
+}
